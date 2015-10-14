@@ -1999,12 +1999,6 @@ Asynchronous writes can be enabled with the command line option \texttt{----enab
 \end{itemize}
 If one of these limits is reached, subsequent write() requests will block.
 
-\subsection{Object Cache}
-\label{sec:object_cache}
-The client supports a per-file write-back object cache with LRU policy. This cache is enabled with \texttt{----object-cache-size=<N>} where N is the maximum number of objects it may cache. The cache is currently mutually exclusive with async. writes.
-
-The cache is still experimental and therefore disabled by default.
-
 \section{Troubleshooting}
 
 Different kinds of problems may occur when trying to create, mount or access files in a volume. By default errors are logged to the console. Once \texttt{mount.xtreemfs} moved into background, use \texttt{xtfsutil ----errors <mount point>} to print the last 20 errors for a mounted volume. Additionally, the tools \texttt{mkfs.xtreemfs}, \texttt{rmfs.xtreemfs}, \texttt{lsfs.xtreemfs} and \texttt{mount.xtreemfs} allow to log error messages to a logfile which has to be specified by the \texttt{--l} option. Use the \texttt{--d} option to specify the minimum severity of to be logged events.
@@ -3081,20 +3075,16 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <name>fs.AbstractFileSystem.xtreemfs.impl</name>
     <value>org.xtreemfs.common.clients.hadoop.XtreemFS</value>
     <description>
-       The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
+        The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
     </description>
 </property>
 
   <property>
     <name>fs.default.name</name>
-    <value>xtreemfs://localhost:32638</value>
-    <description>Address for the DIR.</description>
-  </property>
-
-  <property>
-    <name>xtreemfs.defaultVolumeName</name>
-    <value>volumeName</value>
-    <description>Name of the default volume to use within XtreemFS.</description>
+    <value>xtreemfs://localhost:32638/defaultVolumeName</value>
+    <description>
+        Address for the DIR with the default volume name to use.
+    </description>
   </property>
 
   <property>
@@ -3111,11 +3101,12 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	\item The next property makes Hadoop use the DIR instead of a
 	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at
 	\textit{localhost:32638}.
-	\item The third property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
+	It also specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
 	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
 	\end{enumerate}
+	
   Hint: By default Hadoop uses the current user as user ID and \textit{users} as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties:
 	\begin{verbatim}
   <property>
@@ -3228,6 +3219,46 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <value>bufferSize</value>
     <description>
       Buffer size of the write buffer in the XtreemFSHadoopClient
+    </description>
+  </property>
+	\end{verbatim}
+	
+	
+	Hint: The XtreemFSHadoopClient can use the native C++ Library via JNI (Java Native Interface). See section \ref{sec:libjnixtreemfs_for_java} for more information. 
+	The JNI library allows to use features only implemented in C++, such as asynchronous writes:
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.jni.enabled</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the JNI library for the XtreemFSHadoopClient 
+      (disabled by default).
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.jni.libraryPath</name>
+    <value>/xtreemfs/cpp/build/</value>
+    <description>
+      Optional. Set a path where the native XtreemFS libraries
+      are searched for.
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.asyncWrites.enabled</name>
+    <value>true</value>
+    <description>
+      Enable/Disable asynchronous writes (disabled by default).
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.asyncWrites.maxRequests</name>
+    <value>10</value>
+    <description>
+      Optional. Maximum number of pending write requests per file. 
+      Asynchronous writes will block if this limit is reached first.
     </description>
   </property>
 	\end{verbatim}
@@ -3355,12 +3386,23 @@ Now modify \texttt{cpp/src/example\_libxtreemfs/example\_libxtreemfs.cpp} to sui
 \label{sec:libxtreemfs_for_java}
 
 The libxtreemfs for Java can be found in the XtreemFS sources in the directory
-\texttt{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
+\path{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
 sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
 
-Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \texttt{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
 
 The libxtreemfs for Java is currently not separated from the remaining server Java code. Consequently, you'll find the available functionality as part of the XtreemFS.jar which is generated by ``make server''.
+
+
+\section{Using the C++ libxtreemfs with Java Native Interfaces}
+\label{sec:libjnixtreemfs_for_java}
+The native libxtreemfs for Java is implementing the same interface as the pure Java libxtreemfs but is using Java Native Interfaces (JNI) to make calls to the C++ libxtreemfs. The Java implementation can be found in the XtreemFS sources in the directory \path{java/servers/src/org/xtreemfs/common/libxtreemfs/jni/}. You can retrieve the
+sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
+
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library. 
+
+To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. To install it from source either call ``\texttt{make client-jni}'' or set the environment variable \texttt{BUILD\_JNI=true} and call ``\texttt{make client}''. The library will then be found in  \path{cpp/build}.
+
 
 \chapter{Command Line Utilities}
 \label{sec:cli_utils}

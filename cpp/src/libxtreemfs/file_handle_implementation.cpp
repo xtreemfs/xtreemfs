@@ -59,7 +59,6 @@ FileHandleImplementation::FileHandleImplementation(
     const std::map<xtreemfs::pbrpc::StripingPolicyType,
                    StripeTranslator*>& stripe_translators,
     bool async_writes_enabled,
-    ObjectCache* object_cache,
     const Options& options,
     const xtreemfs::pbrpc::Auth& auth_bogus,
     const xtreemfs::pbrpc::UserCredentials& user_credentials_bogus)
@@ -75,7 +74,6 @@ FileHandleImplementation::FileHandleImplementation(
       stripe_translators_(stripe_translators),
       async_writes_enabled_(async_writes_enabled),
       async_writes_failed_(false),
-      object_cache_(object_cache),
       volume_options_(options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus),
@@ -85,9 +83,6 @@ FileHandleImplementation::FileHandleImplementation(
                     mrc_uuid_iterator,
                     auth_bogus_,
                     user_credentials_bogus_) {
-  if (async_writes_enabled_) {
-    object_cache_ = NULL;
-  }
 }
 
 FileHandleImplementation::~FileHandleImplementation() {}
@@ -212,31 +207,10 @@ int FileHandleImplementation::DoRead(
       uuid_iterator = osd_uuid_iterator_;
     }
 
-    if (object_cache_) {
-      ObjectReaderFunction reader = boost::bind(
-          &FileHandleImplementation::ReadFromOSD,
-          this,
-          uuid_iterator,
-          file_credentials,
-          _1, _2, 0, object_cache_->object_size());
-      ObjectWriterFunction writer = boost::bind(
-          &FileHandleImplementation::WriteToOSD,
-          this,
-          osd_uuid_iterator_,
-          file_credentials,
-          _1, 0, _2, _3);
-      received_data += object_cache_->Read(
-          operations[j].obj_number,
-          operations[j].req_offset,
-          operations[j].data,
-          operations[j].req_size,
-          reader, writer);
-    } else {
-      received_data +=
-          ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
-          operations[j].data, operations[j].req_offset,
-          operations[j].req_size);
-    }
+    received_data +=
+        ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
+        operations[j].data, operations[j].req_offset,
+        operations[j].req_size);
   }
 
   return received_data;
@@ -401,29 +375,9 @@ int FileHandleImplementation::DoWrite(
         uuid_iterator = osd_uuid_iterator_;
       }
 
-      if (object_cache_ != NULL) {
-        ObjectReaderFunction reader = boost::bind(
-            &FileHandleImplementation::ReadFromOSD,
-            this,
-            uuid_iterator,
-            file_credentials,
-            _1, _2, 0, object_cache_->object_size());
-        ObjectWriterFunction writer = boost::bind(
-            &FileHandleImplementation::WriteToOSD,
-            this,
-            osd_uuid_iterator_,
-            file_credentials,
-            _1, 0, _2, _3);
-        object_cache_->Write(operations[j].obj_number,
-                             operations[j].req_offset,
-                             operations[j].data,
-                             operations[j].req_size,
-                             reader, writer);
-      } else {
-            WriteToOSD(uuid_iterator, file_credentials,
-                       operations[j].obj_number, operations[j].req_offset,
-                       operations[j].data, operations[j].req_size);
-      }
+      WriteToOSD(uuid_iterator, file_credentials,
+                  operations[j].obj_number, operations[j].req_offset,
+                  operations[j].data, operations[j].req_size);
     }
   }
 
@@ -500,19 +454,6 @@ void FileHandleImplementation::Flush(bool close_file) {
 }
 
 void FileHandleImplementation::DoFlush(bool close_file) {
-  if (object_cache_ != NULL) {
-    FileCredentials file_credentials;
-    xcap_manager_.GetXCap(file_credentials.mutable_xcap());
-    file_info_->GetXLocSet(file_credentials.mutable_xlocs());
-    ObjectWriterFunction writer = boost::bind(
-        &FileHandleImplementation::WriteToOSD,
-        this,
-        osd_uuid_iterator_,
-        file_credentials,
-        _1, 0, _2, _3);
-    object_cache_->Flush(writer);
-  }
-
   file_info_->Flush(this, close_file);
 
   if (DidAsyncWritesFail()) {
@@ -607,10 +548,6 @@ void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
     delete response->error();
   } else {
     response->DeleteBuffers();
-  }
-
-  if (object_cache_ != NULL) {
-    object_cache_->Truncate(new_file_size);
   }
 
   // 3. Update the file size at the MRC.

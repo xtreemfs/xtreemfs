@@ -78,7 +78,6 @@ Options::Options()
   async_writes_max_requests = 10;  // Only 10 pending requests allowed by default.
   readdir_chunk_size = 1024;
   enable_atime = false;
-  object_cache_size = 0;
 
   // Error Handling options.
   // A RPC call may be retried up to "max{_read|_write|}_tries" times. The
@@ -215,10 +214,7 @@ void Options::GenerateProgramOptionsDescriptions() {
         " will block if this limit is reached first.")
     ("readdir-chunk-size",
         po::value(&readdir_chunk_size)->default_value(readdir_chunk_size),
-        "Number of entries requested per readdir.")
-    ("object-cache-size",
-        po::value(&object_cache_size)->default_value(object_cache_size),
-        "Number of cached objects per file.");
+        "Number of entries requested per readdir.");
 
   error_handling_.add_options()
     ("max-tries",
@@ -553,11 +549,6 @@ std::vector<std::string> Options::ParseCommandLine(int argc, char** argv) {
       vm.count("async-writes-max-reqs"))) {
     throw InvalidCommandLineParametersException("You specified async-writes-*"
         " options but did not set enable-async-writes.");
-  }
-
-  if (enable_async_writes && object_cache_size > 0) {
-    throw InvalidCommandLineParametersException(
-        "Only one of async. writes and the object cache may be enabled.");
   }
 
   // Show help if no arguments given.

@@ -377,6 +377,9 @@ public abstract class StorageLayout {
                 writeData = obj.getData();
                 writeData.position(offset);
                 writeData.put(data);
+                for (int i = obj.getData().capacity(); i < offset; i++) {
+                    writeData.put((byte) 0);
+                }
                 BufferPool.free(data);
             } else {
                 // copy old data and then new data

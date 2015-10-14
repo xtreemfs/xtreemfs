@@ -98,7 +98,7 @@ public final class ReusableBuffer {
      * ByteBuffer.wrap method.
      * 
      * @param data
-     *            the byte arry containing the data
+     *            the byte array containing the data
      * @return
      */
     public static ReusableBuffer wrap(byte[] data) {
@@ -128,7 +128,7 @@ public final class ReusableBuffer {
         if (this.viewParent == null) {
             
             if (parentBuffer == null) {
-                // wraped buffers
+                // wrapped buffers
                 ReusableBuffer view = new ReusableBuffer(this.buffer.slice());
                 view.viewParent = this;
                 
@@ -153,7 +153,7 @@ public final class ReusableBuffer {
         } else {
             
             if (parentBuffer == null) {
-                // wraped buffers
+                // wrapped buffers
                 ReusableBuffer view = new ReusableBuffer(this.buffer.slice());
                 view.viewParent = this.viewParent;
                 
@@ -234,7 +234,7 @@ public final class ReusableBuffer {
     }
     
     /**
-     * @see java.nio.Buffer#compact
+     * @see java.nio.ByteBuffer#compact
      */
     public void compact() {
         assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;

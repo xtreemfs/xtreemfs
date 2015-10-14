@@ -34,6 +34,8 @@ XTREEMFS_CONFIG_PARENT_DIR=$(DESTDIR)/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 XTREEMFS_SHARE_DIR=$(DESTDIR)/usr/share/xtreemfs
+LIB_DIR?=/usr/lib/xtreemfs
+XTREEMFS_LIB_DIR=$(DESTDIR)$(LIB_DIR)
 BIN_DIR=$(DESTDIR)/usr/bin
 SBIN_DIR=$(DESTDIR)/sbin
 MAN_DIR=$(DESTDIR)/usr/share/man/man1
@@ -55,6 +57,8 @@ CLIENT_GOOGLE_TEST_CPP_MAIN = $(CLIENT_GOOGLE_TEST_CPP)/lib/.libs/libgtest_main.
 # This prevents the target from getting executed again as long as the checkfile does not change.
 CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
+XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
+
 TARGETS = client server foundation flease
 .PHONY:	clean distclean set_version
 
@@ -64,7 +68,7 @@ clean: check_server check_client $(patsubst %,%_clean,$(TARGETS))
 
 distclean: check_server check_client $(patsubst %,%_distclean,$(TARGETS))
 
-install: install-client install-server install-tools
+install: install-client install-server install-tools install-libs
 
 install-client:
 
@@ -147,6 +151,14 @@ install-tools:
 	@mkdir -p $(MAN_DIR)
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
 
+install-libs:
+# This could also install a shared libxtreemfs 
+# but for now it only installs the libjni-xtreemfs if it exists.
+	@mkdir -p $(XTREEMFS_LIB_DIR) 
+	@if [ -f $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) ]; then \
+		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
+	fi
+
 uninstall:
 
 	@rm -rf $(DOC_DIR_SERVER)
@@ -158,6 +170,9 @@ uninstall:
 
 	@rm -f $(SBIN_DIR)/mount.xtreemfs
 	@rm -f $(SBIN_DIR)/umount.xtreemfs
+
+	@rm -f $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
+	@rmdir $(XTREEMFS_LIB_DIR)
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
@@ -214,26 +229,39 @@ ifdef BUILD_CLIENT_TESTS
 	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
 endif
 
+CMAKE_GENERATE_JNI = -DGENERATE_JNI=false
+ifdef BUILD_JNI
+	CMAKE_BUILD_JNI = -DBUILD_JNI=true
+else
+	CMAKE_BUILD_JNI = -DBUILD_JNI=false
+endif
+
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
 # Instead define them via -D, so they will be cached.
 ifdef BOOST_ROOT
 	CMAKE_BOOST_ROOT = -DBOOST_ROOT="$(BOOST_ROOT)" -DBoost_NO_SYSTEM_PATHS=ON
 endif
+
+# Fix boost problems on centos 6 (see https://public.kitware.com/Bug/view.php?id=15270)
+ifdef NO_BOOST_CMAKE
+	CMAKE_NO_BOOST_CMAKE = -DBoost_NO_BOOST_CMAKE=BOOL:ON
+endif
+
 # Tell CMake if it should ignore a missing Fuse.
 ifdef SKIP_FUSE
 	CMAKE_SKIP_FUSE = -DSKIP_FUSE=true
 endif
+
 # Trigger building the experimental LD_PRELOAD library
 ifdef BUILD_PRELOAD
 	CMAKE_BUILD_PRELOAD = -DBUILD_PRELOAD=true
 endif
 
-
 client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure --with-pic $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
@@ -270,7 +298,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)
@@ -347,3 +375,12 @@ pbrpcgen_clean:
 
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
+
+.PHONY: jni-client 
+jni-client: CMAKE_BUILD_JNI = -DBUILD_JNI=true
+jni-client: client 
+
+.PHONY: jni-client-generate
+jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
+jni-client-generate: client
+

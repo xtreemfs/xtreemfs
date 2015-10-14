@@ -147,8 +147,6 @@ class Options {
   int readdir_chunk_size;
   /** True, if atime requests are enabled in Fuse/not ignored by the library. */
   bool enable_atime;
-  /** Cached objects per file. A value <= 0 disables the object cache. */
-  int object_cache_size;
 
   // Error Handling options.
   /** How often shall a failed operation get retried? */

@@ -3,7 +3,7 @@ Section: utils
 Priority: optional
 Maintainer: XtreemFS Project <xtreemfs-users@googlegroups.com>
 Homepage: http://www.xtreemfs.org/
-Standards-Version: 3.7.2
+Standards-Version: 3.9.6
 
 Package: xtreemfs-client
 Architecture: any
@@ -28,3 +28,10 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-backend (= ${binary:Version}), attr (>=2), java6-runtime-headless
 Description: XtreemFS administration tools
  XtreemFS is a distributed and replicated file system for the Internet. For more details, visit www.xtreemfs.org. This package contains XtreemFS administration tools.
+
+Package: libxtreemfs-jni
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: XtreemFS JNI library
+ XtreemFS is a distributed and replicated file system for the Internet. For more details, visit www.xtreemfs.org. This package contains the XtreemFS JNI client library.
+

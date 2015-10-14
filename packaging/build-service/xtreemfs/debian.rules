@@ -5,9 +5,6 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# This is the debhelper compatibility version to use.
-export DH_COMPAT=4
-
 CFLAGS = -g
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 CFLAGS += -O0
@@ -17,6 +14,9 @@ endif
 
 BUILD_DIR:=$(CURDIR)/debian/xtreemfs
 export ANT_OPTS=-D"file.encoding=UTF-8"
+
+# Build JNI library
+export BUILD_JNI=true
 
 build: build-stamp
 build-stamp:
@@ -48,11 +48,11 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	
+
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly /usr/src/packages/BUILD/debian/debian/<nameOfPackage>
 	make install DESTDIR=$(BUILD_DIR)
-	
+
 	# remove copyright notes (let the sections below handle that)
 	rm $(BUILD_DIR)/usr/share/doc/xtreemfs-client/LICENSE
 	rm $(BUILD_DIR)/usr/share/doc/xtreemfs-server/LICENSE
@@ -60,16 +60,16 @@ install: build
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-client
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-server
 	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-tools
-	
+
 	rm $(BUILD_DIR)/etc/xos/xtreemfs/postinstall_setup.sh
-	
+
 	# --- end custom part for installing
-	
+
 	# move files of the xtreemfs-client package
 	mkdir -p $(BUILD_DIR)-client/usr/bin
 	mv    -t $(BUILD_DIR)-client/usr/bin \
 	         $(BUILD_DIR)/usr/bin/*.xtreemfs \
-	         $(BUILD_DIR)/usr/bin/xtfsutil 
+	         $(BUILD_DIR)/usr/bin/xtfsutil
 	mkdir -p $(BUILD_DIR)-client/sbin
 	ln    -sf /usr/bin/mount.xtreemfs $(BUILD_DIR)-client/sbin/mount.xtreemfs
 	ln    -sf /usr/bin/umount.xtreemfs $(BUILD_DIR)-client/sbin/umount.xtreemfs
@@ -80,7 +80,7 @@ install: build
 	mkdir -p $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client
 	cp    -t $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client \
 	         $(CURDIR)/LICENSE
-	
+
 	# move files of the xtreemfs-backend package
 	mkdir -p $(BUILD_DIR)-backend/usr/share/java
 	mv    -t $(BUILD_DIR)-backend/usr/share/java \
@@ -96,7 +96,7 @@ install: build
 	mkdir -p $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend
 	cp    -t $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend \
 	         $(CURDIR)/LICENSE
-	
+
 	# move files of the xtreemfs-server package
 	mkdir -p $(BUILD_DIR)-server/etc/init.d
 	mv    -t $(BUILD_DIR)-server/etc/init.d \
@@ -115,7 +115,7 @@ install: build
 	mkdir -p $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server
 	cp    -t $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server \
 	         $(CURDIR)/LICENSE
-	
+
 	# move files of the xtreemfs-tools package
 	# this file has already been moved and does not have to be explicitly excluded:
 	# %exclude /usr/bin/xtfs_*mount
@@ -130,6 +130,14 @@ install: build
 	         $(BUILD_DIR)/usr/share/man/man1/xtfs_*
 	mkdir -p $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools
 	cp    -t $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools \
+	         $(CURDIR)/LICENSE
+
+	# move files to the libxtreemfs-jni package
+	mkdir -p $(CURDIR)/debian/libxtreemfs-jni/usr/lib/xtreemfs
+	mv    -t $(CURDIR)/debian/libxtreemfs-jni/usr/lib/xtreemfs \
+         $(BUILD_DIR)/usr/lib/xtreemfs/libjni-xtreemfs.so
+	mkdir -p $(CURDIR)/debian/libxtreemfs-jni/usr/share/doc/libxtreemfs-jni
+	cp    -t $(CURDIR)/debian/libxtreemfs-jni/usr/share/doc/libxtreemfs-jni \
 	         $(CURDIR)/LICENSE
 
 # Build architecture-independent files here.

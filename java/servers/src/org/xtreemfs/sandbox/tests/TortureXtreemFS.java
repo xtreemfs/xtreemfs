@@ -24,6 +24,10 @@
 
 package org.xtreemfs.sandbox.tests;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.File;
@@ -46,11 +50,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyTyp
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * 
@@ -110,8 +109,8 @@ public class TortureXtreemFS {
 
                 final String sslProtocol = optSSLProtocol.isSet() ? optSSLProtocol.getValue() : null;
                 final boolean gridSSL = dirURL.getProtocol().equals(Schemes.SCHEME_PBRPCG);
-                sslOptions = new SSLOptions(new FileInputStream(optPKCS12file.getValue()),optPKCS12passphrase.getValue(),"PKCS12",
-                        null, null, "none", false, gridSSL, sslProtocol, null);
+                sslOptions = new SSLOptions(optPKCS12file.getValue(), optPKCS12passphrase.getValue(), "PKCS12", null,
+                        null, "none", false, gridSSL, sslProtocol, null);
             }
 
 

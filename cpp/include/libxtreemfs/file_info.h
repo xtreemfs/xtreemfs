@@ -22,7 +22,6 @@
 
 #include "libxtreemfs/async_write_handler.h"
 #include "libxtreemfs/client_implementation.h"
-#include "libxtreemfs/object_cache.h"
 #include "libxtreemfs/simple_uuid_iterator.h"
 #include "libxtreemfs/uuid_container.h"
 #include "xtreemfs/GlobalTypes.pb.h"
@@ -327,10 +326,6 @@ class FileInfo {
   /** Proceeds async writes, handles the callbacks and provides a
    *  WaitForPendingWrites() method for barrier operations like read. */
   AsyncWriteHandler async_write_handler_;
-
-  /** A cache for objects of this file. Maybe NULL in which case the
-   *  cache is disabled. */
-  boost::scoped_ptr<ObjectCache> object_cache_;
 
   FRIEND_TEST(VolumeImplementationTestFastPeriodicFileSizeUpdate,
               WorkingPendingFileSizeUpdates);

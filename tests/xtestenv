@@ -483,7 +483,7 @@ if __name__ == "__main__":
     option_parser.add_option( "-t", "--test-dir", action="store", dest="test_dir", default='/tmp/xtreemfs_xtestenv/', help="Directory where all temporary test files will be stored.")
     option_parser.add_option( "-v", "--volume", action="store", dest="volume", help="Test a specific volume config.")
     option_parser.add_option( "--clean-test-dir", action="store_true", dest="clean_test_dir", help="Remove content of --test-dir before executing the test")
-    option_parser.add_option( "-c", "--config-file-path", action="store", dest="config_file_path", default='test_config.py')
+    option_parser.add_option( "-c", "--config-file-path", action="store", dest="config_file_path")
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=6 )
     option_parser.add_option( "-x", "--xtreemfs-base-dir", action="store", dest="xtreemfs_dir", default=xtreemfs_dir)
     option_parser.add_option( "-e", "--start-test-env", action="store_true", dest="start_test_env")
@@ -495,6 +495,12 @@ if __name__ == "__main__":
         option_parser.print_help()
         sys.exit(2)
     options, positional_args = option_parser.parse_args()
+
+    if not options.config_file_path:
+        if options.start_test_env or options.start_test_env_with_ssl:
+            options.config_file_path = 'manual_config.py'
+        else:
+            options.config_file_path = 'test_config.py'
 
     print 'Reading config from:', options.config_file_path
     print 'XtreemFS base dir  :', options.xtreemfs_dir

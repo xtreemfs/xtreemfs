@@ -6,6 +6,17 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -30,18 +41,25 @@ import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.*;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.*;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XATTR_FLAGS;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class VolumeTest {
     @Rule
@@ -72,7 +90,7 @@ public class VolumeTest {
 
     private static MRCServiceClient     mrcClient;
 
-    private static ClientImplementation client;
+    private static Client               client;
 
     private static Options              options;
 
@@ -114,8 +132,7 @@ public class VolumeTest {
         mrcClient = new MRCServiceClient(testEnv.getRpcClient(), null);
 
         options = new Options();
-        client = (ClientImplementation) ClientFactory
-                .createClient(dirAddress, userCredentials, null, options);
+        client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
         client.start();
     }
 
@@ -692,7 +709,7 @@ public class VolumeTest {
         String emptyFileName = "emptyFileName";
         client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
         Volume volume = client.openVolume(VOLUME_NAME, null, options);
-        FileHandleImplementation fileHandle = (FileHandleImplementation) volume.openFile(userCredentials,
+        FileHandle fileHandle = volume.openFile(userCredentials,
                 fileName, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                         | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber(), 0777);
 
@@ -706,7 +723,7 @@ public class VolumeTest {
         assertEquals(5, volume.getAttr(userCredentials, fileName).getSize());
         fileHandle.close();
 
-        fileHandle = (FileHandleImplementation) volume.openFile(
+        fileHandle = volume.openFile(
                 userCredentials,
                 emptyFileName,
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
@@ -986,5 +1003,47 @@ public class VolumeTest {
                 assertTrue(false);
             }
         }
+    }
+
+    /**
+     * Test if files inherit the group from its parent if the setgid bit is set, and if subdirectories inherit the group
+     * and the setgid bit.
+     */
+    @Test
+    public void testSetgid() throws Exception {
+        VOLUME_NAME = "testSetgid";
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        volume.createDirectory(userCredentials, "/DIR1", 0777);
+
+        Stat stat;
+        stat = volume.getAttr(userCredentials, "/DIR1");
+
+        int mode = stat.getMode() | 02000;
+        stat = stat.toBuilder().setGroupId("foobar").setMode(mode).build();
+
+        UserCredentials rootCreds = userCredentials.toBuilder().setUsername("root").setGroups(0, "root").build();
+        volume.setAttr(rootCreds, "/DIR1", stat, Setattrs.SETATTR_MODE.getNumber() | Setattrs.SETATTR_GID.getNumber());
+
+        // Test if the setgid bit and the group is set
+        stat = volume.getAttr(userCredentials, "/DIR1");
+        assertEquals(02000, stat.getMode() & 02000);
+        assertEquals("foobar", stat.getGroupId());
+
+        // Test if new subdirectories inherit the setgid bit and the group
+        volume.createDirectory(userCredentials, "/DIR1/DIR2", 0777);
+        stat = volume.getAttr(userCredentials, "/DIR1/DIR2");
+        assertEquals(02000, stat.getMode() & 02000);
+        assertEquals("foobar", stat.getGroupId());
+
+        // Test if new files inherit the group
+        FileHandle fh = volume.openFile(userCredentials, "/DIR1/FILE1",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber());
+        fh.close();
+        stat = volume.getAttr(userCredentials, "/DIR1/FILE1");
+        assertEquals("foobar", stat.getGroupId());
+
+        volume.close();
     }
 }

@@ -76,6 +76,12 @@ cd cpp/build
 global_rc=0
 for test in test_*
 do
+  # disable test_object_cache due to frequent failures (feature is not maintained actively)
+  if [ "$test" = "test_object_cache" ]
+  then
+    continue
+  fi
+
   set +e
   valgrind --leak-check=full --show-reachable=yes --error-exitcode=23 --suppressions="${XTREEMFS_DIR}/cpp/valgrind.supp" ./$test &>>$VALGRIND_LOG_FILE
   rc=$?

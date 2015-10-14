@@ -30,10 +30,15 @@ public class Options {
     private final long metadataCacheTTLs     = 120;
 
     /**
-     * Maximum number of pending bytes (of async writes) per file. TODO: Reenable async writes when retry
-     * support is completed.
+     * Enable asynchronous writes. <br>
+     * Currently only operative through the native C++ client.
      */
-    private int        maxWriteahead         = 0;
+    private boolean    enableAsyncWrites     = false;
+
+    /**
+     * Maximum number of pending bytes (of async writes) per file.
+     */
+    private int        maxWriteahead         = 128 * 1024;
 
     /**
      * Maximum number of pending async write requests per file. Default: 10
@@ -165,11 +170,11 @@ public class Options {
      */
     private final int     periodicXcapRenewalIntervalS      = 60;
 
-    protected int getPeriodicXcapRenewalIntervalS() {
+    public int getPeriodicXcapRenewalIntervalS() {
         return periodicXcapRenewalIntervalS;
     }
 
-    protected int getPeriodicFileSizeUpdatesIntervalS() {
+    public int getPeriodicFileSizeUpdatesIntervalS() {
         return periodicFileSizeUpdatesIntervalS;
     }
 
@@ -222,7 +227,7 @@ public class Options {
         this.maxTries = maxTries;
     }
 
-    protected int getMaxWriteTries() {
+    public int getMaxWriteTries() {
         return maxWriteTries;
     }
 
@@ -238,11 +243,15 @@ public class Options {
         return retryDelay_s;
     }
 
+    public boolean isEnableAsyncWrites() {
+        return enableAsyncWrites;
+    }
+
     public int getMaxWriteahead() {
         return maxWriteahead;
     }
 
-    protected int getMaxWriteaheadRequests() {
+    public int getMaxWriteaheadRequests() {
         return maxWriteaheadRequests;
     }
 
@@ -256,6 +265,10 @@ public class Options {
 
     public void setPeriodicFileSizeUpdatesIntervalS(int periodicFileSizeUpdatesIntervalS) {
         this.periodicFileSizeUpdatesIntervalS = periodicFileSizeUpdatesIntervalS;
+    }
+
+    public void setEnableAsyncWrites(boolean enableAsyncWrites) {
+        this.enableAsyncWrites = enableAsyncWrites;
     }
     
     public void setMaxWriteAhead(int maxWriteAhead) {

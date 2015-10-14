@@ -9,8 +9,9 @@
 package org.xtreemfs.common.xloc;
 
 import java.util.Iterator;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 
 
@@ -39,7 +40,8 @@ public abstract class StripingPolicyImpl {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica,relOsdPosition);
         } else {
-            throw new IllegalArgumentException("unknown striping polciy requested");
+            throw new IllegalArgumentException("unknown striping policy requested...request was " +
+                    replica.getStripingPolicy().getType());
         }
     }
 
@@ -58,6 +60,15 @@ public abstract class StripingPolicyImpl {
 
     public StripingPolicy getPolicy() {
         return this.policy;
+    }
+
+    /**
+     * returns the relative position of the current OSD regarding the ordering of the stripped object
+     * 
+     * @return the relative OSD position
+     */
+    public int getRelativeOSDPosition() {
+        return relOsdPosition;
     }
 
     /**

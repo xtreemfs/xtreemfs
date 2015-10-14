@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009-2012 by Paul Seiferth,
+ *               2015 by Robert Schmidtke,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -7,7 +8,6 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +39,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.common.libxtreemfs.jni.NativeHelper;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -66,6 +67,7 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 writeBufferSize;
     private Volume              defaultVolume;
     private Configuration       conf;
+    private static final int    STANDARD_DIR_PORT = 32638;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -82,11 +84,33 @@ public class XtreemFSFileSystem extends FileSystem {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
         }
 
-        String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
+        String defaultURIString = conf.get("fs.defaultFS");
+        if (defaultURIString == null) {
+            defaultURIString = conf.get("fs.default.name");
+        }
 
-        if (defaultVolumeName == null) {
-            throw new IOException("You have to specify a default volume name in"
-                    + " core-site.xml! (xtreemfs.defaultVolumeName)");
+        if (defaultURIString == null) {
+            throw new IOException("You have to specify a default volume name in "
+                    + "core-site.xml! (as the path part of fs.defaultFS (or deprecated fs.default.name)");
+        }
+
+        URI defaultURI = URI.create(defaultURIString);
+
+        String defaultVolumeName;
+
+        if (defaultURI.getPath() == null || "".equals(defaultURI.getPath())) {
+            defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
+            Logging.logMessage(Logging.LEVEL_WARN, this, "DEPRECATION WARNING: option xtreemfs.defaultVolumeName is "
+                    + "deprecated; specify the default volume as path component of fs.defaultFS");
+        } else {
+            defaultVolumeName = defaultURI.getPath().split("/")[1];
+        }
+
+        int uriPort = uri.getPort();
+        if (uriPort  == -1) {
+            uriPort = STANDARD_DIR_PORT;
+            Logging.logMessage(Logging.LEVEL_INFO, this, "No DIR port was specified "
+                    + "using standard port " + STANDARD_DIR_PORT);
         }
 
         useReadBuffer = conf.getBoolean("xtreemfs.io.buffer.read", false);
@@ -126,33 +150,52 @@ public class XtreemFSFileSystem extends FileSystem {
                 throw new IOException("You have to specify a server credential file in"
                         + " core-site.xml! (xtreemfs.ssl.serverCredentialFile)");
             }
-            FileInputStream credentialFile = new FileInputStream(credentialFilePath);
             String credentialFilePassphrase = conf.get("xtreemfs.ssl.credentialFile.passphrase");
 
             // Get trusted certificates form config.
             String trustedCertificatesFilePath = conf.get("xtreemfs.ssl.trustedCertificatesFile");
             String trustedCertificatesFilePassphrase = conf.get("xtreemfs.ssl.trustedCertificatesFile.passphrase");
             String trustedCertificatesFileContainer = null;
-            FileInputStream trustedCertificatesFile = null;
             String sslProtocolString = conf.get("xtreemfs.ssl.protocol");
             if (trustedCertificatesFilePath == null) {
                 trustedCertificatesFileContainer = "none";
             } else {
-                trustedCertificatesFile = new FileInputStream(trustedCertificatesFilePath);
                 trustedCertificatesFileContainer = SSLOptions.JKS_CONTAINER;
             }
 
-            sslOptions = new SSLOptions(credentialFile, credentialFilePassphrase,
-                    SSLOptions.PKCS12_CONTAINER, trustedCertificatesFile, trustedCertificatesFilePassphrase,
+            sslOptions = new SSLOptions(credentialFilePath, credentialFilePassphrase,
+                    SSLOptions.PKCS12_CONTAINER, trustedCertificatesFilePath, trustedCertificatesFilePassphrase,
                     trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
                             false), false, sslProtocolString, null);
         }
-
-        // Initialize XtreemFS Client with default Options.
+        
+        // Initialize default options
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uri.getPort(), userCredentials, sslOptions,
-                xtreemfsOptions);
+        
+        // Use the native client and use async writes if requested.
+        ClientFactory.ClientType clientType = ClientFactory.ClientType.JAVA;
+        if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
+            clientType = ClientFactory.ClientType.NATIVE;
+            
+            String libraryPath = conf.get("xtreemfs.jni.libraryPath");
+            if (libraryPath != null && !libraryPath.isEmpty()) {
+                NativeHelper.setXtreemfsLibPath(libraryPath);
+            }
+            
+            if (conf.getBoolean("xtreemfs.asyncWrites.enabled", false)) {
+                xtreemfsOptions.setEnableAsyncWrites(true);
+            }
+            
+            int maxWriteAhead = conf.getInt("xtreemfs.asyncWrites.maxRequests", -1);
+            if (maxWriteAhead > -1) {
+                xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
+            }
+        }
+        
+        // Initialize XtreemFS Client
+        xtreemfsClient = ClientFactory.createClient(clientType, uri.getHost() + ":" + uriPort, userCredentials,
+                sslOptions, xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start(true);
@@ -184,12 +227,29 @@ public class XtreemFSFileSystem extends FileSystem {
         defaultVolumeDirectories = new HashSet<String>();
         defaultVolume = xtreemfsVolumes.get(defaultVolumeName);
         for (DirectoryEntry dirEntry : defaultVolume.readDir(userCredentials, "/", 0, 0, true).getEntriesList()) {
+            if (dirEntry.getName().equals("..") || dirEntry.getName().equals(".")) {
+                continue;
+            }
+            
             if (isXtreemFSDirectory("/" + dirEntry.getName(), defaultVolume)) {
                 defaultVolumeDirectories.add(dirEntry.getName());
             }
         }
 
-        fileSystemURI = uri;
+        /* getVolumeFromPath relies on workingDirectory to be set (via makeAbsolute)
+         * and getHomeDirectory relies on this.fileSystemURI to be set
+         * uris that initialize a Filesystem can be assumed to be absolute
+         */
+        Path uriPath = new Path(uri);
+        // if no path is given prepend /
+        if (! uriPath.isAbsolute()) {
+            uriPath = new Path(uriPath, "/");
+        }
+
+        this.fileSystemURI = URI.create(uri.getScheme() + "://"
+                + uri.getHost() + ":"
+                + uriPort + "/"
+                + getVolumeFromAbsolutePath(uriPath).getVolumeName());
         workingDirectory = getHomeDirectory();
 
         if (Logging.isDebug()) {
@@ -502,7 +562,7 @@ public class XtreemFSFileSystem extends FileSystem {
             stat = xtreemfsVolume.getAttr(userCredentials, pathString);
         } catch (PosixErrorException pee) {
             if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException(pathString);
             }
             throw pee;
         }
@@ -560,6 +620,15 @@ public class XtreemFSFileSystem extends FileSystem {
     private String preparePath(Path path, Volume volume) {
         String pathString = makeAbsolute(path).toUri().getPath();
         if (volume == defaultVolume) {
+            String[] splitPath = pathString.split("/");
+            if (splitPath.length > 1 && splitPath[1].equals(defaultVolume.getVolumeName())) {
+                // Path starts with default volume name, strip off volume name if
+                // there is no similarly named directory in the default volume.
+                // (i.e. the default volume has been specified explicitly)
+                if (!defaultVolumeDirectories.contains(splitPath[1])) {
+                    pathString = pathString.substring(pathString.indexOf("/", 1));
+                }
+            }
             return pathString;
         } else {
             int pathBegin = pathString.indexOf("/", 1);
@@ -577,10 +646,20 @@ public class XtreemFSFileSystem extends FileSystem {
      * @throws IOException
      */
     private Volume getVolumeFromPath(Path path) {
-        String pathString = makeAbsolute(path).toUri().getPath();
-        String[] splittedPath = pathString.split("/");
-        if (splittedPath.length > 1 && defaultVolumeDirectories.contains(splittedPath[1])
-                || pathString.lastIndexOf("/") == 0) {
+        return getVolumeFromAbsolutePath(makeAbsolute(path));
+    }
+
+    /**
+     * Returns the volume name from the path or the default volume, if the path does not contain a volume name or the
+     * default volume has a directory equally named to the volume.
+     *
+     * @param path
+     * @return
+     * @throws IOException
+     */
+    private Volume getVolumeFromAbsolutePath(Path path) {
+        String pathString = path.toUri().getPath();
+        if (isDirOrFileInDefVol(pathString)) {
             // First part of path is a directory or path is a file in the root of defaultVolume
             return defaultVolume;
         } else {
@@ -595,5 +674,15 @@ public class XtreemFSFileSystem extends FileSystem {
                 return volume;
             }
         }
+    }
+
+    private boolean isDirOrFileInDefVol(String pathString) {
+        String[]splitPath = pathString.split("/");
+        if (splitPath.length > 1 && defaultVolumeDirectories.contains(splitPath[1])
+                || pathString.lastIndexOf("/") == 0) {
+            // First part of path is a directory or path is a file in the root of defaultVolume
+            return true;
+        } else
+            return false;
     }
 }

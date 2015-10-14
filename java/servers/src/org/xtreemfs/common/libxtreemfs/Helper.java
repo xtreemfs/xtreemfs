@@ -7,11 +7,14 @@
 package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.xtreemfs.common.libxtreemfs.Volume.StripeLocation;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -20,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
@@ -133,6 +137,91 @@ public class Helper {
         }
 
         return uuids;
+    }
+
+    /**
+     * Returns a list containing the UUIDs for the OSDs responsible for the stripe
+     * 
+     * @param replicas
+     * @param stripeIndex
+     * @return list containing the OSD UUIDs
+     */
+    public static List<String> getOSDUUIDsFromReplicas(Replicas replicas, long stripeIndex) {
+        ArrayList<String> uuids = new ArrayList<String>(replicas.getReplicasCount());
+        for (Replica replica : replicas.getReplicasList()) {
+            int osdIndex = (int) stripeIndex % replica.getStripingPolicy().getWidth();
+            uuids.add(replica.getOsdUuids(osdIndex));
+        }
+        return uuids;
+    }
+
+
+    /**
+     * Get the StripeLocations required for the Hadoop driver.
+     * 
+     * @param replicas
+     * @param startSize
+     * @param length
+     * @param uuidResolver
+     * @return list of StripeLocations
+     */
+    public static List<StripeLocation> getStripeLocationsFromReplicas(Replicas replicas, long startSize, long length,
+            UUIDResolver uuidResolver) {
+        long stripeSize = replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
+        long indexOfFirstStripeToConsider = (startSize / stripeSize);
+        long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
+        int numberOfStrips = (int) (length / stripeSize + 1);
+
+        List<StripeLocation> stripeLocations = new ArrayList<StripeLocation>(numberOfStrips);
+        // add first Stripe
+        List<String> uuids = Helper.getOSDUUIDsFromReplicas(replicas, indexOfFirstStripeToConsider);
+        List<String> hostnames = Helper.getOSDHostnamesFromUUIDs(uuids, uuidResolver);
+        stripeLocations.add(new StripeLocation(startSize, remainingLengthOfFirstStripe, uuids.toArray(new String[uuids
+                .size()]), hostnames.toArray(new String[hostnames.size()])));
+
+        for (long index = indexOfFirstStripeToConsider + 1; index * stripeSize < startSize + length; index++) {
+            uuids = Helper.getOSDUUIDsFromReplicas(replicas, index);
+            hostnames = Helper.getOSDHostnamesFromUUIDs(uuids, uuidResolver);
+            stripeLocations.add(new StripeLocation(index * stripeSize, Math.min(stripeSize, startSize + length - index
+                    * stripeSize), uuids.toArray(new String[uuids.size()]), hostnames.toArray(new String[hostnames
+                    .size()])));
+        }
+        return stripeLocations;
+    }
+
+    /**
+     * Returns a list containing the hostnames for the OSDs responsible for the given UUIDs.
+     * 
+     * @param uuids
+     *            List of UUIDs as strings
+     * @param uuidResolver
+     * @return list containing the OSD hostnames as strings
+     */
+    public static List<String> getOSDHostnamesFromUUIDs(List<String> uuids, UUIDResolver uuidResolver) {
+        ArrayList<String> names = new ArrayList<String>(uuids.size());
+        
+        for (String uuidString : uuids) {
+            try {
+                String addressString = uuidResolver.uuidToAddress(uuidString);
+                addressString = addressString.substring(0, addressString.lastIndexOf(':'));
+
+                InetAddress address = InetAddress.getByName(addressString);
+                String hostname = address.getHostName();
+
+                // Ignore entries, that can not be resolved to a hostname.
+                if (!hostname.equals(address.getHostAddress())) {
+                    names.add(hostname);
+                }
+                
+            } catch (AddressToUUIDNotFoundException e) {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, (Object) null,
+                        "Could not find host for UUID '%s'", uuidString);
+            } catch (UnknownHostException e) {
+                Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.net, (Object) null,
+                        "Could not find host for UUID '%s'", uuidString);
+            }
+        }
+        return names;
     }
 
     static public long extractFileIdFromXcap(XCap xcap) {

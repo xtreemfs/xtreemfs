@@ -896,7 +896,9 @@ TEST_F(VolumeImplementationTest, ExplicitCloseSent) {
                       "/",
                       "xtreemfs.default_rp",
                       &new_default_rp_policy);
-    EXPECT_EQ("{\"replication-factor\":2,\"replication-flags\":32,\"update-policy\":\"ronly\"}", new_default_rp_policy);  // NOLINT
+    EXPECT_TRUE(new_default_rp_policy.find("\"replication-factor\":2,"));
+    EXPECT_TRUE(new_default_rp_policy.find("\"replication-flags\":32,"));
+    EXPECT_TRUE(new_default_rp_policy.find("\"update-policy\":\"ronly\"}"));
 
     // Open and close a file.
     FileHandle* file_handle = volume_->OpenFile(user_credentials_,
