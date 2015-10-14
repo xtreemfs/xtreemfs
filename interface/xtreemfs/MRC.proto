@@ -465,12 +465,14 @@ message xtreemfs_check_file_existsResponse {
   repeated FILE_STATE file_states = 2 [packed=true]; 
 }
 
+
 message xtreemfs_clear_vouchersRequest {
   // latest xcap containing file id and client id
   required FileCredentials creds = 1;
-  
+  // list of respones from finalize voucher requests
+  // from the differend OSDs
   repeated OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
-  
+  // list of expire times, which has been finalized
   repeated fixed64 expire_time_ms = 3;
 }
 

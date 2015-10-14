@@ -180,9 +180,10 @@ message XCap {
   // indicates which version (snapshot) of the file should be used
   // on the OSD.
   required fixed64 snap_timestamp = 10;
-  // the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+  // the voucher size indicates the maximal filesize for this file in bytes
+  // zero indicates unlimited file size (no active quota)
   required fixed64 voucher_size = 11 [default = 0];
-  
+  // Timestamp when the XCap expires in milli seconds.
   required fixed64 expire_time_ms = 12 [default = 0];
 }
 
