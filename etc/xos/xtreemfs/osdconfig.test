@@ -18,7 +18,7 @@
 # stage         - log messages pertaining to the request flow through the stages
 # proc          - log messages pertaining to any kind of request processing
 # db            - log messages pertaining storage on OSD or database access on MRC/DIR
-# replication   - logs messages pertaining to replication 
+# replication   - logs messages pertaining to replication
 # misc          - any other log messages
 #debug.categories = all
 
@@ -53,7 +53,7 @@ remote_time_sync = 60000
 # specify whether SSL is required
 ssl.enabled = false
 
-# send and receive buffer sizes of sockets 
+# send and receive buffer sizes of sockets
 #socket.send_buffer_size = 262144
 #socket.recv_buffer_size = 262144
 
@@ -85,15 +85,18 @@ capability_secret = Yagga
 # may be located in subdirectories, JAR files mustn't.
 policy_dir = /etc/xos/xtreemfs/policies
 
-# If you want to monitor your XtreemFS installation through SNMP 
+# If you want to monitor your XtreemFS installation through SNMP
 # uncomment the following lines. You have to set snmp.enabled = true
-# and provide a listen port and optional a address. Also optional 
+# and provide a listen port and optional a address. Also optional
 # is a path to an aclfile which controls which hosts can access the
 # monitoring information via SNMP.
 #snmp.enabled = true
 #snmp.address = localhost
 #snmp.port = 34640
 #snmp.aclfile = etc/xos/xtreemfs/snmp.acl
+
+# Use request scheduling
+use_qos = false
 
 # UUID for the OSD
 uuid = test-localhost-OSD
