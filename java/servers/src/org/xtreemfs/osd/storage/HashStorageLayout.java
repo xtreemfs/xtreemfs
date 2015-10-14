@@ -14,7 +14,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -1159,7 +1158,6 @@ public class HashStorageLayout extends StorageLayout {
 
         try {
             do {
-                int PREVIEW_LENGTH = 15;
                 String currentDir = l.status.pop();
                 File dir = new File(storageDir + currentDir);
                 if (dir.listFiles() == null) {
@@ -1167,8 +1165,6 @@ public class HashStorageLayout extends StorageLayout {
                             + " is not a valid directory!");
                     continue;
                 }
-
-                FileReader fReader;
 
                 File newestFirst = null;
                 File newestLast = null;
@@ -1220,19 +1216,7 @@ public class HashStorageLayout extends StorageLayout {
 
                 // dir is a fileName-directory
                 if (isFileNameDir) {
-
                     if (newestFirst != null) {
-                        // get a preview from the file
-                        char[] preview = null;
-                        try {
-                            fReader = new FileReader(newestFirst);
-                            preview = new char[PREVIEW_LENGTH];
-                            fReader.read(preview);
-                            fReader.close();
-                        } catch (Exception e) {
-                            assert (false);
-                        }
-
                         // get the metaInfo from the root-directory
                         long stripCount = getObjectNo(newestLast);
                         long fileSize = (stripCount == 1) ? newestFirst.length() : (objectSize * stripCount)

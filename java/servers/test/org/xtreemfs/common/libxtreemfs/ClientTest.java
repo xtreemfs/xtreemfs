@@ -266,9 +266,9 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
 
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
-
         client.shutdown();
     }
 
@@ -280,6 +280,7 @@ public class ClientTest {
         options.setPeriodicFileSizeUpdatesIntervalS(10);
         // maxwriteAhead != 0 enables async writes as long as file isn't opened
         // with O_SYNC
+        options.setEnableAsyncWrites(true);
         options.setMaxWriteAhead(1024);
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
@@ -321,6 +322,8 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
+
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         client.shutdown();
     }
@@ -377,6 +380,9 @@ public class ClientTest {
         }
 
         fileHandle.close();
+        volume.close();
+
+        client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME_1);
         client.shutdown();
     }
 }

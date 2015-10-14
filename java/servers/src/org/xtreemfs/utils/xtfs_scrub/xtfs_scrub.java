@@ -8,7 +8,6 @@
 
 package org.xtreemfs.utils.xtfs_scrub;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -400,10 +399,9 @@ public class xtfs_scrub {
 
                     // TODO: support custom SSL trust managers
                     try {
-                        sslOptions = new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPass,
-                                SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                                trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL, sslProtocolString,
-                                null);
+                        sslOptions = new SSLOptions(serviceCredsFile, serviceCredsPass, SSLOptions.PKCS12_CONTAINER,
+                                trustedCAsFile, trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL,
+                                sslProtocolString, null);
                     } catch (Exception e) {
                         System.err.println("unable to set up SSL, because:" + e.getMessage());
                         System.exit(1);

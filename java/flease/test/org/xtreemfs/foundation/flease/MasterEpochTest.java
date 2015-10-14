@@ -37,7 +37,7 @@ public class MasterEpochTest {
     private static File         testDir;
     
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 

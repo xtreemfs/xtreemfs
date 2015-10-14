@@ -10,7 +10,6 @@ package org.xtreemfs.osd;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
@@ -276,9 +275,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     "using custom trust manager '%s'", tm1.getClass().getName());
         }
         
-        SSLOptions serverSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
+        SSLOptions serverSSLopts = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), config.getSSLProtocolString(), tm1) : null;
         
@@ -286,9 +285,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 config.getSocketReceiveBufferSize(), config.getMaxClientQ());
         rpcServer.setLifeCycleListener(this);
         
-        final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
+        final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), config.getSSLProtocolString(), tm2) : null;
         

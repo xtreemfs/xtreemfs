@@ -187,10 +187,10 @@ int main(int argc, char* argv[]) {
          << "\n";
     if (options.volume_attributes.size() > 0) {
       cout << "  Volume attributes (Name = Value)" << endl;
-      for (list<KeyValuePair*>::iterator it = options.volume_attributes.begin();
+      for (map<string, string>::const_iterator it = options.volume_attributes.begin();
            it != options.volume_attributes.end();
            ++it) {
-        cout << "    " << (*it)->key() << " = " << (*it)->value() << endl;
+        cout << "    " << it->first << " = " << it->second << endl;
       }
       cout << endl;
     }

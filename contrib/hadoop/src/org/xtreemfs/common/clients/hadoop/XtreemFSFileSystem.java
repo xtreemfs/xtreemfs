@@ -8,7 +8,6 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
@@ -40,6 +39,7 @@ import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
+import org.xtreemfs.common.libxtreemfs.jni.NativeHelper;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
@@ -150,33 +150,52 @@ public class XtreemFSFileSystem extends FileSystem {
                 throw new IOException("You have to specify a server credential file in"
                         + " core-site.xml! (xtreemfs.ssl.serverCredentialFile)");
             }
-            FileInputStream credentialFile = new FileInputStream(credentialFilePath);
             String credentialFilePassphrase = conf.get("xtreemfs.ssl.credentialFile.passphrase");
 
             // Get trusted certificates form config.
             String trustedCertificatesFilePath = conf.get("xtreemfs.ssl.trustedCertificatesFile");
             String trustedCertificatesFilePassphrase = conf.get("xtreemfs.ssl.trustedCertificatesFile.passphrase");
             String trustedCertificatesFileContainer = null;
-            FileInputStream trustedCertificatesFile = null;
             String sslProtocolString = conf.get("xtreemfs.ssl.protocol");
             if (trustedCertificatesFilePath == null) {
                 trustedCertificatesFileContainer = "none";
             } else {
-                trustedCertificatesFile = new FileInputStream(trustedCertificatesFilePath);
                 trustedCertificatesFileContainer = SSLOptions.JKS_CONTAINER;
             }
 
-            sslOptions = new SSLOptions(credentialFile, credentialFilePassphrase,
-                    SSLOptions.PKCS12_CONTAINER, trustedCertificatesFile, trustedCertificatesFilePassphrase,
+            sslOptions = new SSLOptions(credentialFilePath, credentialFilePassphrase,
+                    SSLOptions.PKCS12_CONTAINER, trustedCertificatesFilePath, trustedCertificatesFilePassphrase,
                     trustedCertificatesFileContainer, conf.getBoolean("xtreemfs.ssl.authenticationWithoutEncryption",
                             false), false, sslProtocolString, null);
         }
-
-        // Initialize XtreemFS Client with default Options.
+        
+        // Initialize default options
         Options xtreemfsOptions = new Options();
         xtreemfsOptions.setMetadataCacheSize(0);
-        xtreemfsClient = ClientFactory.createClient(uri.getHost() + ":" + uriPort, userCredentials, sslOptions,
-                xtreemfsOptions);
+        
+        // Use the native client and use async writes if requested.
+        ClientFactory.ClientType clientType = ClientFactory.ClientType.JAVA;
+        if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
+            clientType = ClientFactory.ClientType.NATIVE;
+            
+            String libraryPath = conf.get("xtreemfs.jni.libraryPath");
+            if (libraryPath != null && !libraryPath.isEmpty()) {
+                NativeHelper.setXtreemfsLibPath(libraryPath);
+            }
+            
+            if (conf.getBoolean("xtreemfs.asyncWrites.enabled", false)) {
+                xtreemfsOptions.setEnableAsyncWrites(true);
+            }
+            
+            int maxWriteAhead = conf.getInt("xtreemfs.asyncWrites.maxRequests", -1);
+            if (maxWriteAhead > -1) {
+                xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
+            }
+        }
+        
+        // Initialize XtreemFS Client
+        xtreemfsClient = ClientFactory.createClient(clientType, uri.getHost() + ":" + uriPort, userCredentials,
+                sslOptions, xtreemfsOptions);
         try {
             // TODO: Fix stupid Exception in libxtreemfs
             xtreemfsClient.start(true);
@@ -543,7 +562,7 @@ public class XtreemFSFileSystem extends FileSystem {
             stat = xtreemfsVolume.getAttr(userCredentials, pathString);
         } catch (PosixErrorException pee) {
             if (pee.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOENT)) {
-                throw new FileNotFoundException();
+                throw new FileNotFoundException(pathString);
             }
             throw pee;
         }

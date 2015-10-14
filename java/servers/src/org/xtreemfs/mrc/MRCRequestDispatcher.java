@@ -8,7 +8,6 @@
 
 package org.xtreemfs.mrc;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -175,12 +174,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using custom trust manager '%s'",
                     policyContainer.getTrustManager().getClass().getName());
 
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config.getServiceCredsFile()),
-                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
-                        config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(),
-                config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(), config.getSSLProtocolString(),
-                policyContainer.getTrustManager())
-                : null;
+        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(),
+                config.getSSLProtocolString(), policyContainer.getTrustManager()) : null;
 
         InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
                 : null;

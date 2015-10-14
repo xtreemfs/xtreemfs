@@ -267,6 +267,30 @@ TEST_F(SimpleUUIDIteratorTest, SetCurrentUUIDAddsUnknownUUID) {
   EXPECT_EQ(uuid1, current_uuid);
 }
 
+TEST_F(SimpleUUIDIteratorTest, AddMultipleAddresses) {
+  string uuid1 = "uuid1";
+  string uuid2 = "uuid2";
+  string uuid3 = "uuid3";
+  string current_uuid;
+
+  // Add the first UUID directly
+  this->adder_(this->uuid_iterator_.get(), uuid1);
+  // and the other from a ServiceAddreses list
+  ServiceAddresses addresses;
+  addresses.Add("uuid2");
+  addresses.Add("uuid3");
+  simple_uuid_iterator_->AddUUIDs(addresses);
+
+  // uuid1 should still be the current uuid
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid1, current_uuid);
+
+  // If uuid1 is marked as failed, the current should be uuid2
+  uuid_iterator_->MarkUUIDAsFailed(uuid1);
+  uuid_iterator_->GetUUID(&current_uuid);
+  EXPECT_EQ(uuid2, current_uuid);
+}
+
 // Tests for ContainerUUIDIterator
 
 class ContainerUUIDIteratorTest

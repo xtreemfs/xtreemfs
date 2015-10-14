@@ -259,7 +259,7 @@ Client::Client(int32_t connect_timeout_s,
 
       ssl_context_->set_password_callback(
           boost::bind(&Client::get_pkcs12_password_callback, this));
-      ssl_context_->use_private_key_file(pemFileName, options->cert_format());
+      ssl_context_->use_private_key_file(pemFileName, boost::asio::ssl::context::pem);
       ssl_context_->use_certificate_chain_file(certFileName);
 
 #if (BOOST_VERSION > 104601)
