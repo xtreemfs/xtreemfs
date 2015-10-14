@@ -41,6 +41,7 @@ import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
@@ -113,6 +114,7 @@ public class MRCHelper {
             rsel_policy,
             osel_policy,
             usable_osds,
+ usable_space,
             free_space,
             used_space,
             num_files,
@@ -131,9 +133,11 @@ public class MRCHelper {
             defaultgroupquota,
             usedspace,
             blockedspace,
+            userquotainfo,
             userquota,
             userusedspace,
             userblockedspace,
+            groupquotainfo,
             groupquota,
             groupusedspace,
             groupblockedspace
@@ -347,18 +351,19 @@ public class MRCHelper {
             return getVolAttrValue(sMan, keyString);
 
         // get subkey in case of user or group quota
-        String subKey = "";
+        String subKey = null;
         if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.groupblockedspace.name())
                 || keyString.startsWith(SysAttrs.groupusedspace.name())
+                || keyString.startsWith(SysAttrs.groupquotainfo.name())
                 || keyString.startsWith(SysAttrs.userquota.name())
                 || keyString.startsWith(SysAttrs.userblockedspace.name())
-                || keyString.startsWith(SysAttrs.userusedspace.name())) {
+                || keyString.startsWith(SysAttrs.userusedspace.name())
+                || keyString.startsWith(SysAttrs.userquotainfo.name())) {
             String[] split = keyString.split("\\.", 2);
-            if (split.length != 2)
-                return "No group or user specified!";
-
             keyString = split[0].trim();
-            subKey = split[1].trim();
+            if (split.length == 2) {
+                subKey = split[1].trim();
+            }
         }
 
         SysAttrs key = null;
@@ -438,6 +443,8 @@ public class MRCHelper {
             }
             case free_space:
                 return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(sMan.getVolumeInfo().getId())) : "";
+            case usable_space:
+                return file.getId() == 1 ? String.valueOf(osdMan.getUsableSpace(sMan.getVolumeInfo().getId())) : "";
             case used_space:
                 return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getVolumeSize()) : "";
             case num_files:
@@ -517,35 +524,75 @@ public class MRCHelper {
             case usedspace:
                 return String.valueOf(sMan.getVolumeUsedSpace());
 
-            case userquota:
-                if (subKey == null || subKey.isEmpty())
+            case userquotainfo:
+                if (subKey == null) {
+                    subKey = "";
+                } else if (subKey.isEmpty()) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+                }
+
+                return JSONParser.writeJSON(sMan.getAllOwnerQuotaInfo(OwnerType.USER, subKey));
+
+            case userquota:
+                if (subKey == null) {
+                    return "No user specified!";
+                } else if (subKey.isEmpty()) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+                }
 
                 return String.valueOf(sMan.getUserQuota(subKey));
 
-            case groupquota:
-                if (subKey == null || subKey.isEmpty())
-                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
-
-                return String.valueOf(sMan.getGroupQuota(subKey));
             case userblockedspace:
-                if (subKey == null || subKey.isEmpty())
+                if (subKey == null) {
+                    return "No user specified!";
+                } else if (subKey.isEmpty()) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+                }
 
                 return String.valueOf(sMan.getUserBlockedSpace(subKey));
+
             case userusedspace:
-                if (subKey == null || subKey.isEmpty())
+                if (subKey == null) {
+                    return "No user specified!";
+                } else if (subKey.isEmpty()) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No user specified!");
+                }
 
                 return String.valueOf(sMan.getUserUsedSpace(subKey));
-            case groupblockedspace:
-                if (subKey == null || subKey.isEmpty())
+
+            case groupquotainfo:
+                if (subKey == null) {
+                    subKey = "";
+                } else if (subKey.isEmpty()) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+                }
+
+                return JSONParser.writeJSON(sMan.getAllOwnerQuotaInfo(OwnerType.GROUP, subKey));
+
+            case groupquota:
+                if (subKey == null) {
+                    return "No group specified!";
+                } else if (subKey.isEmpty()) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+                }
+
+                return String.valueOf(sMan.getGroupQuota(subKey));
+
+            case groupblockedspace:
+                if (subKey == null) {
+                    return "No group specified!";
+                } else if (subKey.isEmpty()) {
+                    throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+                }
 
                 return String.valueOf(sMan.getGroupBlockedSpace(subKey));
+
             case groupusedspace:
-                if (subKey == null || subKey.isEmpty())
+                if (subKey == null) {
+                    return "No group specified!";
+                } else if (subKey.isEmpty()) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group specified!");
+                }
 
                 return String.valueOf(sMan.getGroupUsedSpace(subKey));
             }
@@ -565,18 +612,13 @@ public class MRCHelper {
         }
 
         // get subkey in case of user or group quota
-        String subKey = "";
-        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.groupblockedspace.name())
-                || keyString.startsWith(SysAttrs.groupusedspace.name())
-                || keyString.startsWith(SysAttrs.userquota.name())
-                || keyString.startsWith(SysAttrs.userblockedspace.name())
-                || keyString.startsWith(SysAttrs.userusedspace.name())) {
+        String subKey = null;
+        if (keyString.startsWith(SysAttrs.groupquota.name()) || keyString.startsWith(SysAttrs.userquota.name())) {
             String[] split = keyString.split("\\.", 2);
-            if (split.length != 2)
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No group or user specified!");
-
             keyString = split[0].trim();
-            subKey = split[1].trim();
+            if (split.length == 2) {
+                subKey = split[1].trim();
+            }
         }
 
         SysAttrs key = null;
@@ -957,12 +999,6 @@ public class MRCHelper {
 
             break;
 
-        case blockedspace:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Volume blocked space can't be set!");
-
-        case used_space:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Volume used space can't be set!");
-
         case userquota:
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Specific user quota must be set on volume root");
@@ -974,6 +1010,7 @@ public class MRCHelper {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, "Set user quota of " + subKey + " to: " + value);
 
             break;
+
         case groupquota:
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
@@ -987,15 +1024,6 @@ public class MRCHelper {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, "Set group quota of " + subKey + " to: " + value);
 
             break;
-
-        case userblockedspace:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "User blocked space can't be set!");
-        case userusedspace:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "User used space can't be set!");
-        case groupblockedspace:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Group blocked space can't be set!");
-        case groupusedspace:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Group used space can't be set!");
 
         default:
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "system attribute '" + keyString + "' is immutable");

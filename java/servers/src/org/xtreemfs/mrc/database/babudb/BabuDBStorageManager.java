@@ -757,7 +757,7 @@ public class BabuDBStorageManager implements StorageManager {
     private long getOwnerQuotaInfo(OwnerType ownerType, QuotaInfo quotaInfo, String id, long defaultValue)
             throws DatabaseException {
         try {
-            byte[] key = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, quotaInfo, id);
+            byte[] key = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, id, quotaInfo);
             byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
 
             if (value == null)
@@ -765,6 +765,19 @@ public class BabuDBStorageManager implements StorageManager {
             else {
                 return Long.valueOf(new String(value));
             }
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public Map<String, Map<String, Long>> getAllOwnerQuotaInfo(OwnerType ownerType, String id) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createPrefixOwnerQuotaInfoKey(ownerType, id);
+            ResultSet<byte[], byte[]> it = database.prefixLookup(VOLUME_INDEX, key, null).get();
+
+            return BabuDBStorageHelper.buildAllOwnerQuotaInfoMap(it);
 
         } catch (Exception exc) {
             throw new DatabaseException(exc);
@@ -1107,7 +1120,7 @@ public class BabuDBStorageManager implements StorageManager {
     private void setOwnerQuotaInfo(String id, Long value, OwnerType ownerType, QuotaInfo quotaInfo,
             AtomicDBUpdate update) throws DatabaseException {
 
-        byte[] keyBuf = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, quotaInfo, id);
+        byte[] keyBuf = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, id, quotaInfo);
         byte[] valueBuf = value == null ? null : String.valueOf(value).getBytes();
 
         update.addUpdate(VOLUME_INDEX, keyBuf, valueBuf);

@@ -10,7 +10,9 @@ package org.xtreemfs.mrc.database;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.Map;
 
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
@@ -193,6 +195,8 @@ public interface StorageManager {
 
     public long getGroupBlockedSpace(String groupId) throws DatabaseException;
 
+    public Map<String, Map<String, Long>> getAllOwnerQuotaInfo(OwnerType ownerType, String id) throws DatabaseException;
+
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
     public DatabaseResultSet<FileMetadata> getChildren(long parentId, int seen, int num) throws DatabaseException;
@@ -205,5 +209,4 @@ public interface StorageManager {
     public void deleteSnapshot(String snapName) throws DatabaseException;
     
     public String[] getAllSnapshots() throws DatabaseException;
-    
 }

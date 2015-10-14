@@ -9,13 +9,16 @@
 package org.xtreemfs.mrc.database.babudb;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseRO;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
@@ -279,7 +282,7 @@ public class BabuDBStorageHelper {
         }
 
     }
-
+    
     public enum OwnerType {
 
         USER("u"), GROUP("g");
@@ -309,12 +312,14 @@ public class BabuDBStorageHelper {
     }
 
     public enum QuotaInfo {
-        QUOTA("q"), USED("u"), BLOCKED("b");
+        QUOTA("q", "quota"), USED("u", "used"), BLOCKED("b", "blocked");
 
         private final String dbAttrSubKey;
+        private final String valueAsString;
 
-        private QuotaInfo(String dbAttrSubKey) {
+        private QuotaInfo(String dbAttrSubKey, String valueAsString) {
             this.dbAttrSubKey = dbAttrSubKey;
+            this.valueAsString = valueAsString;
         }
 
         public static QuotaInfo getByDbAttrSubkey(String dbAttrSubkey) {
@@ -332,6 +337,13 @@ public class BabuDBStorageHelper {
          */
         public String getDbAttrSubKey() {
             return dbAttrSubKey;
+        }
+
+        /**
+         * @return the valueAsString
+         */
+        public String getValueAsString() {
+            return valueAsString;
         }
     }
 
@@ -550,18 +562,85 @@ public class BabuDBStorageHelper {
     }
 
     /**
+     * Generates a prefix key for the quota information regarding a given user/group or all user/group (specified by an
+     * empty id) and the given OwnerType.
+     * 
+     * @param ownerType
+     * @param id
+     * @return
+     */
+    public static byte[] createPrefixOwnerQuotaInfoKey(OwnerType ownerType, String id) {
+        return createOwnerQuotaInfoKey(ownerType, id, null);
+    }
+
+    /**
      * Generates the key for the quota information quota, usedSpace or blockedSpace (QuotaInfo) for a user or group
      * (OwnerType) combined with the ownerType id, e.g. userId as ownerId.
      * 
      * @param ownerType
-     * @param quotaInfo
      * @param id
+     * @param quotaInfo
      * @return
      */
-    public static byte[] createOwnerQuotaInfoKey(OwnerType ownerType, QuotaInfo quotaInfo, String id) {
-        String key = BabuDBStorageManager.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + "." + id
-                + "." + quotaInfo.getDbAttrSubKey();
+    public static byte[] createOwnerQuotaInfoKey(OwnerType ownerType, String id, QuotaInfo quotaInfo) {
+        String key = BabuDBStorageManager.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + ".";
+
+        if (!id.isEmpty()) {
+            key += id + ".";
+
+            if (quotaInfo != null) {
+                key += quotaInfo.getDbAttrSubKey();
+            }
+        }
+
+
         return key.getBytes();
+    }
+
+    /**
+     * 
+     * @param it
+     * @return
+     */
+    public static Map<String, Map<String, Long>> buildAllOwnerQuotaInfoMap(ResultSet<byte[], byte[]> it) {
+
+        HashMap<String, Map<String, Long>> overallMap = new HashMap<String, Map<String, Long>>();
+
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> entry = it.next();
+            String key = new String(entry.getKey());
+            Long value = Long.valueOf(new String(entry.getValue()));
+            
+            // split key into single parts: [Prefix, OwnerType, name, QuotaInfo]
+            String[] keyParts = key.split("\\.");
+            if (keyParts.length != 4) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, (Object) null,
+                        "MRC database contains quota related entries with an invalid key structure. "
+                                + "(key: %s - value: %d)", key, value);
+                continue;
+            }
+            
+
+            // parse entry and initialize owner related map
+            String ownerName = keyParts[2];
+            Map<String, Long> ownerMap = overallMap.get(ownerName);
+            if (ownerMap == null) {
+                ownerMap = new HashMap<String, Long>();
+
+                // default values
+                ownerMap.put(QuotaInfo.QUOTA.getValueAsString(), QuotaConstants.UNLIMITED_QUOTA);
+                ownerMap.put(QuotaInfo.USED.getValueAsString(), new Long(0));
+                ownerMap.put(QuotaInfo.BLOCKED.getValueAsString(), new Long(0));
+
+                // add to overall map
+                overallMap.put(ownerName, ownerMap);
+            }
+            
+            // change value
+            ownerMap.put(QuotaInfo.getByDbAttrSubkey(keyParts[3]).getValueAsString(), value);
+        }
+
+        return overallMap;
     }
 
     public static short getXAttrCollisionNumber(byte[] key) {
