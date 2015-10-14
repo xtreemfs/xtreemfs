@@ -648,7 +648,9 @@ public class FileInfo {
         try {
             fileHandle.writeBackFileSize(responseCopy, closeFile);
         } catch (IOException e) {
-            osdWriteResponseStatus = FilesizeUpdateStatus.kDirty;
+            synchronized (osdWriteResponseLock) {
+                osdWriteResponseStatus = FilesizeUpdateStatus.kDirty;
+            }
             throw e;
         }
 

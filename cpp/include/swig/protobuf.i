@@ -217,7 +217,12 @@ VECTOR_AS_JAVA_ARRAY(int64, long, Long);
 %typemap(jstype) Func "JavaProtoType"
 %typemap(javaout) Func {
   byte[] buf = $jnicall;
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
   try {
