@@ -233,7 +233,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     }
 
     @Override
-    public void clear() {
+    synchronized public void clear() {
         for(Queue<E> q: this.queues.values())
             q.clear();
     }
@@ -244,7 +244,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     }
 
     @Override
-    public Iterator<E> iterator() {
+    synchronized public Iterator<E> iterator() {
         List<E> elements = new ArrayList<E>();
         for(Queue<E> q: queues.values()) {
             elements.addAll(q);
@@ -312,7 +312,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     }
 
     @Override
-    public boolean isEmpty() {
+    synchronized public boolean isEmpty() {
         for(Queue q: queues.values()) {
             if(!q.isEmpty())
                 return false;
@@ -321,7 +321,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
     }
 
     @Override
-    public int size() {
+    synchronized public int size() {
         int size = 0;
         for(Queue<E> q: this.queues.values()) {
             size += q.size();
@@ -339,7 +339,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         this.requestCount.put(qualityClass, count);
     }
 
-    protected Queue<E> getQueue(E element) {
+    synchronized protected Queue<E> getQueue(E element) {
         T qualityClass = this.elementInformationProvider.getQualityClass(element);
         if(this.queues.containsKey(qualityClass)) {
             return this.queues.get(qualityClass);
@@ -350,7 +350,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         }
     }
 
-    protected Queue<E> getNextQueue() {
+    synchronized protected Queue<E> getNextQueue() {
         T resultClass = null;
 
         for(T c: this.queues.keySet()) {
@@ -383,7 +383,7 @@ public class WeightedFairQueue<T, E> implements BlockingQueue<E> {
         return (double) this.elementInformationProvider.getWeight(qualityClass) / sum;
     }
 
-    protected double getCurrentProportion(T qualityClass) {
+    synchronized protected double getCurrentProportion(T qualityClass) {
         double sum = 0.0;
 
         if(!this.requestCount.containsKey(qualityClass) || !this.queues.containsKey(qualityClass))
