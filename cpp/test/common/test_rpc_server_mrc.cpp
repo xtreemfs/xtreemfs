@@ -55,7 +55,7 @@ google::protobuf::Message* TestRPCServerMRC::OpenOperation(
   xcap->set_snap_config(SNAP_CONFIG_SNAPS_DISABLED);
   xcap->set_snap_timestamp(0);
   xcap->set_truncate_epoch(0);
-  xcap->set_voucher_size(0); //FIXME(baerhold): export?
+  xcap->set_voucher_size(0);
 
   struct timeval tp;
   gettimeofday(&tp, NULL);

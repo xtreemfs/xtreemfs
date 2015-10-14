@@ -160,10 +160,6 @@ public class OpenOperation extends MRCOperation {
                 // check quota
                 QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), fileId,
                         rq.getDetails().userId, groupId, 0, 1);
-                // FIXME(baerhold): reconsider replica count (1); it will cause inconsistent behavior, if file with real
-                // replica count would not be created due to low free space, but get's created cause only one replica is
-                // assumed, e.g.: 2 bytes left, replica count would be 3: 2/3 = 0 (voucher: no), but 2/1 = 2 (voucher:
-                // yes)
                 master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
 
                 // create the metadata object

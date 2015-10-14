@@ -45,6 +45,11 @@ public class RenewOperation extends MRCOperation {
         final xtreemfs_renew_capabilityRequest renewCapabilityRequest = (xtreemfs_renew_capabilityRequest) rq
                 .getRequestArgs();
         
+        // perform master redirect if necessary due to DB operation
+        if (master.getReplMasterUUID() != null
+                && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
+            throw new DatabaseException(ExceptionType.REDIRECT);
+
         // create a capability object to verify the capability
         Capability cap = new Capability(renewCapabilityRequest.getXcap(), master.getConfig().getCapabilitySecret());
 
@@ -66,11 +71,6 @@ public class RenewOperation extends MRCOperation {
         
         if (VoucherManager.checkManageableAccess(cap.getAccessMode())) {
 
-            // perform master redirect if necessary due to DB operation
-            if (master.getReplMasterUUID() != null
-                    && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
-                throw new DatabaseException(ExceptionType.REDIRECT);
-
             GlobalFileIdResolver globalFileIdResolver = new GlobalFileIdResolver(cap.getFileId());
             StorageManager sMan = master.getVolumeManager().getStorageManager(globalFileIdResolver.getVolumeId());
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
@@ -87,7 +87,7 @@ public class RenewOperation extends MRCOperation {
                         cap.getExpireMs(), newExpireMs, update);
             }
 
-            update.execute(); // FIXME(baerhold): Switch to method scope variable and replace finishRequest(rq)
+            update.execute();
         }
 
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()

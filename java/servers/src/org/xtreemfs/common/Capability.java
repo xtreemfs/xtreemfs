@@ -72,7 +72,6 @@ public class Capability {
                 snapTimestamp, QuotaConstants.UNLIMITED_VOUCHER, 0, sharedSecret);
     }
 
-    // FIXME(baerhold): delete old constructure, if all (test) cases are adapted
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity, int epochNo,
             boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, long voucherSize, long expireMS,
             String sharedSecret) {

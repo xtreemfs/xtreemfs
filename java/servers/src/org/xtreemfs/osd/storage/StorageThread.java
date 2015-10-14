@@ -636,7 +636,6 @@ public class StorageThread extends Stage {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
 
-            // FIXME(baerhold) writeComplete - change EACCES to ...?
             cback.writeComplete(null,
                     ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
         }
@@ -807,7 +806,6 @@ public class StorageThread extends Stage {
                 Logging.logError(Logging.LEVEL_DEBUG, this, ex);
             }
 
-            // FIXME(baerhold) writeComplete - change EACCES to ...?
             cback.truncateComplete(null,
                     ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
         } catch (Exception ex) {
