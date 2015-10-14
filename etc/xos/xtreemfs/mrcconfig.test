@@ -7,7 +7,7 @@
 # 5: notice
 # 6: info (default)
 # 7: debug
-debug.level = 7
+#debug.level = 7
 
 # optional debug categories - a space or comma-separated list of log message categories
 # all (default) - enable logging for all categories
@@ -20,7 +20,7 @@ debug.level = 7
 # db            - log messages pertaining storage on OSD or database access on MRC/DIR
 # replication   - logs messages pertaining to replication 
 # misc          - any other log messages
-debug.categories = all
+#debug.categories = all
 
 # port for the service to listen on
 listen.port = 32636
@@ -116,7 +116,7 @@ capability_secret = Yagga
 # 5 = notice, 
 # 6 = info, 
 # 7 = debug)
-babudb.debug.level = 4
+babudb.debug.level = 7
 
 # optional debug category
 #babudb.debug.category = all
