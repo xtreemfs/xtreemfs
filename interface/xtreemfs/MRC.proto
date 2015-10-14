@@ -776,8 +776,14 @@ service MRCService {
   };
 
   // renews an existing capability to extend the validity period
-  rpc xtreemfs_renew_capability(xtreemfs_renew_capabilityRequest) returns(XCap) {
+  rpc xtreemfs_renew_capability(XCap) returns(XCap) {
     option(proc_id)=37;
+  };
+  
+  // renew an existing capability to extend the validity period and
+  // if the flag is active, increase the voucher size
+  rpc xtreemfs_renew_capability_and_voucher(xtreemfs_renew_capabilityRequest) returns(XCap){
+    option(proc_id)=53;
   };
 
   rpc xtreemfs_replication_to_master(emptyRequest) returns(emptyResponse) {
