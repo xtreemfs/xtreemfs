@@ -1222,7 +1222,7 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options,
   try {
     mrc_uuid_iterator_->GetUUID(&mrc_uuid);
     uuid_resolver_->UUIDToAddressWithOptions(mrc_uuid, &mrc_address, options);
-    mrc_service_client_->xtreemfs_renew_capability(
+    mrc_service_client_->xtreemfs_renew_capability_and_voucher(
         mrc_address,
         auth_bogus_,
         user_credentials_bogus_,
