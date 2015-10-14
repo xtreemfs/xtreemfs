@@ -114,7 +114,7 @@ public class MRCHelper {
             rsel_policy,
             osel_policy,
             usable_osds,
- usable_space,
+            usable_space,
             free_space,
             used_space,
             num_files,
@@ -979,6 +979,9 @@ public class MRCHelper {
             if (file.getId() != 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "voucher size must be set on volume root");
 
+            if (Long.valueOf(value) <= 0)
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "voucher size has to be greater than zero");
+            
             sMan.getVolumeInfo().setVoucherSize(Long.valueOf(value), update);
 
             break;
