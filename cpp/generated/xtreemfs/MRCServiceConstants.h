@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Aug 20 09:17:20 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 14 23:21:43 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECONSTANTS_H_
@@ -38,6 +38,7 @@ const uint32_t PROC_ID_XTREEMFS_LISTDIR = 35;
 const uint32_t PROC_ID_XTREEMFS_LSVOL = 36;
 const uint32_t PROC_ID_XTREEMFS_MKVOL = 47;
 const uint32_t PROC_ID_XTREEMFS_RENEW_CAPABILITY = 37;
+const uint32_t PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER = 53;
 const uint32_t PROC_ID_XTREEMFS_REPLICATION_TO_MASTER = 38;
 const uint32_t PROC_ID_XTREEMFS_REPLICA_ADD = 39;
 const uint32_t PROC_ID_XTREEMFS_REPLICA_LIST = 40;

@@ -33783,24 +33783,49 @@ public final class MRC {
     // repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse> 
         getOsdFinalizeVouchersResponseList();
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse getOsdFinalizeVouchersResponse(int index);
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     int getOsdFinalizeVouchersResponseCount();
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder> 
         getOsdFinalizeVouchersResponseOrBuilderList();
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder getOsdFinalizeVouchersResponseOrBuilder(
         int index);
@@ -33808,19 +33833,36 @@ public final class MRC {
     // repeated fixed64 expire_time_ms = 3;
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     java.util.List<java.lang.Long> getExpireTimeMsList();
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     int getExpireTimeMsCount();
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     long getExpireTimeMs(int index);
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_clear_vouchersRequest}
+   *
+   * <pre>
+   * requests are clear voucher on the listed expire times
+   * with the proper finalize responses from the OSDs
+   * </pre>
    */
   public static final class xtreemfs_clear_vouchersRequest extends
       com.google.protobuf.GeneratedMessage
@@ -33997,12 +34039,22 @@ public final class MRC {
     private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse> osdFinalizeVouchersResponse_;
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse> getOsdFinalizeVouchersResponseList() {
       return osdFinalizeVouchersResponse_;
     }
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder> 
         getOsdFinalizeVouchersResponseOrBuilderList() {
@@ -34010,18 +34062,33 @@ public final class MRC {
     }
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     public int getOsdFinalizeVouchersResponseCount() {
       return osdFinalizeVouchersResponse_.size();
     }
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse getOsdFinalizeVouchersResponse(int index) {
       return osdFinalizeVouchersResponse_.get(index);
     }
     /**
      * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+     *
+     * <pre>
+     * list of respones from finalize voucher requests
+     * from the differend OSDs
+     * </pre>
      */
     public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder getOsdFinalizeVouchersResponseOrBuilder(
         int index) {
@@ -34033,6 +34100,10 @@ public final class MRC {
     private java.util.List<java.lang.Long> expireTimeMs_;
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     public java.util.List<java.lang.Long>
         getExpireTimeMsList() {
@@ -34040,12 +34111,20 @@ public final class MRC {
     }
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     public int getExpireTimeMsCount() {
       return expireTimeMs_.size();
     }
     /**
      * <code>repeated fixed64 expire_time_ms = 3;</code>
+     *
+     * <pre>
+     * list of expire times, which has been finalized
+     * </pre>
      */
     public long getExpireTimeMs(int index) {
       return expireTimeMs_.get(index);
@@ -34194,6 +34273,11 @@ public final class MRC {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_clear_vouchersRequest}
+     *
+     * <pre>
+     * requests are clear voucher on the listed expire times
+     * with the proper finalize responses from the OSDs
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
@@ -34560,6 +34644,11 @@ public final class MRC {
 
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse> getOsdFinalizeVouchersResponseList() {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34570,6 +34659,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public int getOsdFinalizeVouchersResponseCount() {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34580,6 +34674,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse getOsdFinalizeVouchersResponse(int index) {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34590,6 +34689,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder setOsdFinalizeVouchersResponse(
           int index, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse value) {
@@ -34607,6 +34711,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder setOsdFinalizeVouchersResponse(
           int index, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder builderForValue) {
@@ -34621,6 +34730,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder addOsdFinalizeVouchersResponse(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse value) {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34637,6 +34751,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder addOsdFinalizeVouchersResponse(
           int index, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse value) {
@@ -34654,6 +34773,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder addOsdFinalizeVouchersResponse(
           org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder builderForValue) {
@@ -34668,6 +34792,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder addOsdFinalizeVouchersResponse(
           int index, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder builderForValue) {
@@ -34682,6 +34811,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder addAllOsdFinalizeVouchersResponse(
           java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse> values) {
@@ -34696,6 +34830,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder clearOsdFinalizeVouchersResponse() {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34709,6 +34848,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public Builder removeOsdFinalizeVouchersResponse(int index) {
         if (osdFinalizeVouchersResponseBuilder_ == null) {
@@ -34722,6 +34866,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder getOsdFinalizeVouchersResponseBuilder(
           int index) {
@@ -34729,6 +34878,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder getOsdFinalizeVouchersResponseOrBuilder(
           int index) {
@@ -34739,6 +34893,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponseOrBuilder> 
            getOsdFinalizeVouchersResponseOrBuilderList() {
@@ -34750,6 +34909,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder addOsdFinalizeVouchersResponseBuilder() {
         return getOsdFinalizeVouchersResponseFieldBuilder().addBuilder(
@@ -34757,6 +34921,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder addOsdFinalizeVouchersResponseBuilder(
           int index) {
@@ -34765,6 +34934,11 @@ public final class MRC {
       }
       /**
        * <code>repeated .xtreemfs.pbrpc.OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;</code>
+       *
+       * <pre>
+       * list of respones from finalize voucher requests
+       * from the differend OSDs
+       * </pre>
        */
       public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse.Builder> 
            getOsdFinalizeVouchersResponseBuilderList() {
@@ -34795,6 +34969,10 @@ public final class MRC {
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public java.util.List<java.lang.Long>
           getExpireTimeMsList() {
@@ -34802,18 +34980,30 @@ public final class MRC {
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public int getExpireTimeMsCount() {
         return expireTimeMs_.size();
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public long getExpireTimeMs(int index) {
         return expireTimeMs_.get(index);
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public Builder setExpireTimeMs(
           int index, long value) {
@@ -34824,6 +35014,10 @@ public final class MRC {
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public Builder addExpireTimeMs(long value) {
         ensureExpireTimeMsIsMutable();
@@ -34833,6 +35027,10 @@ public final class MRC {
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public Builder addAllExpireTimeMs(
           java.lang.Iterable<? extends java.lang.Long> values) {
@@ -34843,6 +35041,10 @@ public final class MRC {
       }
       /**
        * <code>repeated fixed64 expire_time_ms = 3;</code>
+       *
+       * <pre>
+       * list of expire times, which has been finalized
+       * </pre>
        */
       public Builder clearExpireTimeMs() {
         expireTimeMs_ = java.util.Collections.emptyList();
@@ -49992,7 +50194,7 @@ public final class MRC {
       "\022\027\n\023XATTR_FLAGS_REPLACE\020\002*j\n\014ACCESS_FLAG" +
       "S\022\025\n\021ACCESS_FLAGS_F_OK\020\000\022\025\n\021ACCESS_FLAGS" +
       "_X_OK\020\001\022\025\n\021ACCESS_FLAGS_W_OK\020\002\022\025\n\021ACCESS" +
-      "_FLAGS_R_OK\020\0042\222!\n\nMRCService\022S\n\010fsetattr" +
+      "_FLAGS_R_OK\020\0042\360!\n\nMRCService\022S\n\010fsetattr" +
       "\022\037.xtreemfs.pbrpc.fsetattrRequest\032\035.xtre" +
       "emfs.pbrpc.emptyResponse\"\007\215\265\030\002\000\000\000\022@\n\tftr" +
       "uncate\022\024.xtreemfs.pbrpc.XCap\032\024.xtreemfs." +
@@ -50057,49 +50259,51 @@ public final class MRC {
       ".emptyRequest\032\027.xtreemfs.pbrpc.Volumes\"\007" +
       "\215\265\030$\000\000\000\022P\n\016xtreemfs_mkvol\022\026.xtreemfs.pbr" +
       "pc.Volume\032\035.xtreemfs.pbrpc.emptyResponse" +
-      "\"\007\215\265\030/\000\000\000\022l\n\031xtreemfs_renew_capability\0220" +
-      ".xtreemfs.pbrpc.xtreemfs_renew_capabilit",
-      "yRequest\032\024.xtreemfs.pbrpc.XCap\"\007\215\265\030%\000\000\000\022" +
-      "f\n\036xtreemfs_replication_to_master\022\034.xtre" +
-      "emfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030&\000\000\000\022k\n\024xtreemfs_repl" +
-      "ica_add\022+.xtreemfs.pbrpc.xtreemfs_replic" +
-      "a_addRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
-      "nse\"\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_replica_list\022,." +
-      "xtreemfs.pbrpc.xtreemfs_replica_listRequ" +
-      "est\032\030.xtreemfs.pbrpc.Replicas\"\007\215\265\030(\000\000\000\022s" +
-      "\n\027xtreemfs_replica_remove\022..xtreemfs.pbr",
-      "pc.xtreemfs_replica_removeRequest\032\037.xtre" +
-      "emfs.pbrpc.FileCredentials\"\007\215\265\030)\000\000\000\022z\n\031x" +
-      "treemfs_restore_database\0225.xtreemfs.pbrp" +
-      "c.xtreemfs_dump_restore_databaseRequest\032" +
-      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030*\000\000\000\022" +
-      "m\n\025xtreemfs_restore_file\022,.xtreemfs.pbrp" +
-      "c.xtreemfs_restore_fileRequest\032\035.xtreemf" +
-      "s.pbrpc.emptyResponse\"\007\215\265\030+\000\000\000\022_\n\016xtreem" +
-      "fs_rmvol\022%.xtreemfs.pbrpc.xtreemfs_rmvol" +
-      "Request\032\035.xtreemfs.pbrpc.emptyResponse\"\007",
-      "\215\265\030,\000\000\000\022Y\n\021xtreemfs_shutdown\022\034.xtreemfs." +
-      "pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.empt" +
-      "yResponse\"\007\215\265\030-\000\000\000\022y\n\031xtreemfs_update_fi" +
-      "le_size\0220.xtreemfs.pbrpc.xtreemfs_update" +
-      "_file_sizeRequest\032!.xtreemfs.pbrpc.times" +
-      "tampResponse\"\007\215\265\030.\000\000\000\022\244\001\n\"xtreemfs_set_r" +
-      "eplica_update_policy\0229.xtreemfs.pbrpc.xt" +
-      "reemfs_set_replica_update_policyRequest\032" +
-      ":.xtreemfs.pbrpc.xtreemfs_set_replica_up" +
-      "date_policyResponse\"\007\215\265\0300\000\000\000\022\222\001\n\034xtreemf",
-      "s_set_read_only_xattr\0223.xtreemfs.pbrpc.x" +
-      "treemfs_set_read_only_xattrRequest\0324.xtr" +
-      "eemfs.pbrpc.xtreemfs_set_read_only_xattr" +
-      "Response\"\007\215\265\0301\000\000\000\022\177\n\035xtreemfs_get_file_c" +
-      "redentials\0224.xtreemfs.pbrpc.xtreemfs_get" +
-      "_file_credentialsRequest\032\037.xtreemfs.pbrp" +
-      "c.FileCredentials\"\007\215\265\0302\000\000\000\022e\n\024xtreemfs_g" +
-      "et_xlocset\022+.xtreemfs.pbrpc.xtreemfs_get" +
-      "_xlocsetRequest\032\027.xtreemfs.pbrpc.XLocSet" +
-      "\"\007\215\265\0303\000\000\000\032\007\225\265\030!N\000\000B(\n&org.xtreemfs.pbrpc",
-      ".generatedinterfaces"
+      "\"\007\215\265\030/\000\000\000\022P\n\031xtreemfs_renew_capability\022\024" +
+      ".xtreemfs.pbrpc.XCap\032\024.xtreemfs.pbrpc.XC",
+      "ap\"\007\215\265\030%\000\000\000\022x\n%xtreemfs_renew_capability" +
+      "_and_voucher\0220.xtreemfs.pbrpc.xtreemfs_r" +
+      "enew_capabilityRequest\032\024.xtreemfs.pbrpc." +
+      "XCap\"\007\215\265\0305\000\000\000\022f\n\036xtreemfs_replication_to" +
+      "_master\022\034.xtreemfs.pbrpc.emptyRequest\032\035." +
+      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030&\000\000\000\022k\n" +
+      "\024xtreemfs_replica_add\022+.xtreemfs.pbrpc.x" +
+      "treemfs_replica_addRequest\032\035.xtreemfs.pb" +
+      "rpc.emptyResponse\"\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_r" +
+      "eplica_list\022,.xtreemfs.pbrpc.xtreemfs_re",
+      "plica_listRequest\032\030.xtreemfs.pbrpc.Repli" +
+      "cas\"\007\215\265\030(\000\000\000\022s\n\027xtreemfs_replica_remove\022" +
+      "..xtreemfs.pbrpc.xtreemfs_replica_remove" +
+      "Request\032\037.xtreemfs.pbrpc.FileCredentials" +
+      "\"\007\215\265\030)\000\000\000\022z\n\031xtreemfs_restore_database\0225" +
+      ".xtreemfs.pbrpc.xtreemfs_dump_restore_da" +
+      "tabaseRequest\032\035.xtreemfs.pbrpc.emptyResp" +
+      "onse\"\007\215\265\030*\000\000\000\022m\n\025xtreemfs_restore_file\022," +
+      ".xtreemfs.pbrpc.xtreemfs_restore_fileReq" +
+      "uest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030",
+      "+\000\000\000\022_\n\016xtreemfs_rmvol\022%.xtreemfs.pbrpc." +
+      "xtreemfs_rmvolRequest\032\035.xtreemfs.pbrpc.e" +
+      "mptyResponse\"\007\215\265\030,\000\000\000\022Y\n\021xtreemfs_shutdo" +
+      "wn\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtree" +
+      "mfs.pbrpc.emptyResponse\"\007\215\265\030-\000\000\000\022y\n\031xtre" +
+      "emfs_update_file_size\0220.xtreemfs.pbrpc.x" +
+      "treemfs_update_file_sizeRequest\032!.xtreem" +
+      "fs.pbrpc.timestampResponse\"\007\215\265\030.\000\000\000\022\244\001\n\"" +
+      "xtreemfs_set_replica_update_policy\0229.xtr" +
+      "eemfs.pbrpc.xtreemfs_set_replica_update_",
+      "policyRequest\032:.xtreemfs.pbrpc.xtreemfs_" +
+      "set_replica_update_policyResponse\"\007\215\265\0300\000" +
+      "\000\000\022\222\001\n\034xtreemfs_set_read_only_xattr\0223.xt" +
+      "reemfs.pbrpc.xtreemfs_set_read_only_xatt" +
+      "rRequest\0324.xtreemfs.pbrpc.xtreemfs_set_r" +
+      "ead_only_xattrResponse\"\007\215\265\0301\000\000\000\022\177\n\035xtree" +
+      "mfs_get_file_credentials\0224.xtreemfs.pbrp" +
+      "c.xtreemfs_get_file_credentialsRequest\032\037" +
+      ".xtreemfs.pbrpc.FileCredentials\"\007\215\265\0302\000\000\000" +
+      "\022e\n\024xtreemfs_get_xlocset\022+.xtreemfs.pbrp",
+      "c.xtreemfs_get_xlocsetRequest\032\027.xtreemfs" +
+      ".pbrpc.XLocSet\"\007\215\265\0303\000\000\000\032\007\225\265\030!N\000\000B(\n&org." +
+      "xtreemfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -50438,6 +50642,7 @@ public final class MRC {
               new java.lang.String[] { "FileId", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

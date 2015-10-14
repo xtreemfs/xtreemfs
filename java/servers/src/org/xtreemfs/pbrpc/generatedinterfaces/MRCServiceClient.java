@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Aug 20 09:17:21 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 14 23:21:43 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -388,7 +388,7 @@ public class MRCServiceClient {
          return xtreemfs_mkvol(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_renew_capabilityRequest input) throws IOException {
+    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.XCap input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
          RPCResponse<GlobalTypes.XCap> response = new RPCResponse<GlobalTypes.XCap>(GlobalTypes.XCap.getDefaultInstance());
@@ -396,9 +396,22 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.XCap xcap, boolean increaseVoucher) throws IOException {
-         final MRC.xtreemfs_renew_capabilityRequest msg = MRC.xtreemfs_renew_capabilityRequest.newBuilder().setXcap(xcap).setIncreaseVoucher(increaseVoucher).build();
+    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp, long voucher_size, long expire_time_ms) throws IOException {
+         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).setVoucherSize(voucher_size).setExpireTimeMs(expire_time_ms).build();
          return xtreemfs_renew_capability(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability_and_voucher(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_renew_capabilityRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<GlobalTypes.XCap> response = new RPCResponse<GlobalTypes.XCap>(GlobalTypes.XCap.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 20001, 53, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability_and_voucher(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.XCap xcap, boolean increaseVoucher) throws IOException {
+         final MRC.xtreemfs_renew_capabilityRequest msg = MRC.xtreemfs_renew_capabilityRequest.newBuilder().setXcap(xcap).setIncreaseVoucher(increaseVoucher).build();
+         return xtreemfs_renew_capability_and_voucher(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse xtreemfs_replication_to_master(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, Common.emptyRequest input) throws IOException {

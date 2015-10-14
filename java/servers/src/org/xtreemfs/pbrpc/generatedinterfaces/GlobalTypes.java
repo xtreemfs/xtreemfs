@@ -4725,7 +4725,8 @@ public final class GlobalTypes {
      * <code>required fixed64 voucher_size = 11 [default = 0];</code>
      *
      * <pre>
-     * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+     * the voucher size indicates the maximal filesize for this file in bytes
+     * zero indicates unlimited file size (no active quota)
      * </pre>
      */
     boolean hasVoucherSize();
@@ -4733,7 +4734,8 @@ public final class GlobalTypes {
      * <code>required fixed64 voucher_size = 11 [default = 0];</code>
      *
      * <pre>
-     * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+     * the voucher size indicates the maximal filesize for this file in bytes
+     * zero indicates unlimited file size (no active quota)
      * </pre>
      */
     long getVoucherSize();
@@ -4741,10 +4743,18 @@ public final class GlobalTypes {
     // required fixed64 expire_time_ms = 12 [default = 0];
     /**
      * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+     *
+     * <pre>
+     * Timestamp when the XCap expires in milli seconds.
+     * </pre>
      */
     boolean hasExpireTimeMs();
     /**
      * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+     *
+     * <pre>
+     * Timestamp when the XCap expires in milli seconds.
+     * </pre>
      */
     long getExpireTimeMs();
   }
@@ -5261,7 +5271,8 @@ public final class GlobalTypes {
      * <code>required fixed64 voucher_size = 11 [default = 0];</code>
      *
      * <pre>
-     * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+     * the voucher size indicates the maximal filesize for this file in bytes
+     * zero indicates unlimited file size (no active quota)
      * </pre>
      */
     public boolean hasVoucherSize() {
@@ -5271,7 +5282,8 @@ public final class GlobalTypes {
      * <code>required fixed64 voucher_size = 11 [default = 0];</code>
      *
      * <pre>
-     * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+     * the voucher size indicates the maximal filesize for this file in bytes
+     * zero indicates unlimited file size (no active quota)
      * </pre>
      */
     public long getVoucherSize() {
@@ -5283,12 +5295,20 @@ public final class GlobalTypes {
     private long expireTimeMs_;
     /**
      * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+     *
+     * <pre>
+     * Timestamp when the XCap expires in milli seconds.
+     * </pre>
      */
     public boolean hasExpireTimeMs() {
       return ((bitField0_ & 0x00000800) == 0x00000800);
     }
     /**
      * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+     *
+     * <pre>
+     * Timestamp when the XCap expires in milli seconds.
+     * </pre>
      */
     public long getExpireTimeMs() {
       return expireTimeMs_;
@@ -6480,7 +6500,8 @@ public final class GlobalTypes {
        * <code>required fixed64 voucher_size = 11 [default = 0];</code>
        *
        * <pre>
-       * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+       * the voucher size indicates the maximal filesize for this file in bytes
+       * zero indicates unlimited file size (no active quota)
        * </pre>
        */
       public boolean hasVoucherSize() {
@@ -6490,7 +6511,8 @@ public final class GlobalTypes {
        * <code>required fixed64 voucher_size = 11 [default = 0];</code>
        *
        * <pre>
-       * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+       * the voucher size indicates the maximal filesize for this file in bytes
+       * zero indicates unlimited file size (no active quota)
        * </pre>
        */
       public long getVoucherSize() {
@@ -6500,7 +6522,8 @@ public final class GlobalTypes {
        * <code>required fixed64 voucher_size = 11 [default = 0];</code>
        *
        * <pre>
-       * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+       * the voucher size indicates the maximal filesize for this file in bytes
+       * zero indicates unlimited file size (no active quota)
        * </pre>
        */
       public Builder setVoucherSize(long value) {
@@ -6513,7 +6536,8 @@ public final class GlobalTypes {
        * <code>required fixed64 voucher_size = 11 [default = 0];</code>
        *
        * <pre>
-       * the voucher size indicates the maximal filesize for this file in bytes, zero indicates no active quota
+       * the voucher size indicates the maximal filesize for this file in bytes
+       * zero indicates unlimited file size (no active quota)
        * </pre>
        */
       public Builder clearVoucherSize() {
@@ -6527,18 +6551,30 @@ public final class GlobalTypes {
       private long expireTimeMs_ ;
       /**
        * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+       *
+       * <pre>
+       * Timestamp when the XCap expires in milli seconds.
+       * </pre>
        */
       public boolean hasExpireTimeMs() {
         return ((bitField0_ & 0x00000800) == 0x00000800);
       }
       /**
        * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+       *
+       * <pre>
+       * Timestamp when the XCap expires in milli seconds.
+       * </pre>
        */
       public long getExpireTimeMs() {
         return expireTimeMs_;
       }
       /**
        * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+       *
+       * <pre>
+       * Timestamp when the XCap expires in milli seconds.
+       * </pre>
        */
       public Builder setExpireTimeMs(long value) {
         bitField0_ |= 0x00000800;
@@ -6548,6 +6584,10 @@ public final class GlobalTypes {
       }
       /**
        * <code>required fixed64 expire_time_ms = 12 [default = 0];</code>
+       *
+       * <pre>
+       * Timestamp when the XCap expires in milli seconds.
+       * </pre>
        */
       public Builder clearExpireTimeMs() {
         bitField0_ = (bitField0_ & ~0x00000800);

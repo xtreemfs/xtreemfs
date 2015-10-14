@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Aug 20 09:17:20 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 14 23:21:43 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -677,7 +677,7 @@ namespace pbrpc {
             void xtreemfs_renew_capability(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request,
+                const xtreemfs::pbrpc::XCap* request,
                 CallbackInterface<xtreemfs::pbrpc::XCap> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 37,
@@ -688,10 +688,33 @@ namespace pbrpc {
             SyncCallback<xtreemfs::pbrpc::XCap>* xtreemfs_renew_capability_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request) {
+                , const xtreemfs::pbrpc::XCap* request) {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
                 client_->sendRequest(address, 20001, 37,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_renew_capability_and_voucher(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::XCap> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 53,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::XCap>* xtreemfs_renew_capability_and_voucher_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
+                client_->sendRequest(address, 20001, 53,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
                      NULL, sync_cb);
                 return sync_cb;

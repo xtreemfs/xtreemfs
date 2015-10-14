@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Thu Aug 20 09:17:21 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 14 23:21:43 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -37,6 +37,7 @@ public class MRCServiceConstants {
     public static final int PROC_ID_XTREEMFS_LSVOL = 36;
     public static final int PROC_ID_XTREEMFS_MKVOL = 47;
     public static final int PROC_ID_XTREEMFS_RENEW_CAPABILITY = 37;
+    public static final int PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER = 53;
     public static final int PROC_ID_XTREEMFS_REPLICATION_TO_MASTER = 38;
     public static final int PROC_ID_XTREEMFS_REPLICA_ADD = 39;
     public static final int PROC_ID_XTREEMFS_REPLICA_LIST = 40;
@@ -81,7 +82,8 @@ public class MRCServiceConstants {
            case 35: return MRC.xtreemfs_listdirRequest.getDefaultInstance();
            case 36: return null;
            case 47: return MRC.Volume.getDefaultInstance();
-           case 37: return MRC.xtreemfs_renew_capabilityRequest.getDefaultInstance();
+           case 37: return GlobalTypes.XCap.getDefaultInstance();
+           case 53: return MRC.xtreemfs_renew_capabilityRequest.getDefaultInstance();
            case 38: return null;
            case 39: return MRC.xtreemfs_replica_addRequest.getDefaultInstance();
            case 40: return MRC.xtreemfs_replica_listRequest.getDefaultInstance();
@@ -131,6 +133,7 @@ public class MRCServiceConstants {
            case 36: return MRC.Volumes.getDefaultInstance();
            case 47: return null;
            case 37: return GlobalTypes.XCap.getDefaultInstance();
+           case 53: return GlobalTypes.XCap.getDefaultInstance();
            case 38: return null;
            case 39: return null;
            case 40: return GlobalTypes.Replicas.getDefaultInstance();
