@@ -538,6 +538,9 @@ message xtreemfs_get_xlocsetRequest {
   optional string volume_name = 3;
   // or a valid XCap.
   optional XCap xcap = 4;
+  // optional set of Vivaldi cooridnates of the client, which can be
+  // used to order the list of replicas
+  optional VivaldiCoordinates coordinates = 5;
 }
 
 // removes a replica from a file

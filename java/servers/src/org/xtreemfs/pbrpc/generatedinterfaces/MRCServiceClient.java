@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Sep 14 11:28:51 CEST 2015
+//automatically generated from MRC.proto at Fri Oct 16 17:15:45 CEST 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -552,8 +552,8 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap) throws IOException {
-         final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).build();
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap, GlobalTypes.VivaldiCoordinates coordinates) throws IOException {
+         final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).setCoordinates(coordinates).build();
          return xtreemfs_get_xlocset(server, authHeader, userCreds,msg);
     }
 

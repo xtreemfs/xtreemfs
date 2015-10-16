@@ -5281,6 +5281,15 @@ class xtreemfs_get_xlocsetRequest : public ::google::protobuf::Message {
   inline ::xtreemfs::pbrpc::XCap* release_xcap();
   inline void set_allocated_xcap(::xtreemfs::pbrpc::XCap* xcap);
 
+  // optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 5;
+  inline bool has_coordinates() const;
+  inline void clear_coordinates();
+  static const int kCoordinatesFieldNumber = 5;
+  inline const ::xtreemfs::pbrpc::VivaldiCoordinates& coordinates() const;
+  inline ::xtreemfs::pbrpc::VivaldiCoordinates* mutable_coordinates();
+  inline ::xtreemfs::pbrpc::VivaldiCoordinates* release_coordinates();
+  inline void set_allocated_coordinates(::xtreemfs::pbrpc::VivaldiCoordinates* coordinates);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_get_xlocsetRequest)
  private:
   inline void set_has_file_id();
@@ -5291,6 +5300,8 @@ class xtreemfs_get_xlocsetRequest : public ::google::protobuf::Message {
   inline void clear_has_volume_name();
   inline void set_has_xcap();
   inline void clear_has_xcap();
+  inline void set_has_coordinates();
+  inline void clear_has_coordinates();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -5298,9 +5309,10 @@ class xtreemfs_get_xlocsetRequest : public ::google::protobuf::Message {
   ::std::string* path_;
   ::std::string* volume_name_;
   ::xtreemfs::pbrpc::XCap* xcap_;
+  ::xtreemfs::pbrpc::VivaldiCoordinates* coordinates_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
@@ -13789,6 +13801,44 @@ inline void xtreemfs_get_xlocsetRequest::set_allocated_xcap(::xtreemfs::pbrpc::X
     set_has_xcap();
   } else {
     clear_has_xcap();
+  }
+}
+
+// optional .xtreemfs.pbrpc.VivaldiCoordinates coordinates = 5;
+inline bool xtreemfs_get_xlocsetRequest::has_coordinates() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void xtreemfs_get_xlocsetRequest::set_has_coordinates() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_has_coordinates() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void xtreemfs_get_xlocsetRequest::clear_coordinates() {
+  if (coordinates_ != NULL) coordinates_->::xtreemfs::pbrpc::VivaldiCoordinates::Clear();
+  clear_has_coordinates();
+}
+inline const ::xtreemfs::pbrpc::VivaldiCoordinates& xtreemfs_get_xlocsetRequest::coordinates() const {
+  return coordinates_ != NULL ? *coordinates_ : *default_instance_->coordinates_;
+}
+inline ::xtreemfs::pbrpc::VivaldiCoordinates* xtreemfs_get_xlocsetRequest::mutable_coordinates() {
+  set_has_coordinates();
+  if (coordinates_ == NULL) coordinates_ = new ::xtreemfs::pbrpc::VivaldiCoordinates;
+  return coordinates_;
+}
+inline ::xtreemfs::pbrpc::VivaldiCoordinates* xtreemfs_get_xlocsetRequest::release_coordinates() {
+  clear_has_coordinates();
+  ::xtreemfs::pbrpc::VivaldiCoordinates* temp = coordinates_;
+  coordinates_ = NULL;
+  return temp;
+}
+inline void xtreemfs_get_xlocsetRequest::set_allocated_coordinates(::xtreemfs::pbrpc::VivaldiCoordinates* coordinates) {
+  delete coordinates_;
+  coordinates_ = coordinates;
+  if (coordinates) {
+    set_has_coordinates();
+  } else {
+    clear_has_coordinates();
   }
 }
 
