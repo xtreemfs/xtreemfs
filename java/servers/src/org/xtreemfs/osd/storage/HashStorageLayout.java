@@ -8,6 +8,8 @@
 
 package org.xtreemfs.osd.storage;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
@@ -16,6 +18,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
@@ -23,7 +27,9 @@ import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
+import java.util.TreeSet;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LRUCache;
@@ -71,6 +77,11 @@ public class HashStorageLayout extends StorageLayout {
      * file that stores the latest XLocSet version this replica belonged to and if it is invalidated
      */
     public static final String             XLOC_VERSION_STATE_FILENAME   = ".version_state";
+
+    /**
+     * file that stores the invalid expire times for a file
+     */
+    public static final String             QUOTA_INVALID_EXPIRE_TIMES_FILENAME = ".invalid_expire_times";
 
     public static final int                SL_TAG                        = 0x00000002;
 
@@ -1411,6 +1422,82 @@ public class HashStorageLayout extends StorageLayout {
             output = new FileOutputStream(vsFile);
             versionState.writeDelimitedTo(output);
             xLocSetVSCache.put(fileId, versionState);
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
+    }
+
+    @Override
+    public Set<String> getInvalidClientExpireTimeSet(String fileId) throws IOException {
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "get invalid client expire times for file id: %s", fileId);
+        }
+
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        File invalidClientExpireTimeFile = new File(fileDir, QUOTA_INVALID_EXPIRE_TIMES_FILENAME);
+
+        Set<String> invalidClientExpireTimeSet = new TreeSet<String>();
+
+        if (!invalidClientExpireTimeFile.exists()) {
+            return invalidClientExpireTimeSet;
+        }
+
+        BufferedReader input = null;
+        try {
+            input = new BufferedReader(new InputStreamReader(new FileInputStream(invalidClientExpireTimeFile)));
+
+            String line;
+            while ((line = input.readLine()) != null) {
+                if (line.isEmpty()) {
+                    continue;
+                }
+
+                invalidClientExpireTimeSet.add(line);
+            }
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+
+        return invalidClientExpireTimeSet;
+    }
+
+    @Override
+    public void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet) throws IOException {
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "set invalid client expire times for file id %s and count of expire times %d", fileId,
+                    invalidClientExpireTimeSet.size());
+        }
+
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        if (!fileDir.exists()) {
+            fileDir.mkdirs();
+        }
+
+        File invalidClientExpireTimeFile = new File(fileDir, QUOTA_INVALID_EXPIRE_TIMES_FILENAME);
+
+        if (invalidClientExpireTimeSet == null || invalidClientExpireTimeSet.isEmpty()) {
+            if (invalidClientExpireTimeFile.exists()) {
+                invalidClientExpireTimeFile.delete();
+            }
+            return;
+        }
+
+        BufferedWriter output = null;
+        try {
+            output = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(invalidClientExpireTimeFile)));
+
+            for (String invalidClientExpireTime : invalidClientExpireTimeSet) {
+                output.write(invalidClientExpireTime);
+                output.newLine();
+            }
         } finally {
             if (output != null) {
                 output.close();

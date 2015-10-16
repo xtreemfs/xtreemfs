@@ -988,9 +988,22 @@ public class VolumeTest {
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
-        byte[] content = "foo foo foo".getBytes();
+        byte[] content = "foo foo foo".getBytes(); // 11 bytes will exceed quota
 
         FileHandle file = volume.openFile(userCredentials, "/test1.txt", flags, 0777);
+
+        boolean osdWriteException = false;
+        try {
+            file.write(userCredentials, content, content.length, 0);
+        } catch (Exception ex) {
+            osdWriteException = true;
+        }
+
+        if (!osdWriteException) {
+            fail("OSD performed write operation although it exceeds the quota.");
+        }
+
+        content = "foo bar ".getBytes(); // 8 bytes to fit quota perfectly
         file.write(userCredentials, content, content.length, 0);
         file.close();
 

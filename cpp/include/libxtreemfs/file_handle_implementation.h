@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2011 by Michael Berlin, Zuse Institute Berlin
+ * Copyright (c) 2011 by Michael Berlin,
+ *               2015 by Robert Bärhold
+ *                    Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
@@ -15,17 +17,21 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <gtest/gtest_prod.h>
+#include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "pbrpc/RPC.pb.h"
 #include "rpc/callback_interface.h"
 #include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/MRC.pb.h"
+#include "xtreemfs/OSD.pb.h"
 #include "libxtreemfs/client_implementation.h"
 #include "libxtreemfs/file_handle.h"
 #include "libxtreemfs/interrupt.h"
 #include "libxtreemfs/xcap_handler.h"
+#include "libxtreemfs/xtreemfs_exception.h"
 
 namespace xtreemfs {
 
@@ -49,6 +55,90 @@ class UUIDIterator;
 class UUIDResolver;
 class Volume;
 class XCapManager;
+class VoucherManager;
+
+class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse> {
+ public:
+  VoucherManager(FileInfo* file_info, XCapManager* xcap_manager,
+                 pbrpc::MRCServiceClient* mrc_service_client,
+                 pbrpc::OSDServiceClient* osd_service_client_,
+                 UUIDResolver* uuid_resolver, UUIDIterator* mrc_uuid_iterator,
+                 UUIDIterator* osd_uuid_iterator,
+                 const Options& volume_options,
+                 const pbrpc::Auth& auth_bogus,
+                 const pbrpc::UserCredentials& user_credentials_bogus);
+
+  /** Handles the overall process of the finalize and clear voucher protocol. */
+  void finalizeAndClear();
+ private:
+  /** Sends out the finalize voucher request in an asynchronous manner to all relevant OSDs. */
+  void finalizeVoucher(xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest);
+
+  /** Sends out the clear voucher request to the MRC containing all OSD responses. */
+  void clearVoucher(xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* clearVouchersRequest);
+
+  /** Checks the consistency of all finalize OSD responses and returns true on equality. */
+  bool checkResponseConsistency();
+
+  /** Deletes every object in the osdFinalizeVoucherResponseVector_ and clears it. */
+  void cleanupOSDResponses();
+
+  /** Implements callback for the finalize voucher requests from the OSDs,
+   * saving all responses in the osdFinalizeVoucherResponseVector_. */
+  virtual void CallFinished(xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message,
+                            char* data,
+                            uint32_t data_length,
+                            pbrpc::RPCHeader::ErrorResponse* error,
+                            void* context);
+
+  /** Use this mutex guarantee a single call of finalize and clear. */
+  boost::mutex mutex_;
+
+  /** Used to wait on the condition. */
+  boost::mutex cond_mutex_;
+
+  /** Used to wait for finalize voucher respones of used OSDs. */
+  boost::condition osd_finalize_pending_cond;
+
+  /** number of osds, we expect a reponse of. */
+  int osdCount;
+
+  /** Used to save current finalize voucher responses from the OSDs. */
+  std::vector<xtreemfs::pbrpc::OSDFinalizeVouchersResponse*> osdFinalizeVoucherResponseVector_;
+
+
+  /** Multiple FileHandle may refer to the same File and therefore unique file
+   * properties (e.g. Path, FileId, XlocSet) are stored in a FileInfo object. */
+  FileInfo* file_info_;
+
+  /** Pointer to the XCapManager instance of the file handle. */
+  XCapManager* xcap_manager_;
+
+  /** Pointer to object owned by VolumeImplemention */
+  pbrpc::MRCServiceClient* mrc_service_client_;
+
+  /** Pointer to object owned by VolumeImplemention */
+  pbrpc::OSDServiceClient* osd_service_client_;
+
+  /** UUID resolver*/
+  UUIDResolver* uuid_resolver_;
+
+  /** UUIDIterator of the MRC. */
+  UUIDIterator* mrc_uuid_iterator_;
+
+  /** UUIDIterator which contains the UUIDs of all replicas. */
+  UUIDIterator* osd_uuid_iterator_;
+
+  /** Volume options used in the requests. */
+  const Options& volume_options_;
+
+  /** Auth needed for ServiceClients. Always set to AUTH_NONE by Volume. */
+  const pbrpc::Auth& auth_bogus_;
+
+  /** For same reason needed as auth_bogus_. Always set to user "xtreemfs". */
+  const pbrpc::UserCredentials& user_credentials_bogus_;
+};
+
 
 class XCapManager :
     public rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
@@ -65,6 +155,10 @@ class XCapManager :
   /** Renew xcap_ asynchronously. */
   void RenewXCapAsync(const RPCOptions& options);
 
+  /** Renew xcap_ asynchronously. Add writeback, in case of an error */
+  void RenewXCapAsync(const RPCOptions& options, const bool increaseVoucher,
+                      PosixErrorException* writeback);
+
   /** Blocks until the callback has completed (if an XCapRenewal is pending). */
   void WaitForPendingXCapRenewal();
 
@@ -76,6 +170,15 @@ class XCapManager :
 
   /** Get the file id from the capability. */
   uint64_t GetFileId();
+
+  /** Returns the list of old expire times. */
+  std::list< ::google::protobuf::uint64> GetOldExpireTimes();
+
+  /** Acquires the mutex related to list of old expire times. */
+  void acquireOldExpireTimesMutex();
+
+  /** Releases the mutex related to list of old expire times. */
+  void releaseOldExpireTimesMutex();
 
  private:
   /** Implements callback for an async xtreemfs_renew_capability request. */
@@ -96,6 +199,18 @@ class XCapManager :
 
   /** Used to wait for pending XCap renewal callbacks. */
   boost::condition xcap_renewal_pending_cond_;
+
+  /** Used to keep track of possible writebacks of errros, occured at the renewal. */
+  std::list<PosixErrorException*> xcap_renewal_error_writebacks_;
+
+  /** Any modification on the xcap_renewal_error_writebacks_ list have to obtain this lock first. */
+  boost::mutex xcap_renewal_error_writebacks_mutex_;
+
+  /** Used to keep track of old expire times to finalize voucher requests. **/
+  std::list< ::google::protobuf::uint64> old_expire_times_;
+
+  /** Use this to protect old_expire_times. */
+  boost::mutex old_expire_times_mutex_;
 
   /** UUIDIterator of the MRC. */
   pbrpc::MRCServiceClient* mrc_service_client_;
@@ -251,6 +366,9 @@ class FileHandleImplementation
 
   /** Actual implementation of Flush(). */
   void DoFlush(bool close_file);
+
+  /** Finalize Voucher Acitivites */
+  void ClearVoucher();
 
   /** Actual implementation of Read(). */
   int DoRead(
