@@ -14,6 +14,7 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.utils.Converter;
 
 /**
@@ -40,6 +41,12 @@ public class BabuDBVolumeInfo implements VolumeInfo {
 
     private long                 quota;
 
+    private long                 voucherSize;
+
+    private long                 defaultGroupQuota;
+
+    private long                 defaultUserQuota;
+
     public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy, short[] replicaPolicy,
             short acPolicy, boolean allowSnaps, long quota, AtomicDBUpdate update) throws DatabaseException {
         
@@ -51,6 +58,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.acPolicy = acPolicy;
         this.allowSnaps = allowSnaps;
         this.quota = quota;
+        this.voucherSize = VolumeQuotaManager.DEFAULT_VOUCHER_SIZE;
+        this.defaultGroupQuota = VolumeQuotaManager.DEFAULT_GROUP_QUOTA;
+        this.defaultUserQuota = VolumeQuotaManager.DEFAULT_USER_QUOTA;
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id.getBytes(), true, update);
@@ -63,8 +73,13 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.ALLOW_SNAPS_ATTR_NAME,
                 String.valueOf(allowSnaps).getBytes(), true, update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
-                .getBytes(),
-                true, update);
+                .getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
+                String.valueOf(voucherSize).getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME,
+                String.valueOf(defaultGroupQuota).getBytes(), true, update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME,
+                String.valueOf(defaultUserQuota).getBytes(), true, update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -82,6 +97,12 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             byte[] replicaPolicyAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                     BabuDBStorageManager.REPL_POL_ATTR_NAME);
             byte[] quotaAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME);
+            byte[] voucherSizeAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME);
+            byte[] defaultGroupQuotaAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME);
+            byte[] defaultUserQuotaAttr = sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                    BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME);
             
             if (idAttr != null)
                 id = new String(idAttr);
@@ -114,6 +135,15 @@ public class BabuDBVolumeInfo implements VolumeInfo {
 
             if (quotaAttr != null)
                 quota = Long.valueOf(new String(quotaAttr));
+
+            if (voucherSizeAttr != null)
+                voucherSize = Long.valueOf(new String(voucherSizeAttr));
+
+            if (defaultGroupQuotaAttr != null)
+                defaultGroupQuota = Long.valueOf(new String(defaultGroupQuotaAttr));
+
+            if (defaultUserQuotaAttr != null)
+                defaultUserQuota = Long.valueOf(new String(defaultUserQuotaAttr));
 
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
@@ -152,6 +182,21 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
 
     @Override
+    public long getVoucherSize() throws DatabaseException {
+        return voucherSize;
+    }
+
+    @Override
+    public long getDefaultGroupQuota() throws DatabaseException {
+        return defaultGroupQuota;
+    }
+
+    @Override
+    public long getDefaultUserQuota() throws DatabaseException {
+        return defaultUserQuota;
+    }
+
+    @Override
     public void setOsdPolicy(short[] osdPolicy, AtomicDBUpdate update) throws DatabaseException {
         this.osdPolicy = osdPolicy;
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.OSD_POL_ATTR_NAME, Converter
@@ -181,6 +226,30 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_QUOTA_ATTR_NAME, String.valueOf(quota)
                 .getBytes(),
                 update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        this.voucherSize = voucherSize;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_VOUCHERSIZE_ATTR_NAME,
+                String.valueOf(voucherSize).getBytes(), update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+        this.defaultGroupQuota = defaultGroupQuota;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_G_QUOTA_ATTR_NAME,
+                String.valueOf(defaultGroupQuota).getBytes(), update);
+        sMan.notifyVolumeChange(this);
+    }
+
+    @Override
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+        this.defaultUserQuota = defaultUserQuota;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_DEFAULT_U_QUOTA_ATTR_NAME,
+                String.valueOf(defaultUserQuota).getBytes(), update);
         sMan.notifyVolumeChange(this);
     }
 

@@ -112,8 +112,12 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpCreateDeleteSnapshot(uc, input, &result);
     } else if (op_name == "setRemoveACL") {
       OpSetRemoveACL(uc, input, &result);
-    } else if (op_name == "setVolumeQuota") {
-      OpSetVolumeQuota(uc, input, &result);
+    } else if (op_name == "setQuota") {
+      OpSetQuota(uc, input, &result);
+    } else if (op_name == "setQuotaRelatedValue") {
+      OpSetQuotaRelatedValue(uc, input, &result);
+    } else if (op_name == "getQuota") {
+      OpGetQuota(uc, input, &result);
     } else {
       file->set_last_result(
           "{ \"error\":\"Unknown operation '" + op_name + "'.\" }\n");
@@ -197,25 +201,12 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
     if (path == "/") {
       // Get more volume details.
 
-      uint64_t quota = boost::lexical_cast<uint64_t>(
-          xtfs_attrs["xtreemfs.quota"]);
-      uint64_t used_space = boost::lexical_cast<uint64_t>(
-          xtfs_attrs["xtreemfs.used_space"]);
-      uint64_t available_space = boost::lexical_cast<uint64_t>(
-          xtfs_attrs["xtreemfs.free_space"]);
-
-      // Use free space on osds as free space or if a quota is set, use the minimum of quota and osds free space
-      if (quota != 0) {
-        available_space = (quota < available_space) ? quota : available_space;
-      }
-
-      // calculate remaining free space
-      uint64_t remaining_free_space =
-          (available_space <= used_space) ? 0 : available_space - used_space;
-
-      result["free_space"] = Json::Value(
-          boost::lexical_cast<std::string>(remaining_free_space));
-      result["used_space"] = Json::Value(xtfs_attrs["xtreemfs.used_space"]);
+      result["usable_space"] = Json::Value(xtfs_attrs["xtreemfs.usable_space"]);
+      result["quota"] = Json::Value(xtfs_attrs["xtreemfs.quota"]);
+      result["usedspace"] = Json::Value(xtfs_attrs["xtreemfs.usedspace"]);
+      result["vouchersize"] = Json::Value(xtfs_attrs["xtreemfs.vouchersize"]);
+      result["defaultuserquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultuserquota"]);
+      result["defaultgroupquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultgroupquota"]);
       result["ac_policy_id"] =
           Json::Value(xtfs_attrs["xtreemfs.ac_policy_id"]);
       result["osel_policy"] = Json::Value(xtfs_attrs["xtreemfs.osel_policy"]);
@@ -639,36 +630,191 @@ void XtfsUtilServer::OpSetRemoveACL(
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 
-void XtfsUtilServer::OpSetVolumeQuota(
-	    const xtreemfs::pbrpc::UserCredentials& uc,
-	    const Json::Value& input,
-	    Json::Value* output) {
+void XtfsUtilServer::OpSetQuota(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
 
   if (!input.isMember("path") || !input["path"].isString()
-      || !input.isMember("quota") || !input["quota"].isString()) {
-    (*output)["error"] = Json::Value("One of the following fields is missing or"
-        " has an invalid value: path, quota.");
+      || !input.isMember("value") || !input["value"].isString()
+      || !input.isMember("type") || !input["type"].isString()
+      || !input.isMember("specifiedName")
+      || !input["specifiedName"].isString()) {
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or"
+        " has an invalid value: path, value, type, specifiedName.");
     return;
   }
 
   const string path = input["path"].asString();
-  const long quota = parseByteNumber(input["quota"].asString());
+  const long value = parseByteNumber(input["value"].asString());
 
-  if (quota == -1) {
+  if (value == -1) {
     (*output)["error"] = Json::Value(
-        input["quota"].asString() + " is not a valid quota.");
+        input["value"].asString() + " is not a valid quota.");
     return;
   }
 
-  if (quota < 0) {
-    (*output)["error"] = "Quota has to be greater or equal zero (was set to: "
-        + boost::lexical_cast<std::string>(quota) + ")";
+  if (input["type"] == "vouchersize" && value <= 0) {
+    (*output)["error"] = Json::Value(
+        "Voucher size has to be greater than zero (was set to: "
+            + boost::lexical_cast<std::string>(value) + ")");
+    return;
+  } else if (value < 0) {
+    (*output)["error"] = Json::Value(
+        "Quota has to be greater or equal zero (was set to: "
+            + boost::lexical_cast<std::string>(value) + ")");
     return;
   }
 
-  volume_->SetXAttr(uc, path, "xtreemfs.quota",
-      boost::lexical_cast<std::string>(quota), xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  if ((input["type"].asString() == "user" || input["group"].asString() == "group")
+      && input["specifiedName"].asString().empty()) {
+    (*output)["error"] = Json::Value("User or group hasn't be specified");
+    return;
+  }
+
+  string xattrName = "";
+  if (input["type"] == "user") {
+    xattrName = "xtreemfs.userquota." + input["specifiedName"].asString();
+  } else if (input["type"] == "group") {
+    xattrName = "xtreemfs.groupquota." + input["specifiedName"].asString();
+  } else if (input["type"] == "vouchersize") {
+    xattrName = "xtreemfs.vouchersize";
+  } else if (input["type"] == "defaultuserquota") {
+    xattrName = "xtreemfs.defaultuserquota";
+  } else if (input["type"] == "defaultgroupquota") {
+    xattrName = "xtreemfs.defaultgroupquota";
+  } else {
+    xattrName = "xtreemfs.quota";
+  }
+
+  volume_->SetXAttr(uc, path, xattrName,
+                    boost::lexical_cast<std::string>(value),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+
   (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpSetQuotaRelatedValue(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+
+  if (!input.isMember("path") || !input["path"].isString()
+      || !input.isMember("value") || !input["value"].isString()
+      || !input.isMember("type") || !input["type"].isString()){
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or"
+        " has an invalid value: path, value, type.");
+    return;
+  }
+
+  const string path = input["path"].asString();
+  const long value = parseByteNumber(input["value"].asString());
+
+  if (value == -1) {
+    (*output)["error"] = Json::Value(
+        input["value"].asString() + " is not a valid quota or vouchersize.");
+    return;
+  }
+
+  if (input["type"] == "vouchersize" && value <= 0) {
+    (*output)["error"] = Json::Value(
+        "Voucher size has to be greater than zero (was set to: "
+            + boost::lexical_cast<std::string>(value) + ")");
+    return;
+  } else if (value < 0) {
+    (*output)["error"] = Json::Value(
+        "Quota has to be greater or equal zero (was set to: "
+            + boost::lexical_cast<std::string>(value) + ")");
+    return;
+  }
+
+  string xattrName = "";
+  if (input["type"] == "vouchersize") {
+    xattrName = "xtreemfs.vouchersize";
+  } else if (input["type"] == "defaultuserquota") {
+    xattrName = "xtreemfs.defaultuserquota";
+  } else if (input["type"] == "defaultgroupquota") {
+    xattrName = "xtreemfs.defaultgroupquota";
+  }
+
+  volume_->SetXAttr(uc, path, xattrName,
+                    boost::lexical_cast<std::string>(value),
+                    xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpGetQuota(
+      const xtreemfs::pbrpc::UserCredentials& uc,
+      const Json::Value& input,
+      Json::Value* output) {
+
+  if (!input.isMember("path") || !input["path"].isString()
+      || !input.isMember("type") || !input["type"].isString()
+      || !input.isMember("specifiedName")
+      || !input["specifiedName"].isString()) {
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or"
+        " has an invalid value: path, type, specifiedName.");
+    return;
+  }
+  const string path = input["path"].asString();
+
+  bool performVolume = false;
+  bool performUser = false;
+  bool peformGroup = false;
+
+  if (input["type"].asString() == "volume") {
+    performVolume = true;
+  } else if (input["type"].asString() == "user") {
+    performUser = true;
+  } else if (input["type"].asString() == "group") {
+    peformGroup = true;
+  } else if (input["type"].asString() == "all") {
+    performVolume = true;
+    performUser = true;
+    peformGroup = true;
+  } else {
+    (*output)["error"] = Json::Value("Invalid type specified!" + input["type"].asString());
+    return;
+  }
+
+  Json::Value result(Json::objectValue);
+  if (performVolume) {
+    string quota, usedSpace;
+    volume_->GetXAttr(uc, path, "xtreemfs.quota", &quota);
+    volume_->GetXAttr(uc, path, "xtreemfs.usedspace", &usedSpace);
+
+    Json::Value volume(Json::objectValue);
+    volume["quota"] = Json::Value(quota);
+    volume["used"] = Json::Value(usedSpace);
+    result["volume"] = volume;
+  }
+
+  if (performUser) {
+    string key = "xtreemfs.userquotainfo";
+    if (!input["specifiedName"].asString().empty()) {
+      key = key + "." + input["specifiedName"].asString();
+    }
+
+    string jsonString;
+    volume_->GetXAttr(uc, path, key, &jsonString);
+    result["user"] = Json::Value(jsonString);
+  }
+
+  if (peformGroup) {
+    string key = "xtreemfs.groupquotainfo";
+    if (!input["specifiedName"].asString().empty()) {
+      key = key + "." + input["specifiedName"].asString();
+    }
+
+    string jsonString;
+    volume_->GetXAttr(uc, path, key, &jsonString);
+    result["group"] = Json::Value(jsonString);
+  }
+  (*output)["result"] = result;
 }
 
 bool XtfsUtilServer::checkXctlFile(const std::string& path) {

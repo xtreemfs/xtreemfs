@@ -11,6 +11,7 @@ package org.xtreemfs.osd.stages;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -26,13 +27,14 @@ import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.storage.StorageThread;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 
 public class StorageStage extends Stage {
     
-    private StorageThread[] storageThreads;
+    private final StorageThread[] storageThreads;
     private final StorageLayout layout;
     
     /** Creates a new instance of MultithreadedStorageStage */
@@ -121,6 +123,16 @@ public class StorageStage extends Stage {
         public void truncateComplete(OSDWriteResponse result, ErrorResponse error);
     }
 
+    public void finalizeVouchers(String fileId, String clientId, StripingPolicyImpl sp, Set<Long> expireTimeSet,
+            OSDRequest request, FinalizeVoucherCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_FINALIZE_VOUCHERS, new Object[] { fileId, clientId, sp,
+                expireTimeSet }, request, listener);
+    }
+
+    public static interface FinalizeVoucherCallback {
+        public void finalizeVoucherComplete(OSDFinalizeVouchersResponse result, ErrorResponse error);
+    }
+
     public void deleteObjects(String fileId, StripingPolicyImpl sp,
         long truncateEpoch, Map<Long,Long> objectVersionsToBeDeleted, DeleteObjectsCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_DELETE_OBJECTS, new Object[] { fileId, sp,
@@ -207,6 +219,7 @@ public class StorageStage extends Stage {
         public void createGetFileIDListComplete(ArrayList<String> fileIDList, ErrorResponse Error);
     }
     
+    @Override
     public void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
         notifyCrashed(new Exception(
                 "wrong method call: use enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request, Object callback) instead!"));
@@ -233,23 +246,27 @@ public class StorageStage extends Stage {
             storageThreads[taskId].enqueueOperation(stageOp, args, request, createdViewBuffer, callback);
         }
     
+    @Override
     public void run() {
         // start all storage threads
         for (StorageThread th : storageThreads)
             th.start();
     }
     
+    @Override
     public void shutdown() {
         for (StorageThread th : storageThreads)
             th.shutdown();
     }
     
+    @Override
     public void waitForStartup() throws Exception {
         // wait for all storage threads to be ready
         for (StorageThread th : storageThreads)
             th.waitForStartup();
     }
     
+    @Override
     public void waitForShutdown() throws Exception {
         // wait for all storage threads to be shut down
         for (StorageThread th : storageThreads)
