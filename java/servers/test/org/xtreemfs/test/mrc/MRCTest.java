@@ -488,6 +488,10 @@ public class MRCTest {
             client.readlink(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "testAlias.txt"))
                 .getLinkTargetPath(0);
         assertEquals("test.txt", target);
+
+
+        // delete link
+        invokeSync(client.unlink(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "testAlias.txt"));
     }
     
     @Test
