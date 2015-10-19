@@ -329,19 +329,24 @@ class VolumeManager {
         String path = pathToBasefile.substring(0, pathToBasefile.lastIndexOf('/'));
         String filename = pathToBasefile.substring(pathToBasefile.lastIndexOf('/') + 1);
 
-        List<MRC.DirectoryEntry> directoryEntries = volume.readDir(config.getUserCredentials(), path, 0, 0, true)
-                .getEntriesList();
-        ArrayList<String> entries = new ArrayList<String>(directoryEntries.size());
+        MRC.DirectoryEntries directoryEntries = volume.readDir(config.getUserCredentials(), path, 0, 0, true);
 
-        for (MRC.DirectoryEntry directoryEntry : directoryEntries) {
-            String entry = directoryEntry.getName();
-            if (entry.matches(filename + "[0-9]+"))
-                entries.add(path + '/' + directoryEntry.getName());
+        if(directoryEntries != null) {
+            List<MRC.DirectoryEntry> directoryEntriesList = directoryEntries.getEntriesList();
+            ArrayList<String> entries = new ArrayList<String>(directoryEntriesList.size());
+
+            for (MRC.DirectoryEntry directoryEntry : directoryEntriesList) {
+                String entry = directoryEntry.getName();
+                if (entry.matches(filename + "[0-9]+"))
+                    entries.add(path + '/' + directoryEntry.getName());
+            }
+            entries.trimToSize();
+            String[] filelist = new String[entries.size()];
+            entries.toArray(filelist);
+            return filelist;
+        } else {
+            return new String[0];
         }
-        entries.trimToSize();
-        String[] filelist = new String[entries.size()];
-        entries.toArray(filelist);
-        return filelist;
     }
 
     /* calculates the number of files on a volume */
