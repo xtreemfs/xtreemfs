@@ -136,7 +136,7 @@ public class DeleteOperation extends MRCOperation {
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
         // remove file size from quota manager
-        if (!file.isDirectory() && file.getSize() > 0 && file.getXLocList() != null) {
+        if (!file.isDirectory() && file.getSize() > 0 && file.getXLocList() != null && file.getLinkCount() == 1) {
             QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
             master.getMrcVoucherManager().deleteFile(quotaFileInformation, update);
         }
