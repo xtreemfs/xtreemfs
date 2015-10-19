@@ -637,7 +637,10 @@ public class BabuDBStorageHelper {
             }
             
             // change value
-            ownerMap.put(QuotaInfo.getByDbAttrSubkey(keyParts[3]).getValueAsString(), value);
+            QuotaInfo quotaInfo = QuotaInfo.getByDbAttrSubkey(keyParts[3]);
+            if(quotaInfo != null) {
+                ownerMap.put(quotaInfo.getValueAsString(), value);
+            }
         }
 
         return overallMap;
