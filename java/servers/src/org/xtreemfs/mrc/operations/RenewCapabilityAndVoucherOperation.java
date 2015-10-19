@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -74,18 +75,21 @@ public class RenewCapabilityAndVoucherOperation extends MRCOperation {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
 
             FileMetadata metadata = sMan.getMetadata(globalFileIdResolver.getLocalFileId());
-            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(globalFileIdResolver.getVolumeId(),
-                    metadata);
 
-            if (renewCapabilityRequest.getIncreaseVoucher()) {
-                voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(quotaFileInformation,
-                        cap.getClientIdentity(), cap.getExpireMs(), newExpireMs, update);
-            } else {
-                master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation, cap.getClientIdentity(),
-                        cap.getExpireMs(), newExpireMs, update);
-            }
+            if(metadata != null) {
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(globalFileIdResolver.getVolumeId(),
+                        metadata);
 
-            update.execute();
+                if (renewCapabilityRequest.getIncreaseVoucher()) {
+                    voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(quotaFileInformation,
+                            cap.getClientIdentity(), cap.getExpireMs(), newExpireMs, update);
+                } else {
+                    master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation, cap.getClientIdentity(),
+                            cap.getExpireMs(), newExpireMs, update);
+                }
+
+                update.execute();
+            } else rq.setError(RPC.ErrorType.INTERNAL_SERVER_ERROR, "Error while renewing XCap");
         }
 
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()
