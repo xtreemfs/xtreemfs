@@ -349,7 +349,11 @@ class VolumeManager {
         long aggregatedSizeInBytes = 0;
         for (String file : filelist) {
             MRC.Stat stat = volume.getAttr(config.getUserCredentials(), file);
-            aggregatedSizeInBytes += stat.getSize();
+            if(stat != null) {
+                aggregatedSizeInBytes += stat.getSize();
+            } else {
+                aggregatedSizeInBytes = 0L;
+            }
         }
         return aggregatedSizeInBytes;
     }
