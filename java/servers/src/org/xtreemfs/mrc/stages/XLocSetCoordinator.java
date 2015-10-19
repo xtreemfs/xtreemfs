@@ -825,11 +825,13 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
 
                 FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+                if(file != null) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
 
-                AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
-                update.execute();
+                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+                    master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+                    update.execute();
+                }
             }
 
             // simply rethrow the exception
