@@ -7,11 +7,11 @@
  */
 
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.TimeSync;
-import java.io.IOException;
+
 import java.net.InetSocketAddress;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;

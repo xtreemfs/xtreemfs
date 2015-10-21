@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
@@ -22,7 +22,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
-import static org.junit.Assert.*;
 
 /**
  *

@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.foundation.checksums;
+package org.xtreemfs.foundation.checksums;
 
 import static org.junit.Assert.assertEquals;
 

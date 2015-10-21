@@ -7,11 +7,10 @@
  */
 
 
-package org.xtreemfs.test.foundation.util;
+package org.xtreemfs.foundation.util;
 
 import org.junit.*;
 import org.xtreemfs.foundation.pbrpc.Schemes;
-import org.xtreemfs.foundation.util.PBRPCServiceURL;
 
 import static org.junit.Assert.assertEquals;
 

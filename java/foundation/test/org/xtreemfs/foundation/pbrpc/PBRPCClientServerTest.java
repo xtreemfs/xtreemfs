@@ -6,11 +6,11 @@
  *
  */
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.junit.Test;
-import org.xtreemfs.foundation.pbrpc.Schemes;
+
 import java.net.InetSocketAddress;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;

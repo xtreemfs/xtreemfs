@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.utils.PBRPCDatagramPacket;
@@ -17,7 +17,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingRequest;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+
 import static org.junit.Assert.*;
 
 /**
