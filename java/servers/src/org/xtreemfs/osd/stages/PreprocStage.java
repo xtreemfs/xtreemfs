@@ -399,7 +399,10 @@ public class PreprocStage extends Stage {
         final CloseCallback callback = (CloseCallback) m.getCallback();
 
         OpenFileTableEntry entry = oft.close(fileId);
-        LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+
+        if(entry != null && entry.getFileId() != null) {
+            LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+        }
 
         callback.closeResult(entry, null);
     }
