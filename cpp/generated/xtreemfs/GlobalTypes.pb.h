@@ -831,14 +831,14 @@ class XCap : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 snap_timestamp() const;
   inline void set_snap_timestamp(::google::protobuf::uint64 value);
 
-  // required fixed64 voucher_size = 11 [default = 0];
+  // optional fixed64 voucher_size = 11 [default = 0];
   inline bool has_voucher_size() const;
   inline void clear_voucher_size();
   static const int kVoucherSizeFieldNumber = 11;
   inline ::google::protobuf::uint64 voucher_size() const;
   inline void set_voucher_size(::google::protobuf::uint64 value);
 
-  // required fixed64 expire_time_ms = 12 [default = 0];
+  // optional fixed64 expire_time_ms = 12 [default = 0];
   inline bool has_expire_time_ms() const;
   inline void clear_expire_time_ms();
   static const int kExpireTimeMsFieldNumber = 12;
@@ -2265,7 +2265,7 @@ inline void XCap::set_snap_timestamp(::google::protobuf::uint64 value) {
   snap_timestamp_ = value;
 }
 
-// required fixed64 voucher_size = 11 [default = 0];
+// optional fixed64 voucher_size = 11 [default = 0];
 inline bool XCap::has_voucher_size() const {
   return (_has_bits_[0] & 0x00000400u) != 0;
 }
@@ -2287,7 +2287,7 @@ inline void XCap::set_voucher_size(::google::protobuf::uint64 value) {
   voucher_size_ = value;
 }
 
-// required fixed64 expire_time_ms = 12 [default = 0];
+// optional fixed64 expire_time_ms = 12 [default = 0];
 inline bool XCap::has_expire_time_ms() const {
   return (_has_bits_[0] & 0x00000800u) != 0;
 }
