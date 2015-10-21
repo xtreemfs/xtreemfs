@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Thu Dec 11 16:09:41 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from OSD.proto at Fri Oct 16 17:23:34 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H
@@ -826,6 +826,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 82,
                      creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_rwr_reset_status(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 83,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* xtreemfs_rwr_reset_status_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>();
+                client_->sendRequest(address, 30001, 83,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }
