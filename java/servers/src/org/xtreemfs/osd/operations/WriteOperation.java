@@ -150,7 +150,6 @@ public final class WriteOperation extends OSDOperation {
                                                         "erasure coded write was successful");
                                             }
                                             sendResult(rq, result, null);
-                                            //sendUpdates(rq,args,result,newObjectVersion);
                                         }
                                     }
                                 });

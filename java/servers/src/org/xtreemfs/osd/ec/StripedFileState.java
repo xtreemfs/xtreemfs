@@ -8,10 +8,31 @@
 
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.foundation.flease.Flease;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+
 /**
  * @author Jan Fajerski
  *
  * Store informtion about striped files. Involved OSDs, stripe characteristics, file size, lease aso.
  */
 public class StripedFileState {
+
+    private FileCredentials credentials;
+    private String fileID;
+    private Flease lease;
+
+    public StripedFileState(String fileID) {
+        this.fileID = fileID;
+        this.lease = Flease.EMPTY_LEASE;
+    }
+
+    public FileCredentials getCredentials() {
+        return credentials;
+    }
+
+    public void setCredentials(FileCredentials credentials) {
+        this.credentials = credentials;
+    }
+
 }

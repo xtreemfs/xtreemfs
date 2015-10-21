@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ECStage extends Stage implements FleaseMessageSenderInterface {
 
-    public static final int STAGEOP_REPLICATED_WRITE          = 1;
+    public static final int STAGEOP_EC_WRITE                  = 1;
     public static final int STAGEOP_CLOSE                     = 2;
     public static final int STAGEOP_PROCESS_FLEASE_MSG        = 3;
     public static final int STAGEOP_PREPAREOP                 = 5;
@@ -275,6 +275,11 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
     @Override
     protected void processMethod(StageRequest method) {
         switch (method.getStageMethod()) {
+            case STAGEOP_EC_WRITE: {
+                externalRequestsInQueue.decrementAndGet();
+                processECWrite(method);
+                break;
+            }
         case STAGEOP_TRUNCATE: {
             externalRequestsInQueue.decrementAndGet();
             break;
@@ -302,6 +307,9 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
         }
     }
 
+    private void processECWrite(StageRequest method) {
+    }
+
     private void processFleaseMessage(StageRequest method) {
         try {
             final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
@@ -327,13 +335,11 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this, "open file: " + fileId);
             // "open" file
-            state = new StripedFileState();
+            state = new StripedFileState(fileId);
             files.put(fileId, state);
-            //state.setCredentials(credentials);
-            //state.setForceReset(forceReset);
+            state.setCredentials(credentials);
             //state.setInvalidated(invalidated);
             //cellToFileId.put(state.getPolicy().getCellId(), fileId);
-            //assert (state.getState() == ReplicaState.INITIALIZING);
 
             //master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(),
                     //new InternalGetMaxObjectNoCallback() {
