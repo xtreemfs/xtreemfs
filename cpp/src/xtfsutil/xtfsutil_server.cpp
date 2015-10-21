@@ -201,12 +201,18 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
     if (path == "/") {
       // Get more volume details.
 
-      result["usable_space"] = Json::Value(xtfs_attrs["xtreemfs.usable_space"]);
-      result["quota"] = Json::Value(xtfs_attrs["xtreemfs.quota"]);
-      result["usedspace"] = Json::Value(xtfs_attrs["xtreemfs.usedspace"]);
-      result["vouchersize"] = Json::Value(xtfs_attrs["xtreemfs.vouchersize"]);
-      result["defaultuserquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultuserquota"]);
-      result["defaultgroupquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultgroupquota"]);
+      if(xtfs_attrs.count("xtreemfs.usable_space"))
+        result["usable_space"] = Json::Value(xtfs_attrs["xtreemfs.usable_space"]);
+      if(xtfs_attrs.count("xtreemfs.quota"))
+        result["quota"] = Json::Value(xtfs_attrs["xtreemfs.quota"]);
+      if(xtfs_attrs.count("xtreemfs.usedspace"))
+        result["usedspace"] = Json::Value(xtfs_attrs["xtreemfs.usedspace"]);
+      if(xtfs_attrs.count("xtreemfs.vouchersize"))
+        result["vouchersize"] = Json::Value(xtfs_attrs["xtreemfs.vouchersize"]);
+      if(xtfs_attrs.count("xtreemfs.defaultuserquota"))
+        result["defaultuserquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultuserquota"]);
+      if(xtfs_attrs.count("xtreemfs.defaultgroupquota"))
+        result["defaultgroupquota"] = Json::Value(xtfs_attrs["xtreemfs.defaultgroupquota"]);
       result["ac_policy_id"] =
           Json::Value(xtfs_attrs["xtreemfs.ac_policy_id"]);
       result["osel_policy"] = Json::Value(xtfs_attrs["xtreemfs.osel_policy"]);
