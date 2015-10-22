@@ -402,9 +402,8 @@ public class PreprocStage extends Stage {
 
         if(entry != null && entry.getFileId() != null) {
             LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+            callback.closeResult(entry, null);
         }
-
-        callback.closeResult(entry, null);
     }
 
     @Override
