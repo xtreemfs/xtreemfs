@@ -10,9 +10,13 @@ package org.xtreemfs.mrc.database;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.Map;
 
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.FileVoucherInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
@@ -112,8 +116,35 @@ public interface StorageManager {
     
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
-    
+
+    public void setFileVoucherInfo(FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setFileVoucherClientInfo(FileVoucherClientInfo fileVoucherClientInfo, AtomicDBUpdate update)
+            throws DatabaseException;
+
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setVolumeBlockedSpace(long blockedSpace, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupQuota(String groupId, Long quota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupBlockedSpace(String groupId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setGroupUsedSpace(String groupId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setUserQuota(String userId, Long quota, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setUserBlockedSpace(String userId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException;
+
+    public void setUserUsedSpace(String userId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException;
 
     public void setDefaultReplicationPolicy(long fileId, ReplicationPolicy defaultRp,
         AtomicDBUpdate update) throws DatabaseException;
@@ -133,8 +164,38 @@ public interface StorageManager {
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
     
     public ReplicationPolicy getDefaultReplicationPolicy(long fileId) throws DatabaseException;
-    
+
+    public FileVoucherInfo getFileVoucherInfo(long fileId) throws DatabaseException;
+
+    public FileVoucherClientInfo getFileVoucherClientInfo(long fileId, String clientId) throws DatabaseException;
+
+    public DatabaseResultSet<FileVoucherClientInfo> getAllFileVoucherClientInfo(long fileId) throws DatabaseException;
+
     public long getVolumeQuota() throws DatabaseException;
+
+    public long getVolumeBlockedSpace() throws DatabaseException;
+
+    public long getVolumeUsedSpace() throws DatabaseException;
+
+    public long getVoucherSize() throws DatabaseException;
+
+    public long getDefaultUserQuota() throws DatabaseException;
+
+    public long getDefaultGroupQuota() throws DatabaseException;
+
+    public long getUserQuota(String userId) throws DatabaseException;
+
+    public long getUserUsedSpace(String userId) throws DatabaseException;
+
+    public long getUserBlockedSpace(String userId) throws DatabaseException;
+
+    public long getGroupQuota(String groupId) throws DatabaseException;
+
+    public long getGroupUsedSpace(String groupId) throws DatabaseException;
+
+    public long getGroupBlockedSpace(String groupId) throws DatabaseException;
+
+    public Map<String, Map<String, Long>> getAllOwnerQuotaInfo(OwnerType ownerType, String id) throws DatabaseException;
 
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
@@ -148,5 +209,4 @@ public interface StorageManager {
     public void deleteSnapshot(String snapName) throws DatabaseException;
     
     public String[] getAllSnapshots() throws DatabaseException;
-    
 }

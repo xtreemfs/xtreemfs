@@ -14,9 +14,9 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
-
-import com.google.protobuf.Message;
 
 /**
  * 
@@ -36,6 +36,11 @@ public class RenewOperation extends MRCOperation {
         
         final XCap xcap = (XCap) rq.getRequestArgs();
         
+        // perform master redirect if necessary due to DB operation
+        if (master.getReplMasterUUID() != null
+                && !master.getReplMasterUUID().equals(master.getConfig().getUUID().toString()))
+            throw new DatabaseException(ExceptionType.REDIRECT);
+
         // create a capability object to verify the capability
         Capability cap = new Capability(xcap, master.getConfig().getCapabilitySecret());
         
@@ -48,14 +53,12 @@ public class RenewOperation extends MRCOperation {
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, cap + " has expired");
         
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()
-                .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
-            + master.getConfig().getCapabilityTimeout(), cap.getClientIdentity(), cap.getEpochNo(), cap
-                .isReplicateOnClose(), cap.getSnapConfig(), cap.getSnapTimestamp(), master.getConfig()
-                .getCapabilitySecret());
+                .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(),
+                cap.getClientIdentity(), cap.getEpochNo(), cap.isReplicateOnClose(), cap.getSnapConfig(),
+                cap.getSnapTimestamp(), master.getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(newCap.getXCap());
         finishRequest(rq);
     }
-
 }

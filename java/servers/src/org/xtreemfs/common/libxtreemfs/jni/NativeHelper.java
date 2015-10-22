@@ -91,7 +91,7 @@ public final class NativeHelper {
      */
     public static void setXtreemfsLibPath(String libraryPath) {
         // Ignore if the library path didn't change.
-        if (libraryPath == xtreemfsLibPath) {
+        if (libraryPath.equals(xtreemfsLibPath)) {
             return;
         }
 

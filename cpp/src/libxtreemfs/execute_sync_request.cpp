@@ -25,6 +25,7 @@
 #include "libxtreemfs/uuid_iterator.h"
 #include "libxtreemfs/uuid_resolver.h"
 #include "libxtreemfs/xcap_handler.h"
+#include "libxtreemfs/file_handle_implementation.h"
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"
 #include "rpc/sync_callback.h"
@@ -121,6 +122,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
   const int kMaxRedirectsInARow = 5;
 
   int attempt = 0;
+  bool getXCap = false;
   int redirects_in_a_row = 0;
   bool max_redirects_in_a_row_exceeded = false;
   rpc::SyncCallbackBase* response = NULL;
@@ -152,7 +154,8 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     boost::posix_time::ptime request_sent_time =
         boost::posix_time::microsec_clock::local_time();
 
-    if (attempt > 1 && xcap_handler && xcap_in_req) {
+    if (getXCap || (attempt > 1 && xcap_handler && xcap_in_req)) {
+      getXCap = false;
       xcap_handler->GetXCap(xcap_in_req);
     }
     response = sync_function(service_address);
@@ -176,6 +179,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
     if (has_failed) {
       // Retry only if it is a recoverable error (REDIRECT, IO_ERROR, INTERNAL_SERVER_ERROR).  // NOLINT
       bool retry = false;
+      bool delayRetry = true;
       // Message to be logged and respective log level if retry occurs.
       string delay_error;
       LogLevel level = LEVEL_ERROR;
@@ -248,13 +252,73 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
         }
       }
 
+      if (err.error_type() == INSUFFICIENT_VOUCHER) {
+        string error =
+            "The server "
+                + (uuid_iterator_has_addresses ?
+                    service_address :
+                    (service_address + " (" + service_uuid + ")"))
+                + " denied the requested operation because the size of the voucher"
+                + " was insufficient for the given request. The request will be retried"
+                + " once the xcap has been renewed.";
+
+        if (Logging::log->loggingActive(LEVEL_INFO)) {
+          Logging::log->getLog(LEVEL_INFO) << error << endl;
+        }
+
+        // renew xcap, which takes care of exceptions
+        RPCOptions renewOptions(options.max_retries(), options.retry_delay_s(),
+                                false, NULL);
+
+        XCapManager* xcap_manager_ = dynamic_cast<XCapManager*>(xcap_handler);
+        if (xcap_manager_) {
+          PosixErrorException p(POSIX_ERROR_NONE, "");
+          xcap_manager_->RenewXCapAsync(renewOptions, true, &p);
+          xcap_manager_->WaitForPendingXCapRenewal();
+
+          if(p.posix_errno() != POSIX_ERROR_NONE){
+              throw p;
+          }
+
+          // retry same attempt, due to this reasonale "error"
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            XCap newXCap_;
+            xcap_manager_->GetXCap(&newXCap_);
+            Logging::log->getLog(LEVEL_DEBUG) << "New voucher size: "  << newXCap_.voucher_size() << endl;
+          }
+          retry = true;
+          delayRetry = false;
+          getXCap=true;
+          attempt--;
+        } else {
+          error =
+              "The given xcap_handler isn't a valid XCapManager. "
+                  "Therefore, the XCap can't be renewed and "
+                  "the current operation won't be executed due an insufficient voucher.";
+
+          if (Logging::log->loggingActive(LEVEL_ERROR)) {
+            Logging::log->getLog(LEVEL_ERROR) << error << endl;
+          }
+          ErrorLog::error_log->AppendError(error);
+
+          throw XtreemFSException(error);
+        }
+      }
+
       // Retry (and delay)?
       if (retry &&
            // Attempts left
           (attempt < options.max_retries() || options.max_retries() == 0 ||
            // or this last retry should be delayed.
            (attempt == options.max_retries() && options.delay_last_attempt()))) {  // NOLINT
-        DelayNextRetry(options, request_sent_time, delay_error, level, response);  // NOLINT
+        if (delayRetry) {
+          DelayNextRetry(options, request_sent_time, delay_error, level,
+                         response);  // NOLINT
+        }else{
+          if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+            Logging::log->getLog(LEVEL_DEBUG) << "Retry without delay" << endl;
+          }
+        }
       } else {
         break;  // Do not retry if error occurred - throw exception below.
       }

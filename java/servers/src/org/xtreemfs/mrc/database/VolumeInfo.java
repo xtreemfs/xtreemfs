@@ -73,6 +73,28 @@ public interface VolumeInfo {
      * @return the volume's quota in bytes
      */
     public long getVolumeQuota() throws DatabaseException;
+
+    /**
+     * Returns the size in bytes.
+     * 
+     * @return the size in bytes.
+     */
+    public long getVoucherSize() throws DatabaseException;
+
+    /**
+     * Returns the default user quota in bytes.
+     * 
+     * @return the default user quota in bytes.
+     */
+    public long getDefaultUserQuota() throws DatabaseException;
+
+    /**
+     * Returns the default group quota in bytes
+     * 
+     * @return the default group quota in bytes.
+     */
+    public long getDefaultGroupQuota() throws DatabaseException;
+
     /**
      * Returns the number of files currently stored in the volume.
      * 
@@ -142,6 +164,33 @@ public interface VolumeInfo {
      * @throws DatabaseException
      */
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set the voucher size
+     * 
+     * @param voucherSize
+     *            voucher size in bytes
+     * @throws DatabaseException
+     */
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set the default user quota
+     * 
+     * @param defaultUserQuota
+     *            default user quota in bytes
+     * @throws DatabaseException
+     */
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException;
+
+    /**
+     * Set the default group quota
+     * 
+     * @param defaultGroupQuota
+     *            default group quota in bytes
+     * @throws DatabaseException
+     */
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException;
 
     /**
      * Adds <code>diff</code> to the current volume size.

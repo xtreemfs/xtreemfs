@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Thu Dec 11 16:09:41 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from OSD.proto at Thu Aug 20 09:17:20 CEST 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H
@@ -301,6 +301,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 35,
                      creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_finalize_vouchers(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 22,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::OSDFinalizeVouchersResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::OSDFinalizeVouchersResponse>* xtreemfs_finalize_vouchers_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::OSDFinalizeVouchersResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::OSDFinalizeVouchersResponse>();
+                client_->sendRequest(address, 30001, 22,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::OSDFinalizeVouchersResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }

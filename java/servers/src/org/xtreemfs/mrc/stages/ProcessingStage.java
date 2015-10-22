@@ -34,6 +34,7 @@ import org.xtreemfs.mrc.operations.AccessOperation;
 import org.xtreemfs.mrc.operations.AddReplicaOperation;
 import org.xtreemfs.mrc.operations.CheckFileListOperation;
 import org.xtreemfs.mrc.operations.CheckpointOperation;
+import org.xtreemfs.mrc.operations.ClearVouchersOperation;
 import org.xtreemfs.mrc.operations.CreateDirOperation;
 import org.xtreemfs.mrc.operations.CreateLinkOperation;
 import org.xtreemfs.mrc.operations.CreateSymLinkOperation;
@@ -57,6 +58,7 @@ import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
 import org.xtreemfs.mrc.operations.ReadLinkOperation;
 import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
+import org.xtreemfs.mrc.operations.RenewCapabilityAndVoucherOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
@@ -123,6 +125,8 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_REMOVEXATTR, new RemoveXAttrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_OPEN, new OpenOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RENEW_CAPABILITY, new RenewOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER,
+                new RenewCapabilityAndVoucherOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_ADD, new AddReplicaOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_REMOVE,
             new RemoveReplicaOperation(master));
@@ -153,6 +157,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_CLEAR_VOUCHERS, new ClearVouchersOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2011 by Bjoern Kolbeck, Jan Stender,
+ *                    2015 by Robert Bärhold
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -14,6 +15,7 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -32,6 +34,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.stages.XLocSetLock;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
@@ -99,12 +102,6 @@ public class OpenOperation extends MRCOperation {
         // check whether the file/directory exists
         try {
             
-            // check if volume is full
-            long volumeQuota = volume.getVolumeQuota();
-            if ((write || create) && volumeQuota != 0 && volumeQuota <= volume.getVolumeSize()) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "the volume's quota is reached");
-            }
-            
             res.checkIfFileDoesNotExist();
             
             // check if O_CREAT and O_EXCL are set; if so, send an exception
@@ -115,6 +112,12 @@ public class OpenOperation extends MRCOperation {
             
             if (file.isDirectory() || sMan.getSoftlinkTarget(file.getId()) != null)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR, "open is restricted to files");
+
+            // check quota
+            if (create || truncate || write) {
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+                master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
+            }
             
             // check whether the file is marked as 'read-only'; in this
             // case, throw an exception if write access is requested
@@ -153,6 +156,11 @@ public class OpenOperation extends MRCOperation {
                 if ((parentMode & 02000) > 0) {
                     groupId = res.getParentDir().getOwningGroupId();
                 }
+
+                // check quota
+                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), fileId,
+                        rq.getDetails().userId, groupId, 0, 1);
+                master.getMrcVoucherManager().checkVoucherAvailability(quotaFileInformation);
 
                 // create the metadata object
                 file = sMan.createFile(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
@@ -301,17 +309,29 @@ public class OpenOperation extends MRCOperation {
         xLocSet.clearReplicas();
         xLocSet.addAllReplicas(sortedReplList);
         xLocSet.setReadOnlyFileSize(file.getSize());
-        
+
         // issue a new capability
-        Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file), rqArgs.getFlags(), master
-                .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
-            + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
-                .getSenderAddress()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
-                .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-            : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
-                .getCapabilitySecret());
-        
+        String globalFileId = MRCHelper.createGlobalFileId(volume, file);
+        long expireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
+        String clientID = ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress().getHostAddress();
+
+        // check quota, if write access is issued
+        long voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
+        if (create || truncate || write) {
+            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+            if(defaultReplPolicy != null) {
+                quotaFileInformation.setReplicaCount(defaultReplPolicy.getFactor());
+            }
+            voucherSize = master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
+        }
+
+        Capability cap = new Capability(globalFileId, rqArgs.getFlags(), master.getConfig().getCapabilityTimeout(),
+                TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(), clientID, trEpoch,
+                replicateOnClose, !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                        : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), voucherSize,
+                expireMs, master.getConfig().getCapabilitySecret());
+
         if (Logging.isDebug())
             Logging
                     .logMessage(Logging.LEVEL_DEBUG, Category.proc, this,

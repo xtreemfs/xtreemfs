@@ -488,6 +488,10 @@ public class MRCTest {
             client.readlink(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "testAlias.txt"))
                 .getLinkTargetPath(0);
         assertEquals("test.txt", target);
+
+
+        // delete link
+        invokeSync(client.unlink(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "testAlias.txt"));
     }
     
     @Test
@@ -627,7 +631,7 @@ public class MRCTest {
         
         // test renewing a capability
         XCap newCap = invokeSync(client.xtreemfs_renew_capability(mrcAddress, RPCAuthentication.authNone,
-            RPCAuthentication.userService, xcap));
+                RPCAuthentication.userService, xcap));
         assertTrue(xcap.getExpireTimeS() < newCap.getExpireTimeS());
         
         // open w/ truncate flag; check whether the epoch number is incremented

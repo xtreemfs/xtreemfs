@@ -78,7 +78,7 @@ enum OSDSelectionPolicyType {
     // Reverse given list. Used only internally by unit tests.
     OSD_SELECTION_POLICY_SORT_REVERSE = 3999;
 }
-      
+
 enum ReplicaSelectionPolicyType {
   REPLICA_SELECTION_POLICY_SIMPLE = 1;
 }
@@ -150,7 +150,7 @@ enum LeaseState {
   IDLE = 3;
 }
 
-// The XCap is the authorization token that allows a 
+// The XCap is the authorization token that allows a
 // client to execute operations on an OSD. It is created
 // by the MRC on open and must be renewed by the client
 // *before* it times out.
@@ -180,6 +180,11 @@ message XCap {
   // indicates which version (snapshot) of the file should be used
   // on the OSD.
   required fixed64 snap_timestamp = 10;
+  // the voucher size indicates the maximal filesize for this file in bytes
+  // zero indicates unlimited file size (no active quota)
+  optional fixed64 voucher_size = 11 [default = 0];
+  // Timestamp when the XCap expires in milli seconds.
+  optional fixed64 expire_time_ms = 12 [default = 0];
 }
 
 // Locations of a file, i.e. the list of replicas including the OSDs that hold
@@ -195,7 +200,7 @@ message XLocSet {
   required string replica_update_policy = 3;
   // Monotonically increasing version number of a file's XLocSet.
   // Used to identify clients with outdates XLocSets.
-  required fixed32 version = 4;        
+  required fixed32 version = 4;
 }
 
 // Information required by OSDs for all file operations.
@@ -213,6 +218,18 @@ message VivaldiCoordinates {
   required double x_coordinate = 1;
   required double y_coordinate = 2;
   required double local_error = 3;
+}
+
+// Response for finalze voucher requests on the osd,
+// forwarded as a group to the MRC
+message OSDFinalizeVouchersResponse {
+  required string osd_uuid = 1;
+  // server signature based different fields of the request and this data
+  required string server_signature = 2;
+  // current local file size in bytes.
+  required fixed64 size_in_bytes = 3;
+  // current local truncat epoch.
+  required fixed64 truncate_epoch = 4;
 }
 
 // Response returned by OSD write and truncate operations.
@@ -234,11 +251,11 @@ message OSDWriteResponse {
 // TCP ports used by the services.
 // HTTP ports are used for the status pages.
 enum PORTS {
-  DIR_HTTP_PORT_DEFAULT = 30638; 
+  DIR_HTTP_PORT_DEFAULT = 30638;
   DIR_PBRPC_PORT_DEFAULT = 32638;
-  MRC_HTTP_PORT_DEFAULT = 30636; 
+  MRC_HTTP_PORT_DEFAULT = 30636;
   MRC_PBRPC_PORT_DEFAULT = 32636;
-  OSD_HTTP_PORT_DEFAULT = 30640; 
+  OSD_HTTP_PORT_DEFAULT = 30640;
   OSD_PBRPC_PORT_DEFAULT = 32640;
 }
 
