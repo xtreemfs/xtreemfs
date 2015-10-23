@@ -74,102 +74,100 @@ static void DelegateGetVolumeId(CallbackFileSystem* Sender, PDWORD VolumeID) {
   Adapter(Sender)->GetVolumeId(Sender, VolumeID);
 }
 
-/** Unimplemented. */
-static void DelegateOpenVolume(CallbackFileSystem* Sender) {}
-
-/** Unimplemented. */
-static void DelegateCloseVolume(CallbackFileSystem* Sender) {}
-
 static void DelegateCreateFile(CallbackFileSystem* Sender,
-                               LPCTSTR FileName,
-                               ACCESS_MASK DesiredAccess,
-                               DWORD FileAttributes,
-                               DWORD ShareMode,
-                               PVOID* FileHandleContext) {
-  Adapter(Sender)->CreateFile(Sender, FileName, DesiredAccess, FileAttributes, ShareMode, FileHandleContext);  // NOLINT
+							   LPCWSTR FileName,
+							   ACCESS_MASK DesiredAccess,
+							   DWORD FileAttributes,
+							   DWORD ShareMode,
+							   CbFsFileInfo* FileInfo,
+							   CbFsHandleInfo* HandleInfo) {
+	Adapter(Sender)->CreateFile(Sender, FileName, DesiredAccess, FileAttributes, ShareMode, FileInfo);  // NOLINT
 
-  CbFSAdapter::DebugPrintCreateFile(L"CreateFile", FileName, DesiredAccess, FileAttributes, ShareMode, *FileHandleContext);
+  CbFSAdapter::DebugPrintCreateFile(L"CreateFile", FileName, DesiredAccess, FileAttributes, ShareMode, FileInfo->get_UserContext());
 }
 
 static void DelegateOpenFile(CallbackFileSystem* Sender,
-                             LPCTSTR FileName,
-                             ACCESS_MASK DesiredAccess,
-                             DWORD ShareMode,
-                             PVOID* FileHandleContext) {
-  Adapter(Sender)->OpenFile(Sender, FileName, DesiredAccess, ShareMode, FileHandleContext);  // NOLINT
+	                         LPCWSTR FileName,
+	                         ACCESS_MASK DesiredAccess,
+	                         DWORD FileAttributes,
+	                         DWORD ShareMode,
+	                         CbFsFileInfo* FileInfo,
+	                         CbFsHandleInfo* HandleInfo) {
+	Adapter(Sender)->OpenFile(Sender, FileName, DesiredAccess, ShareMode, FileInfo);  // NOLINT
 
-  CbFSAdapter::DebugPrintCreateFile(L"OpenFile", FileName, DesiredAccess, 0, ShareMode, *FileHandleContext);
+  CbFSAdapter::DebugPrintCreateFile(L"OpenFile", FileName, DesiredAccess, 0, ShareMode, FileInfo->get_UserContext());
 }
 
-static void DelegateCloseFile(CallbackFileSystem* Sender,
-                              CbFsFileInfo* FileInfo,
-                              PVOID FileHandleContext) {
-  if (FileHandleContext != NULL && Logging::log->loggingActive(LEVEL_DEBUG)) {
+static void DelegateCloseFile(CallbackFileSystem* Sender, CbFsFileInfo* FileInfo, CbFsHandleInfo* HandleInfo) {
+  if (FileInfo->get_UserContext() != NULL && Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "CloseFile " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << endl;
+		<< " handle: 0x" << FileInfo->get_UserContext() << endl;
   }
-  Adapter(Sender)->CloseFile(Sender, FileInfo, FileHandleContext);
+  Adapter(Sender)->CloseFile(Sender, FileInfo, FileInfo->get_UserContext());
 }
 
 static void DelegateGetFileInfo(CallbackFileSystem* Sender,
-                                LPCTSTR FileName,
-                                LPBOOL FileExists,
-                                PFILETIME CreationTime,
-                                PFILETIME LastAccessTime,
-                                PFILETIME LastWriteTime,
-                                __int64* EndOfFile,
-                                __int64* AllocationSize,
-                                __int64* FileId,
-                                PDWORD FileAttributes,
-                                LPTSTR LongFileName OPTIONAL,
-                                PWORD LongFileNameLength OPTIONAL) {
-  Adapter(Sender)->GetFileInfo(Sender, FileName, FileExists, CreationTime, LastAccessTime, LastWriteTime, EndOfFile, AllocationSize, FileId, FileAttributes, LongFileName, LongFileNameLength);  // NOLINT
+								LPCWSTR FileName,
+								LPBOOL FileExists,
+								PFILETIME CreationTime,
+								PFILETIME LastAccessTime,
+								PFILETIME LastWriteTime,
+								PFILETIME ChangeTime,
+								__int64* EndOfFile,
+								__int64* AllocationSize,
+								__int64* FileId,
+								PDWORD FileAttributes,
+								PDWORD NumberOfLinks,
+								LPWSTR ShortFileName OPTIONAL,
+								PWORD ShortFileNameLength OPTIONAL,
+								LPWSTR RealFileName OPTIONAL,
+								LPWORD RealFileNameLength OPTIONAL) {
+  Adapter(Sender)->GetFileInfo(Sender, FileName, FileExists, CreationTime, LastAccessTime, LastWriteTime, EndOfFile, AllocationSize, FileId, FileAttributes, RealFileName, RealFileNameLength);  // NOLINT
 
   CbFSAdapter::DebugPrintCreateFile(L"GetFileInfo", FileName, 0, *FileAttributes, 0, 0);
 }
 
 static void DelegateEnumerateDirectory(CallbackFileSystem* Sender,
-                                       CbFsFileInfo* DirectoryInfo,
-                                       PVOID* EnumerationContext,
-                                       LPCTSTR Mask,
-                                       INT Index,
-                                       BOOL Restart,
-                                       LPBOOL FileFound,
-                                       LPTSTR FileName,
-                                       PDWORD FileNameLength,
-                                       LPTSTR ShortFileName OPTIONAL,
-                                       PUCHAR ShortFileNameLength OPTIONAL,
-                                       PFILETIME CreationTime,
-                                       PFILETIME LastAccessTime,
-                                       PFILETIME LastWriteTime,
-                                       __int64* EndOfFile,
-                                       __int64* AllocationSize,
-                                       __int64* FileId,
-                                       PDWORD FileAttributes) {
-  Adapter(Sender)->EnumerateDirectory(Sender, DirectoryInfo, EnumerationContext, Mask, Index, Restart, FileFound, FileName, FileNameLength, ShortFileName, ShortFileNameLength, CreationTime, LastAccessTime, LastWriteTime, EndOfFile, AllocationSize, FileId, FileAttributes);  // NOLINT
+									   CbFsFileInfo* DirectoryInfo,
+	                                   CbFsHandleInfo* HandleInfo,
+	                                   CbFsDirectoryEnumerationInfo* EnumerationInfo,
+	                                   LPCWSTR Mask,
+	                                   INT Index,
+	                                   BOOL Restart,
+	                                   LPBOOL FileFound,
+	                                   LPWSTR FileName,
+	                                   PDWORD FileNameLength,
+	                                   LPWSTR ShortFileName OPTIONAL,
+	                                   PUCHAR ShortFileNameLength OPTIONAL,
+	                                   PFILETIME CreationTime,
+	                                   PFILETIME LastAccessTime,
+	                                   PFILETIME LastWriteTime,
+	                                   PFILETIME ChangeTime,
+	                                   __int64* EndOfFile,
+	                                   __int64* AllocationSize,
+	                                   __int64* FileId,
+	                                   PDWORD FileAttributes) {
+	Adapter(Sender)->EnumerateDirectory(Sender, DirectoryInfo, NULL, Mask, Index, Restart, FileFound, FileName, FileNameLength, ShortFileName, ShortFileNameLength, CreationTime, LastAccessTime, LastWriteTime, EndOfFile, AllocationSize, FileId, FileAttributes);  // NOLINT
 }
 
-static void DelegateCloseEnumeration(CallbackFileSystem* Sender,
-                                     CbFsFileInfo* DirectoryInfo,
-                                     PVOID EnumerationContext) {
-  Adapter(Sender)->CloseEnumeration(Sender, DirectoryInfo, EnumerationContext);
+static void DelegateCloseEnumeration(CallbackFileSystem* Sender, CbFsFileInfo* DirectoryInfo, CbFsDirectoryEnumerationInfo* EnumerationInfo) {
+	Adapter(Sender)->CloseEnumeration(Sender, DirectoryInfo, EnumerationInfo->get_UserContext());
 }
 
 static void DelegateSetFileAttributes(CallbackFileSystem* Sender,
-                                      CbFsFileInfo* FileInfo,
-                                      PVOID FileHandleContext,
-                                      PFILETIME CreationTime,
-                                      PFILETIME LastAccessTime,
-                                      PFILETIME LastWriteTime,
-                                      DWORD FileAttributes) {
+									  CbFsFileInfo* FileInfo,
+	                                  CbFsHandleInfo* HandleInfo,
+	                                  PFILETIME CreationTime,
+	                                  PFILETIME LastAccessTime,
+	                                  PFILETIME LastWriteTime,
+	                                  PFILETIME ChangeTime,
+	                                  DWORD FileAttributes) {
   CbFSAdapter::DebugPrintCreateFile(L"SetFileAttributes", FileInfo->get_FileNameBuffer(), 0, FileAttributes, 0, 0);
 
-  Adapter(Sender)->SetFileAttributes(Sender, FileInfo, FileHandleContext, CreationTime, LastAccessTime, LastWriteTime, FileAttributes);  // NOLINT
+  Adapter(Sender)->SetFileAttributes(Sender, FileInfo, FileInfo->get_UserContext(), CreationTime, LastAccessTime, LastWriteTime, FileAttributes);  // NOLINT
 }
 
-static void DelegateCanFileBeDeleted(CallbackFileSystem* Sender,
-                                     CbFsFileInfo* FileInfo,
-                                     BOOL* CanBeDeleted) {
+static void DelegateCanFileBeDeleted(CallbackFileSystem* Sender, CbFsFileInfo* FileInfo, CbFsHandleInfo* HandleInfo, BOOL* CanBeDeleted) {
   Adapter(Sender)->CanFileBeDeleted(Sender, FileInfo, CanBeDeleted);
 }
 
@@ -180,21 +178,15 @@ static void DelegateDeleteFile(CallbackFileSystem* Sender,
 }
 
 /** Unimplemented. */
-static void DelegateSetAllocationSize(CallbackFileSystem* Sender,
-                                      CbFsFileInfo* FileInfo,
-                                      PVOID FileHandleContext,
-                                      __int64 AllocationSize) {}
+static void DelegateSetAllocationSize(CallbackFileSystem* Sender, CbFsFileInfo* FileInfo, __int64 AllocationSize) {}
 
-static void DelegateSetEndOfFile(CallbackFileSystem* Sender,
-                                 CbFsFileInfo* FileInfo,
-                                 PVOID FileHandleContext,
-                                 __int64 EndOfFile) {
+static void DelegateSetEndOfFile(CallbackFileSystem* Sender, CbFsFileInfo* FileInfo, __int64 EndOfFile) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)  << "SetEndOfFile " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << " s: " << EndOfFile << endl;
+        << " handle: 0x" << FileInfo->get_UserContext() << " s: " << EndOfFile << endl;
   }
 
-  Adapter(Sender)->SetEndOfFile(Sender, FileInfo, FileHandleContext, EndOfFile);
+  Adapter(Sender)->SetEndOfFile(Sender, FileInfo, FileInfo->get_UserContext(), EndOfFile);
 }
 
 static void DelegateRenameOrMoveFile(CallbackFileSystem* Sender,
@@ -204,48 +196,47 @@ static void DelegateRenameOrMoveFile(CallbackFileSystem* Sender,
 }
 
 static void DelegateReadFile(CallbackFileSystem* Sender,
-                             CbFsFileInfo* FileInfo,
-                             PVOID FileHandleContext,
-                             __int64 Position,
-                             PVOID Buffer, 
-                             DWORD BytesToRead,
-                             PDWORD BytesRead) {
+	                         CbFsFileInfo* FileInfo,
+	                         __int64 Position,
+	                         PVOID Buffer,
+	                         DWORD BytesToRead,
+	                         PDWORD BytesRead) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)  << "ReadFile " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << " s: " << BytesToRead <<  " o:" << Position << endl;
+        << " handle: 0x" << FileInfo->get_UserContext() << " s: " << BytesToRead <<  " o:" << Position << endl;
   }
 
-  Adapter(Sender)->ReadFile(Sender, FileInfo, FileHandleContext, Position, Buffer, BytesToRead, BytesRead);  // NOLINT
+  Adapter(Sender)->ReadFile(Sender, FileInfo, FileInfo->get_UserContext(), Position, Buffer, BytesToRead, BytesRead);  // NOLINT
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "ReadFile succeeded " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << " s:" << BytesToRead <<  " o:" << Position << " r:" << *BytesRead << endl;
+		<< " handle: 0x" << FileInfo->get_UserContext() << " s:" << BytesToRead << " o:" << Position << " r:" << *BytesRead << endl;
   }
 }
 
 static void DelegateWriteFile(CallbackFileSystem* Sender,
-                              CbFsFileInfo* FileInfo,
-                              PVOID FileHandleContext,
-                              __int64 Position,
-                              PVOID Buffer, 
-                              DWORD BytesToWrite,
-                              PDWORD BytesWritten) {
+							  CbFsFileInfo* FileInfo,
+							  __int64 Position,
+							  PVOID Buffer,
+							  DWORD BytesToWrite,
+						      PDWORD BytesWritten) {
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)  << "WriteFile " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << " s: " << BytesToWrite <<  " o:" << Position << endl;
+        << " handle: 0x" << FileInfo->get_UserContext() << " s: " << BytesToWrite <<  " o:" << Position << endl;
   }
 
-  Adapter(Sender)->WriteFile(Sender, FileInfo, FileHandleContext, Position, Buffer, BytesToWrite, BytesWritten);  // NOLINT
+  Adapter(Sender)->WriteFile(Sender, FileInfo, FileInfo->get_UserContext(), Position, Buffer, BytesToWrite, BytesWritten);  // NOLINT
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG) << "WriteFile succeeded " << CbFSAdapter::WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer())
-        << " handle: 0x" << FileHandleContext << " s:" << BytesToWrite <<  " o:" << Position << " w:" << *BytesWritten << endl;
+        << " handle: 0x" << FileInfo->get_UserContext() << " s:" << BytesToWrite <<  " o:" << Position << " w:" << *BytesWritten << endl;
   }
 }
 
 static void DelegateIsDirectoryEmpty(CallbackFileSystem* Sender,
-                                     LPWSTR FileName,
-                                     LPBOOL IsEmpty) {
+									 CbFsFileInfo* DirectoryInfo,
+									 LPCWSTR FileName,
+									 LPBOOL IsEmpty) {
   Adapter(Sender)->IsDirectoryEmpty(Sender, FileName, IsEmpty);
 }
 
@@ -363,7 +354,7 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
                              ACCESS_MASK DesiredAccess,
                              DWORD FileAttributes,
                              DWORD ShareMode,
-                             PVOID* FileHandleContext) {
+							 CbFsFileInfo* FileInfo) {
   string path(WindowsPathToUTF8Unix(FileName));
 
   if (FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
@@ -403,7 +394,7 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
           static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags),
           mode,
           FileAttributes);
-      *FileHandleContext = reinterpret_cast<PVOID>(file_handle);
+      FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
     } CATCH_AND_CONVERT_ERRORS
   }
 }
@@ -414,7 +405,7 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
                            LPCTSTR FileName,
                            ACCESS_MASK DesiredAccess,
                            DWORD ShareMode,
-                           PVOID* FileHandleContext) {
+						   CbFsFileInfo* FileInfo) {
   string path(WindowsPathToUTF8Unix(FileName));
 
   try {
@@ -435,7 +426,7 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
         user_credentials_,
         path,
         ConvertFlagsWindowsToXtreemFS(DesiredAccess));
-    *FileHandleContext = reinterpret_cast<PVOID>(file_handle);
+    FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
   } CATCH_AND_CONVERT_ERRORS
 }
 
@@ -592,7 +583,7 @@ void CbFSAdapter::EnumerateDirectory(CallbackFileSystem* Sender,
         DirectoryInfo->get_FileNameBuffer()));
     *FileFound = false;
     CbFSEnumerationContext* enum_ctx =
-        reinterpret_cast<CbFSEnumerationContext*>(*EnumerationContext);
+        reinterpret_cast<CbFSEnumerationContext*>(DirectoryInfo->get_UserContext());
       
     if (Restart && enum_ctx != NULL) {
       // Directory was already opened, but we have to read it from the start now.
@@ -761,7 +752,11 @@ void CbFSAdapter::DeleteFile(CallbackFileSystem* Sender,
                              CbFsFileInfo* FileInfo) {
   string path(WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer()));
 
-  if (FileInfo->get_Attributes() & FILE_ATTRIBUTE_DIRECTORY) {
+  LPWSTR fileName;
+  FileInfo->get_FileName(fileName);
+  DWORD attr = GetFileAttributes(fileName);
+
+  if (attr & FILE_ATTRIBUTE_DIRECTORY){
     try {
       volume_->DeleteDirectory(user_credentials_, path);
     } CATCH_AND_CONVERT_ERRORS
@@ -838,7 +833,7 @@ void CbFSAdapter::WriteFile(CallbackFileSystem* Sender,
 //-----------------------------------------------------------------------------------------------------------
 
 void CbFSAdapter::IsDirectoryEmpty(CallbackFileSystem* Sender,
-                                   LPWSTR FileName,
+								   LPCWSTR FileName,
                                    LPBOOL IsEmpty) {
   try {
     // TODO(mberlin): Find out how often this gets called and if it makes more
@@ -908,14 +903,12 @@ CbFSAdapter::CbFSAdapter(CbFSOptions* options)
   cbfs_.SetOnGetVolumeLabel(DelegateGetVolumeLabel);
   cbfs_.SetOnSetVolumeLabel(DelegateSetVolumeLabel);
   cbfs_.SetOnGetVolumeId(DelegateGetVolumeId);
-  cbfs_.SetOnOpenVolume(DelegateOpenVolume);
-  cbfs_.SetOnCloseVolume(DelegateCloseVolume);
   cbfs_.SetOnCreateFile(DelegateCreateFile);
   cbfs_.SetOnOpenFile(DelegateOpenFile);
   cbfs_.SetOnCloseFile(DelegateCloseFile);
   cbfs_.SetOnGetFileInfo(DelegateGetFileInfo);
   cbfs_.SetOnEnumerateDirectory(DelegateEnumerateDirectory);
-  cbfs_.SetOnCloseEnumeration(DelegateCloseEnumeration);
+  cbfs_.SetOnCloseDirectoryEnumeration(DelegateCloseEnumeration);
   cbfs_.SetOnSetAllocationSize(DelegateSetAllocationSize);
   cbfs_.SetOnSetEndOfFile(DelegateSetEndOfFile);
   cbfs_.SetOnSetFileAttributes(DelegateSetFileAttributes);
@@ -1022,6 +1015,7 @@ void CbFSAdapter::Start() {
 
   // Init CBFS.
   try {
+	cbfs_.Initialize("XtreemFS-Client");
     cbfs_.CreateStorage();
     cbfs_.MountMedia(1000 * max(options_->request_timeout_s,
                                 options_->connect_timeout_s));

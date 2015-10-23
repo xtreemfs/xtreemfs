@@ -76,13 +76,13 @@ class CbFSAdapter {
                   ACCESS_MASK DesiredAccess,
                   DWORD FileAttributes,
                   DWORD ShareMode,
-                  PVOID* FileHandleContext);
+				  CbFsFileInfo* FileInfo);
 
   void OpenFile(CallbackFileSystem* Sender,
                 LPCTSTR FileName,
                 ACCESS_MASK DesiredAccess,
                 DWORD ShareMode,
-                PVOID* FileHandleContext);
+				CbFsFileInfo* FileInfo);
 
   void CloseFile(CallbackFileSystem* Sender,
                  CbFsFileInfo* FileInfo,
@@ -169,7 +169,7 @@ class CbFSAdapter {
                  PDWORD BytesWritten);
     
   void IsDirectoryEmpty(CallbackFileSystem* Sender,
-                        LPWSTR FileName,
+	                    LPCWSTR FileName,
                         LPBOOL IsEmpty);
 
   void StorageEjected(CallbackFileSystem* Sender);
