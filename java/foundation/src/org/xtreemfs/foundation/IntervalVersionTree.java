@@ -95,7 +95,33 @@ public class IntervalVersionTree {
             node.interval.end = end;
             node.interval.version = version;
         }
+
+        node.checkHeight();
+        if (node.balance < -1) node = rotateLeft(node);
+        if (node.balance > 1) node = rotateRight(node);
         return node;
+    }
+
+    public IntervalNode rotateRight(IntervalNode node) {
+        IntervalNode h = node.left;
+        node.left = node.left.right;
+        h.right = node;
+
+        node.checkHeight();
+        h.checkHeight();
+
+        return h;
+    }
+
+    public IntervalNode rotateLeft(IntervalNode node) {
+        IntervalNode h = node.right;
+        node.right = node.right.left;
+        h.left = node;
+
+        node.checkHeight();
+        h.checkHeight();
+
+        return h;
     }
 
     /*
@@ -200,21 +226,30 @@ public class IntervalVersionTree {
         Interval interval;
         IntervalNode left;
         IntervalNode right;
-        boolean balanced;
-        //TODO evaluate if lowest and highest limits in subtree make sense
+        int balance;
+        int height;
 
-        public IntervalNode(long begin, long end) {
+        IntervalNode(long begin, long end) {
             this.interval = new Interval(begin, end);
             this.left = null;
             this.right = null;
-            this.balanced = true;
+            height = 0;
+            this.balance = 0;
         }
 
-        public IntervalNode(long begin, long end, long version) {
+        IntervalNode(long begin, long end, long version) {
             this.interval = new Interval(begin, end, version);
             this.left = null;
             this.right = null;
-            this.balanced = true;
+            height = 0;
+            this.balance = 0;
+        }
+
+        void checkHeight() {
+            int l_h = this.left == null ? 0 : this.left.height + 1;
+            int r_h = this.right == null ? 0 : this.right.height + 1;
+            this.height = Math.max(l_h, r_h);
+            this.balance = l_h - r_h;
         }
     }
 }
