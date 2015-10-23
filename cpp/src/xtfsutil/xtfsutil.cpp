@@ -251,45 +251,57 @@ bool getattr(const string& xctl_file,
         if (path == "/") {
           cout << "volume" << endl;
 
-          cout
-              << "Available Space      "
-              << formatBytes(
-                  boost::lexical_cast<uint64_t>(
-                      stat["usable_space"].asString()))
-              << endl;
+          if(!stat["usable_space"].isNull()) {
+            cout
+            << "Available Space      "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(
+                            stat["usable_space"].asString()))
+            << endl;
+          }
 
-          cout
-              << "Quota / Used Space   "
-              << parseUnlimitedQuota(
-                  boost::lexical_cast<uint64_t>(stat["quota"].asString()))
-              << " / "
-              << formatBytes(
-                  boost::lexical_cast<uint64_t>(stat["usedspace"].asString()))
-              << endl;
+          if(!stat["quota"].isNull() && !stat["usedspace"].isNull()) {
+            cout
+            << "Quota / Used Space   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(stat["quota"].asString()))
+            << " / "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(stat["usedspace"].asString()))
+            << endl;
+          }
 
-          cout
-              << "Voucher Size         "
-              << formatBytes(
-                  boost::lexical_cast<uint64_t>(stat["vouchersize"].asString()))
-              << endl;
+          if(!stat["vouchersize"].isNull()) {
+            cout
+            << "Voucher Size         "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(stat["vouchersize"].asString()))
+            << endl;
+          }
 
-          cout
-              << "Default User Quota   "
-              << parseUnlimitedQuota(
-                  boost::lexical_cast<uint64_t>(
-                      stat["defaultuserquota"].asString()))
-              << endl;
+          if(!stat["defaultuserquota"].isNull()) {
+            cout
+            << "Default User Quota   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(
+                            stat["defaultuserquota"].asString()))
+            << endl;
+          }
 
-          cout
-              << "Default GroupQuota   "
-              << parseUnlimitedQuota(
-                  boost::lexical_cast<uint64_t>(
-                      stat["defaultgroupquota"].asString()))
-              << endl;
+          if(!stat["defaultgroupquota"].isNull()) {
+            cout
+            << "Default GroupQuota   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(
+                            stat["defaultgroupquota"].asString()))
+            << endl;
+          }
 
-          cout << "Num. Files/Dirs      "
+          if(!stat["num_files"].isNull() && !stat["num_dirs"].isNull()) {
+            cout << "Num. Files/Dirs      "
             << stat["num_files"].asString()
             << " / " << stat["num_dirs"].asString() << endl;
+          }
 
           cout << "Access Control p.    ";
           if (stat["ac_policy_id"].asString() == "1") {

@@ -391,8 +391,8 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "ver_signature\030\007 \002(\t\022\026\n\016truncate_epoch\030\010 "
     "\002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemfs.pbrp"
     "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\022\027\n\014"
-    "voucher_size\030\013 \002(\006:\0010\022\031\n\016expire_time_ms\030"
-    "\014 \002(\006:\0010\"\201\001\n\007XLocSet\022\033\n\023read_only_file_s"
+    "voucher_size\030\013 \001(\006:\0010\022\031\n\016expire_time_ms\030"
+    "\014 \001(\006:\0010\"\201\001\n\007XLocSet\022\033\n\023read_only_file_s"
     "ize\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtreemfs.p"
     "brpc.Replica\022\035\n\025replica_update_policy\030\003 "
     "\002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredentials\022"
@@ -2053,7 +2053,7 @@ bool XCap::MergePartialFromCodedStream(
         break;
       }
 
-      // required fixed64 voucher_size = 11 [default = 0];
+      // optional fixed64 voucher_size = 11 [default = 0];
       case 11: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
@@ -2069,7 +2069,7 @@ bool XCap::MergePartialFromCodedStream(
         break;
       }
 
-      // required fixed64 expire_time_ms = 12 [default = 0];
+      // optional fixed64 expire_time_ms = 12 [default = 0];
       case 12: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
@@ -2166,12 +2166,12 @@ void XCap::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(10, this->snap_timestamp(), output);
   }
 
-  // required fixed64 voucher_size = 11 [default = 0];
+  // optional fixed64 voucher_size = 11 [default = 0];
   if (has_voucher_size()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(11, this->voucher_size(), output);
   }
 
-  // required fixed64 expire_time_ms = 12 [default = 0];
+  // optional fixed64 expire_time_ms = 12 [default = 0];
   if (has_expire_time_ms()) {
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(12, this->expire_time_ms(), output);
   }
@@ -2250,12 +2250,12 @@ void XCap::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(10, this->snap_timestamp(), target);
   }
 
-  // required fixed64 voucher_size = 11 [default = 0];
+  // optional fixed64 voucher_size = 11 [default = 0];
   if (has_voucher_size()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(11, this->voucher_size(), target);
   }
 
-  // required fixed64 expire_time_ms = 12 [default = 0];
+  // optional fixed64 expire_time_ms = 12 [default = 0];
   if (has_expire_time_ms()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(12, this->expire_time_ms(), target);
   }
@@ -2330,12 +2330,12 @@ int XCap::ByteSize() const {
       total_size += 1 + 8;
     }
 
-    // required fixed64 voucher_size = 11 [default = 0];
+    // optional fixed64 voucher_size = 11 [default = 0];
     if (has_voucher_size()) {
       total_size += 1 + 8;
     }
 
-    // required fixed64 expire_time_ms = 12 [default = 0];
+    // optional fixed64 expire_time_ms = 12 [default = 0];
     if (has_expire_time_ms()) {
       total_size += 1 + 8;
     }
@@ -2422,7 +2422,7 @@ void XCap::CopyFrom(const XCap& from) {
 }
 
 bool XCap::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000fff) != 0x00000fff) return false;
+  if ((_has_bits_[0] & 0x000003ff) != 0x000003ff) return false;
 
   return true;
 }

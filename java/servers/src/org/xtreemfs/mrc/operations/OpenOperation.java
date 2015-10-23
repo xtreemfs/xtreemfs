@@ -319,6 +319,9 @@ public class OpenOperation extends MRCOperation {
         long voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
         if (create || truncate || write) {
             QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+            if(defaultReplPolicy != null) {
+                quotaFileInformation.setReplicaCount(defaultReplPolicy.getFactor());
+            }
             voucherSize = master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
         }
 
