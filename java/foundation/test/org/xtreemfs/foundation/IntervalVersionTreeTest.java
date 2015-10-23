@@ -7,9 +7,8 @@
  */
 package org.xtreemfs.foundation;
 
+import static org.junit.Assert.*;
 import org.junit.Test;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
 
 import org.xtreemfs.foundation.IntervalVersionTree.Interval;
 
@@ -27,22 +26,22 @@ public class IntervalVersionTreeTest {
         IntervalVersionTree tree = new IntervalVersionTree(0, 1023);
         expected.add(new Interval(0, 1023));
         versions = tree.getVersions(0, 1023);
-        assertThat(expected, equalTo(versions));
+        assertTrue(expected.containsAll(versions));
 
         tree.insert(1024, 2047, 1);
         expected.add(new Interval(1024, 2047, 1));
         versions = tree.getVersions(0, 2047);
-        assertThat(expected, equalTo(versions));
+        assertTrue(expected.containsAll(versions));
 
         tree.insert(2048, 4095, 1);
         expected.add(new Interval(2048, 4095, 1));
         versions = tree.getVersions(0, 4095);
-        assertThat(expected, equalTo(versions));
+        assertTrue(expected.containsAll(versions));
 
         tree.insert(0, 1023, 1);
         expected.get(0).version = 1;
         versions = tree.getVersions(0,4095);
-        assertThat(expected, equalTo(versions));
+        assertTrue(expected.containsAll(versions));
     }
 
     @Test
@@ -55,13 +54,13 @@ public class IntervalVersionTreeTest {
         expected.add(new Interval(0, 1023, 0));
         expected.add(new Interval(1024, 4095, 1));
         versions = tree.getVersions(0, 4095);
-        assertThat(expected, equalTo(versions));
+        assertTrue(expected.containsAll(versions));
 
         tree.insert(0, 511, 1);
         expected.get(0).begin = 512;
         expected.add(new Interval(0, 511, 1));
         versions = tree.getVersions(0, 4095);
-        assert(expected.containsAll(versions));
+        assertTrue(expected.containsAll(versions));
     }
 
     @Test
@@ -75,7 +74,7 @@ public class IntervalVersionTreeTest {
         expected.add(new Interval(512, 1535, 1));
         expected.add(new Interval(1536, 2047, 0));
         versions = tree.getVersions(0, 2047);
-        assert(expected.containsAll(versions));
+        assertTrue(expected.containsAll(versions));
     }
 
     @Test
@@ -90,7 +89,7 @@ public class IntervalVersionTreeTest {
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1801, 2047, 0));
         versions = tree.getVersions(0, 2047);
-        assert(expected.containsAll(versions));
+        assertTrue(expected.containsAll(versions));
 
         expected = new LinkedList<>();
         tree = new IntervalVersionTree(0, 2047);
@@ -103,7 +102,14 @@ public class IntervalVersionTreeTest {
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1801, 2047, 0));
         versions = tree.getVersions(0, 2047);
-        assert(expected.containsAll(versions));
+        assertTrue(expected.containsAll(versions));
+
+        tree = new IntervalVersionTree(0, 1023);
+        expected = new LinkedList<>();
+        expected.add(new Interval(0, 2047, 1));
+        tree.insert(0, 2047, 1);
+        versions = tree.getVersions(0, 2047);
+        assertTrue(expected.containsAll(versions));
     }
 
     @Test
@@ -117,7 +123,7 @@ public class IntervalVersionTreeTest {
         expected.add(new Interval(512, 1535, 1));
         expected.add(new Interval(1536, 2000, 0));
         versions = tree.getVersions(0, 2000);
-        assert(expected.containsAll(versions));
+        assertTrue(expected.containsAll(versions));
     }
 
     @Test
@@ -130,5 +136,20 @@ public class IntervalVersionTreeTest {
         tree.insert(0, 128, 4);
         tree.insert(0, 64, 5);
         tree.insert(0, 32, 6);
+
+        tree = new IntervalVersionTree(0, 2047);
+        tree.insert(0, 1023, 1);
+        tree.insert(0, 512, 2);
+        tree.insert(0, 256, 3);
+        tree.insert(0, 128, 4);
+        tree.insert(0, 64, 5);
+        tree.insert(0, 32, 6);
+
+        tree = new IntervalVersionTree(0, 2047);
+        tree.insert(512, 1535, 1);
+        tree.insert(0, 5, 1);
+        tree.insert(500, 511, 1);
+        tree.insert(500, 2047, 2);
     }
+
 }

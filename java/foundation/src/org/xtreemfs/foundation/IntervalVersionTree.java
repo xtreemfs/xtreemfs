@@ -48,6 +48,9 @@ public class IntervalVersionTree {
         this.root = insert(begin, end, version, this.root);
     }
 
+    /*
+     * insert into tree and balance after
+     */
     private IntervalNode insert(long begin, long end, long version, IntervalNode node) {
         if (node == null) {
             return new IntervalNode(begin, end, version);
@@ -65,7 +68,6 @@ public class IntervalVersionTree {
             node.left = insert(begin, end, version, node.left);
             node.interval.begin = end + 1;
 
-            // check for colour change or need to rotate
         } else if (begin > node.interval.end) {
             // new interval is left of current
             node.right = insert(begin, end, version, node.right);
@@ -75,7 +77,6 @@ public class IntervalVersionTree {
             node.right = insert(begin, end, version, node.right);
             node.interval.end = begin - 1;
 
-            // check for colour change or need to rotate
         } else if (begin > node.interval.begin && end < node.interval.end) {
             // new interval fits into current interval
             IntervalNode newNode = new IntervalNode(begin, end, version);
@@ -161,13 +162,9 @@ public class IntervalVersionTree {
         return node;
     }
 
-    private IntervalNode checkColour(IntervalNode node) {
-        if (node == null) {
-            return node;
-        }
-        return node;
-    }
-
+    /*
+     * returns all overlapping intervals and their version
+     */
     public  LinkedList<Interval> getVersions(long begin, long end) {
         return getVersions(begin, end, this.root, new LinkedList<Interval>());
     }
@@ -191,6 +188,9 @@ public class IntervalVersionTree {
         return acc;
     }
 
+    /*
+     * Interval class mainly exists to return to user as a neat list
+     */
     public static class Interval{
         long begin;
         long end;
@@ -206,6 +206,7 @@ public class IntervalVersionTree {
             this.version = version;
         }
 
+        // used in testing
         @Override
         public boolean equals (Object other) {
             if (other == null) return false;
