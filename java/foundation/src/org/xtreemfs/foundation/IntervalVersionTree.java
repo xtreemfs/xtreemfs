@@ -15,18 +15,36 @@ import java.util.LinkedList;
 public class IntervalVersionTree {
 
     private IntervalNode root;
+    private long highest;
 
     public IntervalVersionTree(long begin, long end) {
         if (begin != 0) {
             throw new IllegalArgumentException("IntervalVersionTree must start at 0");
         }
         this.root = new IntervalNode(begin, end);
+        this.highest = end;
+    }
+
+    public void insert(Interval i) {
+        this.insert(i.begin, i.end, i.version);
     }
 
     public void insert(long begin, long end, long version) {
         if (begin < 0) {
             throw new IllegalArgumentException("Intervals may only start at 0 or greater, not " + begin);
         }
+
+        if (end <= begin) {
+            throw new IllegalArgumentException("Intervals must be bigger the 1");
+        }
+
+        if (end >= highest) {
+            this.highest = end;
+            if (begin == 0) {
+                this.root = new IntervalNode(begin, end, version);
+            }
+        }
+
         this.root = insert(begin, end, version, this.root);
     }
 
