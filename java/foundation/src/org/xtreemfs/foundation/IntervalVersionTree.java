@@ -81,15 +81,14 @@ public class IntervalVersionTree {
             IntervalNode newNode = new IntervalNode(begin, end, version);
             newNode.left = insert(node.interval.begin, begin - 1, node.interval.version, node.left);
             newNode.right = insert(end + 1, node.interval.end, node.interval.version, node.right);
-            return newNode;
+            node = newNode;
 
-            // check for colour change or need to rotate
-        } else if (begin < node.interval.begin && end > node.interval.end) {
+        } else if (begin <= node.interval.begin && end >= node.interval.end) {
             // new interval surrounds current interval
-            if (node.left != null) {
+            if (node.left != null && begin < node.interval.begin) {
                 node.left = shrinkSubTree(begin, node.interval.begin, node.left);
             }
-            if (node.right != null) {
+            if (node.right != null && end > node.interval.end) {
                 node.right = shrinkSubTree(node.interval.end, end, node.right);
             }
             node.interval.begin = begin;
