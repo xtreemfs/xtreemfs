@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -76,7 +77,7 @@ public class GetFileCredentialsOperation extends MRCOperation {
                 !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                         : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                                 : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), enableTracing,
-                traceTarget, tracingPolicy, master.getConfig().getCapabilitySecret());
+                traceTarget, tracingPolicy, QuotaConstants.UNLIMITED_VOUCHER, 0L, master.getConfig().getCapabilitySecret());
 
         // build new XlocSet with readonlyFileSize set. Necessary to check if replication is complete.
         XLocSet newXlocSet = null;
