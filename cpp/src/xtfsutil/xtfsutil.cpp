@@ -1626,12 +1626,6 @@ int main(int argc, char **argv) {
   }
   if (vm.count("set-quota") > 0) {
     ++operationsCount;
-    failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
-  }
-  if (vm.count("enable-tracing") > 0 ||
-      vm.count("disable-tracing") > 0) {
-    ++operationsCount;
-    failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
     failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if (vm.count("get-quotas") > 0) {
@@ -1643,6 +1637,12 @@ int main(int argc, char **argv) {
       || vm.count("set-default-group-quota") > 0) {
     ++operationsCount;
     failedOperationsCount += SetQuotaRelatedValue(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("enable-tracing") > 0 ||
+      vm.count("disable-tracing") > 0) {
+    ++operationsCount;
+    failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
+    failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if(operationsCount == 0){
     ++operationsCount;
