@@ -1408,8 +1408,7 @@ int main(int argc, char **argv) {
   pd.add("path", 1);
 
   options_description cmdline_options;
-  cmdline_options.add(desc).add(snapshot_desc).add(tracing_desc).add(hidden);
-  cmdline_options.add(desc).add(quota_desc).add(snapshot_desc).add(hidden);
+  cmdline_options.add(desc).add(quota_desc).add(snapshot_desc).add(tracing_desc).add(hidden);
   variables_map vm;
   try {
     store(command_line_parser(argc, argv)
@@ -1447,8 +1446,7 @@ int main(int argc, char **argv) {
 
   if (vm.count("help") || option_path.empty()) {
     cerr << "Usage: xtfsutil <path>" << endl;
-    cerr << desc << snapshot_desc << tracing_desc << endl;
-    cerr << desc << quota_desc << snapshot_desc << endl;
+    cerr << desc << quota_desc << snapshot_desc << tracing_desc << endl;
     return 1;
   }
 
