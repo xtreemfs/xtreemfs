@@ -11,6 +11,7 @@ package org.xtreemfs.mrc.operations;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -64,6 +65,10 @@ public class GetFileCredentialsOperation extends MRCOperation {
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
 
+        boolean enableTracing = volume.isTracingEnabled();
+        String traceTarget = volume.getTraceTarget();
+        String tracingPolicy = volume.getTracingPolicy();
+
         // create FileCredentials
         Capability cap = new Capability(MRCHelper.createGlobalFileId(volume, file), FileAccessManager.O_RDONLY,
                 master.getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
@@ -71,8 +76,8 @@ public class GetFileCredentialsOperation extends MRCOperation {
                         .getSenderAddress()).getAddress().getHostAddress(), file.getEpoch(), false,
                 !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                         : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master
-                        .getConfig().getCapabilitySecret());
+                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), enableTracing,
+                traceTarget, tracingPolicy, QuotaConstants.UNLIMITED_VOUCHER, 0L, master.getConfig().getCapabilitySecret());
 
         // build new XlocSet with readonlyFileSize set. Necessary to check if replication is complete.
         XLocSet newXlocSet = null;

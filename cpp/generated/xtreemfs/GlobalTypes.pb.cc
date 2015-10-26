@@ -21,6 +21,9 @@ namespace pbrpc {
 
 namespace {
 
+const ::google::protobuf::Descriptor* TraceConfig_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  TraceConfig_reflection_ = NULL;
 const ::google::protobuf::Descriptor* NewFileSize_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   NewFileSize_reflection_ = NULL;
@@ -78,7 +81,24 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
     ::google::protobuf::DescriptorPool::generated_pool()->FindFileByName(
       "xtreemfs/GlobalTypes.proto");
   GOOGLE_CHECK(file != NULL);
-  NewFileSize_descriptor_ = file->message_type(0);
+  TraceConfig_descriptor_ = file->message_type(0);
+  static const int TraceConfig_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, trace_requests_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, tracing_policy_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, tracing_policy_config_),
+  };
+  TraceConfig_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      TraceConfig_descriptor_,
+      TraceConfig::default_instance_,
+      TraceConfig_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(TraceConfig, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(TraceConfig));
+  NewFileSize_descriptor_ = file->message_type(1);
   static const int NewFileSize_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(NewFileSize, size_in_bytes_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(NewFileSize, truncate_epoch_),
@@ -94,7 +114,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(NewFileSize));
-  StripingPolicy_descriptor_ = file->message_type(1);
+  StripingPolicy_descriptor_ = file->message_type(2);
   static const int StripingPolicy_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, stripe_size_),
@@ -112,7 +132,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(StripingPolicy));
-  Replica_descriptor_ = file->message_type(2);
+  Replica_descriptor_ = file->message_type(3);
   static const int Replica_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Replica, osd_uuids_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Replica, replication_flags_),
@@ -129,7 +149,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Replica));
-  Replicas_descriptor_ = file->message_type(3);
+  Replicas_descriptor_ = file->message_type(4);
   static const int Replicas_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(Replicas, replicas_),
   };
@@ -144,8 +164,8 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Replicas));
-  XCap_descriptor_ = file->message_type(4);
-  static const int XCap_offsets_[12] = {
+  XCap_descriptor_ = file->message_type(5);
+  static const int XCap_offsets_[13] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, access_mode_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, client_identity_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, expire_time_s_),
@@ -158,6 +178,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, snap_timestamp_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, voucher_size_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, expire_time_ms_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XCap, trace_config_),
   };
   XCap_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -170,7 +191,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(XCap));
-  XLocSet_descriptor_ = file->message_type(5);
+  XLocSet_descriptor_ = file->message_type(6);
   static const int XLocSet_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XLocSet, read_only_file_size_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(XLocSet, replicas_),
@@ -188,7 +209,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(XLocSet));
-  FileCredentials_descriptor_ = file->message_type(6);
+  FileCredentials_descriptor_ = file->message_type(7);
   static const int FileCredentials_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileCredentials, xcap_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileCredentials, xlocs_),
@@ -204,7 +225,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(FileCredentials));
-  FileCredentialsSet_descriptor_ = file->message_type(7);
+  FileCredentialsSet_descriptor_ = file->message_type(8);
   static const int FileCredentialsSet_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(FileCredentialsSet, file_credentials_),
   };
@@ -219,7 +240,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(FileCredentialsSet));
-  VivaldiCoordinates_descriptor_ = file->message_type(8);
+  VivaldiCoordinates_descriptor_ = file->message_type(9);
   static const int VivaldiCoordinates_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(VivaldiCoordinates, x_coordinate_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(VivaldiCoordinates, y_coordinate_),
@@ -236,7 +257,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(VivaldiCoordinates));
-  OSDFinalizeVouchersResponse_descriptor_ = file->message_type(9);
+  OSDFinalizeVouchersResponse_descriptor_ = file->message_type(10);
   static const int OSDFinalizeVouchersResponse_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, osd_uuid_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDFinalizeVouchersResponse, server_signature_),
@@ -254,7 +275,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(OSDFinalizeVouchersResponse));
-  OSDWriteResponse_descriptor_ = file->message_type(10);
+  OSDWriteResponse_descriptor_ = file->message_type(11);
   static const int OSDWriteResponse_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, size_in_bytes_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(OSDWriteResponse, truncate_epoch_),
@@ -270,7 +291,7 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(OSDWriteResponse));
-  KeyValuePair_descriptor_ = file->message_type(11);
+  KeyValuePair_descriptor_ = file->message_type(12);
   static const int KeyValuePair_offsets_[2] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(KeyValuePair, key_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(KeyValuePair, value_),
@@ -310,6 +331,8 @@ inline void protobuf_AssignDescriptorsOnce() {
 void protobuf_RegisterTypes(const ::std::string&) {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    TraceConfig_descriptor_, &TraceConfig::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     NewFileSize_descriptor_, &NewFileSize::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     StripingPolicy_descriptor_, &StripingPolicy::default_instance());
@@ -338,6 +361,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
 }  // namespace
 
 void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto() {
+  delete TraceConfig::default_instance_;
+  delete TraceConfig_reflection_;
   delete NewFileSize::default_instance_;
   delete NewFileSize_reflection_;
   delete StripingPolicy::default_instance_;
@@ -375,88 +400,93 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\032xtreemfs/GlobalTypes.proto\022\016xtreemfs.p"
     "brpc\032\023include/PBRPC.proto\032\024include/Commo"
-    "n.proto\"<\n\013NewFileSize\022\025\n\rsize_in_bytes\030"
-    "\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"|\n\016Stripin"
-    "gPolicy\0220\n\004type\030\001 \002(\0162\".xtreemfs.pbrpc.S"
-    "tripingPolicyType\022\023\n\013stripe_size\030\002 \002(\007\022\r"
-    "\n\005width\030\003 \002(\007\022\024\n\014parity_width\030\004 \001(\007\"p\n\007R"
-    "eplica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021replication"
-    "_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 \002(\0132\036."
-    "xtreemfs.pbrpc.StripingPolicy\"5\n\010Replica"
-    "s\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbrpc.Rep"
-    "lica\"\301\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007\022\027\n\017cl"
-    "ient_identity\030\002 \002(\t\022\025\n\rexpire_time_s\030\003 \002"
-    "(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007file_id\030"
-    "\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022\030\n\020ser"
-    "ver_signature\030\007 \002(\t\022\026\n\016truncate_epoch\030\010 "
-    "\002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemfs.pbrp"
-    "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\022\027\n\014"
-    "voucher_size\030\013 \001(\006:\0010\022\031\n\016expire_time_ms\030"
-    "\014 \001(\006:\0010\"\201\001\n\007XLocSet\022\033\n\023read_only_file_s"
-    "ize\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtreemfs.p"
-    "brpc.Replica\022\035\n\025replica_update_policy\030\003 "
-    "\002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredentials\022"
-    "\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap\022&\n\005x"
-    "locs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet\"O\n\022F"
-    "ileCredentialsSet\0229\n\020file_credentials\030\001 "
-    "\001(\0132\037.xtreemfs.pbrpc.FileCredentials\"U\n\022"
-    "VivaldiCoordinates\022\024\n\014x_coordinate\030\001 \002(\001"
-    "\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_error\030\003 "
-    "\002(\001\"x\n\033OSDFinalizeVouchersResponse\022\020\n\010os"
-    "d_uuid\030\001 \002(\t\022\030\n\020server_signature\030\002 \002(\t\022\025"
-    "\n\rsize_in_bytes\030\003 \002(\006\022\026\n\016truncate_epoch\030"
-    "\004 \002(\006\"A\n\020OSDWriteResponse\022\025\n\rsize_in_byt"
-    "es\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014KeyV"
-    "aluePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027"
-    "AccessControlPolicyType\022\036\n\032ACCESS_CONTRO"
-    "L_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POLICY"
-    "_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOLUME"
-    "\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_SEL"
-    "ECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OSD_S"
-    "ELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD_SE"
-    "LECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_SEL"
-    "ECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_SELE"
-    "CTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SELECT"
-    "ION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELECTIO"
-    "N_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTION_P"
-    "OLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION_PO"
-    "LICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION_PO"
-    "LICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_SEL"
-    "ECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SELECT"
-    "ION_POLICY_SORT_REVERSE\020\237\037*A\n\032ReplicaSel"
-    "ectionPolicyType\022#\n\037REPLICA_SELECTION_PO"
-    "LICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONF"
-    "IG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCES"
-    "S_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002"
-    "*P\n\022StripingPolicyType\022\031\n\025STRIPING_POLIC"
-    "Y_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASURECODE"
-    "\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022"
-    "\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_H"
-    "TTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_D"
-    "EFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001\022"
-    "\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTT"
-    "P_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEF"
-    "AULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INTE"
-    "RVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYST"
-    "EM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNT"
-    "L_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RDW"
-    "R\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030SY"
-    "STEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FC"
-    "NTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_E"
-    "XCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030S"
-    "YSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_"
-    "FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_"
-    "S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO\020"
-    "\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPLI"
-    "CA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL_"
-    "FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STRA"
-    "TEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATEG"
-    "Y_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SEQ"
-    "UENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DIR"
-    "\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pbr"
-    "pc.generatedinterfaces", 3262);
+    "n.proto\"\\\n\013TraceConfig\022\026\n\016trace_requests"
+    "\030\001 \002(\010\022\026\n\016tracing_policy\030\002 \001(\t\022\035\n\025tracin"
+    "g_policy_config\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\r"
+    "size_in_bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 "
+    "\002(\007\"|\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".xt"
+    "reemfs.pbrpc.StripingPolicyType\022\023\n\013strip"
+    "e_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_wi"
+    "dth\030\004 \001(\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022"
+    "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p"
+    "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol"
+    "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre"
+    "emfs.pbrpc.Replica\"\364\002\n\004XCap\022\023\n\013access_mo"
+    "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp"
+    "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002"
+    "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos"
+    "e\030\006 \002(\010\022\030\n\020server_signature\030\007 \002(\t\022\026\n\016tru"
+    "ncate_epoch\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032"
+    ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times"
+    "tamp\030\n \002(\006\022\027\n\014voucher_size\030\013 \001(\006:\0010\022\031\n\016e"
+    "xpire_time_ms\030\014 \001(\006:\0010\0221\n\014trace_config\030\r"
+    " \001(\0132\033.xtreemfs.pbrpc.TraceConfig\"\201\001\n\007XL"
+    "ocSet\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n\010re"
+    "plicas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica\022\035\n"
+    "\025replica_update_policy\030\003 \002(\t\022\017\n\007version\030"
+    "\004 \002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002(\0132\024"
+    ".xtreemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xt"
+    "reemfs.pbrpc.XLocSet\"O\n\022FileCredentialsS"
+    "et\0229\n\020file_credentials\030\001 \001(\0132\037.xtreemfs."
+    "pbrpc.FileCredentials\"U\n\022VivaldiCoordina"
+    "tes\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordinat"
+    "e\030\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"x\n\033OSDFinal"
+    "izeVouchersResponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n"
+    "\020server_signature\030\002 \002(\t\022\025\n\rsize_in_bytes"
+    "\030\003 \002(\006\022\026\n\016truncate_epoch\030\004 \002(\006\"A\n\020OSDWri"
+    "teResponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016tru"
+    "ncate_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key"
+    "\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlPo"
+    "licyType\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020\001"
+    "\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034ACC"
+    "ESS_CONTROL_POLICY_VOLUME\020\003*\365\003\n\026OSDSelec"
+    "tionPolicyType\022(\n#OSD_SELECTION_POLICY_F"
+    "ILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLICY"
+    "_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY_"
+    "FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_G"
+    "ROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_GR"
+    "OUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SORT"
+    "_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_F"
+    "QDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT_RAND"
+    "OM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVAL"
+    "DI\020\273\027\022/\n*OSD_SELECTION_POLICY_SORT_HOST_"
+    "ROUND_ROBIN\020\274\027\022#\n\036OSD_SELECTION_POLICY_S"
+    "ORT_UUID\020\236\037\022&\n!OSD_SELECTION_POLICY_SORT"
+    "_REVERSE\020\237\037*A\n\032ReplicaSelectionPolicyTyp"
+    "e\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*i"
+    "\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISABL"
+    "ED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027"
+    "SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPol"
+    "icyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033ST"
+    "RIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseStat"
+    "e\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004"
+    "IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAUL"
+    "T\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025M"
+    "RC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PO"
+    "RT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020"
+    "\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCON"
+    "STANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202"
+    "\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_"
+    "RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022"
+    "\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V"
+    "_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_"
+    "O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200"
+    "\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTE"
+    "M_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H"
+    "_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR"
+    "\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030"
+    "SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLA"
+    "G\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FL"
+    "AG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_R"
+    "ANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIR"
+    "ST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022"
+    "-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETC"
+    "HING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003"
+    "OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedint"
+    "erfaces", 3407);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
+  TraceConfig::default_instance_ = new TraceConfig();
   NewFileSize::default_instance_ = new NewFileSize();
   StripingPolicy::default_instance_ = new StripingPolicy();
   Replica::default_instance_ = new Replica();
@@ -469,6 +499,7 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
   OSDFinalizeVouchersResponse::default_instance_ = new OSDFinalizeVouchersResponse();
   OSDWriteResponse::default_instance_ = new OSDWriteResponse();
   KeyValuePair::default_instance_ = new KeyValuePair();
+  TraceConfig::default_instance_->InitAsDefaultInstance();
   NewFileSize::default_instance_->InitAsDefaultInstance();
   StripingPolicy::default_instance_->InitAsDefaultInstance();
   Replica::default_instance_->InitAsDefaultInstance();
@@ -673,6 +704,327 @@ bool SERVICES_IsValid(int value) {
     default:
       return false;
   }
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int TraceConfig::kTraceRequestsFieldNumber;
+const int TraceConfig::kTracingPolicyFieldNumber;
+const int TraceConfig::kTracingPolicyConfigFieldNumber;
+#endif  // !_MSC_VER
+
+TraceConfig::TraceConfig()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void TraceConfig::InitAsDefaultInstance() {
+}
+
+TraceConfig::TraceConfig(const TraceConfig& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void TraceConfig::SharedCtor() {
+  _cached_size_ = 0;
+  trace_requests_ = false;
+  tracing_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+TraceConfig::~TraceConfig() {
+  SharedDtor();
+}
+
+void TraceConfig::SharedDtor() {
+  if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_;
+  }
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_config_;
+  }
+  if (this != default_instance_) {
+  }
+}
+
+void TraceConfig::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* TraceConfig::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return TraceConfig_descriptor_;
+}
+
+const TraceConfig& TraceConfig::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
+  return *default_instance_;
+}
+
+TraceConfig* TraceConfig::default_instance_ = NULL;
+
+TraceConfig* TraceConfig::New() const {
+  return new TraceConfig;
+}
+
+void TraceConfig::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    trace_requests_ = false;
+    if (has_tracing_policy()) {
+      if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
+        tracing_policy_->clear();
+      }
+    }
+    if (has_tracing_policy_config()) {
+      if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+        tracing_policy_config_->clear();
+      }
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool TraceConfig::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required bool trace_requests = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
+                 input, &trace_requests_)));
+          set_has_trace_requests();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_tracing_policy;
+        break;
+      }
+
+      // optional string tracing_policy = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_tracing_policy:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_tracing_policy()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->tracing_policy().data(), this->tracing_policy().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(26)) goto parse_tracing_policy_config;
+        break;
+      }
+
+      // optional string tracing_policy_config = 3;
+      case 3: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_tracing_policy_config:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_tracing_policy_config()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->tracing_policy_config().data(), this->tracing_policy_config().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void TraceConfig::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required bool trace_requests = 1;
+  if (has_trace_requests()) {
+    ::google::protobuf::internal::WireFormatLite::WriteBool(1, this->trace_requests(), output);
+  }
+
+  // optional string tracing_policy = 2;
+  if (has_tracing_policy()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy().data(), this->tracing_policy().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      2, this->tracing_policy(), output);
+  }
+
+  // optional string tracing_policy_config = 3;
+  if (has_tracing_policy_config()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy_config().data(), this->tracing_policy_config().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      3, this->tracing_policy_config(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* TraceConfig::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required bool trace_requests = 1;
+  if (has_trace_requests()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(1, this->trace_requests(), target);
+  }
+
+  // optional string tracing_policy = 2;
+  if (has_tracing_policy()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy().data(), this->tracing_policy().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        2, this->tracing_policy(), target);
+  }
+
+  // optional string tracing_policy_config = 3;
+  if (has_tracing_policy_config()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->tracing_policy_config().data(), this->tracing_policy_config().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        3, this->tracing_policy_config(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int TraceConfig::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required bool trace_requests = 1;
+    if (has_trace_requests()) {
+      total_size += 1 + 1;
+    }
+
+    // optional string tracing_policy = 2;
+    if (has_tracing_policy()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->tracing_policy());
+    }
+
+    // optional string tracing_policy_config = 3;
+    if (has_tracing_policy_config()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->tracing_policy_config());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void TraceConfig::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const TraceConfig* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const TraceConfig*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void TraceConfig::MergeFrom(const TraceConfig& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_trace_requests()) {
+      set_trace_requests(from.trace_requests());
+    }
+    if (from.has_tracing_policy()) {
+      set_tracing_policy(from.tracing_policy());
+    }
+    if (from.has_tracing_policy_config()) {
+      set_tracing_policy_config(from.tracing_policy_config());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void TraceConfig::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void TraceConfig::CopyFrom(const TraceConfig& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool TraceConfig::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
+
+  return true;
+}
+
+void TraceConfig::Swap(TraceConfig* other) {
+  if (other != this) {
+    std::swap(trace_requests_, other->trace_requests_);
+    std::swap(tracing_policy_, other->tracing_policy_);
+    std::swap(tracing_policy_config_, other->tracing_policy_config_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata TraceConfig::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = TraceConfig_descriptor_;
+  metadata.reflection = TraceConfig_reflection_;
+  return metadata;
 }
 
 
@@ -1775,6 +2127,7 @@ const int XCap::kSnapConfigFieldNumber;
 const int XCap::kSnapTimestampFieldNumber;
 const int XCap::kVoucherSizeFieldNumber;
 const int XCap::kExpireTimeMsFieldNumber;
+const int XCap::kTraceConfigFieldNumber;
 #endif  // !_MSC_VER
 
 XCap::XCap()
@@ -1783,6 +2136,7 @@ XCap::XCap()
 }
 
 void XCap::InitAsDefaultInstance() {
+  trace_config_ = const_cast< ::xtreemfs::pbrpc::TraceConfig*>(&::xtreemfs::pbrpc::TraceConfig::default_instance());
 }
 
 XCap::XCap(const XCap& from)
@@ -1805,6 +2159,7 @@ void XCap::SharedCtor() {
   snap_timestamp_ = GOOGLE_ULONGLONG(0);
   voucher_size_ = GOOGLE_ULONGLONG(0);
   expire_time_ms_ = GOOGLE_ULONGLONG(0);
+  trace_config_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1823,6 +2178,7 @@ void XCap::SharedDtor() {
     delete server_signature_;
   }
   if (this != default_instance_) {
+    delete trace_config_;
   }
 }
 
@@ -1875,6 +2231,9 @@ void XCap::Clear() {
     snap_timestamp_ = GOOGLE_ULONGLONG(0);
     voucher_size_ = GOOGLE_ULONGLONG(0);
     expire_time_ms_ = GOOGLE_ULONGLONG(0);
+    if (has_trace_config()) {
+      if (trace_config_ != NULL) trace_config_->::xtreemfs::pbrpc::TraceConfig::Clear();
+    }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -2081,6 +2440,20 @@ bool XCap::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(106)) goto parse_trace_config;
+        break;
+      }
+
+      // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+      case 13: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_trace_config:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_trace_config()));
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -2176,6 +2549,12 @@ void XCap::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed64(12, this->expire_time_ms(), output);
   }
 
+  // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+  if (has_trace_config()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      13, this->trace_config(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -2260,6 +2639,13 @@ void XCap::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed64ToArray(12, this->expire_time_ms(), target);
   }
 
+  // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+  if (has_trace_config()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        13, this->trace_config(), target);
+  }
+
   if (!unknown_fields().empty()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -2340,6 +2726,13 @@ int XCap::ByteSize() const {
       total_size += 1 + 8;
     }
 
+    // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+    if (has_trace_config()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->trace_config());
+    }
+
   }
   if (!unknown_fields().empty()) {
     total_size +=
@@ -2405,6 +2798,9 @@ void XCap::MergeFrom(const XCap& from) {
     if (from.has_expire_time_ms()) {
       set_expire_time_ms(from.expire_time_ms());
     }
+    if (from.has_trace_config()) {
+      mutable_trace_config()->::xtreemfs::pbrpc::TraceConfig::MergeFrom(from.trace_config());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -2424,6 +2820,9 @@ void XCap::CopyFrom(const XCap& from) {
 bool XCap::IsInitialized() const {
   if ((_has_bits_[0] & 0x000003ff) != 0x000003ff) return false;
 
+  if (has_trace_config()) {
+    if (!this->trace_config().IsInitialized()) return false;
+  }
   return true;
 }
 
@@ -2441,6 +2840,7 @@ void XCap::Swap(XCap* other) {
     std::swap(snap_timestamp_, other->snap_timestamp_);
     std::swap(voucher_size_, other->voucher_size_);
     std::swap(expire_time_ms_, other->expire_time_ms_);
+    std::swap(trace_config_, other->trace_config_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);
