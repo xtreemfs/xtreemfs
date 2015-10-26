@@ -1,13 +1,13 @@
-//automatically generated at Thu Apr 23 14:16:51 CEST 2015
+//automatically generated at Mon Oct 26 10:41:57 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
 
-#include "include/Common.pb.h"
-#include "xtreemfs/DIR.pb.h"
-#include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/MRC.pb.h"
 #include "xtreemfs/OSD.pb.h"
+#include "xtreemfs/MRC.pb.h"
+#include "include/Common.pb.h"
+#include "xtreemfs/GlobalTypes.pb.h"
+#include "xtreemfs/DIR.pb.h"
 
 namespace xtreemfs {
 namespace pbrpc {
@@ -175,6 +175,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
           return new xtreemfs::pbrpc::xtreemfs_check_file_existsRequest();
           break;
         }
+        case 52: {
+          return new xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest();
+          break;
+        }
         case 32: {
           return new xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest();
           break;
@@ -201,6 +205,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 37: {
           return new xtreemfs::pbrpc::XCap();
+          break;
+        }
+        case 53: {
+          return new xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest();
           break;
         }
         case 38: {
@@ -310,6 +318,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 35: {
           return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 22: {
+          return new xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest();
           break;
         }
         case 36: {

@@ -39,6 +39,8 @@ import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.quota.OSDVoucherManager;
+import org.xtreemfs.osd.quota.VoucherErrorException;
 import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
@@ -180,20 +182,51 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "STAGEOP OPEN");
             
+            boolean writeAccess = request.getCapability() != null
+                    && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
+                            | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
+                                .getNumber()) & request.getCapability().getAccessMode()) > 0;
+
+            // configure quota, if valid
+            if (writeAccess) {
+                OSDVoucherManager osdVoucherManager = master.getOsdVoucherManager();
+                Capability capability = request.getCapability();
+                try {
+                    osdVoucherManager.registerFileVoucher(fileId, capability.getClientIdentity(),
+                            capability.getExpireMs(), capability.getVoucherSize());
+                } catch (VoucherErrorException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                                "Failed to process doPrepareRequest() request due to the following VoucherErrorException:");
+                        Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+                    }
+
+                    callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
+                            POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
+                    return;
+                } catch (IOException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                                "Failed to process doPrepareRequest() request due to the following IOException:");
+                    }
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+
+                    callback.parseComplete(request, ErrorUtils.getErrorResponse(ErrorType.IO_ERROR,
+                            POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
+                }
+            }
+
             CowPolicy cowPolicy = CowPolicy.PolicyNoCow;
 
             // check if snasphots are enabled and a write operation is executed;
             // this is required to create new snapshots when files open for
             // writing are closed, even if the same files are still open for
             // reading
-            boolean write = request.getCapability() != null
-                    && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-                    && ((SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
-                            | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber() | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY
-                                .getNumber()) & request.getCapability().getAccessMode()) > 0;
+            boolean snapShotWrite = writeAccess
+                    && request.getCapability().getSnapConfig() != SnapConfig.SNAP_CONFIG_SNAPS_DISABLED;
 
             if (oft.contains(fileId)) {
-                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, write);
+                cowPolicy = oft.refresh(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, snapShotWrite);
             } else {
 
                 // find out which COW mode to use, depending on the capability
@@ -203,7 +236,7 @@ public class PreprocStage extends Stage {
                 else
                     cowPolicy = new CowPolicy(cowMode.COW_ONCE);
 
-                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, write);
+                oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy, snapShotWrite);
                 request.setFileOpen(true);
             }
             request.setCowPolicy(cowPolicy);
@@ -366,9 +399,11 @@ public class PreprocStage extends Stage {
         final CloseCallback callback = (CloseCallback) m.getCallback();
 
         OpenFileTableEntry entry = oft.close(fileId);
-        LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
 
-        callback.closeResult(entry, null);
+        if(entry != null && entry.getFileId() != null) {
+            LRUCache<String, Capability> cachedCaps = capCache.remove(entry.getFileId());
+            callback.closeResult(entry, null);
+        }
     }
 
     @Override

@@ -74,6 +74,7 @@ import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.FinalizeVouchersOperation;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
@@ -99,6 +100,7 @@ import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.quota.OSDVoucherManager;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.*;
 import org.xtreemfs.osd.storage.CleanupThread;
@@ -183,6 +185,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     protected final RWReplicationStage                  rwrStage;
 
+    private final OSDVoucherManager                     osdVoucherManager;
+
     private List<OSDStatusListener>                     statusListener;
 
     private OSDPolicyContainer                          policyContainer;
@@ -191,6 +195,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
+
 
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
@@ -522,6 +527,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             notifyConfigurationChange();
         }
         
+        osdVoucherManager = new OSDVoucherManager(storageLayout);
         
         
         if (Logging.isDebug())
@@ -825,6 +831,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new TruncateOperation(this);
         operations.put(op.getProcedureId(), op);
 
+        op = new FinalizeVouchersOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         /*
          * op = new KeepFileOpenOperation(this); operations.put(op.getProcedureId(),op);
          */
@@ -994,6 +1003,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public OSDPolicyContainer getPolicyContainer() {
         return policyContainer;
+    }
+
+    /**
+     * @return the osdVoucherManager
+     */
+    public OSDVoucherManager getOsdVoucherManager() {
+        return osdVoucherManager;
     }
 
     public void objectReceived() {

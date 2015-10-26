@@ -20,8 +20,8 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
-import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
+import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -90,9 +90,10 @@ public class TruncateOperation extends MRCOperation {
                         .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                         : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(),
                         writeCap.getTraceConfig().getTraceRequests(), writeCap.getTraceConfig().getTracingPolicyConfig(),
-                        writeCap.getTraceConfig().getTracingPolicy(), master
-                        .getConfig().getCapabilitySecret());
-        
+                        writeCap.getTraceConfig().getTracingPolicy(), writeCap.getVoucherSize(),
+                        TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000,
+                        master.getConfig().getCapabilitySecret());
+
         // set the response
         rq.setResponse(truncCap.getXCap());
         update.execute();

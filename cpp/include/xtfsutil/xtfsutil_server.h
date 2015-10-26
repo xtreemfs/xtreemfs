@@ -225,9 +225,19 @@ class XtfsUtilServer {
                       const Json::Value& input,
                       Json::Value* output);
 
-  void OpSetVolumeQuota(const xtreemfs::pbrpc::UserCredentials& uc,
-                      const Json::Value& input,
-                      Json::Value* output);
+  // Quota functions
+
+  void OpSetQuota(const xtreemfs::pbrpc::UserCredentials& uc,
+                        const Json::Value& input,
+                        Json::Value* output);
+
+  void OpSetQuotaRelatedValue(const xtreemfs::pbrpc::UserCredentials& uc,
+                          const Json::Value& input,
+                          Json::Value* output);
+
+  void OpGetQuota(const xtreemfs::pbrpc::UserCredentials& uc,
+                        const Json::Value& input,
+                        Json::Value* output);
 
   /** Mutex to protect xctl_files_. */
   boost::mutex xctl_files_mutex_;

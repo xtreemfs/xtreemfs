@@ -76,6 +76,16 @@ class TestRPCServerOSD : public TestRPCServer<TestRPCServerOSD> {
       boost::scoped_array<char>* response_data,
       uint32_t* response_data_len);
 
+
+  google::protobuf::Message* FinalizeVoucherOperation(
+      const pbrpc::Auth& auth,
+      const pbrpc::UserCredentials& user_credentials,
+      const google::protobuf::Message& request,
+      const char* data,
+      uint32_t data_len,
+      boost::scoped_array<char>* response_data,
+      uint32_t* response_data_len);
+
   /** Mutex used to protect all member variables from concurrent access. */
   mutable boost::mutex mutex_;
 

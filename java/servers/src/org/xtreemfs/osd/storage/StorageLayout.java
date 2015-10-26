@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -473,6 +474,25 @@ public abstract class StorageLayout {
      * @param versionState
      */
     public abstract void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException;
+
+    /**
+     * Retrieves invalid client expire times for a given file from stable storage
+     * 
+     * @param fileId
+     * @return
+     * @throws IOException
+     */
+    public abstract Set<String> getInvalidClientExpireTimeSet(String fileId) throws IOException;
+
+    /**
+     * Saves invalid client expire times for a given file on stable storage
+     * 
+     * @param fileId
+     * @param invalidClientExpireTimeSet
+     * @throws IOException
+     */
+    public abstract void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet)
+            throws IOException;
 
     public static final class FileList {
         // directories to scan

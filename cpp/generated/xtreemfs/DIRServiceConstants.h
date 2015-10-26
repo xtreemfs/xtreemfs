@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Tue Mar 03 16:20:17 CET 2015
+//automatically generated from DIR.proto at Mon Oct 26 10:41:57 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef DIRSERVICECONSTANTS_H_

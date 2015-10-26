@@ -29,6 +29,8 @@ TestRPCServerOSD::TestRPCServerOSD() : file_size_(0) {
       = Op(this, &TestRPCServerOSD::WriteOperation);
   operations_[PROC_ID_READ]
       = Op(this, &TestRPCServerOSD::ReadOperation);
+  operations_[PROC_ID_XTREEMFS_FINALIZE_VOUCHERS]
+      = Op(this, &TestRPCServerOSD::FinalizeVoucherOperation);
   data_.reset(new char[kMaxFileSize]);
 }
 
@@ -136,6 +138,25 @@ google::protobuf::Message* TestRPCServerOSD::WriteOperation(
   memcpy(&data_[offset], data, data_len);
 
   OSDWriteResponse* response = new OSDWriteResponse();
+  response->set_size_in_bytes(file_size_);
+  response->set_truncate_epoch(0);
+
+  return response;
+}
+
+google::protobuf::Message* TestRPCServerOSD::FinalizeVoucherOperation(
+    const pbrpc::Auth& auth,
+    const pbrpc::UserCredentials& user_credentials,
+    const google::protobuf::Message& request,
+    const char* data,
+    uint32_t data_len,
+    boost::scoped_array<char>* response_data,
+    uint32_t* response_data_len) {
+  boost::mutex::scoped_lock lock(mutex_);
+
+  OSDFinalizeVouchersResponse* response = new OSDFinalizeVouchersResponse();
+  response->set_osd_uuid("osd_uuid");
+  response->set_server_signature("signature");
   response->set_size_in_bytes(file_size_);
   response->set_truncate_epoch(0);
 

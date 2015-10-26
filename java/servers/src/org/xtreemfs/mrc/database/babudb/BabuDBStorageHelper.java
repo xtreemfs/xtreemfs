@@ -9,22 +9,27 @@
 package org.xtreemfs.mrc.database.babudb;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.database.Database;
 import org.xtreemfs.babudb.api.database.DatabaseRO;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedRCMetadata;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.XAttr;
 
 public class BabuDBStorageHelper {
@@ -136,6 +141,7 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
@@ -144,9 +150,9 @@ public class BabuDBStorageHelper {
     
     static class XAttrIterator implements DatabaseResultSet<XAttr> {
         
-        private ResultSet<byte[], byte[]> it;
+        private final ResultSet<byte[], byte[]> it;
         
-        private String                    owner;
+        private final String                    owner;
         
         private BufferBackedXAttr         next;
         
@@ -208,6 +214,7 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
@@ -216,7 +223,7 @@ public class BabuDBStorageHelper {
     
     static class ACLIterator implements DatabaseResultSet<ACLEntry> {
         
-        private ResultSet<byte[], byte[]> it;
+        private final ResultSet<byte[], byte[]> it;
         
         public ACLIterator(ResultSet<byte[], byte[]> it) {
             this.it = it;
@@ -238,12 +245,108 @@ public class BabuDBStorageHelper {
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void destroy() {
             it.free();
         }
         
     }
     
+    static class FileVoucherClientInfoIterator implements DatabaseResultSet<FileVoucherClientInfo> {
+
+        private final ResultSet<byte[], byte[]> it;
+
+        public FileVoucherClientInfoIterator(ResultSet<byte[], byte[]> it) {
+            this.it = it;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return it.hasNext();
+        }
+
+        @Override
+        public FileVoucherClientInfo next() {
+            Entry<byte[], byte[]> entry = it.next();
+            return new BufferBackedFileVoucherClientInfo(entry.getKey(), entry.getValue());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void destroy() {
+            it.free();
+        }
+
+    }
+    
+    public enum OwnerType {
+
+        USER("u"), GROUP("g");
+
+        private final String dbAttrSubKey;
+
+        private OwnerType(String dbAttrSubKey) {
+            this.dbAttrSubKey = dbAttrSubKey;
+        }
+
+        public static OwnerType getByDbAttrSubkey(String dbAttrSubkey) {
+            for (OwnerType ownerType : OwnerType.values()) {
+                if (ownerType.getDbAttrSubKey().equals(dbAttrSubkey)) {
+                    return ownerType;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * @return the dbAttrSubKey
+         */
+        public String getDbAttrSubKey() {
+            return dbAttrSubKey;
+        }
+    }
+
+    public enum QuotaInfo {
+        QUOTA("q", "quota"), USED("u", "used"), BLOCKED("b", "blocked");
+
+        private final String dbAttrSubKey;
+        private final String valueAsString;
+
+        private QuotaInfo(String dbAttrSubKey, String valueAsString) {
+            this.dbAttrSubKey = dbAttrSubKey;
+            this.valueAsString = valueAsString;
+        }
+
+        public static QuotaInfo getByDbAttrSubkey(String dbAttrSubkey) {
+            for (QuotaInfo quotaInfo : QuotaInfo.values()) {
+                if (quotaInfo.getDbAttrSubKey().equals(dbAttrSubkey)) {
+                    return quotaInfo;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * @return the dbAttrSubKey
+         */
+        public String getDbAttrSubKey() {
+            return dbAttrSubKey;
+        }
+
+        /**
+         * @return the valueAsString
+         */
+        public String getValueAsString() {
+            return valueAsString;
+        }
+    }
+
     public static byte[] getLastAssignedFileId(Database database) throws BabuDBException {
         
         byte[] bytes = database.lookup(BabuDBStorageManager.VOLUME_INDEX, BabuDBStorageManager.LAST_ID_KEY,
@@ -426,6 +529,123 @@ public class BabuDBStorageHelper {
         return buf;
     }
     
+    /**
+     * Generates the key for a FileVoucherInfo based on the key identifer, the fileID and the word "info", seperated by
+     * dots.
+     * 
+     * @param fileId
+     *            the id of the file related to this key
+     * @return the byte array with the generated key
+     */
+    public static byte[] createFileVoucherInfoKey(long fileId) {
+        // i = info
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".i";
+
+        return keyString.getBytes();
+    }
+
+    /**
+     * Generates the key for a FileVoucherInfo based on the key identifer, the fileID and the clientID, seperated by
+     * dots.
+     * 
+     * @param fileId
+     *            the id of the file related to this key
+     * @param clientId
+     *            the id of the client related to this key
+     * @return
+     */
+    public static byte[] createFileVoucherClientInfoKey(long fileId, String clientId) {
+        // c = client
+        String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".c." + clientId;
+
+        return keyString.getBytes();
+    }
+
+    /**
+     * Generates a prefix key for the quota information regarding a given user/group or all user/group (specified by an
+     * empty id) and the given OwnerType.
+     * 
+     * @param ownerType
+     * @param id
+     * @return
+     */
+    public static byte[] createPrefixOwnerQuotaInfoKey(OwnerType ownerType, String id) {
+        return createOwnerQuotaInfoKey(ownerType, id, null);
+    }
+
+    /**
+     * Generates the key for the quota information quota, usedSpace or blockedSpace (QuotaInfo) for a user or group
+     * (OwnerType) combined with the ownerType id, e.g. userId as ownerId.
+     * 
+     * @param ownerType
+     * @param id
+     * @param quotaInfo
+     * @return
+     */
+    public static byte[] createOwnerQuotaInfoKey(OwnerType ownerType, String id, QuotaInfo quotaInfo) {
+        String key = BabuDBStorageManager.QUOTA_KEY_IDENTIFIER + "." + ownerType.getDbAttrSubKey() + ".";
+
+        if (!id.isEmpty()) {
+            key += id + ".";
+
+            if (quotaInfo != null) {
+                key += quotaInfo.getDbAttrSubKey();
+            }
+        }
+
+
+        return key.getBytes();
+    }
+
+    /**
+     * 
+     * @param it
+     * @return
+     */
+    public static Map<String, Map<String, Long>> buildAllOwnerQuotaInfoMap(ResultSet<byte[], byte[]> it) {
+
+        HashMap<String, Map<String, Long>> overallMap = new HashMap<String, Map<String, Long>>();
+
+        while (it.hasNext()) {
+            Entry<byte[], byte[]> entry = it.next();
+            String key = new String(entry.getKey());
+            Long value = Long.valueOf(new String(entry.getValue()));
+            
+            // split key into single parts: [Prefix, OwnerType, name, QuotaInfo]
+            String[] keyParts = key.split("\\.");
+            if (keyParts.length != 4) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.storage, (Object) null,
+                        "MRC database contains quota related entries with an invalid key structure. "
+                                + "(key: %s - value: %d)", key, value);
+                continue;
+            }
+            
+
+            // parse entry and initialize owner related map
+            String ownerName = keyParts[2];
+            Map<String, Long> ownerMap = overallMap.get(ownerName);
+            if (ownerMap == null) {
+                ownerMap = new HashMap<String, Long>();
+
+                // default values
+                ownerMap.put(QuotaInfo.QUOTA.getValueAsString(), QuotaConstants.UNLIMITED_QUOTA);
+                ownerMap.put(QuotaInfo.USED.getValueAsString(), new Long(0));
+                ownerMap.put(QuotaInfo.BLOCKED.getValueAsString(), new Long(0));
+
+                // add to overall map
+                overallMap.put(ownerName, ownerMap);
+            }
+            
+            // change value
+            QuotaInfo quotaInfo = QuotaInfo.getByDbAttrSubkey(keyParts[3]);
+            if(quotaInfo != null) {
+                ownerMap.put(quotaInfo.getValueAsString(), value);
+            }
+        }
+
+        return overallMap;
+    }
+
     public static short getXAttrCollisionNumber(byte[] key) {
         
         short collNum = 0;

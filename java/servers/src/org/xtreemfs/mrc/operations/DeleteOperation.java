@@ -26,6 +26,7 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
@@ -134,6 +135,12 @@ public class DeleteOperation extends MRCOperation {
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, time, update);
         
+        // remove file size from quota manager
+        if (!file.isDirectory() && file.getSize() > 0 && file.getXLocList() != null && file.getLinkCount() == 1) {
+            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), file);
+            master.getMrcVoucherManager().deleteFile(quotaFileInformation, update);
+        }
+
         // set the response, depending on whether the request was for
         // deleting a
         // file or directory

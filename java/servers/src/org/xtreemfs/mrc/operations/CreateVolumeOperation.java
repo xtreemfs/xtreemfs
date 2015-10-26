@@ -25,6 +25,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
@@ -160,6 +161,11 @@ public class CreateVolumeOperation extends MRCOperation {
             Thread thr = new Thread(rqThr);
             thr.start();
             
+            // create the quota manager for the new volume, which will register itself
+            VolumeQuotaManager volumeQuotaManager = new VolumeQuotaManager(master.getMrcQuotaManager(), master
+                    .getVolumeManager().getStorageManager(volumeId), volumeId);
+            volumeQuotaManager.init();
+
         } catch (UserException exc) {
             if (Logging.isDebug())
                 Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
