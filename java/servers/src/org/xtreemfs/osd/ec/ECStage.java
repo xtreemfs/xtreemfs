@@ -63,7 +63,7 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
     public static final int STAGEOP_FETCHINVALIDATED          = 23;
 
-    public  static enum Operation {
+    public static enum Operation {
         READ,
         WRITE,
         TRUNCATE,
