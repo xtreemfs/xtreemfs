@@ -46,6 +46,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -838,18 +839,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
-    
-    public static interface RWReplicationCallback {
-        public void success(long newObjectVersion);
-        public void redirect(String redirectTo);
-        public void failed(ErrorResponse ex);
-    }
-
-    /*public void openFile(FileCredentials credentials, XLocations locations, boolean forceReset,
-            RWReplicationCallback callback, OSDRequest request) {
-        this.enqueueOperation(STAGEOP_OPEN, new Object[]{credentials,locations,forceReset}, request, callback);
-    }*/
-
     protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request,
             ReusableBuffer createdViewBuffer, Object callback) {
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
@@ -875,20 +864,20 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-            Operation op, RWReplicationCallback callback, OSDRequest request) {
+            Operation op, FileOperationCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[] { credentials, xloc, objNo, objVersion, op },
                 request, null, callback);
     }
 
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-            InternalObjectData data, ReusableBuffer createdViewBuffer, RWReplicationCallback callback,
+            InternalObjectData data, ReusableBuffer createdViewBuffer, FileOperationCallback callback,
             OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion,
                 data }, request, createdViewBuffer, callback);
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize,
-            long newObjectVersion, RWReplicationCallback callback, OSDRequest request) {
+            long newObjectVersion, FileOperationCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_TRUNCATE,
                 new Object[] { credentials, xloc, newFileSize, newObjectVersion }, request, null, callback);
     }
@@ -1074,7 +1063,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void processReplicatedWrite(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
@@ -1114,7 +1103,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void processReplicatedTruncate(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
@@ -1152,7 +1141,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void processPrepareOp(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
             final String fileId = credentials.getXcap().getFileId();
@@ -1171,33 +1160,35 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             if ((op == Operation.INTERNAL_UPDATE) || (op == Operation.INTERNAL_TRUNCATE)) {
                 switch (state.getState()) {
-                case WAITING_FOR_LEASE:
-                case INITIALIZING:
-                case RESET:
-                case OPEN: {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "enqeue update for %s (state is %s)", fileId, state.getState());
-                    }
-                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                    case WAITING_FOR_LEASE:
+                    case INITIALIZING:
+                    case RESET:
+                    case OPEN: {
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
-                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                    "enqeue update for %s (state is %s)", fileId, state.getState());
                         }
-                        callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                                POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
+                        } else {
+                            state.addPendingRequest(method);
+                        }
+                        if (state.getState() == ReplicaState.OPEN) {
+                            // immediately change to backup mode...no need to check the lease
+                            doWaitingForLease(state);
+                        }
                         return;
-                    } else {
-                        state.addPendingRequest(method);
                     }
-                    if (state.getState() == ReplicaState.OPEN) {
-                        // immediately change to backup mode...no need to check the lease
-                        doWaitingForLease(state);
-                    }
-                    return;
                 }
-                }
+
+                // does this internal update have an acceptable version
                 if (!state.getPolicy().acceptRemoteUpdate(objVersion)) {
                     Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                             "received outdated object version %d for file %s", objVersion, fileId);
@@ -1205,6 +1196,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                             "outdated object version for update rejected"));
                     return;
                 }
+
+                // or does it need to be reset first
                 boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s needs reset: %s", fileId,
@@ -1217,42 +1210,46 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     callback.success(0);
                 }
             } else {
+                // not an internal update
                 state.setCredentials(credentials);
 
                 switch (state.getState()) {
-                case WAITING_FOR_LEASE:
-                case INITIALIZING:
-                case RESET: {
-                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
-                        if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
-                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                    case WAITING_FOR_LEASE:
+                    case INITIALIZING:
+                    case RESET: {
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        } else {
+                            state.addPendingRequest(method);
                         }
-                        callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                                POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
-                    } else {
-                        state.addPendingRequest(method);
-                    }
-                    return;
-                }
-                case OPEN: {
-                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
-                        if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
-                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
-                        }
-                        callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                                POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
                         return;
-                    } else {
-                        state.addPendingRequest(method);
                     }
-                    doWaitingForLease(state);
-                    return;
+                    case OPEN: {
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
+                        } else {
+                            state.addPendingRequest(method);
+                        }
+                        doWaitingForLease(state);
+                        return;
+                    }
                 }
-                }
+                /* reset, open, initialising and waiting_for_lease make prepareOp add the operation to pendingRequest
+                 * all other states get a new version
+                 */
 
                 try {
                     long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
@@ -1449,13 +1446,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     public void fetchInvalidated(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
-            FileCredentials credentials, XLocations xloc, RWReplicationCallback callback, OSDRequest request) {
+            FileCredentials credentials, XLocations xloc, FileOperationCallback callback, OSDRequest request) {
         this.enqueueOperation(STAGEOP_FETCHINVALIDATED,
                 new Object[] { fileId, authState, localState, credentials, xloc }, request, null, callback);
     }
 
     private void processFetchInvalidated(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final String fileId = (String) method.getArgs()[0];
             final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];

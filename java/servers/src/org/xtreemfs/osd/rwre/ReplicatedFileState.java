@@ -24,7 +24,8 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationCallback;
+import org.xtreemfs.osd.FileOperationCallback;
+import org.xtreemfs.osd.FileState;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
@@ -34,7 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  *
  * @author bjko
  */
-public class ReplicatedFileState {
+public class ReplicatedFileState extends FileState {
 
     public enum ReplicaState {
         INITIALIZING, 
@@ -55,8 +56,6 @@ public class ReplicatedFileState {
     private ReplicaState               state;
 
     private List<ObjectVersionMapping> objectsToFetch;
-
-    private List<StageRequest>         pendingRequests;
 
     private Flease                     lease;
 
@@ -82,8 +81,8 @@ public class ReplicatedFileState {
 
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
                                OSDServiceClient client) throws UnknownUUIDException, IOException {
+        super();
         queuedData = new AtomicInteger();
-        pendingRequests = new LinkedList();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -214,62 +213,6 @@ public class ReplicatedFileState {
 
     public ReplicaUpdatePolicy getPolicy() {
         return this.policy;
-    }
-
-    /**
-     * Appends the request to the end of the list of pending requests.
-     */
-    public void addPendingRequest(StageRequest request) {
-        pendingRequests.add(request);
-    }
-
-    /**
-     * Retrieves and removes the head (first element) of the list of pending requests.
-     * 
-     * @return request or null if none exists
-     */
-    public StageRequest removePendingRequest() {
-        StageRequest req = null;
-        if (hasPendingRequests()) {
-            req = pendingRequests.remove(0);
-        }
-
-        return req;
-    }
-
-    /**
-     * Removes all of the requests from this list of pending requests and sends them an error response, if a
-     * callback of type RWReplicationCallback exists.
-     * 
-     * @param error
-     *            to respond with or null
-     */
-    public void clearPendingRequests(ErrorResponse error) {
-        if (error != null) {
-            // Respond with the error, if a callback of type RWReplicationCallback exists.
-            for (StageRequest rq : pendingRequests) {
-                Object callback = rq.getCallback();
-                if (callback != null && callback instanceof RWReplicationCallback) {
-                    ((RWReplicationCallback) callback).failed(error);
-                }
-            }
-        }
-
-        pendingRequests.clear();
-    }
-
-    /**
-     * Returns true if there are pending requests.      
-     */
-    public boolean hasPendingRequests() {
-        return (!pendingRequests.isEmpty());
-    }
-
-    /**
-     * Returns the number of pending requests.
-     */
-    public int sizeOfPendingRequests() {
-        return pendingRequests.size();
     }
 
     /**

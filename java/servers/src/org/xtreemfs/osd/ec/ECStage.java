@@ -219,6 +219,14 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
             final Operation op = (Operation) method.getArgs()[4];
 
             StripedFileState state = getState(credentials, loc, false, false);
+            /*
+             * check if request must fail
+             * check what kind of operation should be prepared
+             * collect ops in state if we are master or intend to become master but limit amount of pending ops
+             * determine new version for update or determine version to read
+             *
+             */
+
             callback.success(1);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -227,7 +235,6 @@ public class ECStage extends Stage implements FleaseMessageSenderInterface {
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        // this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
         try {
             FleaseMessage msg = new FleaseMessage(message);
             BufferPool.free(message);
