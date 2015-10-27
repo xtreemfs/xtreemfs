@@ -105,6 +105,11 @@ public class XtreemFSFileSystem extends FileSystem {
         } else {
             defaultVolumeName = defaultURI.getPath().split("/")[1];
         }
+        
+        if(Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "default volume name: %s",
+                    defaultVolumeName);
+        }
 
         int uriPort = uri.getPort();
         if (uriPort  == -1) {
