@@ -110,6 +110,8 @@ void XtfsUtilServer::ParseAndExecute(const xtreemfs::pbrpc::UserCredentials& uc,
       OpListSnapshots(uc, input, &result);
     } else if (op_name == "createDeleteSnapshot") {
       OpCreateDeleteSnapshot(uc, input, &result);
+    } else if (op_name == "enableDisableTracing") {
+      OpEnableDisableTracing(uc, input, &result);
     } else if (op_name == "setRemoveACL") {
       OpSetRemoveACL(uc, input, &result);
     } else if (op_name == "setQuota") {
@@ -220,6 +222,10 @@ void XtfsUtilServer::OpStat(const xtreemfs::pbrpc::UserCredentials& uc,
       result["num_dirs"] = Json::Value(xtfs_attrs["xtreemfs.num_dirs"]);
       result["num_files"] = Json::Value(xtfs_attrs["xtreemfs.num_files"]);
       result["snapshots_enabled"] = Json::Value(xtfs_attrs["xtreemfs.snapshots_enabled"]);
+      result["tracing_enabled"] = Json::Value(xtfs_attrs["xtreemfs.tracing_enabled"]);
+      result["tracing_policy_config"] = Json::Value(xtfs_attrs["xtreemfs.tracing_policy_config"]);
+      result["tracing_policy"] = Json::Value(xtfs_attrs["xtreemfs.tracing_policy"]);
+
       Json::Value usable_osds_json;
       if (reader.parse(xtfs_attrs["xtreemfs.usable_osds"],
                        usable_osds_json,
@@ -570,6 +576,51 @@ void XtfsUtilServer::OpEnableDisableSnapshots(
                     "xtreemfs.snapshots_enabled",
                     input["snapshots_enabled"].asString(),
                     xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+  (*output)["result"] = Json::Value(Json::objectValue);
+}
+
+void XtfsUtilServer::OpEnableDisableTracing(
+    const xtreemfs::pbrpc::UserCredentials& uc,
+    const Json::Value& input,
+    Json::Value* output) {
+  if ((!input.isMember("path") || !input["path"].isString())
+      || (!input.isMember("enable_tracing") || !input["enable_tracing"].isString())) {
+    (*output)["error"] = Json::Value(
+        "One of the following fields is missing or has an invalid value:"
+        " path or enable_tracing.");
+    return;
+  }
+
+  const string path = input["path"].asString();
+
+  if(input["enable_tracing"] == "1") {
+    volume_->SetXAttr(uc,
+                      path,
+                      "xtreemfs.tracing_enabled",
+                      input["enable_tracing"].asString(),
+                      xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+
+    if (input.isMember("tracing_policy_config") && input["tracing_policy_config"].isString()) {
+      volume_->SetXAttr(uc,
+                        path,
+                        "xtreemfs.tracing_policy_config",
+                        input["tracing_policy_config"].asString(),
+                        xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+    }
+
+    if (input.isMember("tracing_policy") && input["tracing_policy"].isString()) {
+      volume_->SetXAttr(uc,
+                        path,
+                        "xtreemfs.tracing_policy",
+                        input["tracing_policy"].asString(),
+                        xtreemfs::pbrpc::XATTR_FLAGS_REPLACE);
+    }
+  } else {
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_enabled");
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_policy");
+    volume_->RemoveXAttr(uc, path, "xtreemfs.tracing_policy_config");
+  }
+
   (*output)["result"] = Json::Value(Json::objectValue);
 }
 

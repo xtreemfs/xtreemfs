@@ -1428,6 +1428,858 @@ public final class GlobalTypes {
     // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.SERVICES)
   }
 
+  public interface TraceConfigOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required bool trace_requests = 1;
+    /**
+     * <code>required bool trace_requests = 1;</code>
+     *
+     * <pre>
+     * Set true to activate request tracing
+     * </pre>
+     */
+    boolean hasTraceRequests();
+    /**
+     * <code>required bool trace_requests = 1;</code>
+     *
+     * <pre>
+     * Set true to activate request tracing
+     * </pre>
+     */
+    boolean getTraceRequests();
+
+    // optional string tracing_policy = 2;
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    boolean hasTracingPolicy();
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    java.lang.String getTracingPolicy();
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getTracingPolicyBytes();
+
+    // optional string tracing_policy_config = 3;
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    boolean hasTracingPolicyConfig();
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    java.lang.String getTracingPolicyConfig();
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getTracingPolicyConfigBytes();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.TraceConfig}
+   *
+   * <pre>
+   * Configuration for request tracing
+   * </pre>
+   */
+  public static final class TraceConfig extends
+      com.google.protobuf.GeneratedMessage
+      implements TraceConfigOrBuilder {
+    // Use TraceConfig.newBuilder() to construct.
+    private TraceConfig(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private TraceConfig(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final TraceConfig defaultInstance;
+    public static TraceConfig getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public TraceConfig getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private TraceConfig(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              traceRequests_ = input.readBool();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              tracingPolicy_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              tracingPolicyConfig_ = input.readBytes();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.internal_static_xtreemfs_pbrpc_TraceConfig_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.internal_static_xtreemfs_pbrpc_TraceConfig_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.class, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<TraceConfig> PARSER =
+        new com.google.protobuf.AbstractParser<TraceConfig>() {
+      public TraceConfig parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new TraceConfig(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<TraceConfig> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required bool trace_requests = 1;
+    public static final int TRACE_REQUESTS_FIELD_NUMBER = 1;
+    private boolean traceRequests_;
+    /**
+     * <code>required bool trace_requests = 1;</code>
+     *
+     * <pre>
+     * Set true to activate request tracing
+     * </pre>
+     */
+    public boolean hasTraceRequests() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required bool trace_requests = 1;</code>
+     *
+     * <pre>
+     * Set true to activate request tracing
+     * </pre>
+     */
+    public boolean getTraceRequests() {
+      return traceRequests_;
+    }
+
+    // optional string tracing_policy = 2;
+    public static final int TRACING_POLICY_FIELD_NUMBER = 2;
+    private java.lang.Object tracingPolicy_;
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    public boolean hasTracingPolicy() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    public java.lang.String getTracingPolicy() {
+      java.lang.Object ref = tracingPolicy_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          tracingPolicy_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string tracing_policy = 2;</code>
+     *
+     * <pre>
+     * Volume to write trace
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getTracingPolicyBytes() {
+      java.lang.Object ref = tracingPolicy_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        tracingPolicy_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string tracing_policy_config = 3;
+    public static final int TRACING_POLICY_CONFIG_FIELD_NUMBER = 3;
+    private java.lang.Object tracingPolicyConfig_;
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public boolean hasTracingPolicyConfig() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public java.lang.String getTracingPolicyConfig() {
+      java.lang.Object ref = tracingPolicyConfig_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          tracingPolicyConfig_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string tracing_policy_config = 3;</code>
+     *
+     * <pre>
+     * Tracing policy
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getTracingPolicyConfigBytes() {
+      java.lang.Object ref = tracingPolicyConfig_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        tracingPolicyConfig_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private void initFields() {
+      traceRequests_ = false;
+      tracingPolicy_ = "";
+      tracingPolicyConfig_ = "";
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasTraceRequests()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, traceRequests_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getTracingPolicyBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getTracingPolicyConfigBytes());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, traceRequests_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getTracingPolicyBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getTracingPolicyConfigBytes());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.TraceConfig}
+     *
+     * <pre>
+     * Configuration for request tracing
+     * </pre>
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.internal_static_xtreemfs_pbrpc_TraceConfig_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.internal_static_xtreemfs_pbrpc_TraceConfig_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.class, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder.class);
+      }
+
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        traceRequests_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        tracingPolicy_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        tracingPolicyConfig_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.internal_static_xtreemfs_pbrpc_TraceConfig_descriptor;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig getDefaultInstanceForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig build() {
+        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig buildPartial() {
+        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig result = new org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.traceRequests_ = traceRequests_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.tracingPolicy_ = tracingPolicy_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.tracingPolicyConfig_ = tracingPolicyConfig_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig) {
+          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig other) {
+        if (other == org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance()) return this;
+        if (other.hasTraceRequests()) {
+          setTraceRequests(other.getTraceRequests());
+        }
+        if (other.hasTracingPolicy()) {
+          bitField0_ |= 0x00000002;
+          tracingPolicy_ = other.tracingPolicy_;
+          onChanged();
+        }
+        if (other.hasTracingPolicyConfig()) {
+          bitField0_ |= 0x00000004;
+          tracingPolicyConfig_ = other.tracingPolicyConfig_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasTraceRequests()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required bool trace_requests = 1;
+      private boolean traceRequests_ ;
+      /**
+       * <code>required bool trace_requests = 1;</code>
+       *
+       * <pre>
+       * Set true to activate request tracing
+       * </pre>
+       */
+      public boolean hasTraceRequests() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required bool trace_requests = 1;</code>
+       *
+       * <pre>
+       * Set true to activate request tracing
+       * </pre>
+       */
+      public boolean getTraceRequests() {
+        return traceRequests_;
+      }
+      /**
+       * <code>required bool trace_requests = 1;</code>
+       *
+       * <pre>
+       * Set true to activate request tracing
+       * </pre>
+       */
+      public Builder setTraceRequests(boolean value) {
+        bitField0_ |= 0x00000001;
+        traceRequests_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool trace_requests = 1;</code>
+       *
+       * <pre>
+       * Set true to activate request tracing
+       * </pre>
+       */
+      public Builder clearTraceRequests() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        traceRequests_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional string tracing_policy = 2;
+      private java.lang.Object tracingPolicy_ = "";
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public boolean hasTracingPolicy() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public java.lang.String getTracingPolicy() {
+        java.lang.Object ref = tracingPolicy_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          tracingPolicy_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getTracingPolicyBytes() {
+        java.lang.Object ref = tracingPolicy_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          tracingPolicy_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public Builder setTracingPolicy(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        tracingPolicy_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public Builder clearTracingPolicy() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        tracingPolicy_ = getDefaultInstance().getTracingPolicy();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy = 2;</code>
+       *
+       * <pre>
+       * Volume to write trace
+       * </pre>
+       */
+      public Builder setTracingPolicyBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        tracingPolicy_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string tracing_policy_config = 3;
+      private java.lang.Object tracingPolicyConfig_ = "";
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public boolean hasTracingPolicyConfig() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public java.lang.String getTracingPolicyConfig() {
+        java.lang.Object ref = tracingPolicyConfig_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          tracingPolicyConfig_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getTracingPolicyConfigBytes() {
+        java.lang.Object ref = tracingPolicyConfig_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          tracingPolicyConfig_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder setTracingPolicyConfig(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        tracingPolicyConfig_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder clearTracingPolicyConfig() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        tracingPolicyConfig_ = getDefaultInstance().getTracingPolicyConfig();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string tracing_policy_config = 3;</code>
+       *
+       * <pre>
+       * Tracing policy
+       * </pre>
+       */
+      public Builder setTracingPolicyConfigBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        tracingPolicyConfig_ = value;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.TraceConfig)
+    }
+
+    static {
+      defaultInstance = new TraceConfig(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.TraceConfig)
+  }
+
   public interface NewFileSizeOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
@@ -4757,6 +5609,32 @@ public final class GlobalTypes {
      * </pre>
      */
     long getExpireTimeMs();
+
+    // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    boolean hasTraceConfig();
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig getTraceConfig();
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder getTraceConfigOrBuilder();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.XCap}
@@ -4881,6 +5759,19 @@ public final class GlobalTypes {
             case 97: {
               bitField0_ |= 0x00000800;
               expireTimeMs_ = input.readFixed64();
+              break;
+            }
+            case 106: {
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder subBuilder = null;
+              if (((bitField0_ & 0x00001000) == 0x00001000)) {
+                subBuilder = traceConfig_.toBuilder();
+              }
+              traceConfig_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(traceConfig_);
+                traceConfig_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00001000;
               break;
             }
           }
@@ -5314,6 +6205,40 @@ public final class GlobalTypes {
       return expireTimeMs_;
     }
 
+    // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+    public static final int TRACE_CONFIG_FIELD_NUMBER = 13;
+    private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig traceConfig_;
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    public boolean hasTraceConfig() {
+      return ((bitField0_ & 0x00001000) == 0x00001000);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig getTraceConfig() {
+      return traceConfig_;
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+     *
+     * <pre>
+     * Tracing configuration for the file
+     * </pre>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder getTraceConfigOrBuilder() {
+      return traceConfig_;
+    }
+
     private void initFields() {
       accessMode_ = 0;
       clientIdentity_ = "";
@@ -5327,6 +6252,7 @@ public final class GlobalTypes {
       snapTimestamp_ = 0L;
       voucherSize_ = 0L;
       expireTimeMs_ = 0L;
+      traceConfig_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -5373,6 +6299,12 @@ public final class GlobalTypes {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (hasTraceConfig()) {
+        if (!getTraceConfig().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -5415,6 +6347,9 @@ public final class GlobalTypes {
       }
       if (((bitField0_ & 0x00000800) == 0x00000800)) {
         output.writeFixed64(12, expireTimeMs_);
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        output.writeMessage(13, traceConfig_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -5472,6 +6407,10 @@ public final class GlobalTypes {
       if (((bitField0_ & 0x00000800) == 0x00000800)) {
         size += com.google.protobuf.CodedOutputStream
           .computeFixed64Size(12, expireTimeMs_);
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(13, traceConfig_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -5589,6 +6528,7 @@ public final class GlobalTypes {
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getTraceConfigFieldBuilder();
         }
       }
       private static Builder create() {
@@ -5621,6 +6561,12 @@ public final class GlobalTypes {
         bitField0_ = (bitField0_ & ~0x00000400);
         expireTimeMs_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000800);
+        if (traceConfigBuilder_ == null) {
+          traceConfig_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
+        } else {
+          traceConfigBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00001000);
         return this;
       }
 
@@ -5697,6 +6643,14 @@ public final class GlobalTypes {
           to_bitField0_ |= 0x00000800;
         }
         result.expireTimeMs_ = expireTimeMs_;
+        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+          to_bitField0_ |= 0x00001000;
+        }
+        if (traceConfigBuilder_ == null) {
+          result.traceConfig_ = traceConfig_;
+        } else {
+          result.traceConfig_ = traceConfigBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -5755,6 +6709,9 @@ public final class GlobalTypes {
         if (other.hasExpireTimeMs()) {
           setExpireTimeMs(other.getExpireTimeMs());
         }
+        if (other.hasTraceConfig()) {
+          mergeTraceConfig(other.getTraceConfig());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -5799,6 +6756,12 @@ public final class GlobalTypes {
         if (!hasSnapTimestamp()) {
           
           return false;
+        }
+        if (hasTraceConfig()) {
+          if (!getTraceConfig().isInitialized()) {
+            
+            return false;
+          }
         }
         return true;
       }
@@ -6578,6 +7541,159 @@ public final class GlobalTypes {
         expireTimeMs_ = 0L;
         onChanged();
         return this;
+      }
+
+      // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig traceConfig_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder> traceConfigBuilder_;
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public boolean hasTraceConfig() {
+        return ((bitField0_ & 0x00001000) == 0x00001000);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig getTraceConfig() {
+        if (traceConfigBuilder_ == null) {
+          return traceConfig_;
+        } else {
+          return traceConfigBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public Builder setTraceConfig(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig value) {
+        if (traceConfigBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          traceConfig_ = value;
+          onChanged();
+        } else {
+          traceConfigBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00001000;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public Builder setTraceConfig(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder builderForValue) {
+        if (traceConfigBuilder_ == null) {
+          traceConfig_ = builderForValue.build();
+          onChanged();
+        } else {
+          traceConfigBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00001000;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public Builder mergeTraceConfig(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig value) {
+        if (traceConfigBuilder_ == null) {
+          if (((bitField0_ & 0x00001000) == 0x00001000) &&
+              traceConfig_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance()) {
+            traceConfig_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.newBuilder(traceConfig_).mergeFrom(value).buildPartial();
+          } else {
+            traceConfig_ = value;
+          }
+          onChanged();
+        } else {
+          traceConfigBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00001000;
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public Builder clearTraceConfig() {
+        if (traceConfigBuilder_ == null) {
+          traceConfig_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
+          onChanged();
+        } else {
+          traceConfigBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00001000);
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder getTraceConfigBuilder() {
+        bitField0_ |= 0x00001000;
+        onChanged();
+        return getTraceConfigFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder getTraceConfigOrBuilder() {
+        if (traceConfigBuilder_ != null) {
+          return traceConfigBuilder_.getMessageOrBuilder();
+        } else {
+          return traceConfig_;
+        }
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;</code>
+       *
+       * <pre>
+       * Tracing configuration for the file
+       * </pre>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder> 
+          getTraceConfigFieldBuilder() {
+        if (traceConfigBuilder_ == null) {
+          traceConfigBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder>(
+                  traceConfig_,
+                  getParentForChildren(),
+                  isClean());
+          traceConfig_ = null;
+        }
+        return traceConfigBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.XCap)
@@ -11892,6 +13008,11 @@ public final class GlobalTypes {
   }
 
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_xtreemfs_pbrpc_TraceConfig_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_xtreemfs_pbrpc_TraceConfig_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_NewFileSize_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -11962,160 +13083,170 @@ public final class GlobalTypes {
     java.lang.String[] descriptorData = {
       "\n\032xtreemfs/GlobalTypes.proto\022\016xtreemfs.p" +
       "brpc\032\023include/PBRPC.proto\032\024include/Commo" +
-      "n.proto\"<\n\013NewFileSize\022\025\n\rsize_in_bytes\030" +
-      "\001 \002(\006\022\026\n\016truncate_epoch\030\002 \002(\007\"|\n\016Stripin" +
-      "gPolicy\0220\n\004type\030\001 \002(\0162\".xtreemfs.pbrpc.S" +
-      "tripingPolicyType\022\023\n\013stripe_size\030\002 \002(\007\022\r" +
-      "\n\005width\030\003 \002(\007\022\024\n\014parity_width\030\004 \001(\007\"p\n\007R" +
-      "eplica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021replication" +
-      "_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 \002(\0132\036." +
-      "xtreemfs.pbrpc.StripingPolicy\"5\n\010Replica",
-      "s\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbrpc.Rep" +
-      "lica\"\301\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007\022\027\n\017cl" +
-      "ient_identity\030\002 \002(\t\022\025\n\rexpire_time_s\030\003 \002" +
-      "(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007file_id\030" +
-      "\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022\030\n\020ser" +
-      "ver_signature\030\007 \002(\t\022\026\n\016truncate_epoch\030\010 " +
-      "\002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemfs.pbrp" +
-      "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\022\027\n\014" +
-      "voucher_size\030\013 \001(\006:\0010\022\031\n\016expire_time_ms\030" +
-      "\014 \001(\006:\0010\"\201\001\n\007XLocSet\022\033\n\023read_only_file_s",
-      "ize\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027.xtreemfs.p" +
-      "brpc.Replica\022\035\n\025replica_update_policy\030\003 " +
-      "\002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileCredentials\022" +
-      "\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrpc.XCap\022&\n\005x" +
-      "locs\030\002 \002(\0132\027.xtreemfs.pbrpc.XLocSet\"O\n\022F" +
-      "ileCredentialsSet\0229\n\020file_credentials\030\001 " +
-      "\001(\0132\037.xtreemfs.pbrpc.FileCredentials\"U\n\022" +
-      "VivaldiCoordinates\022\024\n\014x_coordinate\030\001 \002(\001" +
-      "\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013local_error\030\003 " +
-      "\002(\001\"x\n\033OSDFinalizeVouchersResponse\022\020\n\010os",
-      "d_uuid\030\001 \002(\t\022\030\n\020server_signature\030\002 \002(\t\022\025" +
-      "\n\rsize_in_bytes\030\003 \002(\006\022\026\n\016truncate_epoch\030" +
-      "\004 \002(\006\"A\n\020OSDWriteResponse\022\025\n\rsize_in_byt" +
-      "es\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 \001(\007\"*\n\014KeyV" +
-      "aluePair\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027" +
-      "AccessControlPolicyType\022\036\n\032ACCESS_CONTRO" +
-      "L_POLICY_NULL\020\001\022\037\n\033ACCESS_CONTROL_POLICY" +
-      "_POSIX\020\002\022 \n\034ACCESS_CONTROL_POLICY_VOLUME" +
-      "\020\003*\365\003\n\026OSDSelectionPolicyType\022(\n#OSD_SEL" +
-      "ECTION_POLICY_FILTER_DEFAULT\020\350\007\022%\n OSD_S",
-      "ELECTION_POLICY_FILTER_FQDN\020\351\007\022%\n OSD_SE" +
-      "LECTION_POLICY_FILTER_UUID\020\352\007\022%\n OSD_SEL" +
-      "ECTION_POLICY_GROUP_DCMAP\020\320\017\022$\n\037OSD_SELE" +
-      "CTION_POLICY_GROUP_FQDN\020\321\017\022$\n\037OSD_SELECT" +
-      "ION_POLICY_SORT_DCMAP\020\270\027\022#\n\036OSD_SELECTIO" +
-      "N_POLICY_SORT_FQDN\020\271\027\022%\n OSD_SELECTION_P" +
-      "OLICY_SORT_RANDOM\020\272\027\022&\n!OSD_SELECTION_PO" +
-      "LICY_SORT_VIVALDI\020\273\027\022/\n*OSD_SELECTION_PO" +
-      "LICY_SORT_HOST_ROUND_ROBIN\020\274\027\022#\n\036OSD_SEL" +
-      "ECTION_POLICY_SORT_UUID\020\236\037\022&\n!OSD_SELECT",
-      "ION_POLICY_SORT_REVERSE\020\237\037*A\n\032ReplicaSel" +
-      "ectionPolicyType\022#\n\037REPLICA_SELECTION_PO" +
-      "LICY_SIMPLE\020\001*i\n\nSnapConfig\022\036\n\032SNAP_CONF" +
-      "IG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_CONFIG_ACCES" +
-      "S_CURRENT\020\001\022\033\n\027SNAP_CONFIG_ACCESS_SNAP\020\002" +
-      "*P\n\022StripingPolicyType\022\031\n\025STRIPING_POLIC" +
-      "Y_RAID0\020\000\022\037\n\033STRIPING_POLICY_ERASURECODE" +
-      "\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022" +
-      "\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_H" +
-      "TTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_D",
-      "EFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001\022" +
-      "\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTT" +
-      "P_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEF" +
-      "AULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INTE" +
-      "RVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYST" +
-      "EM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNT" +
-      "L_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RDW" +
-      "R\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030SY" +
-      "STEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FC" +
-      "NTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_E",
-      "XCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030S" +
-      "YSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_" +
-      "FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_" +
-      "S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO\020" +
-      "\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPLI" +
-      "CA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL_" +
-      "FLAG_STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STRA" +
-      "TEGY_RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATEG" +
-      "Y_SEQUENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SEQ" +
-      "UENTIAL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DIR",
-      "\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pbr" +
-      "pc.generatedinterfaces"
+      "n.proto\"\\\n\013TraceConfig\022\026\n\016trace_requests" +
+      "\030\001 \002(\010\022\026\n\016tracing_policy\030\002 \001(\t\022\035\n\025tracin" +
+      "g_policy_config\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\r" +
+      "size_in_bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 " +
+      "\002(\007\"|\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".xt" +
+      "reemfs.pbrpc.StripingPolicyType\022\023\n\013strip" +
+      "e_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_wi" +
+      "dth\030\004 \001(\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022",
+      "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p" +
+      "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol" +
+      "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre" +
+      "emfs.pbrpc.Replica\"\364\002\n\004XCap\022\023\n\013access_mo" +
+      "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp" +
+      "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002" +
+      "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos" +
+      "e\030\006 \002(\010\022\030\n\020server_signature\030\007 \002(\t\022\026\n\016tru" +
+      "ncate_epoch\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032" +
+      ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times",
+      "tamp\030\n \002(\006\022\027\n\014voucher_size\030\013 \001(\006:\0010\022\031\n\016e" +
+      "xpire_time_ms\030\014 \001(\006:\0010\0221\n\014trace_config\030\r" +
+      " \001(\0132\033.xtreemfs.pbrpc.TraceConfig\"\201\001\n\007XL" +
+      "ocSet\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n\010re" +
+      "plicas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica\022\035\n" +
+      "\025replica_update_policy\030\003 \002(\t\022\017\n\007version\030" +
+      "\004 \002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002(\0132\024" +
+      ".xtreemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xt" +
+      "reemfs.pbrpc.XLocSet\"O\n\022FileCredentialsS" +
+      "et\0229\n\020file_credentials\030\001 \001(\0132\037.xtreemfs.",
+      "pbrpc.FileCredentials\"U\n\022VivaldiCoordina" +
+      "tes\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordinat" +
+      "e\030\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"x\n\033OSDFinal" +
+      "izeVouchersResponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n" +
+      "\020server_signature\030\002 \002(\t\022\025\n\rsize_in_bytes" +
+      "\030\003 \002(\006\022\026\n\016truncate_epoch\030\004 \002(\006\"A\n\020OSDWri" +
+      "teResponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016tru" +
+      "ncate_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key" +
+      "\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlPo" +
+      "licyType\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020\001",
+      "\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034ACC" +
+      "ESS_CONTROL_POLICY_VOLUME\020\003*\365\003\n\026OSDSelec" +
+      "tionPolicyType\022(\n#OSD_SELECTION_POLICY_F" +
+      "ILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLICY" +
+      "_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY_" +
+      "FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_G" +
+      "ROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_GR" +
+      "OUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SORT" +
+      "_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_F" +
+      "QDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT_RAND",
+      "OM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVAL" +
+      "DI\020\273\027\022/\n*OSD_SELECTION_POLICY_SORT_HOST_" +
+      "ROUND_ROBIN\020\274\027\022#\n\036OSD_SELECTION_POLICY_S" +
+      "ORT_UUID\020\236\037\022&\n!OSD_SELECTION_POLICY_SORT" +
+      "_REVERSE\020\237\037*A\n\032ReplicaSelectionPolicyTyp" +
+      "e\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*i" +
+      "\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISABL" +
+      "ED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027" +
+      "SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPol" +
+      "icyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033ST",
+      "RIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseStat" +
+      "e\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004" +
+      "IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAUL" +
+      "T\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025M" +
+      "RC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PO" +
+      "RT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020" +
+      "\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCON" +
+      "STANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202" +
+      "\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_" +
+      "RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022",
+      "\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V" +
+      "_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_" +
+      "O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200" +
+      "\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTE" +
+      "M_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H" +
+      "_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR" +
+      "\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030" +
+      "SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLA" +
+      "G\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FL" +
+      "AG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_R",
+      "ANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIR" +
+      "ST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022" +
+      "-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETC" +
+      "HING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003" +
+      "OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedint" +
+      "erfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
         public com.google.protobuf.ExtensionRegistry assignDescriptors(
             com.google.protobuf.Descriptors.FileDescriptor root) {
           descriptor = root;
-          internal_static_xtreemfs_pbrpc_NewFileSize_descriptor =
+          internal_static_xtreemfs_pbrpc_TraceConfig_descriptor =
             getDescriptor().getMessageTypes().get(0);
+          internal_static_xtreemfs_pbrpc_TraceConfig_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_xtreemfs_pbrpc_TraceConfig_descriptor,
+              new java.lang.String[] { "TraceRequests", "TracingPolicy", "TracingPolicyConfig", });
+          internal_static_xtreemfs_pbrpc_NewFileSize_descriptor =
+            getDescriptor().getMessageTypes().get(1);
           internal_static_xtreemfs_pbrpc_NewFileSize_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_NewFileSize_descriptor,
               new java.lang.String[] { "SizeInBytes", "TruncateEpoch", });
           internal_static_xtreemfs_pbrpc_StripingPolicy_descriptor =
-            getDescriptor().getMessageTypes().get(1);
+            getDescriptor().getMessageTypes().get(2);
           internal_static_xtreemfs_pbrpc_StripingPolicy_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_StripingPolicy_descriptor,
               new java.lang.String[] { "Type", "StripeSize", "Width", "ParityWidth", });
           internal_static_xtreemfs_pbrpc_Replica_descriptor =
-            getDescriptor().getMessageTypes().get(2);
+            getDescriptor().getMessageTypes().get(3);
           internal_static_xtreemfs_pbrpc_Replica_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_Replica_descriptor,
               new java.lang.String[] { "OsdUuids", "ReplicationFlags", "StripingPolicy", });
           internal_static_xtreemfs_pbrpc_Replicas_descriptor =
-            getDescriptor().getMessageTypes().get(3);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_xtreemfs_pbrpc_Replicas_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_Replicas_descriptor,
               new java.lang.String[] { "Replicas", });
           internal_static_xtreemfs_pbrpc_XCap_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_xtreemfs_pbrpc_XCap_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_XCap_descriptor,
-              new java.lang.String[] { "AccessMode", "ClientIdentity", "ExpireTimeS", "ExpireTimeoutS", "FileId", "ReplicateOnClose", "ServerSignature", "TruncateEpoch", "SnapConfig", "SnapTimestamp", "VoucherSize", "ExpireTimeMs", });
+              new java.lang.String[] { "AccessMode", "ClientIdentity", "ExpireTimeS", "ExpireTimeoutS", "FileId", "ReplicateOnClose", "ServerSignature", "TruncateEpoch", "SnapConfig", "SnapTimestamp", "VoucherSize", "ExpireTimeMs", "TraceConfig", });
           internal_static_xtreemfs_pbrpc_XLocSet_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_xtreemfs_pbrpc_XLocSet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_XLocSet_descriptor,
               new java.lang.String[] { "ReadOnlyFileSize", "Replicas", "ReplicaUpdatePolicy", "Version", });
           internal_static_xtreemfs_pbrpc_FileCredentials_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_xtreemfs_pbrpc_FileCredentials_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_FileCredentials_descriptor,
               new java.lang.String[] { "Xcap", "Xlocs", });
           internal_static_xtreemfs_pbrpc_FileCredentialsSet_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_xtreemfs_pbrpc_FileCredentialsSet_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_FileCredentialsSet_descriptor,
               new java.lang.String[] { "FileCredentials", });
           internal_static_xtreemfs_pbrpc_VivaldiCoordinates_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_xtreemfs_pbrpc_VivaldiCoordinates_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_VivaldiCoordinates_descriptor,
               new java.lang.String[] { "XCoordinate", "YCoordinate", "LocalError", });
           internal_static_xtreemfs_pbrpc_OSDFinalizeVouchersResponse_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_xtreemfs_pbrpc_OSDFinalizeVouchersResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_OSDFinalizeVouchersResponse_descriptor,
               new java.lang.String[] { "OsdUuid", "ServerSignature", "SizeInBytes", "TruncateEpoch", });
           internal_static_xtreemfs_pbrpc_OSDWriteResponse_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_xtreemfs_pbrpc_OSDWriteResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_OSDWriteResponse_descriptor,
               new java.lang.String[] { "SizeInBytes", "TruncateEpoch", });
           internal_static_xtreemfs_pbrpc_KeyValuePair_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_xtreemfs_pbrpc_KeyValuePair_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_KeyValuePair_descriptor,

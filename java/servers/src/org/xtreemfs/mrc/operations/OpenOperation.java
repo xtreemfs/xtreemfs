@@ -311,6 +311,10 @@ public class OpenOperation extends MRCOperation {
         xLocSet.setReadOnlyFileSize(file.getSize());
 
         // issue a new capability
+        boolean enableTracing = volume.isTracingEnabled();
+        String traceTarget = volume.getTraceTarget();
+        String tracingPolicy = volume.getTracingPolicy();
+
         String globalFileId = MRCHelper.createGlobalFileId(volume, file);
         long expireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         String clientID = ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress().getHostAddress();
@@ -329,8 +333,8 @@ public class OpenOperation extends MRCOperation {
                 TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(), clientID, trEpoch,
                 replicateOnClose, !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                         : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), voucherSize,
-                expireMs, master.getConfig().getCapabilitySecret());
+                                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), enableTracing,
+                tracingPolicy, traceTarget, voucherSize, expireMs, master.getConfig().getCapabilitySecret());
 
         if (Logging.isDebug())
             Logging

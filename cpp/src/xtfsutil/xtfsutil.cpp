@@ -369,6 +369,22 @@ bool getattr(const string& xctl_file,
           cout << "unknown" << endl;
         }
 
+        cout << "Tracing enabled      ";
+        if (stat.isMember("tracing_enabled")) {
+          if(stat["tracing_enabled"].asString() == "true" &&
+            stat.isMember("tracing_policy_config") && stat.isMember("tracing_policy")) {
+            cout << "yes" << endl;
+            cout << "Tracing policy config         "
+              << stat["tracing_policy_config"].asString() << endl;
+            cout << "Tracing policy       "
+              << stat["tracing_policy"].asString() << endl;
+          } else {
+            cout << "no" << endl;
+          }
+        } else {
+          cout << "unknown" << endl;
+        }
+
         if (path == "/") {
           cout << "Selectable OSDs      ";
           if (stat.isMember("usable_osds") && stat["usable_osds"].size() > 0) {
@@ -1136,6 +1152,37 @@ bool CreateDeleteSnapshot(const string& xctl_file,
   }
 }
 
+bool EnableDisableTracing(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "enableDisableTracing";
+  if (vm.count("disable-tracing") > 0) {
+    request["enable_tracing"] = "0";
+  }
+  if (vm.count("enable-tracing") > 0) {
+    request["enable_tracing"] = "1";
+    if (vm.count("tracing-policy-config") > 0 ) {
+      request["tracing_policy_config"] = vm["tracing-policy-config"].as<string>();
+    }
+    if (vm.count("tracing-policy") > 0) {
+      request["tracing_policy"] = vm["tracing-policy"].as<string>();
+    } else {
+      request["tracing_policy"] = "default";
+    }
+  }
+  request["path"] = path;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
 // Sets/Modifies/Removes the ACL.
 bool SetRemoveACL(const string& xctl_file,
                   const string& path,
@@ -1356,11 +1403,24 @@ int main(int argc, char **argv) {
        "Delete the snapshot with the name given as argument.");
 
 
+  options_description tracing_desc("Tracing Options");
+  tracing_desc.add_options()
+      ("enable-tracing",
+       "Enable tracing on the volume.")
+      ("disable-tracing",
+       "disable tracing on the volume.")
+      ("tracing-policy-config",
+       value<string>(),
+       "Volume to write trace")
+      ("tracing-policy",
+       value<string>(),
+       "Tracing policy");
+
   positional_options_description pd;
   pd.add("path", 1);
 
   options_description cmdline_options;
-  cmdline_options.add(desc).add(quota_desc).add(snapshot_desc).add(hidden);
+  cmdline_options.add(desc).add(quota_desc).add(snapshot_desc).add(tracing_desc).add(hidden);
   variables_map vm;
   try {
     store(command_line_parser(argc, argv)
@@ -1398,7 +1458,7 @@ int main(int argc, char **argv) {
 
   if (vm.count("help") || option_path.empty()) {
     cerr << "Usage: xtfsutil <path>" << endl;
-    cerr << desc << quota_desc << snapshot_desc << endl;
+    cerr << desc << quota_desc << snapshot_desc << tracing_desc << endl;
     return 1;
   }
 
@@ -1587,6 +1647,12 @@ int main(int argc, char **argv) {
       || vm.count("set-default-group-quota") > 0) {
     ++operationsCount;
     failedOperationsCount += SetQuotaRelatedValue(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("enable-tracing") > 0 ||
+      vm.count("disable-tracing") > 0) {
+    ++operationsCount;
+    failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
+    failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if(operationsCount == 0){
     ++operationsCount;
