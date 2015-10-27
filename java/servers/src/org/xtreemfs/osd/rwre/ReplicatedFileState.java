@@ -10,9 +10,7 @@ package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -23,10 +21,7 @@ import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.FileState;
-import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -47,7 +42,6 @@ public class ReplicatedFileState extends FileState {
         INVALIDATED
     }
 
-    private final AtomicInteger        queuedData;
 
     private ReplicaUpdatePolicy        policy;
 
@@ -82,7 +76,6 @@ public class ReplicatedFileState extends FileState {
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
                                OSDServiceClient client) throws UnknownUUIDException, IOException {
         super();
-        queuedData = new AtomicInteger();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -205,10 +198,6 @@ public class ReplicatedFileState extends FileState {
      */
     public void setMasterEpoch(long masterEpoch) {
         this.masterEpoch = masterEpoch;
-    }
-    
-    public int getDataQueueLength() {
-        return queuedData.get();
     }
 
     public ReplicaUpdatePolicy getPolicy() {
