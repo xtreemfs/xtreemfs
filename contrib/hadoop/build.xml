@@ -92,10 +92,16 @@
     </target>
 
     <target name="-pre-init">
-       <property environment="env"/>
-        <condition property="hadoop.prefix" value="${env.HADOOP_PREFIX}">
-            <isset property="env.HADOOP_PREFIX"/>
+        <property environment="env"/>
+        <condition property="libs.hadoop_common.classpath" value="${env.HADOOP_PREFIX}/share/hadoop/common/*">
+            <not>
+                <isset property="netbeans.home"/>
+            </not>
         </condition>
-        <fail unless="hadoop.prefix" message="HADOOP_PREFIX not set."/>
+        <condition property="libs.hadoop_common_dependencies.classpath" value="${env.HADOOP_PREFIX}/share/hadoop/common/lib/*">
+            <not>
+                <isset property="netbeans.home"/>
+            </not>
+        </condition>
     </target>
 </project>
