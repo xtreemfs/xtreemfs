@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>xtreemfs://localhost:32638</value>
+    </property>
+    <property>
+        <name>fs.xtreemfs.impl</name>
+        <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
+    </property>
+    <property>
+        <name>fs.AbstractFileSystem.xtreemfs.impl</name>
+        <value>org.xtreemfs.common.clients.hadoop.XtreemFS</value>
+    </property>
+    <property>
+        <name>io.file.buffer.size</name>
+        <value>1048576</value>
+    </property>
+    <property>
+        <name>xtreemfs.defaultVolumeName</name>
+        <value>${env.XTREEMFS_DEFAULT_VOLUME}</value>
+    </property>
+</configuration>
