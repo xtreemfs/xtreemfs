@@ -19,8 +19,9 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         Configuration.addDefaultResource(XtreemFSFileSystemContractTest.class
                 .getClassLoader().getResource("core-site.xml").getPath());
         Configuration conf = new Configuration();
-        conf.setStrings("xtreemfs.defaultVolumeName",
+        conf.set("test.xtreemfs.defaultVolumeName",
                 System.getenv("XTREEMFS_DEFAULT_VOLUME"));
+        conf.set("test.xtreemfs.jni.libraryPath", System.getenv("XTREEMFS") + "/cpp/build");
         fs = FileSystem.get(URI.create("xtreemfs://localhost:32638"),
                 conf);
     }
