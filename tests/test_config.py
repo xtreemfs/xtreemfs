@@ -79,7 +79,7 @@ TestSets = {
                 'mrc_repl': False,
                 'dir_repl': False,
                 'snmp': False,
-    },
+    }
 }
 
 VolumeConfigs = {
@@ -148,7 +148,7 @@ VolumeConfigs = {
                     'ronly_factor': 0,
                     'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ],
                     'mkfs_options':  [ '--max-tries=10']
-                },
+                }
 }
 
 Tests = [
@@ -286,6 +286,12 @@ Tests = [
         'file': 'hadoop_ssl_test.sh',
         'VolumeConfigs': ['regular_two_osds'],
         'TestSets': [ 'short-ssl' ]
+    },
+    {
+        'name': 'hadoop adapter junit tests',
+        'file': 'hadoop_junit_tests.sh',
+        'VolumeConfigs': ['regular'],
+        'TestSets': [ 'testing' ]
     },
     {
         'name': 'xtfs_benchmark',
