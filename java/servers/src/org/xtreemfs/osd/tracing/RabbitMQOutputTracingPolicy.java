@@ -48,9 +48,14 @@ public class RabbitMQOutputTracingPolicy implements TracingPolicy {
             factory.setHost(target);
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
-            channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-            this.channels.put(target, channel);
-            return channel;
+            if(channel != null) {
+                channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+                this.channels.put(target, channel);
+                return channel;
+            } else {
+                throw new Exception("Canno create RabbitMQ channel");
+            }
+
         }
     }
 }
