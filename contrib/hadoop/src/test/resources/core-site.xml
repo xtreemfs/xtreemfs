@@ -21,8 +21,4 @@
         <name>xtreemfs.client.debug</name>
         <value>true</value>
     </property>
-    <property>
-        <name>xtreemfs.defaultVolumeName</name>
-        <value>${env.XTREEMFS_DEFAULT_VOLUME}</value>
-    </property>
 </configuration>
