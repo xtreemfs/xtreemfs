@@ -288,12 +288,6 @@ Tests = [
         'TestSets': [ 'short-ssl' ]
     },
     {
-        'name': 'hadoop adapter junit tests',
-        'file': 'hadoop_junit_tests.sh',
-        'VolumeConfigs': ['regular'],
-        'TestSets': [ 'testing' ]
-    },
-    {
         'name': 'xtfs_benchmark',
         'file': '14_xtfs_benchmark.sh',
         'VolumeConfigs': [ 'regular', 'regular_two_osds', 'nomdcache', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites'],
