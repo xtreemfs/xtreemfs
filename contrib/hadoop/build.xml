@@ -76,19 +76,26 @@
     The following target was added manually to build a jar which contains the 
     XtreemFS Hadoop client and all its dependencies.
     -->
-	<target name="-post-jar">
-	<echo level="info">Creating a single jar file containing all dependencies.</echo>
-		<!-- Rename the XtreemFSHadoopClient JAR. -->
-		<move file="dist/XtreemFSHadoopClient.jar" tofile="dist/XtreemFSHadoopClient_no_deps.jar"/> 
-		<!-- Create a new JAR. -->
-		<jar destfile="dist/XtreemFSHadoopClient.jar">
-			<zipfileset src="dist/XtreemFSHadoopClient_no_deps.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/foundation/dist/Foundation.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/servers/dist/XtreemFS.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/lib/protobuf-java-2.5.0.jar" includes="**/*.java **/*.class"/>
-		</jar>
-		<!-- Delete the original XtreemFSHadoopClient JAR. -->
-		<delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>
-	</target>
-    
+    <target name="-post-jar">
+        <echo level="info">Creating a single jar file containing all dependencies.</echo>
+        <!-- Rename the XtreemFSHadoopClient JAR. -->
+        <move file="dist/XtreemFSHadoopClient.jar" tofile="dist/XtreemFSHadoopClient_no_deps.jar"/> 
+        <!-- Create a new JAR. -->
+        <jar destfile="dist/XtreemFSHadoopClient.jar">
+	    <zipfileset src="dist/XtreemFSHadoopClient_no_deps.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/foundation/dist/Foundation.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/servers/dist/XtreemFS.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/lib/protobuf-java-2.5.0.jar" includes="**/*.java **/*.class"/>
+        </jar>
+        <!-- Delete the original XtreemFSHadoopClient JAR. -->
+        <delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>
+    </target>
+
+    <target name="-pre-init">
+       <property environment="env"/>
+        <condition property="hadoop.prefix" value="${env.HADOOP_PREFIX}">
+            <isset property="env.HADOOP_PREFIX"/>
+        </condition>
+        <fail unless="hadoop.prefix" message="HADOOP_PREFIX not set."/>
+    </target>
 </project>
