@@ -91,31 +91,29 @@
         <delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>
     </target>
 
-    <target name="-pre-init">
+    <!-- Sets JUnit Classpath for Test Compilation if not in NetBeans -->
+    <target name="-set-junit-classpath" unless="netbeans.home">
+        <property name="libs.junit_4.classpath" value="../../java/lib/test/junit-4.11.jar"/>
+    </target>
+
+    <!-- Sets Hadoop Classpaths for Test Compilation and Execution if not in NetBeans -->
+    <target name="-set-hadoop-classpaths" unless="netbeans.home">
         <property environment="env"/>
 
-        <!-- List Hadoop Tests Jar file -->
+        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
+
         <path id="hadoop_common_tests_jar">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
         </path>
-        <!-- Put it into a property -->
-        <property name="hadoop_common_tests_path" refid="hadoop_common_tests_jar"/>
-        <!-- Set the property as the Hadoop Tests Classpath if we're not in NetBeans -->
-        <condition property="libs.hadoop_common_tests.classpath" value="${hadoop_common_tests_path}">
-            <not>
-                <isset property="netbeans.home"/>
-            </not>
-        </condition>
+        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_tests_jar"/>
 
-        <!-- Same for the Hadoop Common Dependencies -->
         <path id="hadoop_common_dependency_jars">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
         </path>
-        <property name="hadoop_common_dependency_paths" refid="hadoop_common_dependency_jars"/>
-        <condition property="libs.hadoop_common_dependencies.classpath" value="${hadoop_common_dependency_paths}">
-            <not>
-                <isset property="netbeans.home"/>
-            </not>
-        </condition>
+        <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
+    </target>
+
+    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-classpaths">
+        <!-- Empty target -->
     </target>
 </project>
