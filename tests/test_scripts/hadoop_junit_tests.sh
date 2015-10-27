@@ -1,6 +1,8 @@
 #!/bin/bash
 
-XTREEMFS=$1
+# test relies on this variable
+export XTREEMFS=$1
+
 TEST_DIR=$4
 HADOOP_VERSIONS="2.7.1"
 
