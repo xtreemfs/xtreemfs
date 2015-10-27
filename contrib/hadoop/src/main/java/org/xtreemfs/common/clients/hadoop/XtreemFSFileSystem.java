@@ -339,7 +339,14 @@ public class XtreemFSFileSystem extends FileSystem {
         final String srcPath = preparePath(src, xtreemfsVolume);
         final String destPath = preparePath(dest, xtreemfsVolume);
 
-        xtreemfsVolume.rename(userCredentials, srcPath, destPath);
+        try {
+            xtreemfsVolume.rename(userCredentials, srcPath, destPath);
+        } catch(PosixErrorException e) {
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "Rename file/directory '%s' to '%s' failed with '%s'",
+                    srcPath, destPath, e.getMessage());
+            return false;
+        }
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath, destPath);
         }
