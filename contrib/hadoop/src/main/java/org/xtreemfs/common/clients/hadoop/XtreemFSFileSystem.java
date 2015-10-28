@@ -311,7 +311,23 @@ public class XtreemFSFileSystem extends FileSystem {
     public boolean rename(Path src, Path dest) throws IOException {
         Volume xtreemfsVolume = getVolumeFromPath(src);
         final String srcPath = preparePath(src, xtreemfsVolume);
-        final String destPath = preparePath(dest, xtreemfsVolume);
+        String destPath = preparePath(dest, xtreemfsVolume);
+        
+        // add possibility to override POSIX behavior
+        boolean overwrite = getConf().getBoolean("xtreemfs.rename.overwrite", false);
+        if (isXtreemFSFile(srcPath, xtreemfsVolume)
+                && isXtreemFSFile(destPath, xtreemfsVolume)
+                && !overwrite) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Not renaming '%s' to existing file '%s'."
+                    + " Set 'xtreemfs.rename.overwrite' to true to change this behavior.",
+                    srcPath, destPath);
+            return false;
+        }
+        
+        // add mv semantics
+        if (isXtreemFSDirectory(destPath, xtreemfsVolume)) {
+            destPath = preparePath(new Path(dest, src.getName()), defaultVolume);
+        }
 
         try {
             xtreemfsVolume.rename(userCredentials, srcPath, destPath);
