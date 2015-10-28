@@ -66,13 +66,12 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 readBufferSize;
     private int                 writeBufferSize;
     private Volume              defaultVolume;
-    private Configuration       conf;
     private static final int    STANDARD_DIR_PORT = 32638;
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
         super.initialize(uri, conf);
-        this.conf = conf;
+        setConf(conf);
         
         int logLevel = Logging.LEVEL_WARN;
         if (conf.getBoolean("xtreemfs.client.debug", false)) {
@@ -249,11 +248,6 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public String getScheme() {
         return "xtreemfs://";
-    }
-    
-    @Override
-    public Configuration getConf() {
-    	return conf;
     }
 
     @Override
