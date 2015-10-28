@@ -511,13 +511,7 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
         Volume xtreemfsVolume = getVolumeFromPath(path);
-        
         final String pathString = preparePath(path, xtreemfsVolume);
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "mkdirs '%s' with mode '%s'",
-                    pathString, fp.toString());
-        }
-        
         final String[] dirs = pathString.split("/");
         statistics.incrementWriteOps(1);
 
@@ -531,14 +525,14 @@ public class XtreemFSFileSystem extends FileSystem {
         for (String dir : dirs) {
             dirString += dir + "/";
             if (isXtreemFSFile(dirString, xtreemfsVolume)) {
-                return false;
+                throw new IOException("Cannot make subdirectory of existing file " + dirString);
             }
             if (isXtreemFSDirectory(dirString, xtreemfsVolume) == false) { // stringPath does not exist, create it
                 xtreemfsVolume.createDirectory(userCredentials, dirString, mode);
             }
         }
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Created direcotry %s", pathString);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Created directory %s", pathString);
         }
         return true;
     }
