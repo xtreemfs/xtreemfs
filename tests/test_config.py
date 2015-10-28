@@ -291,7 +291,7 @@ Tests = [
         'name': 'hadoop adapter junit tests',
         'file': 'hadoop_junit_tests.sh',
         'VolumeConfigs': ['regular'],
-        'TestSets': [ 'testing' ]
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'xtfs_benchmark',
