@@ -285,7 +285,7 @@ public class XtreemFSFileSystem extends FileSystem {
             mkdirs(path.getParent());
         }
 
-        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, fp.toShort());
+        final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString, flags, applyUMask(fp).toShort());
         return new FSDataOutputStream(new XtreemFSFileOutputStream(userCredentials, fileHandle, pathString,
                 useWriteBuffer, writeBufferSize), statistics);
     }
@@ -515,14 +515,7 @@ public class XtreemFSFileSystem extends FileSystem {
         final String[] dirs = pathString.split("/");
         statistics.incrementWriteOps(1);
 
-        final short mode;
-        String umaskString = getConf().get(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY);
-        if (umaskString == null) {
-            mode = fp.toShort();
-        } else {
-            mode = fp.applyUMask(new FsPermission(umaskString)).toShort();
-        }
-        
+        final short mode = applyUMask(fp).toShort();
         String dirString = "";
 
         if (xtreemfsVolume == defaultVolume) {
@@ -602,6 +595,21 @@ public class XtreemFSFileSystem extends FileSystem {
                     stripeLocations.get(i).getStartSize(), stripeLocations.get(i).getLength());
         }
         return result;
+    }
+    
+    /**
+     * Check the configuration for a umask and apply if set.
+     * 
+     * @param fp
+     * @return
+     */
+    private FsPermission applyUMask(FsPermission fp) {
+        String umaskString = getConf().get(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY);
+        if (umaskString == null) {
+            return fp;
+        } else {
+            return fp.applyUMask(new FsPermission(umaskString));
+        }
     }
 
     /**
