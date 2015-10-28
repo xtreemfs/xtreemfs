@@ -25,6 +25,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.RedundancyStage;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  * @author Jan Fajerski
  */
-public class ECStage extends Stage implements FleaseMessageSenderInterface {
+public class ECStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
     public static final int STAGEOP_EC_WRITE                  = 1;
     public static final int STAGEOP_CLOSE                     = 2;

@@ -46,10 +46,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.FileOperationCallback;
-import org.xtreemfs.osd.InternalObjectData;
-import org.xtreemfs.osd.OSDRequest;
-import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.*;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
@@ -75,7 +72,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  * 
  * @author bjko
  */
-public class RWReplicationStage extends Stage implements FleaseMessageSenderInterface {
+public class RWReplicationStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
     public static final int STAGEOP_REPLICATED_WRITE          = 1;
     public static final int STAGEOP_CLOSE                     = 2;
