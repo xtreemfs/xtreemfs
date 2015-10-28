@@ -17,7 +17,7 @@ export LANG=en_US.UTF-8
 
 # Global variables
 TEST_ID=`date +%Y%m%dT%H%M%S`
-DIR_PREFIX="/tmp/autotests"
+DIR_PREFIX="/scratch/autotests"
 XTREEMFS_DIR="$DIR_PREFIX/checkouts/xtreemfs_checkout-$TEST_ID"
 TEST_DIR="$DIR_PREFIX/tests/xtreemfs_test-$TEST_ID"
 TEST_LOG="$TEST_DIR/test.log"
@@ -132,13 +132,12 @@ mkdir -p $TEST_DIR
 
 # Check out using SSH for passwordless push using deploy keys.
 cd $XTREEMFS_DIR
-git clone git@github.com:robert-schmidtke/xtreemfs.git . &> $TEST_LOG
-git checkout hadoop-filesystemcontract-test
+git clone git@github.com:xtreemfs/xtreemfs.git . &> $TEST_LOG
 
 # Compile
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
 # Build client unit tests.
-export BUILD_CLIENT_TESTS=false
+export BUILD_CLIENT_TESTS=true
 export BUILD_JNI=true
 export CPPFLAGS=-O0
 make client_debug server hadoop-client &>$TEST_LOG
@@ -152,6 +151,6 @@ fi
 # Run xtfs_test
 # rm $TEST_LOG
 cd $XTREEMFS_DIR/tests
-python -u xtestenv -t $TEST_DIR testing &> $TEST_SUMMARY
+python -u xtestenv -t $TEST_DIR full &> $TEST_SUMMARY
 result=$?
-# sendresult $result
+sendresult $result
