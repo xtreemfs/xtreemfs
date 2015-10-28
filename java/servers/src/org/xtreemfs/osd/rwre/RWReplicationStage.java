@@ -165,8 +165,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 new FleaseViewChangeListenerInterface() {
 
                     @Override
-                    public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
-                        eventViewIdChanged(cellId, viewId);
+                    public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
+                        eventViewIdChanged(cellId, viewId, onProposal);
                     }
                 }, new FleaseStatusListener() {
 
@@ -258,8 +258,15 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 credentials, xloc }, null, null);
     }
 
-    void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+    void eventViewIdChanged(ASCIIString cellId, int viewId, boolean onProposal) {
+        if (onProposal) {
+            // Newer views encountered on lease proposals are ignored, because they could revalidate a removed Replica,
+            // that had been primary trying to renew its lease.
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "New view (%d) encountered on lease proposal for %s is ignored.", viewId, cellId);
+        } else {
+            master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+        }
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState,
