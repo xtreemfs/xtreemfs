@@ -326,7 +326,7 @@ public class XtreemFSFileSystem extends FileSystem {
         
         // add mv semantics
         if (isXtreemFSDirectory(destPath, xtreemfsVolume)) {
-            destPath = preparePath(new Path(dest, src.getName()), defaultVolume);
+            destPath = preparePath(new Path(dest, src.getName()), xtreemfsVolume);
         }
 
         try {
