@@ -34457,7 +34457,7 @@ public final class OSD {
       "thResult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022\035" +
       "\n\031OSD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HEA" +
       "LTH_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT" +
-      "_NOT_AVAIL\020\0032\313\037\n\nOSDService\022L\n\004read\022\033.xt" +
+      "_NOT_AVAIL\020\0032\340\037\n\nOSDService\022L\n\004read\022\033.xt" +
       "reemfs.pbrpc.readRequest\032\032.xtreemfs.pbrp",
       "c.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037." +
       "xtreemfs.pbrpc.truncateRequest\032 .xtreemf" +
@@ -34551,15 +34551,16 @@ public final class OSD {
       "reemfs_xloc_set_invalidate\0223.xtreemfs.pb",
       "rpc.xtreemfs_xloc_set_invalidateRequest\032" +
       "4.xtreemfs.pbrpc.xtreemfs_xloc_set_inval" +
-      "idateResponse\"\007\215\265\030Q\000\000\000\022}\n#xtreemfs_rwr_a" +
-      "uth_state_invalidated\022..xtreemfs.pbrpc.x" +
-      "treemfs_rwr_auth_stateRequest\032\035.xtreemfs" +
-      ".pbrpc.emptyResponse\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreem" +
-      "fs_rwr_reset_status\0220.xtreemfs.pbrpc.xtr" +
-      "eemfs_rwr_reset_statusRequest\0321.xtreemfs" +
-      ".pbrpc.xtreemfs_rwr_reset_statusResponse" +
-      "\"\007\215\265\030S\000\000\000\032\007\225\265\0301u\000\000B(\n&org.xtreemfs.pbrpc",
-      ".generatedinterfaces"
+      "idateResponse\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreemfs_rwr_" +
+      "auth_state_invalidated\022..xtreemfs.pbrpc." +
+      "xtreemfs_rwr_auth_stateRequest\0321.xtreemf" +
+      "s.pbrpc.xtreemfs_rwr_reset_statusRespons" +
+      "e\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs_rwr_reset_status" +
+      "\0220.xtreemfs.pbrpc.xtreemfs_rwr_reset_sta" +
+      "tusRequest\0321.xtreemfs.pbrpc.xtreemfs_rwr" +
+      "_reset_statusResponse\"\007\215\265\030S\000\000\000\032\007\225\265\0301u\000\000B",
+      "(\n&org.xtreemfs.pbrpc.generatedinterface" +
+      "s"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

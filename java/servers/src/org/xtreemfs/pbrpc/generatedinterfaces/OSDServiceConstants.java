@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Oct 16 17:23:35 CEST 2015
+//automatically generated from OSD.proto at Wed Oct 28 10:52:21 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -124,7 +124,7 @@ public class OSDServiceConstants {
            case 60: return OSD.xtreemfs_pingMesssage.getDefaultInstance();
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance();
-           case 82: return null;
+           case 82: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
            case 83: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }

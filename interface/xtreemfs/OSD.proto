@@ -588,7 +588,7 @@ service OSDService {
   // Sets the authoritative state on a replica during an xLocSet change. 
   // This operation invalidets replicas not yet invalidated and does not require
   // a valid view.
-  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(emptyResponse) {
+  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(xtreemfs_rwr_reset_statusResponse) { 
     option(proc_id)=82;
   };
 
