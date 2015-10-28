@@ -517,7 +517,8 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public void setWorkingDirectory(Path path) {
         Volume xtreemfsVolume = getVolumeFromPath(path);
-        this.workingDirectory = new Path(preparePath(path, xtreemfsVolume));
+        this.workingDirectory = new Path(preparePath(path, xtreemfsVolume))
+                .makeQualified(this.fileSystemURI, this.workingDirectory);
     }
 
     @Override
