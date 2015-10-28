@@ -2560,7 +2560,7 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 
 \subsection{Quotas}
 
-XtreemFS supports quotas on volume, user or group base. All set quotas on a
+XtreemFS supports qble-traci  nguotas on volume, user or group base. All set quotas on a
 volume can be shown by executing:
 
 \begin{verbatim}
@@ -2600,6 +2600,44 @@ $> xtfsutil --set-voucher-size 100M /path/to/mounted/volume
 
 Using a small voucher size generates larger overhead while using large vouchers
 may cause files running out of capacity, even before a quota is used up.
+
+\subsection{Access Tracing}
+
+The XtreemFS OSD can trace read and write requests to debugging or application
+profiling purposes. XtreemFS contains example policies to write an access trace to a
+file or a network socket.
+
+File-based tracing can be activated on volume level as follows:
+
+\begin{verbatim}
+$> xtfsutil --enable-tracing /path/to/mounted/volume
+$> xtfsutil --tracing-policy=6001 /path/to/mounted/volume
+$> xtfsutil --enable-tracing-config=/tmp/file_access.log /path/to/mounted/volume
+\end{verbatim}
+
+\begin{itemize}
+  \item \textbf{File-based tracing (policy ID 6001)} Writes access trace to a
+    file that is stored locally on the OSD hosts. The output file can be set by
+    the \emph{--trace-policy-config} option.
+  \item \textbf{Socket-based tracing (policy ID 6002)} Writes access trace to a
+    server socket, that is listening on each OSD. The listening port ist 9999.
+\end{itemize}
+
+User defined tracing policies can be added by implementing the following Java
+interface:
+
+\begin{verbatim}
+package org.xtreemfs.osd.tracing;
+
+import org.xtreemfs.osd.OSDRequest;
+
+public interface TracingPolicy {
+  void traceRequest(OSDRequest req, TraceInfo traceInfo);
+}
+\end{verbatim}
+
+Similar to MRC policies, OSD tracing policies have to be placed in the policy
+container directory of the OSD.
 
 \section{Test Tools}
 XtreemFS provides two tools to simplify testing. \texttt{xstartserv} can be used to start and stop XtreemFS servers manually. \texttt{xtestenv} automatically sets-up an entire test environment with servers and mounted clients. In addition, \texttt{xtestenv} can be used to execute the automatic integration tests.
