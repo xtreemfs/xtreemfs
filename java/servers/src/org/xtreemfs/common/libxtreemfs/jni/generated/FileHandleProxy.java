@@ -53,7 +53,12 @@ public class FileHandleProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat getAttr(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.FileHandleProxy_getAttr(swigCPtr, this, user_credentials.toByteArray());
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
   try {

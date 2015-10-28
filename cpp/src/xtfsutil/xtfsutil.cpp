@@ -23,6 +23,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #include "json/json.h"
 #include "libxtreemfs/version_management.h"
@@ -124,6 +125,16 @@ string formatBytes(uint64_t bytes) {
   } else {
     return boost::lexical_cast<string>((float)bytes/(1LL << 50)) + " PB";
   }
+}
+
+// checks whether the quota is unlimited and returns unlimted
+// or a formatted string
+string parseUnlimitedQuota(uint64_t quota){
+  if (quota == 0) { // unlimited
+      return "unlimited";
+    } else {
+      return formatBytes(quota);
+    }
 }
 
 void OutputACLs(Json::Value* stat) {
@@ -240,14 +251,57 @@ bool getattr(const string& xctl_file,
         if (path == "/") {
           cout << "volume" << endl;
 
-          cout << "Available/Used Space "
-            << formatBytes(boost::lexical_cast<uint64_t>(
-                stat["free_space"].asString()))
-            << " / " << formatBytes(boost::lexical_cast<uint64_t>(
-                stat["used_space"].asString())) << endl;
-          cout << "Num. Files/Dirs      "
+          if(!stat["usable_space"].isNull()) {
+            cout
+            << "Available Space      "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(
+                            stat["usable_space"].asString()))
+            << endl;
+          }
+
+          if(!stat["quota"].isNull() && !stat["usedspace"].isNull()) {
+            cout
+            << "Quota / Used Space   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(stat["quota"].asString()))
+            << " / "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(stat["usedspace"].asString()))
+            << endl;
+          }
+
+          if(!stat["vouchersize"].isNull()) {
+            cout
+            << "Voucher Size         "
+            << formatBytes(
+                    boost::lexical_cast<uint64_t>(stat["vouchersize"].asString()))
+            << endl;
+          }
+
+          if(!stat["defaultuserquota"].isNull()) {
+            cout
+            << "Default User Quota   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(
+                            stat["defaultuserquota"].asString()))
+            << endl;
+          }
+
+          if(!stat["defaultgroupquota"].isNull()) {
+            cout
+            << "Default GroupQuota   "
+            << parseUnlimitedQuota(
+                    boost::lexical_cast<uint64_t>(
+                            stat["defaultgroupquota"].asString()))
+            << endl;
+          }
+
+          if(!stat["num_files"].isNull() && !stat["num_dirs"].isNull()) {
+            cout << "Num. Files/Dirs      "
             << stat["num_files"].asString()
             << " / " << stat["num_dirs"].asString() << endl;
+          }
 
           cout << "Access Control p.    ";
           if (stat["ac_policy_id"].asString() == "1") {
@@ -309,6 +363,22 @@ bool getattr(const string& xctl_file,
         if (stat.isMember("snapshots_enabled")) {
           cout << (stat["snapshots_enabled"].asString() == "true" ?
                        "yes" : "no") << endl;
+        } else {
+          cout << "unknown" << endl;
+        }
+
+        cout << "Tracing enabled      ";
+        if (stat.isMember("tracing_enabled")) {
+          if(stat["tracing_enabled"].asString() == "true" &&
+            stat.isMember("tracing_policy_config") && stat.isMember("tracing_policy")) {
+            cout << "yes" << endl;
+            cout << "Tracing policy config         "
+              << stat["tracing_policy_config"].asString() << endl;
+            cout << "Tracing policy       "
+              << stat["tracing_policy"].asString() << endl;
+          } else {
+            cout << "no" << endl;
+          }
         } else {
           cout << "unknown" << endl;
         }
@@ -393,23 +463,207 @@ bool SetDefaultSP(const string& xctl_file,
   }
 }
 
-// Sets the volume quota
-bool SetVolumeQuota(const string& xctl_file,
+// Sets the quota for a volume, user or group
+bool SetQuota(const string& xctl_file,
                   const string& path,
                   const variables_map& vm) {
 
-  const string quota = vm["set-quota"].as<string>();
+  const string value = vm["set-quota"].as<string>();
 
   Json::Value request(Json::objectValue);
-  request["operation"] = "setVolumeQuota";
+  request["operation"] = "setQuota";
   request["path"] = path;
-  request["quota"] = quota;
+
+  request["value"] = value;
+  request["type"] = "";
+  request["specifiedName"] = "";
+
+  if (vm.count("user") > 0) {
+    request["type"] = "user";
+    request["specifiedName"] = vm["user"].as<string>();
+  } else if (vm.count("group") > 0) {
+    request["type"] = "group";
+    request["specifiedName"] = vm["group"].as<string>();
+  } else if(vm.count("volume") > 0) {
+    request["type"] = "volume";
+  } else{
+    cerr << "--set-quota needs a sub option: volume, user or group!" << endl;
+    return false;
+  }
+
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
-    cout << "Set volume quota to " << quota << "." << endl;
+    cout << "Set quota to " << value << " for the " << request["type"].asString() << "."
+         << endl;
     return true;
   } else {
-    cerr << "Setting Volume Quota FAILED" << endl;
+    cerr << "Setting quota value has FAILED" << endl;
+    return false;
+  }
+}
+
+// Sets the voucher size or the default quota for users or groups
+bool SetQuotaRelatedValue(const string& xctl_file, const string& path,
+                          const variables_map& vm) {
+
+  Json::Value request(Json::objectValue);
+  request["operation"] = "setQuotaRelatedValue";
+  request["path"] = path;
+
+  request["type"] = "";
+  request["value"] = "";
+
+  if (vm.count("set-voucher-size") > 0) {
+    request["type"] = "vouchersize";
+    request["value"] = Json::Value(vm["set-voucher-size"].as<string>());
+  } else if (vm.count("set-default-user-quota") > 0) {
+    request["type"] = "defaultuserquota";
+    request["value"] = Json::Value(vm["set-default-user-quota"].as<string>());
+  } else if (vm.count("set-default-group-quota") > 0) {
+    request["type"] = "defaultgroupquota";
+    request["value"] = Json::Value(vm["set-default-group-quota"].as<string>());
+  } else {
+    cerr << "Unsupported type on set quota related value!" << endl;
+    return false;
+  }
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Set value to " << request["value"].asString() << " for the "
+         << request["type"].asString() << "." << endl;
+    return true;
+  } else {
+    cerr << "Setting " << request["type"].asString() << " has FAILED" << endl;
+    return false;
+  }
+}
+
+// gets the quota value(s) for the volume, user(s) and/or group(s)
+bool GetQuota(const string& xctl_file,
+              const string& path,
+              const variables_map& vm) {
+
+  Json::Value request(Json::objectValue);
+  request["operation"] = "getQuota";
+  request["path"] = path;
+
+  request["type"] = "all";
+  request["specifiedName"] = "";
+
+  if (vm.count("user") > 0) {
+    request["type"] = "user";
+    request["specifiedName"] = vm["user"].as<string>();
+  } else if (vm.count("all-users") > 0) {
+    request["type"] = "user";
+  } else if (vm.count("group") > 0) {
+    request["type"] = "group";
+    request["specifiedName"] = vm["group"].as<string>();
+  } else if (vm.count("all-groups") > 0) {
+    request["type"] = "group";
+  } else if( vm.count("volume") > 0){
+    request["type"] = "volume";
+  }
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    const Json::Value& stat = response["result"];
+    const int setwValue1st = 35;
+    const int setwValue = 15;
+
+    bool showVolume = false;
+    bool showUser = false;
+    bool showGroup = false;
+
+    if (request["type"].asString() == "volume") {
+      showVolume = true;
+    } else if (request["type"].asString() == "user") {
+      showUser = true;
+    } else if (request["type"].asString() == "group") {
+      showGroup = true;
+    } else if (request["type"].asString() == "all") {
+      showVolume = true;
+      showUser = true;
+      showGroup = true;
+    }
+
+    // Output
+    cout << setw(setwValue1st) << ""
+         << setw(setwValue) << "Quota"
+         << setw(setwValue) << "Used Space" << endl;
+
+    if(showVolume){
+      const string name = "Volume";
+
+      cout << setw(setwValue1st) << name
+          << setw(setwValue)
+          << parseUnlimitedQuota(
+              boost::lexical_cast<uint64_t>(stat["volume"]["quota"].asString()))
+           << setw(setwValue) << stat["volume"]["used"].asString() << endl;
+    }
+
+    if (showUser) {
+      if (stat["user"].asString().empty()) {
+        if (!request["specifiedName"].asString().empty()) {
+          cout << "There is no quota related entry for user: "
+               << request["specifiedName"].asString() << endl;
+        } else {
+          cout << "There is no quota related entry for any user!" << endl;
+        }
+      } else {
+        // parse user entries
+        Json::Reader reader;
+        Json::Value entries;
+        if (reader.parse(stat["user"].asString(), entries, false)) {
+          cout << "User Quota";
+          if (entries.size() > 1) {
+            cout << " Entries";
+          }
+          cout << ":" << endl;
+
+          for (Json::ValueIterator it = entries.begin(); it != entries.end();
+              ++it) {
+            cout << setw(setwValue1st) << it.key().asString() << setw(setwValue)
+                 << parseUnlimitedQuota((*it)["quota"].asUInt64())
+                 << setw(setwValue) << formatBytes((*it)["used"].asUInt64())
+                 << endl;
+          }  // for
+        }
+      }
+    }
+
+    if (showGroup) {
+      if (stat["group"].asString().empty()) {
+        if (!request["specifiedName"].asString().empty()) {
+          cout << "There is no quota related entry for group: "
+               << request["specifiedName"].asString() << endl;
+        } else {
+          cout << "There is no quota related entry for any group!" << endl;
+        }
+      } else {
+        // parse group entries
+        Json::Reader reader;
+        Json::Value entries;
+        if (reader.parse(stat["group"].asString(), entries, false)) {
+          cout << "Group Quota";
+          if (entries.size() > 1) {
+            cout << " Entries";
+          }
+          cout << ":" << endl;
+
+          for (Json::ValueIterator it = entries.begin(); it != entries.end();
+              ++it) {
+            cout << setw(setwValue1st) << it.key().asString() << setw(setwValue)
+                 << parseUnlimitedQuota((*it)["quota"].asUInt64())
+                 << setw(setwValue) << formatBytes((*it)["used"].asUInt64())
+                 << endl;
+          }  // for
+        }
+      }
+    }
+
+    return true;
+  } else {
+    cerr << "Getting quota value(s) has FAILED!" << endl;
     return false;
   }
 }
@@ -888,6 +1142,37 @@ bool CreateDeleteSnapshot(const string& xctl_file,
   }
 }
 
+bool EnableDisableTracing(const string& xctl_file,
+                     const string& path,
+                     const variables_map& vm) {
+  Json::Value request(Json::objectValue);
+  request["operation"] = "enableDisableTracing";
+  if (vm.count("disable-tracing") > 0) {
+    request["enable_tracing"] = "0";
+  }
+  if (vm.count("enable-tracing") > 0) {
+    request["enable_tracing"] = "1";
+    if (vm.count("tracing-policy-config") > 0 ) {
+      request["tracing_policy_config"] = vm["tracing-policy-config"].as<string>();
+    }
+    if (vm.count("tracing-policy") > 0) {
+      request["tracing_policy"] = vm["tracing-policy"].as<string>();
+    } else {
+      request["tracing_policy"] = "default";
+    }
+  }
+  request["path"] = path;
+
+  Json::Value response;
+  if (executeOperation(xctl_file, request, &response)) {
+    cout << "Success." << endl;
+    return true;
+  } else {
+    cerr << "FAILED" << endl;
+    return false;
+  }
+}
+
 // Sets/Modifies/Removes the ACL.
 bool SetRemoveACL(const string& xctl_file,
                   const string& path,
@@ -1067,9 +1352,25 @@ int main(int argc, char **argv) {
       ("set-acl", value<string>(),
        "adds/modifies an ACL entry, format: u|g|m|o:[<name>]:[<rwx>|<octal>]")
       ("del-acl", value<string>(),
-       "removes an ACL entry, format: u|g|m|o:<name>")
+       "removes an ACL entry, format: u|g|m|o:<name>");
+
+  options_description quota_desc("Quota Options");
+  quota_desc.add_options()
+      ("get-quotas", "get the quotainformation for volume, all users and all groups, "
+          "or if specified, only a specific value")
+       ("all-users", "extends --get-quota to show the quota of all users")
+       ("all-groups", "extends --get-quota to show the quota of all groups")
       ("set-quota", value<string>(),
-       "sets the volume quota in bytes (set quota to 0 to disable the quota), format: <value>M|G|T");
+       "sets the value as quota on volume, user or group level (needs sub option)"
+       "Value will be specified in bytes "
+       "(0 means unlimited/disabled), format: <value>[K|M|...|E]")
+       ("volume,v", "option will be processed for the volume")
+       ("user,u", value<string>(), "option will be processed for the given user")
+       ("group,g", value<string>(), "option will be processed for the given group")
+       ("set-voucher-size", value<string>(), "sets the value as voucher")
+       ("set-default-user-quota", value<string>(), "option will be processed for the default user quota")
+       ("set-default-group-quota", value<string>(), "option will be processed for the default group quota");
+
 
   options_description snapshot_desc("Snapshot Options");
   snapshot_desc.add_options()
@@ -1090,11 +1391,24 @@ int main(int argc, char **argv) {
        "Delete the snapshot with the name given as argument.");
 
 
+  options_description tracing_desc("Tracing Options");
+  tracing_desc.add_options()
+      ("enable-tracing",
+       "Enable tracing on the volume.")
+      ("disable-tracing",
+       "disable tracing on the volume.")
+      ("tracing-policy-config",
+       value<string>(),
+       "Volume to write trace")
+      ("tracing-policy",
+       value<string>(),
+       "Tracing policy");
+
   positional_options_description pd;
   pd.add("path", 1);
 
   options_description cmdline_options;
-  cmdline_options.add(desc).add(snapshot_desc).add(hidden);
+  cmdline_options.add(desc).add(quota_desc).add(snapshot_desc).add(tracing_desc).add(hidden);
   variables_map vm;
   try {
     store(command_line_parser(argc, argv)
@@ -1132,7 +1446,7 @@ int main(int argc, char **argv) {
 
   if (vm.count("help") || option_path.empty()) {
     cerr << "Usage: xtfsutil <path>" << endl;
-    cerr << desc << snapshot_desc << endl;
+    cerr << desc << quota_desc << snapshot_desc << tracing_desc << endl;
     return 1;
   }
 
@@ -1180,6 +1494,35 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
+  if (vm.count("volume") > 0 || vm.count("user") > 0 || vm.count("group") > 0
+      || vm.count("all-users") > 0 || vm.count("all-groups") > 0) {
+
+    if (vm.count("set-quota") == 0 && vm.count("get-quotas") == 0) {
+      cerr << "--volume, --user, --group are only allowed in conjunction "
+           "with --set-quota and --get-quotas." << endl
+           << "--all-users and --all-groups are only allowed with --get-quotas"
+           << endl << endl << "Usage: xtfsutil <path>" << endl << quota_desc << endl;
+      return 1;
+    }
+
+    if ((vm.count("all-users") > 0 || vm.count("all-groups") > 0)
+        && vm.count("get-quotas") == 0) {
+      cerr << "--all-users and all-groups are only allowed in conjunction "
+           "with --get-quotas"
+           << endl << endl << "Usage: xtfsutil <path>" << endl << quota_desc << endl;
+      return 1;
+    }
+
+    int sum = vm.count("volume") + vm.count("user") + vm.count("group")
+        + vm.count("all-users") + vm.count("all-groups");
+    if (sum != 1) {
+      cerr
+          << "Only one of the following options can be specified on a single request: "
+          << endl << "--volume, --user, --group, --all-users and --all-groups"
+          << endl << endl << "Usage: xtfsutil <path>" << endl << quota_desc << endl;
+      return 1;
+    }
+  }
 
   char* real_path_cstr = realpath(option_path.c_str(), NULL);
   if (!real_path_cstr) {
@@ -1214,7 +1557,6 @@ int main(int argc, char **argv) {
                            + boost::lexical_cast<string>(getpid());
 
   size_t operationsCount = 0, failedOperationsCount = 0;
-
   if (vm.count("set-dsp") > 0) {
     ++operationsCount;
     failedOperationsCount += SetDefaultSP(xctl_file, path_on_volume, vm) ? 0 : 1;
@@ -1282,7 +1624,23 @@ int main(int argc, char **argv) {
   }
   if (vm.count("set-quota") > 0) {
     ++operationsCount;
-	failedOperationsCount += SetVolumeQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+    failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("get-quotas") > 0) {
+    ++operationsCount;
+    failedOperationsCount += GetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("set-voucher-size") > 0
+      || vm.count("set-default-user-quota") > 0
+      || vm.count("set-default-group-quota") > 0) {
+    ++operationsCount;
+    failedOperationsCount += SetQuotaRelatedValue(xctl_file, path_on_volume, vm) ? 0 : 1;
+  }
+  if (vm.count("enable-tracing") > 0 ||
+      vm.count("disable-tracing") > 0) {
+    ++operationsCount;
+    failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
+    failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if(operationsCount == 0){
     ++operationsCount;

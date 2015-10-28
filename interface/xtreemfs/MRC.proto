@@ -465,6 +465,18 @@ message xtreemfs_check_file_existsResponse {
   repeated FILE_STATE file_states = 2 [packed=true]; 
 }
 
+// requests are clear voucher on the listed expire times
+// with the proper finalize responses from the OSDs
+message xtreemfs_clear_vouchersRequest {
+  // latest xcap containing file id and client id
+  required FileCredentials creds = 1;
+  // list of respones from finalize voucher requests
+  // from the differend OSDs
+  repeated OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
+  // list of expire times, which has been finalized
+  repeated fixed64 expire_time_ms = 3;
+}
+
 // dumps or restores the MRC database
 message xtreemfs_dump_restore_databaseRequest {
   // the path to the dump file on the MRC host
@@ -559,6 +571,13 @@ message xtreemfs_replica_removeResponse {
   required int32 expected_xlocset_version = 2;
   required XLocSet unlink_xloc = 3;
   required XCap unlink_xcap = 4;
+}
+
+message xtreemfs_renew_capabilityRequest {
+  // the XCap
+  required XCap xcap = 1;
+  // hint, whether to increase voucher or not
+  optional bool increaseVoucher = 2 [default = false];
 }
 
 // restores a file w/ orphaned file content by creating a new metadata object
@@ -752,6 +771,10 @@ service MRCService {
   rpc xtreemfs_check_file_exists(xtreemfs_check_file_existsRequest) returns(xtreemfs_check_file_existsResponse) {
     option(proc_id)=31;
   };
+  
+  rpc xtreemfs_clear_vouchers(xtreemfs_clear_vouchersRequest) returns(emptyResponse) {
+    option(proc_id)=52;
+  };
 
   // dumps the MRC database to a dump file on the MRC host
   rpc xtreemfs_dump_database(xtreemfs_dump_restore_databaseRequest) returns(emptyResponse) {
@@ -786,6 +809,12 @@ service MRCService {
   // renews an existing capability to extend the validity period
   rpc xtreemfs_renew_capability(XCap) returns(XCap) {
     option(proc_id)=37;
+  };
+  
+  // renew an existing capability to extend the validity period and
+  // if the flag is active, increase the voucher size
+  rpc xtreemfs_renew_capability_and_voucher(xtreemfs_renew_capabilityRequest) returns(XCap){
+    option(proc_id)=53;
   };
 
   rpc xtreemfs_replication_to_master(emptyRequest) returns(emptyResponse) {
@@ -853,6 +882,6 @@ service MRCService {
   };
 
   rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(xtreemfs_reselect_osdsResponse) {
-    option(proc_id)=52;
+    option(proc_id)=54;
   };
 }

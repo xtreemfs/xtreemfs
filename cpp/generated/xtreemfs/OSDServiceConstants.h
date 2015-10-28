@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Oct 16 17:23:34 CEST 2015
+//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECONSTANTS_H_
@@ -21,6 +21,7 @@ const uint32_t PROC_ID_XTREEMFS_CLEANUP_START = 32;
 const uint32_t PROC_ID_XTREEMFS_CLEANUP_STATUS = 33;
 const uint32_t PROC_ID_XTREEMFS_CLEANUP_STOP = 34;
 const uint32_t PROC_ID_XTREEMFS_CLEANUP_VERSIONS_START = 35;
+const uint32_t PROC_ID_XTREEMFS_FINALIZE_VOUCHERS = 22;
 const uint32_t PROC_ID_XTREEMFS_REPAIR_OBJECT = 36;
 const uint32_t PROC_ID_XTREEMFS_RWR_FETCH = 73;
 const uint32_t PROC_ID_XTREEMFS_RWR_FLEASE_MSG = 71;

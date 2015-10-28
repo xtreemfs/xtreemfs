@@ -79,7 +79,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
-    private BlockingQueue<RequestMethod> q;
+    private final BlockingQueue<RequestMethod> q;
 
     /** The lease timeout is needed to ensure no primary can exist after invalidating. */
     private final int                    leaseToMS;
@@ -513,8 +513,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             private int             numErrors        = 0;
             private boolean         primaryResponded = false;
             private boolean         primaryExists    = false;
-            private RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
-            private ReplicaStatus[] states;
+            private final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses;
+            private final ReplicaStatus[] states;
 
             public InvalidatedResponseListener(RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses) {
                 this.responses = responses;
@@ -770,7 +770,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         private int                                              numComplete  = 0;
 
-        @SuppressWarnings("unchecked")
         public RWRResetStatusResponseListener(List<ServiceUUID> OSDServiceUUIDs,
                 RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses) throws MRCException {
             this.OSDServiceUUIDs = OSDServiceUUIDs;
@@ -794,7 +793,6 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             for (int i = 0; i < OSDServiceUUIDs.size(); i++) {
                 try {
                     final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
-                    @SuppressWarnings("unchecked")
                     final RPCResponse<xtreemfs_rwr_reset_statusResponse> rpcResponse = client.xtreemfs_rwr_reset_status(
                             OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
                             resetStatusRequest);

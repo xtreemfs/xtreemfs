@@ -24,6 +24,7 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.mrc.stages.XLocSetCoordinatorCallback;
 import org.xtreemfs.mrc.stages.XLocSetLock;
@@ -180,6 +181,10 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         // the RequestMethod when the update is complete.
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(coordinator, m);
         
+        // try to add the new replica via the voucher manager, which will check against the quota
+        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(), file);
+        master.getMrcVoucherManager().addReplica(quotaFileInformation, update);
+
         // Lock the replica and start the coordination.
         coordinator.lockXLocSet(file, sMan, update);
 
@@ -244,6 +249,11 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         file.setXLocList(xLocList);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         master.getXLocSetCoordinator().unlockXLocSet(idRes.getLocalFileId(), sMan, update);
+
+        // remove already added replica from quota via voucher management
+        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+        master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+
         update.execute();
     }
 

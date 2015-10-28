@@ -74,6 +74,7 @@ import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.FinalizeVouchersOperation;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
@@ -100,6 +101,7 @@ import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.quota.OSDVoucherManager;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple;
 import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple.ReplicatedFileStateSimpleFuture;
@@ -107,6 +109,7 @@ import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage;
+import org.xtreemfs.osd.stages.TracingStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
@@ -169,6 +172,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     protected final ReplicationStage                    replStage;
 
+    protected final TracingStage                        tracingStage;
+
     protected final RPCUDPSocketServer                  udpCom;
 
     protected final StatusServer                        statusServer;
@@ -188,12 +193,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     protected final RWReplicationStage                  rwrStage;
 
+    private final OSDVoucherManager                     osdVoucherManager;
+
     private List<OSDStatusListener>                     statusListener;
+
+    private OSDPolicyContainer                          policyContainer;
 
     /**
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
+
 
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
@@ -254,6 +264,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             if (!objDir.mkdirs())
                 throw new IOException("unable to create object directory: " + objDir.getAbsolutePath());
         }
+
+        policyContainer = new OSDPolicyContainer(config);
         
         // -------------------------------
         // initialize communication stages
@@ -344,6 +356,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
         rwrStage.setLifeCycleListener(this);
+
+        tracingStage = new TracingStage(this, config.getMaxRequestsQueueLength());
+        tracingStage.setLifeCycleListener(this);
+
         
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
@@ -519,6 +535,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             notifyConfigurationChange();
         }
         
+        osdVoucherManager = new OSDVoucherManager(storageLayout);
         
         
         if (Logging.isDebug())
@@ -554,6 +571,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.start();
             cvThread.start();
             rwrStage.start();
+            tracingStage.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -563,6 +581,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForStartup();
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
+            tracingStage.waitForStartup();
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -608,6 +627,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.shutdown();
             rwrStage.shutdown();
             vStage.shutdown();
+            tracingStage.shutdown();
             cThread.cleanupStop();
             cThread.shutdown();
             cvThread.cleanupStop();
@@ -621,6 +641,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.waitForShutdown();
             rwrStage.waitForShutdown();
             vStage.waitForShutdown();
+            tracingStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
 
@@ -657,6 +678,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.shutdown();
             rwrStage.shutdown();
             vStage.shutdown();
+            tracingStage.shutdown();
             cThread.cleanupStop();
             cThread.shutdown();
             cvThread.cleanupStop();
@@ -777,6 +799,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
+                    if(result.getCapability() != null && result.getCapability().getTraceConfig() != null &&
+                       result.getCapability().getTraceConfig().getTraceRequests()) {
+                        tracingStage.traceRequest(result);
+                    }
+
                     if (error == null) {
                         result.getOperation().startRequest(result);
                     } else {
@@ -810,6 +837,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
 
         op = new TruncateOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new FinalizeVouchersOperation(this);
         operations.put(op.getProcedureId(), op);
 
         /*
@@ -980,6 +1010,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public ServiceAvailability getServiceAvailability() {
         return serviceAvailability;
+    }
+
+    public OSDPolicyContainer getPolicyContainer() {
+        return policyContainer;
+    }
+
+    /**
+     * @return the osdVoucherManager
+     */
+    public OSDVoucherManager getOsdVoucherManager() {
+        return osdVoucherManager;
     }
 
     public void objectReceived() {

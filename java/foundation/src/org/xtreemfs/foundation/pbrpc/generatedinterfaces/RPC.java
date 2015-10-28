@@ -304,13 +304,21 @@ public final class RPC {
      */
     INVALID_VIEW(7, 8),
     /**
+     * <code>INSUFFICIENT_VOUCHER = 9;</code>
+     *
+     * <pre>
+     * Request failed, due to an insufficient voucher size
+     * </pre>
+     */
+    INSUFFICIENT_VOUCHER(8, 9),
+    /**
      * <code>IO_ERROR = 100;</code>
      *
      * <pre>
      * Generic IO_ERROR to be used by the RPC implementation.
      * </pre>
      */
-    IO_ERROR(8, 100),
+    IO_ERROR(9, 100),
     ;
 
     /**
@@ -379,6 +387,14 @@ public final class RPC {
      */
     public static final int INVALID_VIEW_VALUE = 8;
     /**
+     * <code>INSUFFICIENT_VOUCHER = 9;</code>
+     *
+     * <pre>
+     * Request failed, due to an insufficient voucher size
+     * </pre>
+     */
+    public static final int INSUFFICIENT_VOUCHER_VALUE = 9;
+    /**
      * <code>IO_ERROR = 100;</code>
      *
      * <pre>
@@ -400,6 +416,7 @@ public final class RPC {
         case 6: return ERRNO;
         case 7: return REDIRECT;
         case 8: return INVALID_VIEW;
+        case 9: return INSUFFICIENT_VOUCHER;
         case 100: return IO_ERROR;
         default: return null;
       }
@@ -6233,23 +6250,23 @@ public final class RPC {
       "ver_uuid\030\005 \001(\t*P\n\013MessageType\022\017\n\013RPC_REQ" +
       "UEST\020\000\022\030\n\024RPC_RESPONSE_SUCCESS\020\001\022\026\n\022RPC_" +
       "RESPONSE_ERROR\020\002*,\n\010AuthType\022\r\n\tAUTH_NON" +
-      "E\020\000\022\021\n\rAUTH_PASSWORD\020\001*\261\001\n\tErrorType\022\030\n\024" +
+      "E\020\000\022\021\n\rAUTH_PASSWORD\020\001*\313\001\n\tErrorType\022\030\n\024" +
       "INVALID_INTERFACE_ID\020\001\022\023\n\017INVALID_PROC_I" +
       "D\020\002\022\020\n\014GARBAGE_ARGS\020\003\022\017\n\013AUTH_FAILED\020\004\022\031" +
       "\n\025INTERNAL_SERVER_ERROR\020\005\022\t\n\005ERRNO\020\006\022\014\n\010" +
-      "REDIRECT\020\007\022\020\n\014INVALID_VIEW\020\010\022\014\n\010IO_ERROR" +
-      "\020d*\212\003\n\nPOSIXErrno\022\025\n\020POSIX_ERROR_NONE\020\217N" +
-      "\022\025\n\021POSIX_ERROR_EPERM\020\001\022\026\n\022POSIX_ERROR_E",
-      "NOENT\020\002\022\025\n\021POSIX_ERROR_EINTR\020\004\022\023\n\017POSIX_" +
-      "ERROR_EIO\020\005\022\026\n\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022P" +
-      "OSIX_ERROR_EACCES\020\r\022\026\n\022POSIX_ERROR_EEXIS" +
-      "T\020\021\022\025\n\021POSIX_ERROR_EXDEV\020\022\022\026\n\022POSIX_ERRO" +
-      "R_ENODEV\020\023\022\027\n\023POSIX_ERROR_ENOTDIR\020\024\022\026\n\022P" +
-      "OSIX_ERROR_EISDIR\020\025\022\026\n\022POSIX_ERROR_EINVA" +
-      "L\020\026\022\026\n\022POSIX_ERROR_ENOSPC\020\034\022\031\n\025POSIX_ERR" +
-      "OR_ENOTEMPTY\020\'\022\027\n\023POSIX_ERROR_ENODATA\020=B" +
-      "3\n1org.xtreemfs.foundation.pbrpc.generat" +
-      "edinterfaces"
+      "REDIRECT\020\007\022\020\n\014INVALID_VIEW\020\010\022\030\n\024INSUFFIC" +
+      "IENT_VOUCHER\020\t\022\014\n\010IO_ERROR\020d*\212\003\n\nPOSIXEr" +
+      "rno\022\025\n\020POSIX_ERROR_NONE\020\217N\022\025\n\021POSIX_ERRO",
+      "R_EPERM\020\001\022\026\n\022POSIX_ERROR_ENOENT\020\002\022\025\n\021POS" +
+      "IX_ERROR_EINTR\020\004\022\023\n\017POSIX_ERROR_EIO\020\005\022\026\n" +
+      "\022POSIX_ERROR_EAGAIN\020\013\022\026\n\022POSIX_ERROR_EAC" +
+      "CES\020\r\022\026\n\022POSIX_ERROR_EEXIST\020\021\022\025\n\021POSIX_E" +
+      "RROR_EXDEV\020\022\022\026\n\022POSIX_ERROR_ENODEV\020\023\022\027\n\023" +
+      "POSIX_ERROR_ENOTDIR\020\024\022\026\n\022POSIX_ERROR_EIS" +
+      "DIR\020\025\022\026\n\022POSIX_ERROR_EINVAL\020\026\022\026\n\022POSIX_E" +
+      "RROR_ENOSPC\020\034\022\031\n\025POSIX_ERROR_ENOTEMPTY\020\'" +
+      "\022\027\n\023POSIX_ERROR_ENODATA\020=B3\n1org.xtreemf" +
+      "s.foundation.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {

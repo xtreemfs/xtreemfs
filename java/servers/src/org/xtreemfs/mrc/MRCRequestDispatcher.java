@@ -66,6 +66,8 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBVolumeManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
+import org.xtreemfs.mrc.quota.QuotaManager;
+import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
@@ -128,6 +130,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private List<MRCStatusListener>        statusListener;
     
     private final XLocSetCoordinator       xLocSetCoordinator;
+
+    private final QuotaManager          mrcQuotaManager;
+
+    private final VoucherManager        mrcVoucherManager;
 
     private final long                     initTimeMS;
 
@@ -211,6 +217,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         xLocSetCoordinator.setLifeCycleListener(this);
 
         procStage = new ProcessingStage(this);
+
+        mrcQuotaManager = new QuotaManager();
+        mrcVoucherManager = new VoucherManager(mrcQuotaManager);
 
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
@@ -386,6 +395,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             volumeManager.init();
             volumeManager.addVolumeChangeListener(osdMonitor);
+
+            mrcQuotaManager.initializeVolumeQuotaManager(volumeManager);
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -932,6 +943,20 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public ProcessingStage getProcStage() {
         return procStage;
+    }
+
+    /**
+     * @return the mrcQuotaManager
+     */
+    public QuotaManager getMrcQuotaManager() {
+        return mrcQuotaManager;
+    }
+
+    /**
+     * @return the mrcVoucherManager
+     */
+    public VoucherManager getMrcVoucherManager() {
+        return mrcVoucherManager;
     }
 
     /**

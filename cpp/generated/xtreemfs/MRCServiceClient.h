@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Sep 14 11:28:50 CEST 2015
+//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -513,6 +513,29 @@ namespace pbrpc {
                 return sync_cb;
             }
 
+            void xtreemfs_clear_vouchers(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 52,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_clear_vouchers_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 20001, 52,
+                     creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
             void xtreemfs_dump_database(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
@@ -669,6 +692,29 @@ namespace pbrpc {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
                 client_->sendRequest(address, 20001, 37,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_renew_capability_and_voucher(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::XCap> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 20001, 53,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::XCap>* xtreemfs_renew_capability_and_voucher_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::XCap>* sync_cb = new SyncCallback<xtreemfs::pbrpc::XCap>();
+                client_->sendRequest(address, 20001, 53,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::XCap(),
                      NULL, sync_cb);
                 return sync_cb;
@@ -979,7 +1025,7 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest* request,
                 CallbackInterface<xtreemfs::pbrpc::xtreemfs_reselect_osdsResponse> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
-                client_->sendRequest(address, 20001, 52,
+                client_->sendRequest(address, 20001, 54,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_reselect_osdsResponse(),
                      context, callback);
             }
@@ -990,7 +1036,7 @@ namespace pbrpc {
                 , const xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest* request) {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_reselect_osdsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_reselect_osdsResponse>();
-                client_->sendRequest(address, 20001, 52,
+                client_->sendRequest(address, 20001, 54,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_reselect_osdsResponse(),
                      NULL, sync_cb);
                 return sync_cb;

@@ -11,12 +11,14 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.api.SnapshotManager;
 import org.xtreemfs.babudb.api.database.DatabaseRO;
 import org.xtreemfs.babudb.api.database.ResultSet;
 import org.xtreemfs.babudb.api.exception.BabuDBException;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -26,17 +28,25 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.FileVoucherClientInfoIterator;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.QuotaInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedXAttr;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
+import org.xtreemfs.mrc.metadata.FileVoucherInfo;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.quota.VolumeQuotaManager;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.DBAdminHelper;
 import org.xtreemfs.mrc.utils.Path;
@@ -81,6 +91,16 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     protected static final String          VOL_QUOTA                  = "quota";
     
+    protected static final String          VOL_BSPACE_ATTR_NAME       = "blockedSpace";
+
+    protected static final String          VOL_USPACE_ATTR_NAME       = "usedSpace";
+
+    protected static final String          VOL_VOUCHERSIZE_ATTR_NAME  = "voucherSize";
+
+    protected static final String          VOL_DEFAULT_U_QUOTA_ATTR_NAME = "defaultUserQuota";
+
+    protected static final String          VOL_DEFAULT_G_QUOTA_ATTR_NAME = "defaultGroupQuota";
+
     protected static final int[]           ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
         ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                       };
     
@@ -206,6 +226,46 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         }
     }
     
+    @Override
+    public FileVoucherInfo getFileVoucherInfo(long fileId) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createFileVoucherInfoKey(fileId);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            return value == null ? null : new BufferBackedFileVoucherInfo(key, value);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public FileVoucherClientInfo getFileVoucherClientInfo(long fileId, String clientId) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createFileVoucherClientInfoKey(fileId, clientId);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            return value == null ? null : new BufferBackedFileVoucherClientInfo(key, value);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public DatabaseResultSet<FileVoucherClientInfo> getAllFileVoucherClientInfo(long fileId) throws DatabaseException {
+        try {
+            byte[] prefixKey = BabuDBStorageHelper.createFileVoucherClientInfoKey(fileId, "");
+            ResultSet<byte[], byte[]> it = database.prefixLookup(VOLUME_INDEX, prefixKey, null).get();
+
+            return new FileVoucherClientInfoIterator(it);
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public long getVolumeQuota() throws DatabaseException {
         try {
             byte[] quotaBytes = getXAttr(1, SYSTEM_UID, VOL_QUOTA);
@@ -216,6 +276,151 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             }
         } catch (DatabaseException exc) {
             throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeBlockedSpace() throws DatabaseException {
+        try {
+            byte[] blockedSpace = getXAttr(1, SYSTEM_UID, VOL_BSPACE_ATTR_NAME);
+            if (blockedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(blockedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVolumeUsedSpace() throws DatabaseException {
+        try {
+            byte[] usedSpace = getXAttr(1, SYSTEM_UID, VOL_USPACE_ATTR_NAME);
+            if (usedSpace == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(usedSpace));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getVoucherSize() throws DatabaseException {
+        try {
+            byte[] voucherSize = getXAttr(1, SYSTEM_UID, VOL_VOUCHERSIZE_ATTR_NAME);
+            if (voucherSize == null)
+                return 0;
+            else {
+                return Long.valueOf(new String(voucherSize));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getDefaultGroupQuota() throws DatabaseException {
+        try {
+            byte[] defaultGroupQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_G_QUOTA_ATTR_NAME);
+            if (defaultGroupQuota == null)
+                return VolumeQuotaManager.DEFAULT_GROUP_QUOTA;
+            else {
+                return Long.valueOf(new String(defaultGroupQuota));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getDefaultUserQuota() throws DatabaseException {
+        try {
+            byte[] defaultUserQuota = getXAttr(1, SYSTEM_UID, VOL_DEFAULT_U_QUOTA_ATTR_NAME);
+            if (defaultUserQuota == null)
+                return VolumeQuotaManager.DEFAULT_USER_QUOTA;
+            else {
+                return Long.valueOf(new String(defaultUserQuota));
+            }
+
+        } catch (DatabaseException exc) {
+            throw exc;
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public long getGroupQuota(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.QUOTA, groupId, QuotaConstants.NO_QUOTA);
+    }
+
+    @Override
+    public long getGroupBlockedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.BLOCKED, groupId, 0);
+    }
+
+    @Override
+    public long getGroupUsedSpace(String groupId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.GROUP, QuotaInfo.USED, groupId, 0);
+    }
+
+    @Override
+    public long getUserQuota(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.QUOTA, userId, QuotaConstants.NO_QUOTA);
+    }
+
+    @Override
+    public long getUserBlockedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.BLOCKED, userId, 0);
+    }
+
+    @Override
+    public long getUserUsedSpace(String userId) throws DatabaseException {
+        return getOwnerQuotaInfo(OwnerType.USER, QuotaInfo.USED, userId, 0);
+    }
+
+    private long getOwnerQuotaInfo(OwnerType ownerType, QuotaInfo quotaInfo, String id, long defaultValue)
+            throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createOwnerQuotaInfoKey(ownerType, id, quotaInfo);
+            byte[] value = database.lookup(VOLUME_INDEX, key, null).get();
+
+            if (value == null)
+                return defaultValue;
+            else {
+                return Long.valueOf(new String(value));
+            }
+
+        } catch (Exception exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
+    public Map<String, Map<String, Long>> getAllOwnerQuotaInfo(OwnerType ownerType, String id) throws DatabaseException {
+        try {
+            byte[] key = BabuDBStorageHelper.createPrefixOwnerQuotaInfoKey(ownerType, id);
+            ResultSet<byte[], byte[]> it = database.prefixLookup(VOLUME_INDEX, key, null).get();
+
+            return BabuDBStorageHelper.buildAllOwnerQuotaInfoMap(it);
+
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
@@ -544,7 +749,73 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
+    public void setFileVoucherClientInfo(FileVoucherClientInfo fileVoucherClientInfo, AtomicDBUpdate update)
+            throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setFileVoucherInfo(FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
     public void setVolumeQuota(long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeBlockedSpace(long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVolumeUsedSpace(long usedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupQuota(String groupId, Long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupBlockedSpace(String groupId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setGroupUsedSpace(String groupId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserQuota(String userId, Long quota, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserBlockedSpace(String userId, Long blockedSpace, AtomicDBUpdate update) throws DatabaseException {
+        throwException();
+    }
+
+    @Override
+    public void setUserUsedSpace(String userId, Long usedSpace, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
 
@@ -552,7 +823,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     public void setLastFileId(long fileId, AtomicDBUpdate update) throws DatabaseException {
         throwException();
     }
-    
+
     @Override
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException {
         throwException();

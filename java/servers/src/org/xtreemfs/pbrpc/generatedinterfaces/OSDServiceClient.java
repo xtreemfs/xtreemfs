@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Oct 28 10:52:21 CET 2015
+//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -178,6 +178,19 @@ public class OSDServiceClient {
     public RPCResponse xtreemfs_cleanup_versions_start(InetSocketAddress server, Auth authHeader, UserCredentials userCreds) throws IOException {
          
          return xtreemfs_cleanup_versions_start(server, authHeader, userCreds,null);
+    }
+
+    public RPCResponse<GlobalTypes.OSDFinalizeVouchersResponse> xtreemfs_finalize_vouchers(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_finalize_vouchersRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<GlobalTypes.OSDFinalizeVouchersResponse> response = new RPCResponse<GlobalTypes.OSDFinalizeVouchersResponse>(GlobalTypes.OSDFinalizeVouchersResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 22, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<GlobalTypes.OSDFinalizeVouchersResponse> xtreemfs_finalize_vouchers(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, List<Long> expire_time_ms) throws IOException {
+         final OSD.xtreemfs_finalize_vouchersRequest msg = OSD.xtreemfs_finalize_vouchersRequest.newBuilder().setFileCredentials(file_credentials).addAllExpireTimeMs(expire_time_ms).build();
+         return xtreemfs_finalize_vouchers(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse xtreemfs_repair_object(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_repair_objectRequest input) throws IOException {

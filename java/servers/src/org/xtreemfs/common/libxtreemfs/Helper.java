@@ -167,7 +167,7 @@ public class Helper {
      */
     public static List<StripeLocation> getStripeLocationsFromReplicas(Replicas replicas, long startSize, long length,
             UUIDResolver uuidResolver) {
-        long stripeSize = replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024;
+        long stripeSize = replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024L;
         long indexOfFirstStripeToConsider = (startSize / stripeSize);
         long remainingLengthOfFirstStripe = Math.min(length, stripeSize - (startSize % stripeSize));
         int numberOfStrips = (int) (length / stripeSize + 1);

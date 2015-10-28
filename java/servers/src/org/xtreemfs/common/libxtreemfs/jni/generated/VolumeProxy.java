@@ -102,7 +102,12 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat getAttr(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_getAttr__SWIG_0(swigCPtr, this, user_credentials.toByteArray(), path);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
   try {
@@ -115,7 +120,12 @@ public class VolumeProxy {
 
   public org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat getAttr(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, boolean ignore_metadata_cache) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
   byte[] buf = xtreemfs_jniJNI.VolumeProxy_getAttr__SWIG_1(swigCPtr, this, user_credentials.toByteArray(), path, ignore_metadata_cache);
-  if (buf == null || buf.length == 0) {
+
+  // It is possible that a serialized protobuf message has a length of 0, for 
+  // example if it consists only of repeated fields of which none has an entry.
+  // In that case it is preferred to parse the (empty) message and return it
+  // instead of null. Null is only valid if the native call did return null.
+  if (buf == null) {
     return null;
   }
   try {

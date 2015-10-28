@@ -37,6 +37,7 @@ void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
 void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
 void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto();
 
+class TraceConfig;
 class NewFileSize;
 class StripingPolicy;
 class Replica;
@@ -46,6 +47,7 @@ class XLocSet;
 class FileCredentials;
 class FileCredentialsSet;
 class VivaldiCoordinates;
+class OSDFinalizeVouchersResponse;
 class OSDWriteResponse;
 class KeyValuePair;
 
@@ -290,6 +292,118 @@ inline bool SERVICES_Parse(
     SERVICES_descriptor(), name, value);
 }
 // ===================================================================
+
+class TraceConfig : public ::google::protobuf::Message {
+ public:
+  TraceConfig();
+  virtual ~TraceConfig();
+
+  TraceConfig(const TraceConfig& from);
+
+  inline TraceConfig& operator=(const TraceConfig& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const TraceConfig& default_instance();
+
+  void Swap(TraceConfig* other);
+
+  // implements Message ----------------------------------------------
+
+  TraceConfig* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const TraceConfig& from);
+  void MergeFrom(const TraceConfig& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required bool trace_requests = 1;
+  inline bool has_trace_requests() const;
+  inline void clear_trace_requests();
+  static const int kTraceRequestsFieldNumber = 1;
+  inline bool trace_requests() const;
+  inline void set_trace_requests(bool value);
+
+  // optional string tracing_policy = 2;
+  inline bool has_tracing_policy() const;
+  inline void clear_tracing_policy();
+  static const int kTracingPolicyFieldNumber = 2;
+  inline const ::std::string& tracing_policy() const;
+  inline void set_tracing_policy(const ::std::string& value);
+  inline void set_tracing_policy(const char* value);
+  inline void set_tracing_policy(const char* value, size_t size);
+  inline ::std::string* mutable_tracing_policy();
+  inline ::std::string* release_tracing_policy();
+  inline void set_allocated_tracing_policy(::std::string* tracing_policy);
+
+  // optional string tracing_policy_config = 3;
+  inline bool has_tracing_policy_config() const;
+  inline void clear_tracing_policy_config();
+  static const int kTracingPolicyConfigFieldNumber = 3;
+  inline const ::std::string& tracing_policy_config() const;
+  inline void set_tracing_policy_config(const ::std::string& value);
+  inline void set_tracing_policy_config(const char* value);
+  inline void set_tracing_policy_config(const char* value, size_t size);
+  inline ::std::string* mutable_tracing_policy_config();
+  inline ::std::string* release_tracing_policy_config();
+  inline void set_allocated_tracing_policy_config(::std::string* tracing_policy_config);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.TraceConfig)
+ private:
+  inline void set_has_trace_requests();
+  inline void clear_has_trace_requests();
+  inline void set_has_tracing_policy();
+  inline void clear_has_tracing_policy();
+  inline void set_has_tracing_policy_config();
+  inline void clear_has_tracing_policy_config();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* tracing_policy_;
+  ::std::string* tracing_policy_config_;
+  bool trace_requests_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto();
+
+  void InitAsDefaultInstance();
+  static TraceConfig* default_instance_;
+};
+// -------------------------------------------------------------------
 
 class NewFileSize : public ::google::protobuf::Message {
  public:
@@ -830,6 +944,29 @@ class XCap : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 snap_timestamp() const;
   inline void set_snap_timestamp(::google::protobuf::uint64 value);
 
+  // optional fixed64 voucher_size = 11 [default = 0];
+  inline bool has_voucher_size() const;
+  inline void clear_voucher_size();
+  static const int kVoucherSizeFieldNumber = 11;
+  inline ::google::protobuf::uint64 voucher_size() const;
+  inline void set_voucher_size(::google::protobuf::uint64 value);
+
+  // optional fixed64 expire_time_ms = 12 [default = 0];
+  inline bool has_expire_time_ms() const;
+  inline void clear_expire_time_ms();
+  static const int kExpireTimeMsFieldNumber = 12;
+  inline ::google::protobuf::uint64 expire_time_ms() const;
+  inline void set_expire_time_ms(::google::protobuf::uint64 value);
+
+  // optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+  inline bool has_trace_config() const;
+  inline void clear_trace_config();
+  static const int kTraceConfigFieldNumber = 13;
+  inline const ::xtreemfs::pbrpc::TraceConfig& trace_config() const;
+  inline ::xtreemfs::pbrpc::TraceConfig* mutable_trace_config();
+  inline ::xtreemfs::pbrpc::TraceConfig* release_trace_config();
+  inline void set_allocated_trace_config(::xtreemfs::pbrpc::TraceConfig* trace_config);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XCap)
  private:
   inline void set_has_access_mode();
@@ -852,6 +989,12 @@ class XCap : public ::google::protobuf::Message {
   inline void clear_has_snap_config();
   inline void set_has_snap_timestamp();
   inline void clear_has_snap_timestamp();
+  inline void set_has_voucher_size();
+  inline void clear_has_voucher_size();
+  inline void set_has_expire_time_ms();
+  inline void clear_has_expire_time_ms();
+  inline void set_has_trace_config();
+  inline void clear_has_trace_config();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -864,10 +1007,13 @@ class XCap : public ::google::protobuf::Message {
   bool replicate_on_close_;
   ::google::protobuf::uint32 truncate_epoch_;
   ::google::protobuf::uint64 snap_timestamp_;
+  ::google::protobuf::uint64 voucher_size_;
+  ::google::protobuf::uint64 expire_time_ms_;
+  ::xtreemfs::pbrpc::TraceConfig* trace_config_;
   int snap_config_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(10 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(13 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
@@ -1280,6 +1426,128 @@ class VivaldiCoordinates : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
+class OSDFinalizeVouchersResponse : public ::google::protobuf::Message {
+ public:
+  OSDFinalizeVouchersResponse();
+  virtual ~OSDFinalizeVouchersResponse();
+
+  OSDFinalizeVouchersResponse(const OSDFinalizeVouchersResponse& from);
+
+  inline OSDFinalizeVouchersResponse& operator=(const OSDFinalizeVouchersResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const OSDFinalizeVouchersResponse& default_instance();
+
+  void Swap(OSDFinalizeVouchersResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  OSDFinalizeVouchersResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const OSDFinalizeVouchersResponse& from);
+  void MergeFrom(const OSDFinalizeVouchersResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string osd_uuid = 1;
+  inline bool has_osd_uuid() const;
+  inline void clear_osd_uuid();
+  static const int kOsdUuidFieldNumber = 1;
+  inline const ::std::string& osd_uuid() const;
+  inline void set_osd_uuid(const ::std::string& value);
+  inline void set_osd_uuid(const char* value);
+  inline void set_osd_uuid(const char* value, size_t size);
+  inline ::std::string* mutable_osd_uuid();
+  inline ::std::string* release_osd_uuid();
+  inline void set_allocated_osd_uuid(::std::string* osd_uuid);
+
+  // required string server_signature = 2;
+  inline bool has_server_signature() const;
+  inline void clear_server_signature();
+  static const int kServerSignatureFieldNumber = 2;
+  inline const ::std::string& server_signature() const;
+  inline void set_server_signature(const ::std::string& value);
+  inline void set_server_signature(const char* value);
+  inline void set_server_signature(const char* value, size_t size);
+  inline ::std::string* mutable_server_signature();
+  inline ::std::string* release_server_signature();
+  inline void set_allocated_server_signature(::std::string* server_signature);
+
+  // required fixed64 size_in_bytes = 3;
+  inline bool has_size_in_bytes() const;
+  inline void clear_size_in_bytes();
+  static const int kSizeInBytesFieldNumber = 3;
+  inline ::google::protobuf::uint64 size_in_bytes() const;
+  inline void set_size_in_bytes(::google::protobuf::uint64 value);
+
+  // required fixed64 truncate_epoch = 4;
+  inline bool has_truncate_epoch() const;
+  inline void clear_truncate_epoch();
+  static const int kTruncateEpochFieldNumber = 4;
+  inline ::google::protobuf::uint64 truncate_epoch() const;
+  inline void set_truncate_epoch(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.OSDFinalizeVouchersResponse)
+ private:
+  inline void set_has_osd_uuid();
+  inline void clear_has_osd_uuid();
+  inline void set_has_server_signature();
+  inline void clear_has_server_signature();
+  inline void set_has_size_in_bytes();
+  inline void clear_has_size_in_bytes();
+  inline void set_has_truncate_epoch();
+  inline void clear_has_truncate_epoch();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::std::string* osd_uuid_;
+  ::std::string* server_signature_;
+  ::google::protobuf::uint64 size_in_bytes_;
+  ::google::protobuf::uint64 truncate_epoch_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fGlobalTypes_2eproto();
+
+  void InitAsDefaultInstance();
+  static OSDFinalizeVouchersResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
 class OSDWriteResponse : public ::google::protobuf::Message {
  public:
   OSDWriteResponse();
@@ -1476,6 +1744,172 @@ class KeyValuePair : public ::google::protobuf::Message {
 
 
 // ===================================================================
+
+// TraceConfig
+
+// required bool trace_requests = 1;
+inline bool TraceConfig::has_trace_requests() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void TraceConfig::set_has_trace_requests() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void TraceConfig::clear_has_trace_requests() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void TraceConfig::clear_trace_requests() {
+  trace_requests_ = false;
+  clear_has_trace_requests();
+}
+inline bool TraceConfig::trace_requests() const {
+  return trace_requests_;
+}
+inline void TraceConfig::set_trace_requests(bool value) {
+  set_has_trace_requests();
+  trace_requests_ = value;
+}
+
+// optional string tracing_policy = 2;
+inline bool TraceConfig::has_tracing_policy() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void TraceConfig::set_has_tracing_policy() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void TraceConfig::clear_has_tracing_policy() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void TraceConfig::clear_tracing_policy() {
+  if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_->clear();
+  }
+  clear_has_tracing_policy();
+}
+inline const ::std::string& TraceConfig::tracing_policy() const {
+  return *tracing_policy_;
+}
+inline void TraceConfig::set_tracing_policy(const ::std::string& value) {
+  set_has_tracing_policy();
+  if (tracing_policy_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_ = new ::std::string;
+  }
+  tracing_policy_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy(const char* value) {
+  set_has_tracing_policy();
+  if (tracing_policy_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_ = new ::std::string;
+  }
+  tracing_policy_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy(const char* value, size_t size) {
+  set_has_tracing_policy();
+  if (tracing_policy_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_ = new ::std::string;
+  }
+  tracing_policy_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* TraceConfig::mutable_tracing_policy() {
+  set_has_tracing_policy();
+  if (tracing_policy_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_ = new ::std::string;
+  }
+  return tracing_policy_;
+}
+inline ::std::string* TraceConfig::release_tracing_policy() {
+  clear_has_tracing_policy();
+  if (tracing_policy_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = tracing_policy_;
+    tracing_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void TraceConfig::set_allocated_tracing_policy(::std::string* tracing_policy) {
+  if (tracing_policy_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_;
+  }
+  if (tracing_policy) {
+    set_has_tracing_policy();
+    tracing_policy_ = tracing_policy;
+  } else {
+    clear_has_tracing_policy();
+    tracing_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional string tracing_policy_config = 3;
+inline bool TraceConfig::has_tracing_policy_config() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void TraceConfig::set_has_tracing_policy_config() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void TraceConfig::clear_has_tracing_policy_config() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void TraceConfig::clear_tracing_policy_config() {
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_->clear();
+  }
+  clear_has_tracing_policy_config();
+}
+inline const ::std::string& TraceConfig::tracing_policy_config() const {
+  return *tracing_policy_config_;
+}
+inline void TraceConfig::set_tracing_policy_config(const ::std::string& value) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy_config(const char* value) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(value);
+}
+inline void TraceConfig::set_tracing_policy_config(const char* value, size_t size) {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  tracing_policy_config_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* TraceConfig::mutable_tracing_policy_config() {
+  set_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    tracing_policy_config_ = new ::std::string;
+  }
+  return tracing_policy_config_;
+}
+inline ::std::string* TraceConfig::release_tracing_policy_config() {
+  clear_has_tracing_policy_config();
+  if (tracing_policy_config_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = tracing_policy_config_;
+    tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void TraceConfig::set_allocated_tracing_policy_config(::std::string* tracing_policy_config) {
+  if (tracing_policy_config_ != &::google::protobuf::internal::kEmptyString) {
+    delete tracing_policy_config_;
+  }
+  if (tracing_policy_config) {
+    set_has_tracing_policy_config();
+    tracing_policy_config_ = tracing_policy_config;
+  } else {
+    clear_has_tracing_policy_config();
+    tracing_policy_config_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// -------------------------------------------------------------------
 
 // NewFileSize
 
@@ -2122,6 +2556,88 @@ inline void XCap::set_snap_timestamp(::google::protobuf::uint64 value) {
   snap_timestamp_ = value;
 }
 
+// optional fixed64 voucher_size = 11 [default = 0];
+inline bool XCap::has_voucher_size() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
+}
+inline void XCap::set_has_voucher_size() {
+  _has_bits_[0] |= 0x00000400u;
+}
+inline void XCap::clear_has_voucher_size() {
+  _has_bits_[0] &= ~0x00000400u;
+}
+inline void XCap::clear_voucher_size() {
+  voucher_size_ = GOOGLE_ULONGLONG(0);
+  clear_has_voucher_size();
+}
+inline ::google::protobuf::uint64 XCap::voucher_size() const {
+  return voucher_size_;
+}
+inline void XCap::set_voucher_size(::google::protobuf::uint64 value) {
+  set_has_voucher_size();
+  voucher_size_ = value;
+}
+
+// optional fixed64 expire_time_ms = 12 [default = 0];
+inline bool XCap::has_expire_time_ms() const {
+  return (_has_bits_[0] & 0x00000800u) != 0;
+}
+inline void XCap::set_has_expire_time_ms() {
+  _has_bits_[0] |= 0x00000800u;
+}
+inline void XCap::clear_has_expire_time_ms() {
+  _has_bits_[0] &= ~0x00000800u;
+}
+inline void XCap::clear_expire_time_ms() {
+  expire_time_ms_ = GOOGLE_ULONGLONG(0);
+  clear_has_expire_time_ms();
+}
+inline ::google::protobuf::uint64 XCap::expire_time_ms() const {
+  return expire_time_ms_;
+}
+inline void XCap::set_expire_time_ms(::google::protobuf::uint64 value) {
+  set_has_expire_time_ms();
+  expire_time_ms_ = value;
+}
+
+// optional .xtreemfs.pbrpc.TraceConfig trace_config = 13;
+inline bool XCap::has_trace_config() const {
+  return (_has_bits_[0] & 0x00001000u) != 0;
+}
+inline void XCap::set_has_trace_config() {
+  _has_bits_[0] |= 0x00001000u;
+}
+inline void XCap::clear_has_trace_config() {
+  _has_bits_[0] &= ~0x00001000u;
+}
+inline void XCap::clear_trace_config() {
+  if (trace_config_ != NULL) trace_config_->::xtreemfs::pbrpc::TraceConfig::Clear();
+  clear_has_trace_config();
+}
+inline const ::xtreemfs::pbrpc::TraceConfig& XCap::trace_config() const {
+  return trace_config_ != NULL ? *trace_config_ : *default_instance_->trace_config_;
+}
+inline ::xtreemfs::pbrpc::TraceConfig* XCap::mutable_trace_config() {
+  set_has_trace_config();
+  if (trace_config_ == NULL) trace_config_ = new ::xtreemfs::pbrpc::TraceConfig;
+  return trace_config_;
+}
+inline ::xtreemfs::pbrpc::TraceConfig* XCap::release_trace_config() {
+  clear_has_trace_config();
+  ::xtreemfs::pbrpc::TraceConfig* temp = trace_config_;
+  trace_config_ = NULL;
+  return temp;
+}
+inline void XCap::set_allocated_trace_config(::xtreemfs::pbrpc::TraceConfig* trace_config) {
+  delete trace_config_;
+  trace_config_ = trace_config;
+  if (trace_config) {
+    set_has_trace_config();
+  } else {
+    clear_has_trace_config();
+  }
+}
+
 // -------------------------------------------------------------------
 
 // XLocSet
@@ -2455,6 +2971,194 @@ inline double VivaldiCoordinates::local_error() const {
 inline void VivaldiCoordinates::set_local_error(double value) {
   set_has_local_error();
   local_error_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// OSDFinalizeVouchersResponse
+
+// required string osd_uuid = 1;
+inline bool OSDFinalizeVouchersResponse::has_osd_uuid() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void OSDFinalizeVouchersResponse::set_has_osd_uuid() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void OSDFinalizeVouchersResponse::clear_has_osd_uuid() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void OSDFinalizeVouchersResponse::clear_osd_uuid() {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
+    osd_uuid_->clear();
+  }
+  clear_has_osd_uuid();
+}
+inline const ::std::string& OSDFinalizeVouchersResponse::osd_uuid() const {
+  return *osd_uuid_;
+}
+inline void OSDFinalizeVouchersResponse::set_osd_uuid(const ::std::string& value) {
+  set_has_osd_uuid();
+  if (osd_uuid_ == &::google::protobuf::internal::kEmptyString) {
+    osd_uuid_ = new ::std::string;
+  }
+  osd_uuid_->assign(value);
+}
+inline void OSDFinalizeVouchersResponse::set_osd_uuid(const char* value) {
+  set_has_osd_uuid();
+  if (osd_uuid_ == &::google::protobuf::internal::kEmptyString) {
+    osd_uuid_ = new ::std::string;
+  }
+  osd_uuid_->assign(value);
+}
+inline void OSDFinalizeVouchersResponse::set_osd_uuid(const char* value, size_t size) {
+  set_has_osd_uuid();
+  if (osd_uuid_ == &::google::protobuf::internal::kEmptyString) {
+    osd_uuid_ = new ::std::string;
+  }
+  osd_uuid_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* OSDFinalizeVouchersResponse::mutable_osd_uuid() {
+  set_has_osd_uuid();
+  if (osd_uuid_ == &::google::protobuf::internal::kEmptyString) {
+    osd_uuid_ = new ::std::string;
+  }
+  return osd_uuid_;
+}
+inline ::std::string* OSDFinalizeVouchersResponse::release_osd_uuid() {
+  clear_has_osd_uuid();
+  if (osd_uuid_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = osd_uuid_;
+    osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void OSDFinalizeVouchersResponse::set_allocated_osd_uuid(::std::string* osd_uuid) {
+  if (osd_uuid_ != &::google::protobuf::internal::kEmptyString) {
+    delete osd_uuid_;
+  }
+  if (osd_uuid) {
+    set_has_osd_uuid();
+    osd_uuid_ = osd_uuid;
+  } else {
+    clear_has_osd_uuid();
+    osd_uuid_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required string server_signature = 2;
+inline bool OSDFinalizeVouchersResponse::has_server_signature() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void OSDFinalizeVouchersResponse::set_has_server_signature() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void OSDFinalizeVouchersResponse::clear_has_server_signature() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void OSDFinalizeVouchersResponse::clear_server_signature() {
+  if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
+    server_signature_->clear();
+  }
+  clear_has_server_signature();
+}
+inline const ::std::string& OSDFinalizeVouchersResponse::server_signature() const {
+  return *server_signature_;
+}
+inline void OSDFinalizeVouchersResponse::set_server_signature(const ::std::string& value) {
+  set_has_server_signature();
+  if (server_signature_ == &::google::protobuf::internal::kEmptyString) {
+    server_signature_ = new ::std::string;
+  }
+  server_signature_->assign(value);
+}
+inline void OSDFinalizeVouchersResponse::set_server_signature(const char* value) {
+  set_has_server_signature();
+  if (server_signature_ == &::google::protobuf::internal::kEmptyString) {
+    server_signature_ = new ::std::string;
+  }
+  server_signature_->assign(value);
+}
+inline void OSDFinalizeVouchersResponse::set_server_signature(const char* value, size_t size) {
+  set_has_server_signature();
+  if (server_signature_ == &::google::protobuf::internal::kEmptyString) {
+    server_signature_ = new ::std::string;
+  }
+  server_signature_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* OSDFinalizeVouchersResponse::mutable_server_signature() {
+  set_has_server_signature();
+  if (server_signature_ == &::google::protobuf::internal::kEmptyString) {
+    server_signature_ = new ::std::string;
+  }
+  return server_signature_;
+}
+inline ::std::string* OSDFinalizeVouchersResponse::release_server_signature() {
+  clear_has_server_signature();
+  if (server_signature_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = server_signature_;
+    server_signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void OSDFinalizeVouchersResponse::set_allocated_server_signature(::std::string* server_signature) {
+  if (server_signature_ != &::google::protobuf::internal::kEmptyString) {
+    delete server_signature_;
+  }
+  if (server_signature) {
+    set_has_server_signature();
+    server_signature_ = server_signature;
+  } else {
+    clear_has_server_signature();
+    server_signature_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required fixed64 size_in_bytes = 3;
+inline bool OSDFinalizeVouchersResponse::has_size_in_bytes() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void OSDFinalizeVouchersResponse::set_has_size_in_bytes() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void OSDFinalizeVouchersResponse::clear_has_size_in_bytes() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void OSDFinalizeVouchersResponse::clear_size_in_bytes() {
+  size_in_bytes_ = GOOGLE_ULONGLONG(0);
+  clear_has_size_in_bytes();
+}
+inline ::google::protobuf::uint64 OSDFinalizeVouchersResponse::size_in_bytes() const {
+  return size_in_bytes_;
+}
+inline void OSDFinalizeVouchersResponse::set_size_in_bytes(::google::protobuf::uint64 value) {
+  set_has_size_in_bytes();
+  size_in_bytes_ = value;
+}
+
+// required fixed64 truncate_epoch = 4;
+inline bool OSDFinalizeVouchersResponse::has_truncate_epoch() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void OSDFinalizeVouchersResponse::set_has_truncate_epoch() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void OSDFinalizeVouchersResponse::clear_has_truncate_epoch() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void OSDFinalizeVouchersResponse::clear_truncate_epoch() {
+  truncate_epoch_ = GOOGLE_ULONGLONG(0);
+  clear_has_truncate_epoch();
+}
+inline ::google::protobuf::uint64 OSDFinalizeVouchersResponse::truncate_epoch() const {
+  return truncate_epoch_;
+}
+inline void OSDFinalizeVouchersResponse::set_truncate_epoch(::google::protobuf::uint64 value) {
+  set_has_truncate_epoch();
+  truncate_epoch_ = value;
 }
 
 // -------------------------------------------------------------------
