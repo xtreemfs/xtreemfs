@@ -1,5 +1,5 @@
 /*
- * Copyright (c) ${year} by Jan Fajerski,
+ * Copyright (c) 2015 by Jan Fajerski,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -16,11 +16,11 @@ import java.util.List;
 /**
  * @author Jan Fajerski
  */
-public abstract class FileState {
+public abstract class RedundantFileState {
 
     List<StageRequest> pendingRequests;
 
-    public FileState() {
+    public RedundantFileState() {
         this.pendingRequests = new LinkedList();
     }
 

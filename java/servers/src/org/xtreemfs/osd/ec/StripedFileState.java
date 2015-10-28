@@ -9,19 +9,15 @@
 package org.xtreemfs.osd.ec;
 
 import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.osd.FileState;
-import org.xtreemfs.osd.stages.Stage;
+import org.xtreemfs.osd.RedundantFileState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author Jan Fajerski
  *
  * Store informtion about striped files. Involved OSDs, stripe characteristics, file size, lease aso.
  */
-public class StripedFileState extends FileState {
+public class StripedFileState extends RedundantFileState {
 
     private FileCredentials             credentials;
     private String                      fileID;

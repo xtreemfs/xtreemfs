@@ -21,7 +21,7 @@ import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.osd.FileState;
+import org.xtreemfs.osd.RedundantFileState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -30,7 +30,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  *
  * @author bjko
  */
-public class ReplicatedFileState extends FileState {
+public class ReplicatedFileState extends RedundantFileState {
 
     public enum ReplicaState {
         INITIALIZING, 
