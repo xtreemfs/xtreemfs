@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -47,7 +48,6 @@ import org.xtreemfs.mrc.operations.MRCOperation;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -57,6 +57,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_statusRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_statusResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -73,6 +75,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     };
 
     public final static String           XLOCSET_CHANGE_ATTR_KEY = "xlocsetchange";
+    private final static long            STATUS_RETRY_DELAY_MS   = 5000;
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
@@ -130,7 +133,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable e) {
-            // Try to handle the error from the
+            // Try to handle the error
+            Logging.logError(Logging.LEVEL_WARN, this, e);
             try {
                 m.getCallback().handleInstallXLocSetError(e, m.getFileId(), m.getNewXLocList(), m.getCurXLocList());
             } catch (Throwable e2) {
@@ -208,7 +212,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             return newXLocList;
         }
     }
-
+    
 
     /**
      * @see {@link XLocSetCoordinator#requestXLocSetChange(String, FileMetadata, XLocList, XLocList, MRCRequest, MRCOperation, XLocSetCoordinatorCallback)}
@@ -594,8 +598,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
                 long now = System.currentTimeMillis();
                 long leaseEndTimeMS = now + leaseToMS;
                 
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                        "invalidateReplicas is waiting on the primary (now: %d, until: %d, timeout: ).", now,
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "invalidateReplicas is waiting on the primary (now: %d, until: %d, timeout: %d ).", now,
                         leaseEndTimeMS, leaseToMS);
 
                 while (now < leaseEndTimeMS) {
@@ -628,7 +632,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // Create a list of OSDs which should be updated. Replicas that are up to date will be filtered.
         Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
-        ArrayList<ServiceUUID> OSDServiceUUIDs = new ArrayList<ServiceUUID>();
+        List<ServiceUUID> OSDServiceUUIDs = new ArrayList<ServiceUUID>();
         int numUpToDate = 0;
         for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
             String OSDUUID = Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0);
@@ -643,9 +647,10 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // Calculate the number of required updates. OSDs already up to date will be ignored.
         int numAcksRequired = calculateNumRequiredAcks(fileId, newXLocSet);
         int numRequiredUpdates = numAcksRequired - numUpToDate;
+        int numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
 
         // Create the Union of the current and the new XLocSet to ensure setting the AuthState is successful.
-        XLocSet unionXLocSet = xLocSetUnion(newXLocSet, curXLocSet);
+        XLocSet unionXLocSet = xLocSetUnion(curXLocSet, newXLocSet);
 
         // Build the authState request.
         FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(unionXLocSet).setXcap(cap.getXCap())
@@ -655,13 +660,14 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // Send the request to every replica from new new XLocSet not up to date yet.
         @SuppressWarnings("unchecked")
-        final RPCResponse<emptyResponse>[] responses = new RPCResponse[OSDServiceUUIDs.size()];
+        final RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses = new RPCResponse[OSDServiceUUIDs.size()];
         for (int i = 0; i < OSDServiceUUIDs.size(); i++) {
             try {
                 final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
                 @SuppressWarnings("unchecked")
-                final RPCResponse<emptyResponse> rpcResponse = client.xtreemfs_rwr_auth_state_invalidated(
-                        OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, authStateRequest);
+                final RPCResponse<xtreemfs_rwr_reset_statusResponse> rpcResponse = client
+                        .xtreemfs_rwr_auth_state_invalidated(OSDUUID.getAddress(), RPCAuthentication.authNone,
+                                RPCAuthentication.userService, authStateRequest);
                 responses[i] = rpcResponse;
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
@@ -671,53 +677,180 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        /**
-         * This local class is used to collect responses to the asynchronous update requests.<br>
-         * It counts the number of errors and successful requests.
-         */
-        class RWRAuthStateResponseListener implements RPCResponseAvailableListener<emptyResponse> {
-            private int numResponses = 0;
-            private int numErrors    = 0;
-
-            RWRAuthStateResponseListener(RPCResponse<emptyResponse>[] responses) {
-                for (int i = 0; i < responses.length; i++) {
-                    responses[i].registerListener(this);
-                }
-            }
-
-            @Override
-            synchronized public void responseAvailable(RPCResponse<emptyResponse> r) {
-                try {
-                    r.get();
-                    numResponses++;
-                } catch (Exception ex) {
-                    numErrors++;
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "no fetchInvalidated response from replica due to exception: %s", ex.toString());
-                } finally {
-                    r.freeBuffers();
-                    this.notifyAll();
-                }
-            }
-        }
-        RWRAuthStateResponseListener listener = new RWRAuthStateResponseListener(responses);
-
-
-        // Wait until the required number of updates has been successfully executed.
-        int numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
+        // Analyze the results and abort if too many errors occurred.
+        RWRResetStatusResponseListener listener = new RWRResetStatusResponseListener(OSDServiceUUIDs, responses);
+        int numRemainingUpdates = 0;
+        List<ServiceUUID> OSDsInReset;
         synchronized (listener) {
-            while (listener.numResponses < numRequiredUpdates) {
+            while (listener.numErrors <= numMaxErrors && !listener.allResponsesAvailable()) {
                 listener.wait();
+            }
 
-                if (listener.numErrors > numMaxErrors) {
-                    throw new MRCException(
-                            "XLocSetCoordinator failed because too many replicas didn't respond to the update request.");
-                }
+            if (listener.numErrors > numMaxErrors) {
+                throw new MRCException(
+                        "XLocSetCoordinator failed because too many replicas didn't respond to the update request.");
+            }
+
+            numRemainingUpdates = numRequiredUpdates - listener.numComplete;
+            // listener.OSDsInReset won't change anymore, since all responses are available.
+            OSDsInReset = listener.OSDsInReset;
+        }
+        
+        
+        // If there are still required updates remaining, wait for the updates to complete and poll the reset status.
+        if (numRemainingUpdates > 0) {
+            xtreemfs_rwr_reset_statusRequest resetStatusRequest = xtreemfs_rwr_reset_statusRequest.newBuilder()
+                    .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
+            boolean complete = waitForReset(OSDsInReset, numRemainingUpdates, resetStatusRequest);
+
+            if (!complete) {
+                throw new MRCException(
+                        "XLocSetCoordinator failed because too many replicas didn't complete the update request.");
             }
         }
     }
-    
-    
+
+    private boolean waitForReset(List<ServiceUUID> OSDServiceUUIDs, int numRequiredUpdates,
+            final xtreemfs_rwr_reset_statusRequest resetStatusRequest) throws MRCException, InterruptedException {
+        final OSDServiceClient client = master.getOSDClient();
+
+        RWRResetStatusResponseListener listener;
+        int numMaxErrors;
+        long nextPollTime = System.currentTimeMillis() + STATUS_RETRY_DELAY_MS;
+        // long nextPollTime = -1;
+
+        while (numRequiredUpdates <= OSDServiceUUIDs.size()) {
+            // delay the next poll.
+            long now = System.currentTimeMillis();
+            if (now < nextPollTime) {
+                sleep(nextPollTime - now);
+            }
+            nextPollTime = System.currentTimeMillis() + STATUS_RETRY_DELAY_MS;
+
+            listener = new RWRResetStatusResponseListener(OSDServiceUUIDs, resetStatusRequest, client);
+            numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
+
+            synchronized (listener) {
+                // Wait until every request is finished.
+                while (!listener.allResponsesAvailable()) {
+                    listener.wait();
+
+                    // Return on success.
+                    if (listener.numComplete >= numRequiredUpdates) {
+                        return true;
+                    }
+
+                    // Abort if too many errors occured.
+                    if (listener.numErrors > numMaxErrors) {
+                        return false;
+                    }
+                }
+
+                // Adapt to the responses and poll the status after a delay.
+                OSDServiceUUIDs = listener.OSDsInReset;
+                numRequiredUpdates = numRequiredUpdates - listener.numComplete;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * This local class is used to collect responses to the asynchronous status requests.<br>
+     * It counts the number of errors and successful requests.
+     */
+    private static class RWRResetStatusResponseListener
+            implements RPCResponseAvailableListener<xtreemfs_rwr_reset_statusResponse> {
+        private int                                              numAcks     = 0;
+        private int                                              numErrors   = 0;
+        private RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses;
+
+        private List<ServiceUUID>                                OSDServiceUUIDs;
+        private List<ServiceUUID>                                OSDsInReset;
+
+        private int                                              numComplete  = 0;
+
+        @SuppressWarnings("unchecked")
+        public RWRResetStatusResponseListener(List<ServiceUUID> OSDServiceUUIDs,
+                RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses) throws MRCException {
+            this.OSDServiceUUIDs = OSDServiceUUIDs;
+            this.responses = responses;
+
+            // Attach this as the listener.
+            OSDsInReset = new LinkedList<ServiceUUID>();
+            for (int i = 0; i < responses.length; i++) {
+                responses[i].registerListener(this);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public RWRResetStatusResponseListener(List<ServiceUUID> OSDServiceUUIDs,
+                xtreemfs_rwr_reset_statusRequest resetStatusRequest, final OSDServiceClient client)
+                        throws MRCException {
+            this.OSDServiceUUIDs = OSDServiceUUIDs;
+
+            // Send the request to every replica from new new XLocSet not up to date yet.
+            responses = new RPCResponse[OSDServiceUUIDs.size()];
+            for (int i = 0; i < OSDServiceUUIDs.size(); i++) {
+                try {
+                    final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
+                    @SuppressWarnings("unchecked")
+                    final RPCResponse<xtreemfs_rwr_reset_statusResponse> rpcResponse = client.xtreemfs_rwr_reset_status(
+                            OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                            resetStatusRequest);
+                    responses[i] = rpcResponse;
+                } catch (IOException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+                    }
+                    throw new MRCException(ex);
+                }
+            }
+
+            // Attach this as the listener.
+            OSDsInReset = new LinkedList<ServiceUUID>();
+            for (int i = 0; i < responses.length; i++) {
+                responses[i].registerListener(this);
+            }
+        }
+
+        @Override
+        synchronized public void responseAvailable(RPCResponse<xtreemfs_rwr_reset_statusResponse> r) {
+            // Get the index of the responding OSD.
+            int osdNum = -1;
+            for (int i = 0; i < responses.length; i++) {
+                if (responses[i] == r) {
+                    osdNum = i;
+                    break;
+                }
+            }
+            assert (osdNum > -1);
+
+            try {
+                xtreemfs_rwr_reset_statusResponse response = r.get();
+                numAcks++;
+
+                if (response.getRunning()) {
+                    ServiceUUID osd = OSDServiceUUIDs.get(osdNum);
+                    OSDsInReset.add(osd);
+                } else if (response.getComplete()) {
+                    numComplete++;
+                }
+            } catch (Exception ex) {
+                numErrors++;
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "no response from replica due to exception: %s", ex.toString());
+            } finally {
+                r.freeBuffers();
+                this.notifyAll();
+            }
+        }
+
+        synchronized boolean allResponsesAvailable() {
+            return ((numAcks + numErrors) == responses.length);
+        }
+    }
+
 
     /**
      * Calculate the set of replicas that are up-to-date, which means they have the latest version of every

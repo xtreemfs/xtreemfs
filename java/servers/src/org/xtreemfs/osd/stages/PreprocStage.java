@@ -710,7 +710,7 @@ public class PreprocStage extends Stage {
                 if (locset.getNumReplicas() > 1
                         && ReplicaUpdatePolicies.isRwReplicated(locset.getReplicaUpdatePolicy())) {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
-                    master.getRWReplicationStage().setFleaseView(fileId, cellId, newstate);
+                    master.getRWReplicationStage().setView(fileId, cellId, newstate);
                 }
             } catch (IOException e) {
                 return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -761,7 +761,7 @@ public class PreprocStage extends Stage {
                 // persist the version
                 layout.setXLocSetVersionState(fileId, state);
                 // and pass it back to flease
-                master.getRWReplicationStage().setFleaseView(fileId, cellId, state);
+                master.getRWReplicationStage().setView(fileId, cellId, state);
             } catch (IOException e) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.storage, this,
                         "VersionState could not be written for fileId: %s", fileId);

@@ -341,9 +341,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 ReplicatedFileState state = files.get(fileId);
                 assert (state != null);
 
-                // Ignore any leaseStateChange if the replica is invalidated
+                // Ignore any leaseStateChange if the replica is invalidated.
                 if (state.isInvalidated()) {
-                    return;
+                    doInvalidated(state);
                 }
 
                 boolean leaseOk = false;
@@ -428,11 +428,16 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 executeSetAuthState(localState, authState, state, fileId);
                 break;
             }
-            case RESET:
-            default: {
+            case RESET: {
                 // Ignore.
                 Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                         "(R:%s) auth state ignored, already in reset for file %s", localID, fileId);
+                break;
+            }
+            default: {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,
+                        "(R:%s) auth state ignored, because file %s is in state %s", localID, fileId, state.getState());
+                break;
             }
             }
         } catch (Exception ex) {
@@ -662,7 +667,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.setState(ReplicaState.RESET_COMPLETE);
 
         if (file.isInvalidated()) {
-            // If the file has been invalidated don't go into open state again.
             doInvalidated(file);
         } else {
             doOpen(file);
@@ -764,12 +768,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.setState(ReplicaState.OPEN);
 
         if (file.hasPendingRequests()) {
-            if (file.isInvalidated()) {
-                // If the file has been invalidated don't wait for lease.
-                doInvalidated(file);
-            } else {
-                doWaitingForLease(file);
-            }
+            doWaitingForLease(file);
         }
     }
 
@@ -808,12 +807,8 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doInvalidated(final ReplicatedFileState file) {
-        assert (file.isInvalidated());
-        // Keep the current fileState and re-enqueue the requests.
-        if (file.isInvalidatedReset()) {
-            // The AuthState has been set and the file is up to date.
-            file.setInvalidatedReset(false);
-        }
+        file.setState(ReplicaState.INVALIDATED);
+
         while (file.hasPendingRequests()) {
             enqueuePrioritized(file.removePendingRequest());
         }
@@ -970,7 +965,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
         case STAGEOP_FORCE_RESET: processForceReset(method); break;
         case STAGEOP_GETSTATUS: processGetStatus(method); break;
-        case STAGEOP_SETVIEW: processSetFleaseView(method); break;
+        case STAGEOP_SETVIEW: processSetView(method); break;
         case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
         case STAGEOP_INVALIDATED_RESET: processInvalidatedReplicaReset(method); break;
         // TODO: externalRequestsInQueue.decrementAndGet(); ????
@@ -1076,7 +1071,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             if (state.getState() == ReplicaState.INITIALIZING) {
                 state.getPolicy().setLocalObjectVersion(maxObjVersion);
-                doOpen(state);
+                if (state.isInvalidated()) {
+                    doInvalidated(state);
+                } else {
+                    doOpen(state);
+                }
             } else {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "ReplicaState is %s instead of INITIALIZING, maxObjectVersion=%d", state.getState().name(),
@@ -1210,7 +1209,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     return;
                 }
 
-                case RESET_COMPLETE:
                 case OPEN: {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -1275,7 +1273,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     return;
                 }
 
-                case RESET_COMPLETE:
                 case OPEN: {
                     if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
                         if (Logging.isDebug()) {
@@ -1360,11 +1357,11 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
      * @param cellId
      * @param versionState
      */
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
+    public void setView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
     }
 
-    private void processSetFleaseView(StageRequest method) {
+    private void processSetView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
         final ASCIIString cellId = (ASCIIString) args[1];
@@ -1378,12 +1375,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
 
         // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
-        // This will also cancel any pending (invalidated) resets.
-        // ATTENTION: Some objectsToFetch in flight could be lost until the ReplicatedFileState is opened again.
+        // This will also cancel any pending (invalidated) resets, but the reset will be restarted by the replication
+        // policy.
         ReplicatedFileState state = files.get(fileId);
         if (state != null) {
             // Abort if the view to be set is older than the current one.
-            if (state.getLocations().getVersion() < versionState.getVersion()) {
+            if (state.getLocations().getVersion() > versionState.getVersion()) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "(R:%s) requested to set an older view than stored in the ReplicatedFileState for %s.",
                         localID, fileId);
@@ -1412,7 +1409,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     /**
      * Invalidate the replica and the corresponding flease view.<br>
-     * If this Replica is the primary it will ensure the lease is given back.
+     * If this Replica is the primary it will try to give the lease back.
      * 
      * @param fileId
      *            to close.
@@ -1437,16 +1434,22 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
 
         // Set the fileState to invalidated (or open the file invalidated).
-        ReplicatedFileState state;
+        final ReplicatedFileState state;
         try {
             state = getState(fileCreds, xLoc, true, true);
             state.setInvalidated(true);
-            assert (state.isInvalidated());
 
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             callback.invalidateComplete(LeaseState.NONE, ErrorUtils.getInternalServerError(ex));
             return;
+        }
+
+        // Clear pending requests. This ensures the ReplicaState won't change from now on.
+        if (state.hasPendingRequests()) {
+            ErrorResponse er = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "File got invalidated!");
+            state.clearPendingRequests(er);
         }
 
         // Check the replicas lease state.
@@ -1460,44 +1463,52 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         } else {
             leaseState = LeaseState.IDLE;
         }
+        
+        switch (state.getState()) {
+        case INVALIDATED:
+        // If file.isInvalidated is true, the following states will make a transition to INVALIDATED.
+        case INITIALIZING:
+        case WAITING_FOR_LEASE:
+        case RESET:
+        case RESET_COMPLETE:
+            callback.invalidateComplete(leaseState, null);
+            break;
 
-        // Close the flease cell and return the lease if possible.
-        state.setCellOpen(false);
-        fstage.closeCell(state.getPolicy().getCellId(), true);
-        cellToFileId.remove(state.getPolicy().getCellId());
+        case OPEN:
+        case BACKUP:
+        case PRIMARY:
+            state.setState(ReplicaState.INVALIDATED);
 
-        // Clear pending requests. This ensures the ReplicaState won't change from now on.
-        if (state.hasPendingRequests()) {
-            ErrorResponse er = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    "File got invalidated!");
-            state.clearPendingRequests(er);
+            // Transfer the view to flease.
+            fstage.setViewId(state.getPolicy().getCellId(), FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
+
+                @Override
+                public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
+                        long masterEpochNumber) {
+                    callback.invalidateComplete(leaseState, null);
+                }
+
+                @Override
+                public void proposalFailed(ASCIIString cellId, Throwable cause) {
+                    callback.invalidateComplete(leaseState, ErrorUtils.getInternalServerError(cause));
+                }
+            });
+
+            // Asynchronous close the cell
+            fstage.closeCell(state.getPolicy().getCellId(), true);
+            state.setCellOpen(false);
+            break;
         }
-
-        // Transfer the view to flease.
-        fstage.setViewId(state.getPolicy().getCellId(), FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
-
-            @Override
-            public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
-                    long masterEpochNumber) {
-                callback.invalidateComplete(leaseState, null);
-            }
-
-            @Override
-            public void proposalFailed(ASCIIString cellId, Throwable cause) {
-                callback.invalidateComplete(leaseState, ErrorUtils.getInternalServerError(cause));
-            }
-        });
 
     }
 
     public void invalidatedReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
-            FileCredentials credentials, XLocations xloc, RWReplicationCallback callback, OSDRequest request) {
+            FileCredentials credentials, XLocations xloc, OSDRequest request) {
         this.enqueueOperation(STAGEOP_INVALIDATED_RESET,
-                new Object[] { fileId, authState, localState, credentials, xloc }, request, null, callback);
+                new Object[] { fileId, authState, localState, credentials, xloc }, request, null, null);
     }
 
     private void processInvalidatedReplicaReset(StageRequest method) {
-        final RWReplicationCallback callback = (RWReplicationCallback) method.getCallback();
         try {
             final String fileId = (String) method.getArgs()[0];
             final AuthoritativeReplicaState authState = (AuthoritativeReplicaState) method.getArgs()[1];
@@ -1509,8 +1520,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             ReplicatedFileState state = getState(credentials, loc, true, true);
             state.setInvalidated(true);
 
-            assert (state.isInvalidated());
-
             // There should exist no pending requests, because they were cleaned when the replica got invalidated and
             // subsequent requests are denied.
             if (state.hasPendingRequests()) {
@@ -1521,53 +1530,46 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
             switch (state.getState()) {
             case RESET:
-                // Wait until this reset is done. Since fileState.isInvalidated() is true this will result in an OPEN
-                // state.
+                throw new XtreemFSException(
+                        String.format("(R:%s) auth state ignored, already in reset for file %s", localID, fileId));
+
+            case INITIALIZING:
+                // Wait until the initializing is done. Since fileState.isInvalidated() this will result in an
+                // INVALIDATED state.
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
                 state.addPendingRequest(method);
                 break;
 
-            case INITIALIZING:
-                // Wait until the initializing is done. Since fileState.isInvalidated() this will result in an OPEN
-                // state.
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
-                state.addPendingRequest(method);
+            case INVALIDATED:
+                // At this point it is ensured, that no other Request is queued. Therefore the AuthState can be set
+                // regardless of the state.
+                // TODO(jdillmann): It would be possible to store and compare maxObjNo and truncateEpoch to identify a AuthState.
+                if (!state.isInvalidatedReset()) {
+                    // Execute the RESET
+                    state.setInvalidatedReset(true);
+                    state.setForceReset(false);
+                    state.setPrimaryReset(false);
+                    state.addPendingRequest(method);
+                    executeSetAuthState(localState, authState, state, fileId);
+                } else {
+                    // If we end up in INVALIDATED with the invalidatedReset flag set, the reset is finished.
+                    state.setInvalidatedReset(false);
+                }
                 break;
 
             case OPEN:
-                // At this point it is ensured, that no other Request is queued. Therefore the AuthState can be set
-                // regardless of the state.
-                state.setInvalidatedReset(true);
-                state.setForceReset(false);
-                state.setPrimaryReset(false);
-                state.setCellOpen(false);
-                state.addPendingRequest(method);
-                executeSetAuthState(localState, authState, state, fileId);
-                break;
-
-            case RESET_COMPLETE:
-                // The AuthState has been set and the Replica is up to date.
-
-                // Close the file by clearing the state.
-                closeFileState(fileId, true, null);
-
-                // Finish the request.
-                callback.success(0);
-                break;
-                
-            case WAITING_FOR_LEASE:
             case BACKUP:
             case PRIMARY:
+            case WAITING_FOR_LEASE:
+            case RESET_COMPLETE:
                 throw new XtreemFSException(
                         String.format("(R:%s) Replica for %s ended up in bad state %s while being invalidated.", 
                                       localID, fileId, state.getState()));
             }
 
         } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            callback.failed(ErrorUtils.getInternalServerError(ex));
+            Logging.logError(Logging.LEVEL_WARN, this, ex);
         }
     }
 
