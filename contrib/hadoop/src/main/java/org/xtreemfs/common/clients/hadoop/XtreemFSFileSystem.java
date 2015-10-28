@@ -484,7 +484,7 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         if (isXtreemFSDirectory(pathString, xtreemfsVolume) == false) {
-            return null;
+            throw new FileNotFoundException(pathString);
         }
 
         DirectoryEntries dirEntries = xtreemfsVolume.readDir(userCredentials, pathString, 0, 0, false);
