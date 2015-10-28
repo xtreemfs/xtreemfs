@@ -271,6 +271,11 @@ public class XtreemFSFileSystem extends FileSystem {
         // block replication for the file
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
+        
+        if (!overwrite && isXtreemFSFile(pathString, xtreemfsVolume)) {
+            throw new IOException("Cannot overwrite existing file '" + pathString + "'");
+        }
+        
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber();
         if (overwrite) {
