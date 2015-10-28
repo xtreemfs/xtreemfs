@@ -8,8 +8,11 @@
 
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.osd.RedundantFileState;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 
 /**
@@ -19,22 +22,23 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
  */
 public class StripedFileState extends RedundantFileState {
 
-    private FileCredentials             credentials;
-    private String                      fileID;
-    private Flease                      lease;
 
     public StripedFileState(String fileID) {
-        super();
-        this.fileID = fileID;
-        this.lease = Flease.EMPTY_LEASE;
+        super(fileID);
     }
 
-    public FileCredentials getCredentials() {
-        return credentials;
+    @Override
+    public XLocations getLocations() {
+        return null;
     }
 
-    public void setCredentials(FileCredentials credentials) {
-        this.credentials = credentials;
+    @Override
+    public ReplicaUpdatePolicy getPolicy() {
+        return null;
     }
 
+    @Override
+    public StripingPolicyImpl getStripingPolicy() {
+        return null;
+    }
 }

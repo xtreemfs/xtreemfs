@@ -72,23 +72,11 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         INTERNAL_TRUNCATE
     };
 
-    private final RPCNIOSocketClient               client;
-
-    private final OSDServiceClient                 osdClient;
-
     private final Map<String, StripedFileState>    files;
 
     private final Map<ASCIIString, String>         cellToFileId;
 
     private final OSDRequestDispatcher             master;
-
-    private final FleaseStage                      fstage;
-
-    private final RPCNIOSocketClient               fleaseClient;
-
-    private final OSDServiceClient                 fleaseOsdClient;
-
-    private final ASCIIString                      localID;
 
     private int                                    numObjsInFlight;
 
@@ -98,85 +86,18 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     private static final int                       MAX_EXTERNAL_REQUESTS_IN_Q = 250;
 
-    private final FleaseMasterEpochStage masterEpochStage;
 
     private final AtomicInteger                    externalRequestsInQueue;
 
     public ECStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
             throws IOException {
-        super("ECSt", maxRequestsQueueLength);
+        super("ECSt", master, sslOpts, maxRequestsQueueLength);
         this.master = master;
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "ECStage");
-        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "ECStage (flease)");
-        osdClient = new OSDServiceClient(client, null);
-        fleaseOsdClient = new OSDServiceClient(fleaseClient, null);
         files = new HashMap<String, StripedFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
         numObjsInFlight = 0;
         externalRequestsInQueue = new AtomicInteger(0);
 
-        localID = new ASCIIString(master.getConfig().getUUID().toString());
-
-        masterEpochStage = new FleaseMasterEpochStage(master.getStorageStage().getStorageLayout(),
-                maxRequestsQueueLength);
-
-        FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
-                .getFleaseDmaxMS(), master.getConfig().getFleaseMsgToMS(), null, localID.toString(), master.getConfig()
-                .getFleaseRetries());
-
-        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir() + "/", this, false,
-                new FleaseViewChangeListenerInterface() {
-
-                    @Override
-                    public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
-                    }
-                }, new FleaseStatusListener() {
-
-                    @Override
-                    public void statusChanged(ASCIIString cellId, Flease lease) {
-                    }
-
-                    @Override
-                    public void leaseFailed(ASCIIString cellID, FleaseException error) {
-                    }
-                }, masterEpochStage);
-        fstage.setLifeCycleListener(master);
-    }
-
-    @Override
-    public void start() {
-        masterEpochStage.start();
-        client.start();
-        fleaseClient.start();
-        fstage.start();
-        super.start();
-    }
-
-    @Override
-    public void shutdown() {
-        client.shutdown();
-        fleaseClient.shutdown();
-        fstage.shutdown();
-        masterEpochStage.shutdown();
-        super.shutdown();
-    }
-
-    @Override
-    public void waitForStartup() throws Exception {
-        masterEpochStage.waitForStartup();
-        client.waitForStartup();
-        fleaseClient.waitForStartup();
-        fstage.waitForStartup();
-        super.waitForStartup();
-    }
-
-    @Override
-    public void waitForShutdown() throws Exception {
-        client.waitForShutdown();
-        fleaseClient.waitForShutdown();
-        fstage.waitForShutdown();
-        masterEpochStage.waitForShutdown();
-        super.waitForShutdown();
     }
 
     protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request,
@@ -235,17 +156,6 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         }
     }
 
-    public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        try {
-            FleaseMessage msg = new FleaseMessage(message);
-            BufferPool.free(message);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
     public void getStatus(StatusCallback callback) {
         this.enqueueOperation(STAGEOP_GETSTATUS, new Object[] {}, null, callback);
     }
@@ -261,26 +171,6 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
     }
 
     @Override
-    public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
-        ReusableBuffer data = BufferPool.allocate(message.getSize());
-        message.serialize(data);
-        data.flip();
-        try {
-            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), data);
-            r.registerListener(new RPCResponseAvailableListener() {
-
-                @Override
-                public void responseAvailable(RPCResponse r) {
-                    r.freeBuffers();
-                }
-            });
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
-    @Override
     protected void processMethod(StageRequest method) {
         switch (method.getStageMethod()) {
             case STAGEOP_EC_WRITE: {
@@ -288,49 +178,34 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
                 processECWrite(method);
                 break;
             }
-        case STAGEOP_TRUNCATE: {
-            externalRequestsInQueue.decrementAndGet();
-            break;
-        }
-        case STAGEOP_CLOSE:  break;
-        case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
-        case STAGEOP_PREPAREOP: {
-            externalRequestsInQueue.decrementAndGet();
-            processPrepareOp(method);
-            break;
-        }
-        case STAGEOP_INTERNAL_AUTHSTATE:  break;
-        case STAGEOP_LEASE_STATE_CHANGED:  break;
-        case STAGEOP_INTERNAL_OBJFETCHED:  break;
-        case STAGEOP_INTERNAL_STATEAVAIL:  break;
-        case STAGEOP_INTERNAL_DELETE_COMPLETE:  break;
-        case STAGEOP_INTERNAL_MAXOBJ_AVAIL:  break;
-        case STAGEOP_INTERNAL_BACKUP_AUTHSTATE:  break;
-        case STAGEOP_FORCE_RESET:  break;
-        case STAGEOP_GETSTATUS:  break;
-        case STAGEOP_SETVIEW:  break;
-        case STAGEOP_INVALIDATEVIEW:  break;
-        case STAGEOP_FETCHINVALIDATED:  break;
-        default : throw new IllegalArgumentException("no such stageop");
+            case STAGEOP_TRUNCATE: {
+                externalRequestsInQueue.decrementAndGet();
+                break;
+            }
+            case STAGEOP_CLOSE:  break;
+            case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
+            case STAGEOP_PREPAREOP: {
+                externalRequestsInQueue.decrementAndGet();
+                processPrepareOp(method);
+                break;
+            }
+            case STAGEOP_INTERNAL_AUTHSTATE:  break;
+            case STAGEOP_LEASE_STATE_CHANGED:  break;
+            case STAGEOP_INTERNAL_OBJFETCHED:  break;
+            case STAGEOP_INTERNAL_STATEAVAIL:  break;
+            case STAGEOP_INTERNAL_DELETE_COMPLETE:  break;
+            case STAGEOP_INTERNAL_MAXOBJ_AVAIL:  break;
+            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE:  break;
+            case STAGEOP_FORCE_RESET:  break;
+            case STAGEOP_GETSTATUS:  break;
+            case STAGEOP_SETVIEW:  break;
+            case STAGEOP_INVALIDATEVIEW:  break;
+            case STAGEOP_FETCHINVALIDATED:  break;
+            default : throw new IllegalArgumentException("no such stageop");
         }
     }
 
     private void processECWrite(StageRequest method) {
-    }
-
-    private void processFleaseMessage(StageRequest method) {
-        try {
-            final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
-            final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
-
-            FleaseMessage msg = new FleaseMessage(data);
-            BufferPool.free(data);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
     }
 
     private StripedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,

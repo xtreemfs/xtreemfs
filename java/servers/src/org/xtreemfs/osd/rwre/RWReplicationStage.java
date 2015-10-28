@@ -9,36 +9,25 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.foundation.flease.FleaseConfig;
 import org.xtreemfs.foundation.flease.FleaseMessageSenderInterface;
-import org.xtreemfs.foundation.flease.FleaseStage;
-import org.xtreemfs.foundation.flease.FleaseStatusListener;
-import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
-import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.flease.proposer.FleaseListener;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
@@ -47,12 +36,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.*;
-import org.xtreemfs.osd.operations.EventRWRStatus;
-import org.xtreemfs.osd.operations.OSDOperation;
-import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
-import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
-import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
@@ -66,7 +50,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * 
@@ -74,28 +57,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class RWReplicationStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
-    public static final int STAGEOP_REPLICATED_WRITE          = 1;
-    public static final int STAGEOP_CLOSE                     = 2;
-    public static final int STAGEOP_PROCESS_FLEASE_MSG        = 3;
-    public static final int STAGEOP_PREPAREOP                 = 5;
-    public static final int STAGEOP_TRUNCATE                  = 6;
-    public static final int STAGEOP_GETSTATUS                 = 7;
-
-    public static final int STAGEOP_INTERNAL_AUTHSTATE        = 10;
-    public static final int STAGEOP_INTERNAL_OBJFETCHED       = 11;
-
-    public static final int STAGEOP_LEASE_STATE_CHANGED       = 13;
-    public static final int STAGEOP_INTERNAL_STATEAVAIL       = 14;
-    public static final int STAGEOP_INTERNAL_DELETE_COMPLETE  = 15;
-    public static final int STAGEOP_FORCE_RESET               = 16;
-    public static final int STAGEOP_INTERNAL_MAXOBJ_AVAIL     = 17;
-    public static final int STAGEOP_INTERNAL_BACKUP_AUTHSTATE = 18;
-
-    public static final int STAGEOP_SETVIEW                   = 21;
-    public static final int STAGEOP_INVALIDATEVIEW            = 22;
-    public static final int STAGEOP_FETCHINVALIDATED          = 23;
-
-    public  static enum Operation {
+    public static enum Operation {
         READ,
         WRITE,
         TRUNCATE,
@@ -103,23 +65,8 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         INTERNAL_TRUNCATE
     };
 
-    private final RPCNIOSocketClient               client;
-
-    private final OSDServiceClient                 osdClient;
-
     private final Map<String, ReplicatedFileState> files;
 
-    private final Map<ASCIIString, String>         cellToFileId;
-
-    private final OSDRequestDispatcher             master;
-
-    private final FleaseStage                      fstage;
-
-    private final RPCNIOSocketClient               fleaseClient;
-
-    private final OSDServiceClient                 fleaseOsdClient;
-
-    private final ASCIIString                      localID;
 
     private int                                    numObjsInFlight;
 
@@ -131,92 +78,18 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     private final Queue<ReplicatedFileState>       filesInReset;
 
-    private final FleaseMasterEpochStage masterEpochStage;
-
     private final AtomicInteger                    externalRequestsInQueue;
+    private final OSDRequestDispatcher             master;
 
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
             throws IOException {
-        super("RWReplSt", maxRequestsQueueLength);
+        super("RWReplSt", master, sslOpts, maxRequestsQueueLength);
         this.master = master;
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "RWReplicationStage");
-        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "RWReplicationStage (flease)");
-        osdClient = new OSDServiceClient(client, null);
-        fleaseOsdClient = new OSDServiceClient(fleaseClient, null);
         files = new HashMap<String, ReplicatedFileState>();
-        cellToFileId = new HashMap<ASCIIString, String>();
         numObjsInFlight = 0;
         filesInReset = new LinkedList();
         externalRequestsInQueue = new AtomicInteger(0);
 
-        localID = new ASCIIString(master.getConfig().getUUID().toString());
-
-        masterEpochStage = new FleaseMasterEpochStage(master.getStorageStage().getStorageLayout(),
-                maxRequestsQueueLength);
-
-        FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
-                .getFleaseDmaxMS(), master.getConfig().getFleaseMsgToMS(), null, localID.toString(), master.getConfig()
-                .getFleaseRetries());
-
-        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir() + "/", this, false,
-                new FleaseViewChangeListenerInterface() {
-
-                    @Override
-                    public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
-                        eventViewIdChanged(cellId, viewId);
-                    }
-                }, new FleaseStatusListener() {
-
-                    @Override
-                    public void statusChanged(ASCIIString cellId, Flease lease) {
-                        // FIXME: change state
-                        eventLeaseStateChanged(cellId, lease, null);
-                    }
-
-                    @Override
-                    public void leaseFailed(ASCIIString cellID, FleaseException error) {
-                        // change state
-                        // flush pending requests
-                        eventLeaseStateChanged(cellID, null, error);
-                    }
-                }, masterEpochStage);
-        fstage.setLifeCycleListener(master);
-    }
-
-    @Override
-    public void start() {
-        masterEpochStage.start();
-        client.start();
-        fleaseClient.start();
-        fstage.start();
-        super.start();
-    }
-
-    @Override
-    public void shutdown() {
-        client.shutdown();
-        fleaseClient.shutdown();
-        fstage.shutdown();
-        masterEpochStage.shutdown();
-        super.shutdown();
-    }
-
-    @Override
-    public void waitForStartup() throws Exception {
-        masterEpochStage.waitForStartup();
-        client.waitForStartup();
-        fleaseClient.waitForStartup();
-        fstage.waitForStartup();
-        super.waitForStartup();
-    }
-
-    @Override
-    public void waitForShutdown() throws Exception {
-        client.waitForShutdown();
-        fleaseClient.waitForShutdown();
-        fstage.waitForShutdown();
-        masterEpochStage.waitForShutdown();
-        super.waitForShutdown();
     }
 
     public void eventReplicaStateAvailable(String fileId, ReplicaStatus localState, ErrorResponse error) {
@@ -241,22 +114,14 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 null);
     }
 
-    void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
-        this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[] { cellId, lease, error }, null, null);
-    }
-
     void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
         this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[] { fileId, maxObjVer, error }, null, null);
     }
 
     public void eventBackupReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
             FileCredentials credentials, XLocations xloc) {
-        this.enqueueOperation(STAGEOP_INTERNAL_BACKUP_AUTHSTATE, new Object[] { fileId, authState, localState,
-                credentials, xloc }, null, null);
-    }
-
-    void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+        this.enqueueOperation(STAGEOP_INTERNAL_BACKUP_AUTHSTATE, new Object[]{fileId, authState, localState,
+                credentials, xloc}, null, null);
     }
 
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState,
@@ -295,7 +160,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             state.setObjectsToFetch(new LinkedList(missingObjects.values()));
             filesInReset.add(state);
             // Start by deleting the old objects.
-            master.getStorageStage().deleteObjects(fileId, state.getsPolicy(), authState.getTruncateEpoch(),
+            master.getStorageStage().deleteObjects(fileId, state.getStripingPolicy(), authState.getTruncateEpoch(),
                     objectsToBeDeleted, new DeleteObjectsCallback() {
 
                         @Override
@@ -309,83 +174,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                         "(R:%s) replica RESET finished (replica is up-to-date): %s", localID, state.getFileId());
             }
             doOpen(state);
-        }
-    }
-
-    private void processLeaseStateChanged(StageRequest method) {
-        try {
-            final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
-            final Flease lease = (Flease) method.getArgs()[1];
-            final FleaseException error = (FleaseException) method.getArgs()[2];
-
-            if (error == null) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "(R:%s) lease change event: %s, %s", localID, cellId, lease);
-                }
-            } else {
-                // Logging.logMessage(Logging.LEVEL_WARN, Category.replication,
-                // this,"(R:%s) lease error in cell %s: %s cell debug: %s",localID, cellId, error,
-                // error.getFleaseCellDebugString());
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) lease error in cell %s: %s",
-                        localID, cellId, error);
-            }
-
-            final String fileId = cellToFileId.get(cellId);
-            if (fileId != null) {
-                ReplicatedFileState state = files.get(fileId);
-                assert (state != null);
-
-                // Ignore any leaseStateChange if the replica is invalidated
-                if (state.isInvalidated()) {
-                    return;
-                }
-
-                if (error == null) {
-                    boolean localIsPrimary = (lease.getLeaseHolder() != null)
-                            && (lease.getLeaseHolder().equals(localID));
-                    ReplicaState oldState = state.getState();
-                    state.setLocalIsPrimary(localIsPrimary);
-                    state.setLease(lease);
-
-                    // Error handling for timeouts on the primary.
-                    if (oldState == ReplicaState.PRIMARY
-                            && lease.getLeaseHolder() == null
-                            && lease.getLeaseTimeout_ms() == 0) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
-                                "(R:%s) was primary, lease error in cell %s, restarting replication: %s", localID,
-                                cellId, lease, error);
-                        failed(state,
-                                ErrorUtils.getInternalServerError(new IOException(fileId
-                                        + ": lease timed out, renew failed")), "processLeaseStateChanged");
-                    } else {
-                        if ((state.getState() == ReplicaState.BACKUP) 
-                                || (state.getState() == ReplicaState.PRIMARY)
-                                || (state.getState() == ReplicaState.WAITING_FOR_LEASE)) {
-                            if (localIsPrimary) {
-                                // notify onPrimary
-                                if (oldState != ReplicaState.PRIMARY) {
-                                    state.setMasterEpoch(lease.getMasterEpochNumber());
-                                    doPrimary(state);
-                                }
-                            } else {
-                                if (oldState != ReplicaState.BACKUP) {
-                                    state.setMasterEpoch(FleaseMessage.IGNORE_MASTER_EPOCH);
-                                    doBackup(state);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    failed(state, ErrorUtils.getInternalServerError(error), "processLeaseStateChanged (error != null)");
-                }
-            }
-
-        } catch (Exception ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, this,
-                    "Exception was thrown and caught while processing the change of the lease state."
-                            + " This is an error in the code. Please report it! Caught exception: ");
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 
@@ -418,7 +206,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             case BACKUP: {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) backup reset triggered by AUTHSTATE request for file %s", localID, fileId);
-                state.setState(ReplicaState.RESET);
+                state.setState(ReplicatedFileState.LocalState.RESET);
                 executeSetAuthState(localState, authState, state, fileId);
                 break;
             }
@@ -584,7 +372,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 } else {
                     final int bytes = data.getData().remaining();
                     master.getStorageStage().writeObjectWithoutGMax(fileId, record.getObjectNumber(),
-                            state.getsPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
+                            state.getStripingPolicy(), 0, data.getData(), CowPolicy.PolicyNoCow, null, false,
                             record.getObjectVersion(), null, new WriteObjectCallback() {
 
                                 @Override
@@ -620,30 +408,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
-    }
-
-    private void doReset(final ReplicatedFileState file, long updateObjVer) {
-
-        if (file.getState() == ReplicaState.RESET) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "file %s is already in RESET",
-                        file.getFileId());
-            return;
-        }
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    ReplicaState.RESET);
-        }
-        file.setState(ReplicaState.RESET);
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "(R:%s) replica RESET started: %s (update objVer=%d)", localID, file.getFileId(), updateObjVer);
-        }
-
-        OSDOperation op = master.getInternalEvent(EventRWRStatus.class);
-        op.startInternalEvent(new Object[] { file.getFileId(), file.getsPolicy() });
-
     }
 
     private void processReplicaStateAvailExecReset(StageRequest method) {
@@ -698,144 +462,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
     }
 
-    private void doWaitingForLease(final ReplicatedFileState file) {
-        // If the file is invalidated a XLocSetChange is in progress and we can assume, that no primary exists.
-        if (file.isInvalidated()) {
-            doInvalidated(file);
-        } else if (file.getPolicy().requiresLease()) {
-            if (file.isCellOpen()) {
-                if (file.isLocalIsPrimary()) {
-                    doPrimary(file);
-                } else {
-                    doBackup(file);
-                }
-            } else {
-                file.setCellOpen(true);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), ReplicaState.WAITING_FOR_LEASE);
-                }
-                try {
-                    file.setState(ReplicaState.WAITING_FOR_LEASE);
-                    List<InetSocketAddress> osdAddresses = new ArrayList();
-                    for (ServiceUUID osd : file.getPolicy().getRemoteOSDUUIDs()) {
-                        osdAddresses.add(osd.getAddress());
-                    }
-
-                    // it is save to use the version from the XLoc, because outdated or invalidated requests
-                    // will be filtered in the preprocStage if the Operation requires a valid view
-                    int viewId = file.getLocations().getVersion();
-
-                    fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true, viewId);
-                    // wait for lease...
-                } catch (UnknownUUIDException ex) {
-                    failed(file,
-                            ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex),
-                            "doWaitingForLease");
-                }
-            }
-
-        } else {
-            // become primary immediately
-            doPrimary(file);
-        }
-    }
-
-    private void doOpen(final ReplicatedFileState file) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
-                    file.getFileId(), file.getState(), ReplicaState.OPEN);
-        }
-        file.setState(ReplicaState.OPEN);
-        if (file.hasPendingRequests()) {
-            doWaitingForLease(file);
-        }
-    }
-
-    private void doPrimary(final ReplicatedFileState file) {
-        assert (file.isLocalIsPrimary());
-        try {
-            if (file.getPolicy().onPrimary((int) file.getMasterEpoch()) && !file.isPrimaryReset()) {
-                file.setPrimaryReset(true);
-                doReset(file, ReplicaUpdatePolicy.UNLIMITED_RESET);
-            } else {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), ReplicaState.PRIMARY);
-                }
-                file.setPrimaryReset(false);
-                file.setState(ReplicaState.PRIMARY);
-                while (file.hasPendingRequests()) {
-                    enqueuePrioritized(file.removePendingRequest());
-                }
-            }
-        } catch (IOException ex) {
-            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex),
-                    "doPrimary");
-        }
-    }
-
-    private void doBackup(final ReplicatedFileState file) {
-        assert (!file.isLocalIsPrimary());
-        //try {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    ReplicaState.BACKUP);
-        }
-        file.setPrimaryReset(false);
-        file.setState(ReplicaState.BACKUP);
-        while (file.hasPendingRequests()) {
-            enqueuePrioritized(file.removePendingRequest());
-        }
-        /*} catch (IOException ex) {
-            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
-        }*/
-    }
-
-    private void doInvalidated(final ReplicatedFileState file) {
-        assert (file.isInvalidated());
-
-
-        if (file.isInvalidatedReset()) {
-            // The AuthState has been set and the file is up to date.
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                        file.getState(), ReplicaState.INVALIDATED);
-            }
-
-            file.setInvalidatedReset(false);
-            file.setState(ReplicaState.INVALIDATED);
-        }
-        file.setPrimaryReset(false);
-        while (file.hasPendingRequests()) {
-            enqueuePrioritized(file.removePendingRequest());
-        }
-    }
-
-    private void failed(ReplicatedFileState file, ErrorResponse ex, String methodName) {
-        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
-                "(R:%s) replica for file %s failed (in method: %s): %s", localID, file.getFileId(), methodName,
-                ErrorUtils.formatError(ex));
-        file.setPrimaryReset(false);
-        file.setState(ReplicaState.OPEN);
-        file.setCellOpen(false);
-        fstage.closeCell(file.getPolicy().getCellId(), false);
-        file.clearPendingRequests(ex);
-    }
-
-    private void enqueuePrioritized(StageRequest rq) {
-        while (!q.offer(rq)) {
-            StageRequest otherRq = q.poll();
-            otherRq.sendInternalServerError(new IllegalStateException(
-                    "internal queue overflow, cannot enqueue operation for processing."));
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Dropping request from rwre queue due to overload");
-        }
-    }
-
     protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request,
             ReusableBuffer createdViewBuffer, Object callback) {
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
@@ -862,41 +488,29 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
             Operation op, FileOperationCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[] { credentials, xloc, objNo, objVersion, op },
+        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials, xloc, objNo, objVersion, op},
                 request, null, callback);
     }
 
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
             InternalObjectData data, ReusableBuffer createdViewBuffer, FileOperationCallback callback,
             OSDRequest request) {
-        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[] { credentials, xloc, objNo, objVersion,
-                data }, request, createdViewBuffer, callback);
+        this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials, xloc, objNo, objVersion,
+                data}, request, createdViewBuffer, callback);
     }
 
     public void replicateTruncate(FileCredentials credentials, XLocations xloc, long newFileSize,
             long newObjectVersion, FileOperationCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_TRUNCATE,
-                new Object[] { credentials, xloc, newFileSize, newObjectVersion }, request, null, callback);
+                new Object[]{credentials, xloc, newFileSize, newObjectVersion}, request, null, callback);
     }
 
     public void fileClosed(String fileId) {
-        this.enqueueOperation(STAGEOP_CLOSE, new Object[] { fileId }, null, null);
-    }
-
-    public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        // this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
-        try {
-            FleaseMessage msg = new FleaseMessage(message);
-            BufferPool.free(message);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
+        this.enqueueOperation(STAGEOP_CLOSE, new Object[]{fileId}, null, null);
     }
 
     public void getStatus(StatusCallback callback) {
-        this.enqueueOperation(STAGEOP_GETSTATUS, new Object[] {}, null, callback);
+        this.enqueueOperation(STAGEOP_GETSTATUS, new Object[]{}, null, callback);
     }
 
     public static interface StatusCallback {
@@ -904,73 +518,38 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
     }
 
     @Override
-    public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
-        ReusableBuffer data = BufferPool.allocate(message.getSize());
-        message.serialize(data);
-        data.flip();
-        try {
-            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), data);
-            r.registerListener(new RPCResponseAvailableListener() {
-
-                @Override
-                public void responseAvailable(RPCResponse r) {
-                    r.freeBuffers();
-                }
-            });
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
-    @Override
     protected void processMethod(StageRequest method) {
         switch (method.getStageMethod()) {
-        case STAGEOP_REPLICATED_WRITE: {
-            externalRequestsInQueue.decrementAndGet();
-            processReplicatedWrite(method);
-            break;
-        }
-        case STAGEOP_TRUNCATE: {
-            externalRequestsInQueue.decrementAndGet();
-            processReplicatedTruncate(method);
-            break;
-        }
-        case STAGEOP_CLOSE: processFileClosed(method); break;
-        case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
-        case STAGEOP_PREPAREOP: {
-            externalRequestsInQueue.decrementAndGet();
-            processPrepareOp(method);
-            break;
-        }
-        case STAGEOP_INTERNAL_AUTHSTATE: processSetAuthoritativeState(method); break;
-        case STAGEOP_LEASE_STATE_CHANGED: processLeaseStateChanged(method); break;
-        case STAGEOP_INTERNAL_OBJFETCHED: processObjectFetched(method); break;
-        case STAGEOP_INTERNAL_STATEAVAIL: processReplicaStateAvailExecReset(method); break;
-        case STAGEOP_INTERNAL_DELETE_COMPLETE: processDeleteObjectsComplete(method); break;
-        case STAGEOP_INTERNAL_MAXOBJ_AVAIL: processMaxObjAvail(method); break;
-        case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
-        case STAGEOP_FORCE_RESET: processForceReset(method); break;
-        case STAGEOP_GETSTATUS: processGetStatus(method); break;
-        case STAGEOP_SETVIEW: processSetFleaseView(method); break;
-        case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
-        case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
-        default : throw new IllegalArgumentException("no such stageop");
-        }
-    }
-
-    private void processFleaseMessage(StageRequest method) {
-        try {
-            final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
-            final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
-
-            FleaseMessage msg = new FleaseMessage(data);
-            BufferPool.free(data);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            case STAGEOP_REPLICATED_WRITE: {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedWrite(method);
+                break;
+            }
+            case STAGEOP_TRUNCATE: {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedTruncate(method);
+                break;
+            }
+            case STAGEOP_CLOSE: processFileClosed(method); break;
+            case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
+            case STAGEOP_PREPAREOP: {
+                externalRequestsInQueue.decrementAndGet();
+                processPrepareOp(method);
+                break;
+            }
+            case STAGEOP_INTERNAL_AUTHSTATE: processSetAuthoritativeState(method); break;
+            case STAGEOP_LEASE_STATE_CHANGED: processLeaseStateChanged(method); break;
+            case STAGEOP_INTERNAL_OBJFETCHED: processObjectFetched(method); break;
+            case STAGEOP_INTERNAL_STATEAVAIL: processReplicaStateAvailExecReset(method); break;
+            case STAGEOP_INTERNAL_DELETE_COMPLETE: processDeleteObjectsComplete(method); break;
+            case STAGEOP_INTERNAL_MAXOBJ_AVAIL: processMaxObjAvail(method); break;
+            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
+            case STAGEOP_FORCE_RESET: processForceReset(method); break;
+            case STAGEOP_GETSTATUS: processGetStatus(method); break;
+            case STAGEOP_SETVIEW: processSetFleaseView(method); break;
+            case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
+            case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
+            default : throw new IllegalArgumentException("no such stageop");
         }
     }
 
@@ -991,7 +570,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             }
             state.getPolicy().closeFile();
             if (state.getPolicy().requiresLease())
-                fstage.closeCell(state.getPolicy().getCellId(), returnLease);
+                closeFleaseCell(state.getPolicy().getCellId(), returnLease);
             cellToFileId.remove(state.getPolicy().getCellId());
         }
     }
@@ -1012,7 +591,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             state.setForceReset(forceReset);
             state.setInvalidated(invalidated);
             cellToFileId.put(state.getPolicy().getCellId(), fileId);
-            assert (state.getState() == ReplicaState.INITIALIZING);
+            assert (state.getState() == ReplicatedFileState.LocalState.INITIALIZING);
 
             master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(),
                     new InternalGetMaxObjectNoCallback() {
@@ -1025,38 +604,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                     });
         }
         return state;
-    }
-
-    private void processMaxObjAvail(StageRequest method) {
-        try {
-            final String fileId = (String) method.getArgs()[0];
-            final Long maxObjVersion = (Long) method.getArgs()[1];
-            final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
-
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: "
-                        + fileId + " max=" + maxObjVersion, localID);
-
-            ReplicatedFileState state = files.get(fileId);
-            if (state == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
-                        "received maxObjAvail event for unknown file: %s", fileId);
-                return;
-            }
-
-            if (state.getState() == ReplicaState.INITIALIZING) {
-                state.getPolicy().setLocalObjectVersion(maxObjVersion);
-                doOpen(state);
-            } else {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
-                        "ReplicaState is %s instead of INITIALIZING, maxObjectVersion=%d", state.getState().name(),
-                        maxObjVersion);
-                return;
-            }
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
     }
 
     private void processReplicatedWrite(StageRequest method) {
@@ -1177,7 +724,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                         } else {
                             state.addPendingRequest(method);
                         }
-                        if (state.getState() == ReplicaState.OPEN) {
+                        if (state.getState() == ReplicatedFileState.LocalState.OPEN) {
                             // immediately change to backup mode...no need to check the lease
                             doWaitingForLease(state);
                         }
@@ -1257,7 +804,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 } catch (RetryException ex) {
                     final ErrorResponse err = ErrorUtils.getInternalServerError(ex);
                     failed(state, err, "processPrepareOp");
-                    if (state.getState() == ReplicaState.BACKUP || state.getState() == ReplicaState.PRIMARY) {
+                    if (state.getState() == ReplicatedFileState.LocalState.BACKUP || state.getState() == ReplicatedFileState.LocalState.PRIMARY) {
                         // Request is not in queue, we must notify
                         // callback.
                         callback.failed(err);
@@ -1305,22 +852,9 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
     }
 
-    public String getPrimary(final String fileId) {
-        String primary = null;
-        
-        final ReplicatedFileState fState = files.get(fileId);
-
-        if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
-            if (fState.getLease().isValid()) {
-                    primary = "" + fState.getLease().getLeaseHolder();
-            }
-        }
-        return primary;
-    }
-    
     /**
      * Set the viewId associated with the fileId/cellId. This will close open cells.
-     * 
+     *
      * @param fileId
      * @param cellId
      * @param versionState
@@ -1348,11 +882,11 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             closeFileState(fileId, true);
         }
 
-        fstage.setViewId(cellId, viewId, new FleaseListener() {
+        setFleaseViewId(cellId, viewId, new FleaseListener() {
 
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
-                    long masterEpochNumber) {
+                                       long masterEpochNumber) {
                 // Ignore because #setFleaseView is never used with a callback.
             }
 
@@ -1415,10 +949,10 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
 
         // Close the flease cell and return the lease if possible.
-        fstage.closeCell(state.getPolicy().getCellId(), true);
+        closeFleaseCell(state.getPolicy().getCellId(), true);
         cellToFileId.remove(state.getPolicy().getCellId());
 
-        // Clear pending requests. This ensures the ReplicaState won't change from now on.
+        // Clear pending requests. This ensures the LocalState won't change from now on.
         if (state.hasPendingRequests()) {
             ErrorResponse er = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "File got invalidated!");
@@ -1426,11 +960,11 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
 
         // Transfer the view to flease.
-        fstage.setViewId(state.getPolicy().getCellId(), FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
+        setFleaseViewId(state.getPolicy().getCellId(), FleaseMessage.VIEW_ID_INVALIDATED, new FleaseListener() {
 
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
-                    long masterEpochNumber) {
+                                       long masterEpochNumber) {
                 callback.invalidateComplete(leaseState, null);
             }
 
@@ -1472,42 +1006,42 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             }
 
             switch (state.getState()) {
-            case RESET:
-                // Wait until this reset is done. Since fileState.isInvalidated() is true this will result in an OPEN
-                // state.
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
-                state.addPendingRequest(method);
-                break;
+                case RESET:
+                    // Wait until this reset is done. Since fileState.isInvalidated() is true this will result in an OPEN
+                    // state.
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
+                    state.addPendingRequest(method);
+                    break;
 
-            case INITIALIZING:
-                // Wait until the initializing is done. Since fileState.isInvalidated() this will result in an OPEN
-                // state.
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
-                state.addPendingRequest(method);
-                break;
+                case INITIALIZING:
+                    // Wait until the initializing is done. Since fileState.isInvalidated() this will result in an OPEN
+                    // state.
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "(R:%s) enqueued fetch invalidated reset for file %s", localID, fileId);
+                    state.addPendingRequest(method);
+                    break;
 
-            case OPEN:
-            case WAITING_FOR_LEASE:
-            case BACKUP:
-            case PRIMARY:
-                // At this point it is ensured, that no other Request is queued. Therefore the AuthState can be set
-                // regardless of the state.
-                state.setInvalidatedReset(true);
-                state.addPendingRequest(method);
-                executeSetAuthState(localState, authState, state, fileId);
-                break;
+                case OPEN:
+                case WAITING_FOR_LEASE:
+                case BACKUP:
+                case PRIMARY:
+                    // At this point it is ensured, that no other Request is queued. Therefore the AuthState can be set
+                    // regardless of the state.
+                    state.setInvalidatedReset(true);
+                    state.addPendingRequest(method);
+                    executeSetAuthState(localState, authState, state, fileId);
+                    break;
 
-            case INVALIDATED:
-                // The AuthState has been set and the Replica is up to date.
+                case INVALIDATED:
+                    // The AuthState has been set and the Replica is up to date.
 
-                // Close the file by clearing the state.
-                closeFileState(fileId, true);
+                    // Close the file by clearing the state.
+                    closeFileState(fileId, true);
 
-                // Finish the request.
-                callback.success(0);
-                break;
+                    // Finish the request.
+                    callback.success(0);
+                    break;
             }
 
         } catch (Exception ex) {

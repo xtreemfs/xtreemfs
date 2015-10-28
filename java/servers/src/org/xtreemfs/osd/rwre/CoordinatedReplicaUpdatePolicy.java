@@ -30,7 +30,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
-import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
@@ -416,8 +415,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public long onClientOperation(Operation operation, long objVersion, ReplicaState currentState, Flease lease) throws RedirectToMasterException, IOException {
-        if (currentState == ReplicaState.PRIMARY) {
+    public long onClientOperation(Operation operation, long objVersion, ReplicatedFileState.LocalState currentState, Flease lease) throws RedirectToMasterException, IOException {
+        if (currentState == ReplicatedFileState.LocalState.PRIMARY) {
             long tmpObjVer;
             if (operation != Operation.READ) {
                 if (this.localObjVersion == -1) {
@@ -434,7 +433,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) prepared op for %s with objVer %d",localUUID, cellId,nextObjVer);
 
             return nextObjVer;
-        } else if (currentState == ReplicaState.BACKUP) {
+        } else if (currentState == ReplicatedFileState.LocalState.BACKUP) {
             if (backupCanRead() && (operation == Operation.READ)) {
                 return this.localObjVersion;
             } else {
@@ -452,9 +451,9 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public boolean onRemoteUpdate(long objVersion, ReplicaState state) throws IOException {
+    public boolean onRemoteUpdate(long objVersion, ReplicatedFileState.LocalState state) throws IOException {
         //apply everything...
-        if (state == ReplicaState.PRIMARY) {
+        if (state == ReplicatedFileState.LocalState.PRIMARY) {
             throw new IOException("no accepting updates in PRIMARY mode");
         }
 

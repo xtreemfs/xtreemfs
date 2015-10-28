@@ -18,7 +18,6 @@ import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
-import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
@@ -151,10 +150,10 @@ public abstract class ReplicaUpdatePolicy {
     public abstract long onClientOperation(
         Operation operation,
         long objVersion,
-        ReplicaState currentState,
+        ReplicatedFileState.LocalState currentState,
         Flease lease) throws RedirectToMasterException, IOException;
 
-    public abstract boolean onRemoteUpdate(long objVersion, ReplicaState currentState)
+    public abstract boolean onRemoteUpdate(long objVersion, ReplicatedFileState.LocalState currentState)
         throws IOException;
 
     /**
