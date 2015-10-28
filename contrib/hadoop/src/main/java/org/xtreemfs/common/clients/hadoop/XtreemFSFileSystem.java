@@ -366,6 +366,9 @@ public class XtreemFSFileSystem extends FileSystem {
             return deleteXtreemFSFile(pathString, xtreemfsVolume);
         }
         if (isXtreemFSDirectory(pathString, xtreemfsVolume)) {
+            if (!recursive) {
+                throw new IOException("Attempted to non-recursively delete directory '" + pathString + "'");
+            }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Deleting directory %s", pathString);
             }
