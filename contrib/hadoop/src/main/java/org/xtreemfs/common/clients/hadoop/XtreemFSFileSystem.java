@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -514,7 +515,14 @@ public class XtreemFSFileSystem extends FileSystem {
         final String[] dirs = pathString.split("/");
         statistics.incrementWriteOps(1);
 
-        final short mode = fp.toShort();
+        final short mode;
+        String umaskString = getConf().get(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY);
+        if (umaskString == null) {
+            mode = fp.toShort();
+        } else {
+            mode = fp.applyUMask(new FsPermission(umaskString)).toShort();
+        }
+        
         String dirString = "";
 
         if (xtreemfsVolume == defaultVolume) {
