@@ -2,10 +2,6 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <configuration>
     <property>
-        <name>fs.defaultFS</name>
-        <value>xtreemfs://localhost:32638</value>
-    </property>
-    <property>
         <name>fs.xtreemfs.impl</name>
         <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
     </property>
