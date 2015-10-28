@@ -2558,6 +2558,87 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 
 \textbf{Note:} A snapshot only captures a file in its current state if it is \emph{closed}. Files that are \emph{open} when taking a snapshot are captured in the last state in which they were before they were opened. Since files are implicitly closed on an OSD through a timeout rather than an explicit \texttt{close} call, it may happen that files are not included in a snapshot despite having been closed at application level before the snapshot was taken. To make sure a change to a specific file is included in a subsequent snapshot, it is necessary to wait for the close timeout on the OSD before taking the snapshot, which by default is set to 60 seconds.
 
+\subsection{Quotas}
+
+XtreemFS supports qble-traci  nguotas on volume, user or group base. All set quotas on a
+volume can be shown by executing:
+
+\begin{verbatim}
+$> xtfsutil --get-quotas /path/to/mounted/volume
+\end{verbatim}
+
+The output can be limited to a specific user witht he \emph{-u} option or a
+group using \emph{-g}.
+
+Quotas can be set by executing \emph{xtfsutil} with the \emph{--set-quota}
+option, which has to be combined with \emph{-v} to set the volume quota,
+\emph{-u} to set a user quota or \emph{-g} to set a group quota. Run for
+instance
+
+\begin{verbatim}
+$> xtfsutil --set-quota 1G -u user1 /path/to/mounted/volume
+\end{verbatim}
+
+to set a quota of 1 GB for the user \emph{user1}.
+
+Volumes can have a default group or volume quota which is applied to all groups
+or users that do not have an individual quota. A default user quota can for
+instance set to 5 GB as follows:
+
+\begin{verbatim}
+$> xtfsutil --set-default-user-quota 5G /path/to/mounted/volume
+\end{verbatim}
+
+Usable space is issued to a client while creating a file handle in the form of a
+voucher. After the granted capacity on a file is used, a file handle has to be
+renewed. This is done automatically by the XtreemFS client, but generates
+additional overhead. The voucher size for a volume can be set as follows:
+
+\begin{verbatim}
+$> xtfsutil --set-voucher-size 100M /path/to/mounted/volume
+\end{verbatim}
+
+Using a small voucher size generates larger overhead while using large vouchers
+may cause files running out of capacity, even before a quota is used up.
+
+\subsection{Access Tracing}
+
+The XtreemFS OSD can trace read and write requests to debugging or application
+profiling purposes. XtreemFS contains example policies to write an access trace to a
+file or a network socket.
+
+File-based tracing can be activated on volume level as follows:
+
+\begin{verbatim}
+$> xtfsutil --enable-tracing /path/to/mounted/volume
+$> xtfsutil --tracing-policy=6001 /path/to/mounted/volume
+$> xtfsutil --enable-tracing-config=/tmp/file_access.log /path/to/mounted/volume
+\end{verbatim}
+
+\begin{itemize}
+  \item \textbf{File-based tracing (policy ID 6001)} Writes access trace to a
+    file that is stored locally on the OSD hosts. The output file can be set by
+    the \emph{--trace-policy-config} option.
+  \item \textbf{Socket-based tracing (policy ID 6002)} Writes access trace to a
+    server socket, that is listening on each OSD. The listening port ist 9999.
+\end{itemize}
+
+User defined tracing policies can be added by implementing the following Java
+interface:
+
+\begin{verbatim}
+package org.xtreemfs.osd.tracing;
+
+import org.xtreemfs.osd.OSDRequest;
+
+public interface TracingPolicy {
+  void traceRequest(OSDRequest req, TraceInfo traceInfo);
+}
+\end{verbatim}
+
+Similar to MRC policies, OSD tracing policies have to be placed in the policy
+container directory of the OSD.
+
 \section{Test Tools}
 XtreemFS provides two tools to simplify testing. \texttt{xstartserv} can be used to start and stop XtreemFS servers manually. \texttt{xtestenv} automatically sets-up an entire test environment with servers and mounted clients. In addition, \texttt{xtestenv} can be used to execute the automatic integration tests.
 
@@ -3106,7 +3187,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
 	\end{enumerate}
-	
+
   Hint: By default Hadoop uses the current user as user ID and \textit{users} as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties:
 	\begin{verbatim}
   <property>
@@ -3222,16 +3303,16 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     </description>
   </property>
 	\end{verbatim}
-	
-	
-	Hint: The XtreemFSHadoopClient can use the native C++ Library via JNI (Java Native Interface). See section \ref{sec:libjnixtreemfs_for_java} for more information. 
+
+
+	Hint: The XtreemFSHadoopClient can use the native C++ Library via JNI (Java Native Interface). See section \ref{sec:libjnixtreemfs_for_java} for more information.
 	The JNI library allows to use features only implemented in C++, such as asynchronous writes:
 	\begin{verbatim}
   <property>
     <name>xtreemfs.jni.enabled</name>
     <value>true</value>
     <description>
-      Enable/Disable the JNI library for the XtreemFSHadoopClient 
+      Enable/Disable the JNI library for the XtreemFSHadoopClient
       (disabled by default).
     </description>
   </property>
@@ -3257,7 +3338,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <name>xtreemfs.asyncWrites.maxRequests</name>
     <value>10</value>
     <description>
-      Optional. Maximum number of pending write requests per file. 
+      Optional. Maximum number of pending write requests per file.
       Asynchronous writes will block if this limit is reached first.
     </description>
   </property>
@@ -3399,7 +3480,7 @@ The libxtreemfs for Java is currently not separated from the remaining server Ja
 The native libxtreemfs for Java is implementing the same interface as the pure Java libxtreemfs but is using Java Native Interfaces (JNI) to make calls to the C++ libxtreemfs. The Java implementation can be found in the XtreemFS sources in the directory \path{java/servers/src/org/xtreemfs/common/libxtreemfs/jni/}. You can retrieve the
 sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
 
-Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library. 
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library.
 
 To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. To install it from source either call ``\texttt{make client-jni}'' or set the environment variable \texttt{BUILD\_JNI=true} and call ``\texttt{make client}''. The library will then be found in  \path{cpp/build}.
 
