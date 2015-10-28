@@ -247,7 +247,7 @@ public class XtreemFSFileSystem extends FileSystem {
     
     @Override
     public String getScheme() {
-        return "xtreemfs://";
+        return "xtreemfs";
     }
 
     @Override
