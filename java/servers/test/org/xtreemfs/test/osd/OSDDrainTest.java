@@ -265,8 +265,9 @@ public class OSDDrainTest {
             // get the current replica configuration
             fileInfos = osdDrain.getReplicaInfo(fileInfos);
 
-            // Handle r/w coordinated files and remove them from the file info list.
+            // As there are no RWR replicated files the fileInfos count wont change.
             fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+            assertEquals(NUMBER_OF_FILES, fileInfos.size());
 
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
@@ -325,6 +326,112 @@ public class OSDDrainTest {
         }
 
         // test if files are the samel like before
+        for (int i = 0; i < NUMBER_OF_FILES; i++) {
+            RandomAccessFile raf = files[i].open("r", 0777);
+
+            raf.read(data, 0, data.length);
+            raf.close();
+
+            for (int j = 0; j < SIZE; j++) {
+                assertEquals('f', data[j]);
+            }
+        }
+
+        // tidy up
+        for (File file : files) {
+            file.delete();
+        }
+
+        c.deleteVolume(VOLNAME, authHeader, uc);
+        c.stop();
+
+        for (OSD osd : osdServer) {
+            osd.shutdown();
+        }
+        osdServer.clear();
+
+        TimeSync.initializeLocal(50).waitForStartup();
+
+    }
+
+    @Test
+    public void testRemoveOSDWithRWR() throws Exception {
+        osdServer.add(new OSD(osdConfig1));
+        osdServer.add(new OSD(osdConfig2));
+
+        final int NUMBER_OF_FILES = 5;
+        LinkedList<String> fileNames = new LinkedList<String>();
+        fileNames.add("foo1");
+        fileNames.add("foo2");
+        fileNames.add("foo3");
+        fileNames.add("foo4");
+        fileNames.add("foo5");
+
+        final Client c = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15000, 300000, null);
+        c.start();
+
+        c.createVolume(VOLNAME, authHeader, uc, sp.getPolicy(), AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                0777);
+
+        Volume volume = c.getVolume(VOLNAME, uc);
+
+        File root = volume.getFile("/");
+        root.setDefaultReplication(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2);
+
+
+        final int SIZE = 1024 * 200;
+        byte[] data = new byte[SIZE];
+
+        File files[] = new File[NUMBER_OF_FILES];
+
+        for (int i = 0; i < NUMBER_OF_FILES; i++) {
+            files[i] = volume.getFile(fileNames.get(i));
+            files[i].createFile();
+
+            for (int j = 0; j < SIZE; j++) {
+                data[j] = 'f';
+            }
+
+            RandomAccessFile raf = files[i].open("rw", 0777);
+            raf.write(data, 0, data.length);
+            raf.flush();
+            raf.close();
+        }
+
+        // start third OSD
+        osdServer.add(new OSD(osdConfig3));
+
+        // wait until the OSD is registered and known to the MRC
+        Thread.sleep(10 * 1000);
+
+        List<FileInformation> fileInfos = null;
+        try {
+            // set OSDServiceStatus to prevent further writing on this OSD
+            osdDrain.setServiceStatus(ServiceStatus.SERVICE_STATUS_REMOVED);
+
+            // get all files the OSD has
+            fileInfos = osdDrain.getFileListOfOSD();
+            assertEquals(NUMBER_OF_FILES, fileInfos.size());
+
+            // get address of MRC which is responsible for every file
+            osdDrain.updateMRCAddresses(fileInfos);
+            for (FileInformation fileInfo : fileInfos) {
+                assertEquals(testEnv.getMRCAddress(), fileInfo.mrcAddress);
+            }
+
+            // get the current replica configuration
+            fileInfos = osdDrain.getReplicaInfo(fileInfos);
+
+            // Handle r/w coordinated files and remove them from the file info list.
+            fileInfos = osdDrain.drainCoordinatedFiles(fileInfos);
+            assertEquals(0, fileInfos.size());
+
+        } catch (OSDDrainException e) {
+            osdDrain.handleException(e, true);
+            throw e;
+        }
+
+        // test if files are the same like before
         for (int i = 0; i < NUMBER_OF_FILES; i++) {
             RandomAccessFile raf = files[i].open("r", 0777);
 
