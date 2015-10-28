@@ -366,32 +366,25 @@ public class XtreemFSFileSystem extends FileSystem {
             return deleteXtreemFSFile(pathString, xtreemfsVolume);
         }
         if (isXtreemFSDirectory(pathString, xtreemfsVolume)) {
-            if (!recursive) {
-                throw new IOException("Attempted to non-recursively delete directory '" + pathString + "'");
+            if (!recursive
+                    && xtreemfsVolume.readDir(userCredentials, pathString, 0, 0, true).getEntriesCount() > 2) {
+                throw new IOException("Attempted to non-recursively delete non-empty directory '" + pathString + "'");
             }
+            
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Deleting directory %s", pathString);
             }
-            return deleteXtreemFSDirectory(pathString, xtreemfsVolume, recursive);
+            
+            if (recursive) {
+                return deleteXtreemFSDirRecursive(pathString, xtreemfsVolume);
+            } else {
+                // at this point the directory is empty
+                xtreemfsVolume.removeDirectory(userCredentials, pathString);
+                return true;
+            }
         }
         // path is neither a file nor a directory. Consider it as not existing.
         return false;
-    }
-
-    private boolean deleteXtreemFSDirectory(String path, Volume xtreemfsVolume, boolean recursive) throws IOException {
-        DirectoryEntries dirEntries = xtreemfsVolume.readDir(userCredentials, path, 0, 0, true);
-        boolean isEmpty = (dirEntries.getEntriesCount() <= 2);
-
-        if (recursive) {
-            return deleteXtreemFSDirRecursive(path, xtreemfsVolume);
-        } else {
-            if (isEmpty) {
-                xtreemfsVolume.removeDirectory(userCredentials, path);
-                return true;
-            } else {
-                return false;
-            }
-        }
     }
 
     private boolean deleteXtreemFSDirRecursive(String path, Volume xtreemfsVolume) throws IOException {
