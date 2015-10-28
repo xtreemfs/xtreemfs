@@ -19,7 +19,7 @@ import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
 import org.xtreemfs.osd.storage.FileMetadata;
 
 /**
- * EventCloseFile flushes the internal metadata caches, creates create a new file version if versioning / COW is enabled
+ * EventCloseFile flushes the internal metadata caches, creates a new file version if versioning / COW is enabled
  * and deletes the file along with its objects if the file has been marked for deletion. <br>
  * 
  * It is not responsible for removing files from the open file table (which has to be ensured previously) and doesn't

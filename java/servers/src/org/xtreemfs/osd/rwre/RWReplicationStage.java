@@ -96,6 +96,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     public static final int STAGEOP_SETVIEW                   = 21;
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
     public static final int STAGEOP_INVALIDATED_RESET         = 23;
+    public static final int STAGEOP_GET_REPLICATED_FILE_STATE  = 24;
 
     public  static enum Operation {
         READ,
@@ -364,9 +365,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                                 ErrorUtils.getInternalServerError(new IOException(fileId
                                         + ": lease timed out, renew failed")), "processLeaseStateChanged");
                     } else {
-                        if ((state.getState() == ReplicaState.BACKUP) 
-                                || (state.getState() == ReplicaState.PRIMARY)
-                                || (state.getState() == ReplicaState.WAITING_FOR_LEASE)) {
+                        if ((oldState == ReplicaState.BACKUP) 
+                                || (oldState == ReplicaState.PRIMARY)
+                                || (oldState == ReplicaState.WAITING_FOR_LEASE)) {
                             if (localIsPrimary) {
                                 // notify onPrimary
                                 if (oldState != ReplicaState.PRIMARY) {
@@ -646,11 +647,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         file.getFileId());
             return;
         }
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    ReplicaState.RESET);
-        }
         file.setState(ReplicaState.RESET);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -663,10 +659,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doResetComplete(final ReplicatedFileState file) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
-                    file.getFileId(), file.getState(), ReplicaState.RESET_COMPLETE);
-        }
         file.setState(ReplicaState.RESET_COMPLETE);
 
         if (file.isInvalidated()) {
@@ -741,14 +733,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 }
             } else {
                 file.setCellOpen(true);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), ReplicaState.WAITING_FOR_LEASE);
-                }
                 try {
                     file.setState(ReplicaState.WAITING_FOR_LEASE);
-                    List<InetSocketAddress> osdAddresses = new ArrayList();
+                    List<InetSocketAddress> osdAddresses = new ArrayList<InetSocketAddress>();
                     for (ServiceUUID osd : file.getPolicy().getRemoteOSDUUIDs()) {
                         osdAddresses.add(osd.getAddress());
                     }
@@ -773,10 +760,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doOpen(final ReplicatedFileState file) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
-                    file.getFileId(), file.getState(), ReplicaState.OPEN);
-        }
+        assert (!file.isInvalidated());
         file.setState(ReplicaState.OPEN);
 
         if (file.hasPendingRequests()) {
@@ -790,17 +774,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doPrimary(final ReplicatedFileState file) {
+        assert (!file.isInvalidated());
         assert (file.isLocalIsPrimary());
         try {
             if (file.getPolicy().onPrimary((int) file.getMasterEpoch()) && !file.isPrimaryReset()) {
                 file.setPrimaryReset(true);
                 doReset(file, ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), ReplicaState.PRIMARY);
-                }
                 file.setPrimaryReset(false);
                 file.setState(ReplicaState.PRIMARY);
                 while (file.hasPendingRequests()) {
@@ -814,13 +794,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
     }
 
     private void doBackup(final ReplicatedFileState file) {
+        assert (!file.isInvalidated());
         assert (!file.isLocalIsPrimary());
         //try {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    ReplicaState.BACKUP);
-        }
         file.setPrimaryReset(false);
         file.setState(ReplicaState.BACKUP);
         while (file.hasPendingRequests()) {
@@ -851,7 +827,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         file.setState(ReplicaState.OPEN);
         file.setInvalidatedReset(false);
         file.setCellOpen(false);
-        // TODO (jdillmann): Should numObjectsPending and objectsToFetch be cleared, too?
         fstage.closeCell(file.getPolicy().getCellId(), false);
         file.clearPendingRequests(ex);
     }
@@ -865,11 +840,13 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
+    public static interface RWReplicationFailableCallback {
+        public void failed(ErrorResponse ex);
+    }
     
-    public static interface RWReplicationCallback {
+    public static interface RWReplicationCallback extends RWReplicationFailableCallback {
         public void success(long newObjectVersion);
         public void redirect(String redirectTo);
-        public void failed(ErrorResponse ex);
     }
 
     /*public void openFile(FileCredentials credentials, XLocations locations, boolean forceReset,
@@ -940,7 +917,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         this.enqueueOperation(STAGEOP_GETSTATUS, new Object[] {}, null, callback);
     }
 
-    public static interface StatusCallback {
+    public static interface StatusCallback extends RWReplicationFailableCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
     }
 
@@ -997,6 +974,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
         case STAGEOP_INVALIDATED_RESET: processInvalidatedReplicaReset(method); break;
         // TODO: externalRequestsInQueue.decrementAndGet(); ????
+        case STAGEOP_GET_REPLICATED_FILE_STATE: processGetInvalidatedResetStatus(method); break; 
 
         default : throw new IllegalArgumentException("no such stageop");
         }
@@ -1374,21 +1352,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             callback.statusComplete(null);
         }
     }
-
-    public String getPrimary(final String fileId) {
-        String primary = null;
-        
-        final ReplicatedFileState fState = files.get(fileId);
-
-        if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
-            if (fState.getLease().isValid()) {
-                    primary = "" + fState.getLease().getLeaseHolder();
-            } else {
-                // outdated lease
-            }
-        }
-        return primary;
-    }
     
     /**
      * Set the viewId associated with the fileId/cellId. This will close open cells.
@@ -1608,4 +1571,31 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         }
     }
 
+     
+    /**
+     * Returns the {@link ReplicatedFileStateSimple} to the callback or null if the file is not opened in this instance.
+     * 
+     * @param fileId
+     * @param callback
+     * @param request
+     */
+    public void getReplicatedFileState(String fileId, GetReplicatedFileStateCallback callback, OSDRequest request) {
+        this.enqueueOperation(STAGEOP_GET_REPLICATED_FILE_STATE, new Object[] { fileId }, request, null, callback);
+    }
+
+    public interface GetReplicatedFileStateCallback extends RWReplicationFailableCallback {
+        public void getReplicatedFileStateComplete(ReplicatedFileStateSimple state);
+    }
+
+    private void processGetInvalidatedResetStatus(StageRequest method) {
+        final GetReplicatedFileStateCallback callback = (GetReplicatedFileStateCallback) method.getCallback();
+        final String fileId = (String) method.getArgs()[0];
+        
+        ReplicatedFileState state = files.get(fileId);
+        if (state != null) {
+            callback.getReplicatedFileStateComplete(new ReplicatedFileStateSimple(state));
+        } else {
+            callback.getReplicatedFileStateComplete(null);
+        }
+    }
 }
