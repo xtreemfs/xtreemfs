@@ -3158,20 +3158,29 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <description>
         The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
     </description>
-</property>
-
+  </property>
+  
   <property>
-    <name>fs.default.name</name>
-    <value>xtreemfs://localhost:32638/defaultVolumeName</value>
-    <description>
-        Address for the DIR with the default volume name to use.
-    </description>
+    <name>xtreemfs.defaultVolumeName</name>
+    <value>volumeName</value>
+    <description>Name of the default volume to use within XtreemFS.</description>
   </property>
 
   <property>
     <name>io.file.buffer.size</name>
     <value>131072</value>
     <description>Default buffer size when accessing files.</description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.rename.overwrite</name>
+    <value>false</value>
+    <description>
+      Set to true if an existing file should be overwritten
+      when another file is renamed to the existing file's
+      path. Defaults to false for Hadoop FileSystem Contract
+      conformance; for POSIX conformance, set this to true.
+    </description>
   </property>
 
 </configuration>
