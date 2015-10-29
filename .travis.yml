@@ -10,7 +10,7 @@ env:
     - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true
     - TEST_SUITE=travis-contrib   BUILD_JNI=true
 
-sudo: false
+sudo: required
 
 addons:
   apt:
@@ -33,7 +33,8 @@ before_script:
 
 script:
   - make client server hadoop-client -j2
-  - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE -d 7
+  - sudo usermod -a -G fuse $USER
+  - sudo -E su $USER -c './tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE -d 7'
 
 after_failure:
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
