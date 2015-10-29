@@ -96,8 +96,8 @@
         <property name="libs.junit_4.classpath" value="../../java/lib/test/junit-4.11.jar"/>
     </target>
 
-    <!-- Sets Hadoop Classpaths for Test Compilation and Execution if not in NetBeans -->
-    <target name="-set-hadoop-classpaths" unless="netbeans.home">
+    <!-- Sets Hadoop Classpaths for Test Compilation if not in NetBeans -->
+    <target name="-set-hadoop-compile-classpaths" unless="netbeans.home">
         <property environment="env"/>
 
         <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
@@ -106,6 +106,13 @@
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
         </path>
         <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_tests_jar"/>
+    </target>
+
+    <!-- Sets Hadoop Classpaths for Test Execution if not in NetBeans -->
+    <target name="-set-hadoop-run-classpaths" unless="netbeans.home">
+        <property environment="env"/>
+
+        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
 
         <path id="hadoop_common_dependency_jars">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
@@ -113,7 +120,14 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
-    <target name="-pre-compile-test" depends="-set-junit-classpath,-set-hadoop-classpaths">
+    <target name="-pre-compile-test" depends="-set-junit-classpath,-set-hadoop-compile-classpaths">
+        <!-- Empty target -->
+    </target>
+
+    <target name="-pre-test-run" depends="-set-hadoop-run-classpaths">
+        <!-- Empty target -->
+    </target>
+    <target name="-pre-test-run-single" depends="-set-hadoop-run-classpaths">
         <!-- Empty target -->
     </target>
 </project>

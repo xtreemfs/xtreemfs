@@ -1287,48 +1287,54 @@ is divided into following sections:
                 TEST EXECUTION SECTION
                 =======================
             -->
-    <target depends="init" if="have.tests" name="-pre-test-run">
+    <target depends="init" if="have.tests" name="-pre-pre-test-run">
         <mkdir dir="${build.test.results.dir}"/>
     </target>
-    <target depends="init,compile-test,-pre-test-run" if="have.tests" name="-do-test-run">
+    <target name="-pre-test-run">
+        <!-- This target is overridden in ../build.xml -->
+    </target>
+    <target depends="init,compile-test,-pre-pre-test-run,-pre-test-run" if="have.tests" name="-do-test-run">
         <j2seproject3:test includes="${includes}" testincludes="**/*Test.java"/>
     </target>
-    <target depends="init,compile-test,-pre-test-run,-do-test-run" if="have.tests" name="-post-test-run">
+    <target depends="init,compile-test,-pre-pre-test-run,-pre-test-run,-do-test-run" if="have.tests" name="-post-test-run">
         <fail if="tests.failed" unless="ignore.failing.tests">Some tests failed; see details above.</fail>
     </target>
     <target depends="init" if="have.tests" name="test-report"/>
     <target depends="init" if="netbeans.home+have.tests" name="-test-browse"/>
-    <target depends="init,compile-test,-pre-test-run,-do-test-run,test-report,-post-test-run,-test-browse" description="Run unit tests." name="test"/>
-    <target depends="init" if="have.tests" name="-pre-test-run-single">
+    <target depends="init,compile-test,-pre-pre-test-run,-pre-test-run,-do-test-run,test-report,-post-test-run,-test-browse" description="Run unit tests." name="test"/>
+    <target depends="init" if="have.tests" name="-pre-pre-test-run-single">
         <mkdir dir="${build.test.results.dir}"/>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single" if="have.tests" name="-do-test-run-single">
+    <target name="-pre-test-run-single">
+        <!-- This target is overridden in ../build.xml -->
+    </target>
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single" if="have.tests" name="-do-test-run-single">
         <fail unless="test.includes">Must select some files in the IDE or set test.includes</fail>
         <j2seproject3:test excludes="" includes="${test.includes}" testincludes="${test.includes}"/>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single,-do-test-run-single" if="have.tests" name="-post-test-run-single">
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single,-do-test-run-single" if="have.tests" name="-post-test-run-single">
         <fail if="tests.failed" unless="ignore.failing.tests">Some tests failed; see details above.</fail>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single,-do-test-run-single,-post-test-run-single" description="Run single unit test." name="test-single"/>
-    <target depends="init,compile-test-single,-pre-test-run-single" if="have.tests" name="-do-test-run-single-method">
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single,-do-test-run-single,-post-test-run-single" description="Run single unit test." name="test-single"/>
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single" if="have.tests" name="-do-test-run-single-method">
         <fail unless="test.class">Must select some files in the IDE or set test.class</fail>
         <fail unless="test.method">Must select some method in the IDE or set test.method</fail>
         <j2seproject3:test excludes="" includes="${javac.includes}" testincludes="${test.class}" testmethods="${test.method}"/>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single,-do-test-run-single-method" if="have.tests" name="-post-test-run-single-method">
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single,-do-test-run-single-method" if="have.tests" name="-post-test-run-single-method">
         <fail if="tests.failed" unless="ignore.failing.tests">Some tests failed; see details above.</fail>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single,-do-test-run-single-method,-post-test-run-single-method" description="Run single unit test." name="test-single-method"/>
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single,-do-test-run-single-method,-post-test-run-single-method" description="Run single unit test." name="test-single-method"/>
     <!--
                 =======================
                 TEST DEBUGGING SECTION
                 =======================
             -->
-    <target depends="init,compile-test-single,-pre-test-run-single" if="have.tests" name="-debug-start-debuggee-test">
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single" if="have.tests" name="-debug-start-debuggee-test">
         <fail unless="test.class">Must select one file in the IDE or set test.class</fail>
         <j2seproject3:test-debug excludes="" includes="${javac.includes}" testClass="${test.class}" testincludes="${javac.includes}"/>
     </target>
-    <target depends="init,compile-test-single,-pre-test-run-single" if="have.tests" name="-debug-start-debuggee-test-method">
+    <target depends="init,compile-test-single,-pre-pre-test-run-single,-pre-test-run-single" if="have.tests" name="-debug-start-debuggee-test-method">
         <fail unless="test.class">Must select one file in the IDE or set test.class</fail>
         <fail unless="test.method">Must select some method in the IDE or set test.method</fail>
         <j2seproject3:test-debug excludes="" includes="${javac.includes}" testClass="${test.class}" testMethod="${test.method}" testincludes="${test.class}" testmethods="${test.method}"/>
