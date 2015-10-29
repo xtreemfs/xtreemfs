@@ -1433,16 +1433,15 @@ public class VolumeImplementation implements Volume, AdminVolume {
 
     private XLocSet waitForXLocSetInstallation(UserCredentials userCredentials, String fileId, int expectedVersion)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
-        // The delay to wait between to pings in seconds.
-        int delay_s = 10;
-
+        long delay_ms = volumeOptions.getXLocInstallPollIntervalS() * 1000L;
+        
         // The initial call is made without delay.
         XLocSet xLocSet = getXLocSet(userCredentials, fileId);
 
         // Periodically ping the MRC to request the current XLocSet.
         while (xLocSet.getVersion() < expectedVersion) {
             try {
-                Thread.sleep(delay_s * 1000);
+                Thread.sleep(delay_ms);
             } catch (InterruptedException e) {
                 String msg = "Caught interrupt while waiting for the next poll, abort waiting for xLocSet installation.";
                 if (Logging.isDebug()) {

@@ -252,6 +252,7 @@ public final class NativeHelper {
         op.setPeriodic_xcap_renewal_interval_s(o.getPeriodicXcapRenewalIntervalS());
         op.setRequest_timeout_s(o.getRequestTimeout_s());
         op.setRetry_delay_s(o.getRetryDelay_s());
+        op.setXLoc_install_poll_interval_s(o.getXLocInstallPollIntervalS());
 
         return op;
     }

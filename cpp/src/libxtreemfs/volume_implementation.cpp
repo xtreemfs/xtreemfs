@@ -1500,7 +1500,7 @@ void VolumeImplementation::WaitForXLocSetInstallation(
     int expected_version,
     xtreemfs::pbrpc::XLocSet* xlocset) {
   // The delay to wait between two pings in seconds.
-  int delay_s = 10;
+  int64_t delay_ms = volume_options_.xLoc_install_poll_interval_s * 1000;
 
   // The initial call is made without delay.
   GetXLocSet(user_credentials, file_id, xlocset);
@@ -1508,7 +1508,7 @@ void VolumeImplementation::WaitForXLocSetInstallation(
   // Periodically ping the MRC to request the current XLocSet.
   while (xlocset->version() < expected_version) {
     // Delay the xLocSet renewal and the next run of the operation.
-    Interruptibilizer::SleepInterruptible((delay_s * 1000), volume_options_.was_interrupted_function);
+    Interruptibilizer::SleepInterruptible(delay_ms, volume_options_.was_interrupted_function);
 
     GetXLocSet(user_credentials, file_id, xlocset);
   }
