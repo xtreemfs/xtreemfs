@@ -6,19 +6,19 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     # contains only multi-threaded benchmarks. set option "-t" accordingly.
     'ssd' : {
@@ -39,46 +39,52 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     # This configuration is used for manual test environment set-ups (option -e).
     'manual' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': True,
+                'snmp': True
     },
     # This configuration is used for manual test environment set-ups with SSL enabled (option -f).
     'manual-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': True,
+                'snmp': True
     },
     # This configuration is used to run the tests on the Travis CI build environment.
     'travis' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-junit' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-cpp' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-valgrind' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
+    },
+    'travis-contrib' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
     }
 }
 
@@ -291,7 +297,7 @@ Tests = [
         'name': 'hadoop adapter junit tests',
         'file': 'hadoop_junit_tests.sh',
         'VolumeConfigs': ['regular'],
-        'TestSets': [ 'full' ]
+        'TestSets': [ 'full', 'travis-contrib' ]
     },
     {
         'name': 'xtfs_benchmark',
