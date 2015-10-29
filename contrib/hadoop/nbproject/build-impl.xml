@@ -34,7 +34,8 @@ is divided into following sections:
                 ======================
             -->
     <target name="-pre-init">
-        <!-- This target is overridden in ../build.xml -->
+        <!-- Empty placeholder for easier customization. -->
+        <!-- You can override this target in the ../build.xml file. -->
     </target>
     <target depends="-pre-init" name="-init-private">
         <property file="nbproject/private/config.properties"/>
@@ -1248,8 +1249,7 @@ is divided into following sections:
         <mkdir dir="${build.test.classes.dir}"/>
     </target>
     <target name="-pre-compile-test">
-        <!-- Empty placeholder for easier customization. -->
-        <!-- You can override this target in the ../build.xml file. -->
+        <!-- This target is overridden in ../build.xml -->
     </target>
     <target if="do.depend.true" name="-compile-test-depend">
         <j2seproject3:depend classpath="${javac.test.classpath}" destdir="${build.test.classes.dir}" srcdir="${test.java.dir}"/>

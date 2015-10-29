@@ -113,7 +113,7 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
-    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-classpaths">
+    <target name="-pre-compile-test" depends="-set-junit-classpath,-set-hadoop-classpaths">
         <!-- Empty target -->
     </target>
 </project>
