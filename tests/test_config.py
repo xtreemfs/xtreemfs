@@ -294,16 +294,10 @@ Tests = [
         'TestSets': [ 'short-ssl' ]
     },
     {
-        'name': 'hadoop adapter junit tests',
-        'file': 'hadoop_junit_tests.sh',
-        'VolumeConfigs': [],
-        'TestSets': [ 'full', 'travis-contrib' ]
-    },
-    {
         'name': 'xtfs_benchmark',
         'file': '14_xtfs_benchmark.sh',
         'VolumeConfigs': [ 'regular', 'regular_two_osds', 'nomdcache', 'directio', 'striped2', 'replicated_wqrq', 'replicated_wqrq_asyncwrites'],
-        'TestSets': [ 'full', 'travis-contrib' ]
+        'TestSets': [ 'full' ]
     },
     # SYSTEM TESTS
     {
@@ -341,6 +335,12 @@ Tests = [
         'file': 'system_chstatus_test.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'hadoop adapter junit tests',
+        'file': 'hadoop_junit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'travis-contrib' ]
     },
     {
         'name': 'Coverity Scan Test',
