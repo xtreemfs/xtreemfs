@@ -33,6 +33,8 @@ before_script:
 
 script:
   - make client server hadoop-client -j2
+  - lsmod
+  - sudo modprobe -v fuse
   - ls -al /dev/fuse
   - groups
   - sudo usermod -a -G fuse $USER
