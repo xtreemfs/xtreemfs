@@ -10,7 +10,7 @@ env:
     - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true
     - TEST_SUITE=travis-contrib   BUILD_JNI=true
 
-sudo: required
+sudo: false
 
 addons:
   apt:
