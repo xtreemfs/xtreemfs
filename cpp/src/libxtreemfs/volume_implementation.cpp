@@ -1514,7 +1514,9 @@ void VolumeImplementation::WaitForXLocSetInstallation(
   }
 
   if (xlocset->version() > expected_version) {
-    // TODO (jdillmann): Unexpected! Decide what to do
+    string msg("Missed the expected xLocSet after installing a new view. Please check if the xLocSet is correct.");
+    Logging::log->getLog(LEVEL_NOTICE) << "WaitForXLocSetInstallation: " << msg << endl;
+    throw IOException(msg);
   }
 }
 

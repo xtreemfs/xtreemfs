@@ -183,7 +183,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
 
     private static final String                             OSD_SELECTION_POLICY     = "xtreemfs.osel_policy";
     private static final String                             REPLICA_SELECTION_POLICY = "xtreemfs.rsel_policy";
-
+    
     /**
      * 
      */
@@ -1455,7 +1455,9 @@ public class VolumeImplementation implements Volume, AdminVolume {
         }
 
         if (xLocSet.getVersion() > expectedVersion) {
-            // TODO (jdillmann): Unexpected! Decide what to do
+            String msg = "Missed the expected xLocSet after installing a new view. Please check if the xLocSet is correct.";
+            Logging.logMessage(Logging.LEVEL_NOTICE, this, msg);
+            throw new IOException(msg);
         }
 
         return xLocSet;
