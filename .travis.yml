@@ -32,7 +32,7 @@ before_script:
   - XTREEMFS_DIR=`pwd`
 
 script:
-  - make -j2
+  - make client server hadoop-client -j2
   - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:
