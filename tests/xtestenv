@@ -236,7 +236,7 @@ class TestEnvironment:
 
             for k in self.__volumes.keys():
                 self.__volumes[k].create()
-                self.__volumes[k].mount(os.path.join(self.__test_dir, "log", "client_vol_"+str(k)+".log"))
+                self.__volumes[k].mount() #os.path.join(self.__test_dir, "log", "client_vol_"+str(k)+".log"))
 
             print 'xtestenv: All volumes mounted.'
         except KeyboardInterrupt:
