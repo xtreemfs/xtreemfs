@@ -108,6 +108,12 @@ public class BabuDBStorageManager implements StorageManager {
     protected static final String            ALLOW_SNAPS_ATTR_NAME      = "allowSnaps";
     
     protected static final String            VOL_ID_ATTR_NAME           = "volId";
+
+    protected static final String            ENABLE_TRACING             = "enableTracing";
+
+    protected static final String            TRACE_TARGET               = "traceTarget";
+
+    protected static final String            TRACING_POLICY             = "tracingPolicy";
     
     protected static final String            VOL_QUOTA_ATTR_NAME        = "quota";
     

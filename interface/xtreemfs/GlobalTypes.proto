@@ -93,6 +93,16 @@ enum SnapConfig {
   SNAP_CONFIG_ACCESS_SNAP = 2;
 }
 
+// Configuration for request tracing
+message TraceConfig {
+  // Set true to activate request tracing
+  required bool trace_requests = 1;
+  // Volume to write trace
+  optional string tracing_policy = 2;
+  // Tracing policy
+  optional string tracing_policy_config = 3;
+}
+
 // File size update data sent by OSDs.
 message NewFileSize {
     // New file size in bytes.
@@ -185,6 +195,8 @@ message XCap {
   optional fixed64 voucher_size = 11 [default = 0];
   // Timestamp when the XCap expires in milli seconds.
   optional fixed64 expire_time_ms = 12 [default = 0];
+  // Tracing configuration for the file
+  optional TraceConfig trace_config = 13;
 }
 
 // Locations of a file, i.e. the list of replicas including the OSDs that hold

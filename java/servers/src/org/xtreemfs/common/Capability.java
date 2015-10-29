@@ -17,6 +17,8 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig;
+
 
 /**
  * This class implements a Java representation of a capability.
@@ -45,7 +47,32 @@ public class Capability {
     private final XCap         xcap;
     
     private final String sharedSecret;
-    
+
+    /**
+     * Creates a capability from a given set of data. A signature will be added
+     * automatically. This constructor is meant to initially create a capability
+     * at the MRC.
+     *
+     * @param fileId
+     *            the file ID
+     * @param accessMode
+     *            the access mode
+     * @param validity
+     *            the relative validity time span in seconds
+     * @param expires
+     *            the absolute expiration time stamp (seconds since 1970)
+     * @param epochNo
+     *            the epoch number associated with the capability; epoch numbers
+     *            are incremented each time the file is truncated or deleted
+     * @param sharedSecret
+     *            the shared secret to be used to sign the capability
+     */
+    public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
+                      int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
+        this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
+                snapTimestamp, false, "", "", QuotaConstants.UNLIMITED_VOUCHER, 0L, sharedSecret);
+    }
+
     /**
      * Creates a capability from a given set of data. A signature will be added
      * automatically. This constructor is meant to initially create a capability
@@ -62,30 +89,44 @@ public class Capability {
      * @param epochNo
      *            the epoch number associated with the capability; epoch numbers
      *            are incremented each time the file is truncated or deleted
+     * @param traceRequests
+     *            trace IO requests on file / volume
+     * @param tracingPolicyConfig
+     *            tracing policy config
+     * @param tracingPolicy
+     *            tracing policy
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
-        int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
-        
-        this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
-                snapTimestamp, QuotaConstants.UNLIMITED_VOUCHER, 0, sharedSecret);
+        int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, boolean traceRequests,
+        String tracingPolicy,String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
+
+        this.sharedSecret = sharedSecret;
+
+        XCap.Builder builder = XCap.newBuilder().setAccessMode(accessMode).setClientIdentity(clientIdentity).
+                setExpireTimeS(expires).setExpireTimeoutS(validity).setFileId(fileId).
+                setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).
+                setSnapTimestamp(snapTimestamp).setVoucherSize(voucherSize).setExpireTimeMs(expireMS);
+
+        if(traceRequests && !tracingPolicy.equals("")) {
+            TraceConfig.Builder traceConfigBuilder = TraceConfig.newBuilder();
+            traceConfigBuilder.setTraceRequests(traceRequests);
+            traceConfigBuilder.setTracingPolicyConfig(tracingPolicyConfig);
+            traceConfigBuilder.setTracingPolicy(tracingPolicy);
+            builder.setTraceConfig(traceConfigBuilder.build());
+        }
+
+        final String sig = calcSignature(builder);
+        builder.setServerSignature(sig);
+        xcap=builder.build();
     }
 
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity, int epochNo,
             boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, long voucherSize, long expireMS,
             String sharedSecret) {
-
-        this.sharedSecret = sharedSecret;
-
-        XCap.Builder builder = XCap.newBuilder().setAccessMode(accessMode).setClientIdentity(clientIdentity)
-                .setExpireTimeS(expires).setExpireTimeoutS(validity).setFileId(fileId)
-                .setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig)
-                .setSnapTimestamp(snapTimestamp).setVoucherSize(voucherSize).setExpireTimeMs(expireMS);
-        
-        final String sig = calcSignature(builder);
-        builder.setServerSignature(sig);
-        xcap = builder.build();
+        this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
+                snapTimestamp, false, "", "", voucherSize, expireMS, sharedSecret);
     }
     
     /**
@@ -175,6 +216,10 @@ public class Capability {
     public long getSnapTimestamp() {
         return xcap.getSnapTimestamp();
     }
+
+    public TraceConfig getTraceConfig() {
+        return xcap.getTraceConfig();
+    }
     
     public long getVoucherSize() {
         return xcap.getVoucherSize();
@@ -204,7 +249,7 @@ public class Capability {
         String plainText = builder.getFileId() + Integer.toString(builder.getAccessMode())
             + Long.toString(builder.getExpireTimeS()) + Long.toString(builder.getTruncateEpoch())
             + Long.toString(builder.getSnapConfig().getNumber()) + Long.toString(builder.getSnapTimestamp())
-                + Long.toString(builder.getVoucherSize()) + Long.toString(builder.getExpireTimeMs()) + sharedSecret;
+            + Long.toString(builder.getVoucherSize()) + Long.toString(builder.getExpireTimeMs()) + sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
