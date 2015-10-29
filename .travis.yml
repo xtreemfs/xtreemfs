@@ -28,17 +28,12 @@ addons:
       - net-tools
 
 before_script:
-  - export TEST_DIR="/tmp/xtreemfs_xtestenv"
-  - export XTREEMFS_DIR=`pwd`
+  - TEST_DIR="/tmp/xtreemfs_xtestenv"
+  - XTREEMFS_DIR=`pwd`
 
 script:
   - make client server hadoop-client -j2
-  - lsmod
-  - sudo modprobe -v fuse
-  - ls -al /dev/fuse
-  - groups
-  - sudo usermod -a -G fuse $USER
-  - sudo -E su $USER -c './tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE -d 7'
+  - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
