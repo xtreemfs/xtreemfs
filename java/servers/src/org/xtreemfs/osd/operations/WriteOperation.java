@@ -123,7 +123,7 @@ public final class WriteOperation extends OSDOperation {
         }
         master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
                 args.getObjectVersion(), ECStage.Operation.WRITE,
-                new ECStage.ECCallback() {
+                new FileOperationCallback() {
 
                     @Override
                     public void success(final long newObjectVersion) {

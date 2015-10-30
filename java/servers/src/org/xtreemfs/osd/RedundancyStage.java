@@ -53,6 +53,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class RedundancyStage extends Stage implements FleaseMessageSenderInterface{
 
+    public static enum Operation {
+        READ,
+        WRITE,
+        TRUNCATE,
+        INTERNAL_UPDATE,
+        INTERNAL_TRUNCATE
+    };
+
     public static final int STAGEOP_REPLICATED_WRITE          = 1;
     public static final int STAGEOP_CLOSE                     = 2;
     public static final int STAGEOP_PROCESS_FLEASE_MSG        = 3;

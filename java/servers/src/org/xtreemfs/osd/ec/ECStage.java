@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.RedundancyStage;
@@ -125,7 +126,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
     }
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-            Operation op, ECCallback callback, OSDRequest request) {
+            Operation op, FileOperationCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[] { credentials, xloc, objNo, objVersion, op },
                 request, null, callback);
     }
@@ -153,12 +154,6 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     public static interface StatusCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
-    }
-
-    public static interface ECCallback {
-        public void success(long newObjectVersion);
-        public void redirect(String redirectTo);
-        public void failed(ErrorResponse ex);
     }
 
     @Override

@@ -56,14 +56,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
  */
 public class RWReplicationStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
-    public static enum Operation {
-        READ,
-        WRITE,
-        TRUNCATE,
-        INTERNAL_UPDATE,
-        INTERNAL_TRUNCATE
-    };
-
     private final Map<String, ReplicatedFileState> files;
 
 
