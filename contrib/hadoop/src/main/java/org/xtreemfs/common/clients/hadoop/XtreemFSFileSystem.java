@@ -649,7 +649,9 @@ public class XtreemFSFileSystem extends FileSystem {
                 // there is no similarly named directory in the default volume.
                 // (i.e. the default volume has been specified explicitly)
                 if (!defaultVolumeDirectories.contains(splitPath[1])) {
-                    pathString = pathString.substring(pathString.indexOf("/", 1));
+                    // handle paths without trailing slash
+                    int pos = pathString.indexOf("/", 1);
+                    pathString = pos == -1 ? "/" : pathString.substring(pos);
                 }
             }
             return pathString;
