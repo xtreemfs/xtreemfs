@@ -9,6 +9,7 @@ package org.xtreemfs.osd;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -30,10 +31,13 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
+import org.xtreemfs.osd.rwre.RedirectToMasterException;
 import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
+import org.xtreemfs.osd.rwre.RetryException;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.RedundantFileState.LocalState;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import java.io.IOException;
@@ -42,10 +46,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Jan Fajerski
- * TODO add access to fstage and doOpen and doWaitingForLease
  */
 public abstract class RedundancyStage extends Stage implements FleaseMessageSenderInterface{
 
@@ -70,20 +74,24 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
     public static final int STAGEOP_FETCHINVALIDATED          = 23;
 
-    public final RPCNIOSocketClient client;
-    public final OSDServiceClient osdClient;
-    private final HashMap<String, RedundantFileState> files;
-    private final RPCNIOSocketClient               fleaseClient;
-    private final OSDServiceClient                 fleaseOsdClient;
-    private final FleaseStage fstage;
-    public final ASCIIString                      localID;
-    private final OSDRequestDispatcher             master;
-    private final FleaseMasterEpochStage masterEpochStage;
-    public final Map<ASCIIString, String>         cellToFileId;
+    public final Map<ASCIIString, String>               cellToFileId;
+    public final RPCNIOSocketClient                     client;
+    public final AtomicInteger                          externalRequestsInQueue;
+    private final HashMap<String, RedundantFileState>   files;
+    private final RPCNIOSocketClient                    fleaseClient;
+    private final OSDServiceClient                      fleaseOsdClient;
+    private final FleaseStage                           fleaseStage;
+    public final ASCIIString                            localID;
+    private final OSDRequestDispatcher                  master;
+    private final FleaseMasterEpochStage                masterEpochStage;
+    private static final int                            MAX_EXTERNAL_REQUESTS_IN_Q = 250;
+    private static final int                            MAX_PENDING_PER_FILE       = 10;
+    public final OSDServiceClient                       osdClient;
 
     public RedundancyStage(String name, OSDRequestDispatcher master, SSLOptions sslOpts, int queueCapacity) throws IOException {
         super(name, queueCapacity);
 
+        externalRequestsInQueue = new AtomicInteger(0);
         files = new HashMap<String, RedundantFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
         this.master = master;
@@ -91,7 +99,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         masterEpochStage = new FleaseMasterEpochStage(master.getStorageStage().getStorageLayout(),
                 queueCapacity);
 
-        FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
+        FleaseConfig fleaseConfig = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
                 .getFleaseDmaxMS(), master.getConfig().getFleaseMsgToMS(), null, localID.toString(), master.getConfig()
                 .getFleaseRetries());
 
@@ -99,7 +107,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         osdClient = new OSDServiceClient(client, null);
         fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, name + "(flease)");
         fleaseOsdClient = new OSDServiceClient(fleaseClient, null);
-        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir() + "/", this, false,
+
+        fleaseStage = new FleaseStage(fleaseConfig, master.getConfig().getObjDir() + "/", this, false,
                 new FleaseViewChangeListenerInterface() {
 
                     @Override
@@ -121,7 +130,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 eventLeaseStateChanged(cellID, null, error);
             }
         }, masterEpochStage);
-        fstage.setLifeCycleListener(master);
+
+        fleaseStage.setLifeCycleListener(master);
     }
 
     @Override
@@ -129,7 +139,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         masterEpochStage.start();
         client.start();
         fleaseClient.start();
-        fstage.start();
+        fleaseStage.start();
         super.start();
     }
 
@@ -137,7 +147,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public void shutdown() {
         client.shutdown();
         fleaseClient.shutdown();
-        fstage.shutdown();
+        fleaseStage.shutdown();
         masterEpochStage.shutdown();
         super.shutdown();
     }
@@ -147,7 +157,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         masterEpochStage.waitForStartup();
         client.waitForStartup();
         fleaseClient.waitForStartup();
-        fstage.waitForStartup();
+        fleaseStage.waitForStartup();
         super.waitForStartup();
     }
 
@@ -155,7 +165,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public void waitForShutdown() throws Exception {
         client.waitForShutdown();
         fleaseClient.waitForShutdown();
-        fstage.waitForShutdown();
+        fleaseStage.waitForShutdown();
         masterEpochStage.waitForShutdown();
         super.waitForShutdown();
     }
@@ -196,7 +206,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                     // will be filtered in the preprocStage if the Operation requires a valid view
                     int viewId = file.getLocations().getVersion();
 
-                    fstage.openCell(file.getPolicy().getCellId(), osdAddresses, true, viewId);
+                    fleaseStage.openCell(file.getPolicy().getCellId(), osdAddresses, true, viewId);
                     // wait for lease...
                 } catch (UnknownUUIDException ex) {
                     failed(file,
@@ -248,7 +258,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
     private void doBackup(final RedundantFileState file) {
         assert (!file.isLocalIsPrimary());
-        //try {
+
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                     "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
@@ -259,9 +269,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         while (file.hasPendingRequests()) {
             enqueuePrioritized(file.removePendingRequest());
         }
-        /*} catch (IOException ex) {
-            failed(file, ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
-        }*/
     }
 
     private void doInvalidated(final RedundantFileState file) {
@@ -334,9 +341,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                             "(R:%s) lease change event: %s, %s", localID, cellId, lease);
                 }
             } else {
-                // Logging.logMessage(Logging.LEVEL_WARN, Category.replication,
-                // this,"(R:%s) lease error in cell %s: %s cell debug: %s",localID, cellId, error,
-                // error.getFleaseCellDebugString());
                 Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) lease error in cell %s: %s",
                         localID, cellId, error);
             }
@@ -439,7 +443,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
             FleaseMessage msg = new FleaseMessage(data);
             BufferPool.free(data);
             msg.setSender(sender);
-            fstage.receiveMessage(msg);
+            fleaseStage.receiveMessage(msg);
 
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
@@ -450,7 +454,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         try {
             final String fileId = (String) method.getArgs()[0];
             final Long maxObjVersion = (Long) method.getArgs()[1];
-            final RPC.RPCHeader.ErrorResponse error = (RPC.RPCHeader.ErrorResponse) method.getArgs()[2];
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: "
@@ -479,11 +482,11 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     public void closeFleaseCell(ASCIIString cellId, boolean returnedLease) {
-        fstage.closeCell(cellId, returnedLease);
+        fleaseStage.closeCell(cellId, returnedLease);
     }
 
     public void setFleaseViewId(ASCIIString cellId, int viewId, FleaseListener listener) {
-        fstage.setViewId(cellId, viewId, listener);
+        fleaseStage.setViewId(cellId, viewId, listener);
     }
 
     private void enqueuePrioritized(StageRequest rq) {

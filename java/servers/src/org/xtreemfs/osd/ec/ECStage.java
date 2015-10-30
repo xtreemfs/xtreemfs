@@ -218,7 +218,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this, "open file: " + fileId);
             // "open" file
-            state = new StripedFileState(fileId);
+            state = new StripedFileState(fileId, loc, master.getConfig().getUUID(), osdClient);
             files.put(fileId, state);
             state.setCredentials(credentials);
             //state.setInvalidated(invalidated);

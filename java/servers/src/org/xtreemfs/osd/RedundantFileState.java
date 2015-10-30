@@ -7,6 +7,8 @@
  */
 package org.xtreemfs.osd;
 
+import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.flease.Flease;
@@ -16,12 +18,16 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * @author Jan Fajerski
+ *
+ * This class provides necessary state and acompanying methods to provide master-slave replication of information based on Flease
  */
 public abstract class RedundantFileState {
 
@@ -35,22 +41,23 @@ public abstract class RedundantFileState {
         INVALIDATED
     }
 
-    private List<StageRequest> pendingRequests;
+    private boolean                     cellOpen;
+    private FileCredentials             credentials;
+    private final String                fileId;
+    private boolean                     forceReset;
+    private boolean                     invalidated;
+    private boolean                     invalidatedReset;
+    private Flease                      lease;
+    private XLocations                  loc;
+    private boolean                     localIsPrimary;
+    private long                        masterEpoch;
+    private int                         numObjectsPending;
+    private List<StageRequest>          pendingRequests;
+    private ReplicaUpdatePolicy         policy;
+    private boolean                     primaryReset;
+    private LocalState                  state;
 
-    private LocalState state;
-    private boolean                    invalidated;
-    private boolean                    cellOpen;
-    private final String               fileId;
-    private boolean                    localIsPrimary;
-    private Flease                     lease;
-    private FileCredentials credentials;
-    private int                        numObjectsPending;
-    private boolean                    primaryReset;
-    private boolean                    forceReset;
-    private long                       masterEpoch;
-    private boolean                    invalidatedReset;
-
-    public RedundantFileState(String fileId) {
+    public RedundantFileState(String fileId, XLocations locations, ServiceUUID localUUID, OSDServiceClient client) {
         this.pendingRequests = new LinkedList();
         this.state = LocalState.INITIALIZING;
         this.invalidated = false;
@@ -62,14 +69,20 @@ public abstract class RedundantFileState {
         this.forceReset = false;
         this.masterEpoch = FleaseMessage.IGNORE_MASTER_EPOCH;
         this.invalidatedReset = false;
+        this.loc = locations;
+
+        List<ServiceUUID> remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
+        for (Replica r : locations.getReplicas()) {
+            final ServiceUUID headOSD = r.getHeadOsd();
+            if (headOSD.equals(localUUID))
+                continue;
+            remoteOSDs.add(headOSD);
+        }
+
+        policy = ReplicaUpdatePolicy.newReplicaUpdatePolicy(locations.getReplicaUpdatePolicy(), remoteOSDs, localUUID.toString(),
+                fileId, client);
     }
 
-
-    public abstract XLocations getLocations();
-
-    public abstract ReplicaUpdatePolicy getPolicy();
-
-    public abstract StripingPolicyImpl getStripingPolicy();
 
     /**
      * Appends the request to the end of the list of pending requests.
@@ -82,8 +95,7 @@ public abstract class RedundantFileState {
      * Removes all of the requests from this list of pending requests and sends them an error response, if a
      * callback of type FileOperationCallback exists.
      *
-     * @param error
-     *            to respond with or null
+     * @param error the ErrorResponse to send
      */
     public void clearPendingRequests(ErrorResponse error) {
         if (error != null) {
@@ -291,4 +303,27 @@ public abstract class RedundantFileState {
     public boolean isInvalidatedReset() {
         return invalidatedReset;
     }
+
+    /**
+     * @return the StripingPolicy
+     */
+    public StripingPolicyImpl getStripingPolicy() {
+        return loc.getLocalReplica().getStripingPolicy();
+    }
+
+    public Replica getLocalReplica() {
+        return loc.getLocalReplica();
+    }
+
+    public ReplicaUpdatePolicy getPolicy() {
+        return this.policy;
+    }
+
+    /**
+     * @return the XLocations
+     */
+    public XLocations getLocations() {
+        return loc;
+    }
+
 }

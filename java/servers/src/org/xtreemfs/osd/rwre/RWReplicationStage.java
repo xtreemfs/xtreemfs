@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
@@ -74,11 +73,9 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     private static final int                       MAX_PENDING_PER_FILE       = 10;
 
-    private static final int                       MAX_EXTERNAL_REQUESTS_IN_Q = 250;
 
     private final Queue<ReplicatedFileState>       filesInReset;
 
-    private final AtomicInteger                    externalRequestsInQueue;
     private final OSDRequestDispatcher             master;
 
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
@@ -88,7 +85,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         files = new HashMap<String, ReplicatedFileState>();
         numObjsInFlight = 0;
         filesInReset = new LinkedList();
-        externalRequestsInQueue = new AtomicInteger(0);
 
     }
 
@@ -598,7 +594,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
                         @Override
                         public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch,
-                                ErrorResponse error) {
+                                                         ErrorResponse error) {
                             eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
                         }
                     });

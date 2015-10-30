@@ -8,12 +8,17 @@
 
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.IntervalVersionTree;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.osd.RedundantFileState;
 import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+
+import java.io.IOException;
 
 /**
  * @author Jan Fajerski
