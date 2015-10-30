@@ -11,7 +11,7 @@ package org.xtreemfs.osd.rwre;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
+import org.xtreemfs.osd.RedundancyStage.Operation;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**

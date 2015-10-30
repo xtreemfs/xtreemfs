@@ -17,7 +17,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationCallback;
+import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
@@ -90,7 +90,7 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
         final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
 
         master.getRWReplicationStage().fetchInvalidated(fileId, args.getState(), localState, args.getFileCredentials(),
-                xloc, new RWReplicationCallback() {
+                xloc, new FileOperationCallback() {
 
                     @Override
                     public void success(long newObjectVersion) {

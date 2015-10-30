@@ -17,6 +17,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
@@ -74,7 +75,7 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
 
     public void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, args.getObjectVersion(),
-                RWReplicationStage.Operation.INTERNAL_TRUNCATE, new RWReplicationStage.RWReplicationCallback() {
+                RWReplicationStage.Operation.INTERNAL_TRUNCATE, new FileOperationCallback() {
 
             @Override
             public void success(long newObjectVersion) {

@@ -13,7 +13,7 @@ import java.util.List;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
+import org.xtreemfs.osd.RedundancyStage.Operation;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
