@@ -28,22 +28,11 @@ import java.io.IOException;
 public class StripedFileState extends RedundantFileState {
 
 
-    public StripedFileState(String fileID) {
-        super(fileID);
-    }
+    IntervalVersionTree versions;
 
-    @Override
-    public XLocations getLocations() {
-        return null;
-    }
+    public StripedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
+                               OSDServiceClient client) throws IOException {
+        super(fileId, locations, localUUID, client);
 
-    @Override
-    public ReplicaUpdatePolicy getPolicy() {
-        return null;
-    }
-
-    @Override
-    public StripingPolicyImpl getStripingPolicy() {
-        return null;
     }
 }

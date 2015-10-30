@@ -626,6 +626,30 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         fleaseStage.setViewId(cellId, viewId, listener);
     }
 
+    protected void enqueueExternalOperation(int stageOp, Object[] arguments, OSDRequest request,
+                                            ReusableBuffer createdViewBuffer, Object callback) {
+        if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "RW replication stage is overloaded, request %d for %s dropped", request.getRequestId(),
+                    request.getFileId());
+            request.sendInternalServerError(new IllegalStateException(
+                    "RW replication stage is overloaded, request dropped"));
+
+            // Make sure that the data buffer is returned to the pool if
+            // necessary, as some operations create view buffers on the
+            // data. Otherwise, a 'finalized but not freed before' warning
+            // may occur.
+            if (createdViewBuffer != null) {
+                assert (createdViewBuffer.getRefCount() >= 2);
+                BufferPool.free(createdViewBuffer);
+            }
+
+        } else {
+            externalRequestsInQueue.incrementAndGet();
+            this.enqueueOperation(stageOp, arguments, request, createdViewBuffer, callback);
+        }
+    }
+
     private void enqueuePrioritized(StageRequest rq) {
         while (!q.offer(rq)) {
             StageRequest otherRq = q.poll();
