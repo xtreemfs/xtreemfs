@@ -424,15 +424,20 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        // this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
         try {
             FleaseMessage msg = new FleaseMessage(message);
             BufferPool.free(message);
             msg.setSender(sender);
-            fstage.receiveMessage(msg);
+            fleaseStage.receiveMessage(msg);
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
+    }
+
+    public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
+                                 Operation op, FileOperationCallback callback, OSDRequest request) {
+        this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials, xloc, objNo, objVersion, op},
+                request, null, callback);
     }
 
     public void processFleaseMessage(StageRequest method) {
@@ -481,6 +486,138 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
+    public abstract void processPrepareOp(StageRequest method);
+
+    public void processPrepareOp(RedundantFileState state, StageRequest method) {
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
+        try {
+            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+            final String fileId = credentials.getXcap().getFileId();
+            final Long objVersion = (Long) method.getArgs()[3];
+            final Operation op = (Operation) method.getArgs()[4];
+
+            // Abort the request if the file has been invalidated.
+            if (state.isInvalidated()) {
+                callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                        POSIXErrno.POSIX_ERROR_NONE, "file has been invalidated"));
+                return;
+            }
+
+            if ((op == Operation.INTERNAL_UPDATE) || (op == Operation.INTERNAL_TRUNCATE)) {
+                switch (state.getState()) {
+                    case WAITING_FOR_LEASE:
+                    case INITIALIZING:
+                    case RESET:
+                    case OPEN: {
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                    "enqeue update for %s (state is %s)", fileId, state.getState());
+                        }
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
+                        } else {
+                            state.addPendingRequest(method);
+                        }
+                        if (state.getState() == LocalState.OPEN) {
+                            // immediately change to backup mode...no need to check the lease
+                            doWaitingForLease(state);
+                        }
+                        return;
+                    }
+                }
+
+                // does this internal update have an acceptable version
+                if (!state.getPolicy().acceptRemoteUpdate(objVersion)) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
+                            "received outdated object version %d for file %s", objVersion, fileId);
+                    callback.failed(ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                            "outdated object version for update rejected"));
+                    return;
+                }
+
+                // or does it need to be reset first
+                boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s needs reset: %s", fileId,
+                            needsReset);
+                }
+                if (needsReset) {
+                    state.addPendingRequest(method);
+                    doReset(state, objVersion);
+                } else {
+                    callback.success(0);
+                }
+            } else {
+                // not an internal update
+                state.setCredentials(credentials);
+
+                switch (state.getState()) {
+                    case WAITING_FOR_LEASE:
+                    case INITIALIZING:
+                    case RESET: {
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                        } else {
+                            state.addPendingRequest(method);
+                        }
+                        return;
+                    }
+                    case OPEN: {
+                        if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                                        "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                                        state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
+                            }
+                            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                                    POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+                            return;
+                        } else {
+                            state.addPendingRequest(method);
+                        }
+                        doWaitingForLease(state);
+                        return;
+                    }
+                }
+                /* reset, open, initialising and waiting_for_lease make prepareOp add the operation to pendingRequest
+                 * all other states get a new version
+                 */
+
+                try {
+                    long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
+                            state.getLease());
+                    callback.success(newVersion);
+                } catch (RedirectToMasterException ex) {
+                    callback.redirect(ex.getMasterUUID());
+                } catch (RetryException ex) {
+                    final ErrorResponse err = ErrorUtils.getInternalServerError(ex);
+                    failed(state, err, "processPrepareOp");
+                    if (state.getState() == LocalState.BACKUP || state.getState() == LocalState.PRIMARY) {
+                        // Request is not in queue, we must notify
+                        // callback.
+                        callback.failed(err);
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            callback.failed(ErrorUtils.getInternalServerError(ex));
+        }
+    }
+
     public void closeFleaseCell(ASCIIString cellId, boolean returnedLease) {
         fleaseStage.closeCell(cellId, returnedLease);
     }
@@ -509,4 +646,18 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         file.clearPendingRequests(ex);
     }
 
+    @Override
+    protected void processMethod(StageRequest method) {
+        switch (method.getStageMethod()) {
+            case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
+            case STAGEOP_INTERNAL_MAXOBJ_AVAIL: processMaxObjAvail(method); break;
+            case STAGEOP_LEASE_STATE_CHANGED: processLeaseStateChanged(method); break;
+            case STAGEOP_PREPAREOP: {
+                externalRequestsInQueue.decrementAndGet();
+                processPrepareOp(method);
+                break;
+            }
+            default : throw new IllegalArgumentException("no such stageop");
+        }
+    }
 }

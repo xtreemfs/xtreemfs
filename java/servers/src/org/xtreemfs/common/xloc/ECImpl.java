@@ -10,7 +10,7 @@ import java.util.Iterator;
 
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 
-/** TODO: Brief description of the purpose of this type and its relation to other types. */
+/** TODO(janf): Brief description of the purpose of this type and its relation to other types. */
 public class ECImpl extends StripingPolicyImpl {
     protected final int stripe_size_in_bytes;
 

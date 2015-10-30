@@ -130,24 +130,15 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
                 request, null, callback);
     }
 
-    private void processPrepareOp(StageRequest method) {
-        final ECCallback callback = (ECCallback) method.getCallback();
+    public void processPrepareOp(StageRequest method) {
+        final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final String fileId = credentials.getXcap().getFileId();
             final XLocations loc = (XLocations) method.getArgs()[1];
-            final Long objVersion = (Long) method.getArgs()[3];
-            final Operation op = (Operation) method.getArgs()[4];
 
             StripedFileState state = getState(credentials, loc, false, false);
-            /*
-             * check if request must fail
-             * check what kind of operation should be prepared
-             * collect ops in state if we are master or intend to become master but limit amount of pending ops
-             * determine new version for update or determine version to read
-             *
-             */
+            processPrepareOp(state, method);
 
             callback.success(1);
         } catch (Exception ex) {
