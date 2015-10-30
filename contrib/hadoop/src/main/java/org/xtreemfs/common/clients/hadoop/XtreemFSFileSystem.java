@@ -85,6 +85,10 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
+        if (defaultVolumeName == null) {
+            throw new IOException("You have to specify a default volume via "
+                    + "xtreemfs.defaultVolumeName.");
+        }
         if(Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Default Volume: '%s'",
                     defaultVolumeName);
