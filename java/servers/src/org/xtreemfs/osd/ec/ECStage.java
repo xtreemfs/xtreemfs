@@ -169,25 +169,10 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
                 break;
             }
             case STAGEOP_CLOSE:  break;
-            case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
-            case STAGEOP_PREPAREOP: {
-                externalRequestsInQueue.decrementAndGet();
-                processPrepareOp(method);
-                break;
-            }
-            case STAGEOP_INTERNAL_AUTHSTATE:  break;
-            case STAGEOP_LEASE_STATE_CHANGED:  break;
-            case STAGEOP_INTERNAL_OBJFETCHED:  break;
             case STAGEOP_INTERNAL_STATEAVAIL:  break;
             case STAGEOP_INTERNAL_DELETE_COMPLETE:  break;
-            case STAGEOP_INTERNAL_MAXOBJ_AVAIL:  break;
-            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE:  break;
-            case STAGEOP_FORCE_RESET:  break;
             case STAGEOP_GETSTATUS:  break;
-            case STAGEOP_SETVIEW:  break;
-            case STAGEOP_INVALIDATEVIEW:  break;
-            case STAGEOP_FETCHINVALIDATED:  break;
-            default : throw new IllegalArgumentException("no such stageop");
+            default : super.processMethod(method);
         }
     }
 
