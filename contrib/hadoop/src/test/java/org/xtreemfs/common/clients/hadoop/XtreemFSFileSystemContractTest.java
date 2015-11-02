@@ -19,6 +19,10 @@ import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
+/**
+ * Executes file system contract tests with XtreemFS initialized from
+ * <code>xtreemfs.defaultVolumeName</code>.
+ */
 public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
 
     protected final Client client;
@@ -36,11 +40,11 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
 
     public XtreemFSFileSystemContractTest() {
         this("xtreemfs://localhost:32638", "xtreemfs://localhost:32638",
-                "xtreemfs://localhost:32636");
+                "xtreemfs://localhost:32636", true);
     }
 
     protected XtreemFSFileSystemContractTest(String fileSystemUri,
-            String dirUri, String mrcUri) {
+            String dirUri, String mrcUri, boolean setXtreemFSDefaultVolumeName) {
         this.fileSystemPath = new Path(fileSystemUri);
         this.dirPath = new Path(dirUri);
         this.mrcPath = new Path(mrcUri);
@@ -48,6 +52,11 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         Configuration.addDefaultResource(XtreemFSFileSystemContractTest.class
                 .getClassLoader().getResource("core-site.xml").getPath());
         conf = new Configuration();
+        conf.set("xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
+                + "/cpp/build");
+        if (setXtreemFSDefaultVolumeName) {
+            conf.set("xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
+        }
 
         userCredentials = UserCredentials.newBuilder().setUsername("test")
                 .addGroups("test").build();
@@ -66,9 +75,6 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         client.createVolume(mrcPath.toUri().getAuthority(), RPCAuthentication.authNone,
                 userCredentials, UNUSED_VOLUME_NAME);
 
-        conf.set("test.xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
-        conf.set("test.xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
-                + "/cpp/build");
         fs = FileSystem.get(fileSystemPath.toUri(), conf);
 
         super.setUp();

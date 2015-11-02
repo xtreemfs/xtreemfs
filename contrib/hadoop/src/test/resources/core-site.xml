@@ -21,12 +21,4 @@
         <name>xtreemfs.jni.enabled</name>
         <value>true</value>
     </property>
-    <property>
-        <name>xtreemfs.jni.libraryPath</name>
-        <value>${test.xtreemfs.jni.libraryPath}</value>
-    </property>
-    <property>
-        <name>xtreemfs.defaultVolumeName</name>
-        <value>${test.xtreemfs.defaultVolumeName}</value>
-    </property>
 </configuration>
