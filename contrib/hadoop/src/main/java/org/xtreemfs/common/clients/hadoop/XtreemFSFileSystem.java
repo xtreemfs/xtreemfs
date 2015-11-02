@@ -126,6 +126,7 @@ public class XtreemFSFileSystem extends FileSystem {
                     String[] splitPath = defaultFSUri.getPath().split("/");
                     if (splitPath.length > 1) {
                         defaultVolumeName = splitPath[1];
+                        uri = defaultFSUri;
                     } else {
                         Logging.logMessage(Logging.LEVEL_WARN, this, "The" +
                                 " XtreemFS default file system in 'core-site.xml'"

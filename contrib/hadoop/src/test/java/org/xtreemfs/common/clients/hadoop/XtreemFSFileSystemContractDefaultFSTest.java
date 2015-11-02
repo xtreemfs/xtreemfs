@@ -14,8 +14,14 @@ public class XtreemFSFileSystemContractDefaultFSTest extends XtreemFSFileSystemC
 
     public XtreemFSFileSystemContractDefaultFSTest() {
         super("/path/to/file", "xtreemfs://localhost:32638",
-                "xtreemfs://localhost:32636", false);
+                "xtreemfs://localhost:32636");
+        setXtreemFSDefaultVolumeName = false;
         conf.set("fs.defaultFS", "xtreemfs://localhost:32638/" + DEFAULT_VOLUME_NAME);
+        
+        // When fs.defaultFS is set, FileSystem.get(...) pre-processes the the file
+        // URI to include it. So explicitly instantiate XtreemFSFileSystem to test
+        // its fallback mechanisms.
+        useFSFactory = false;
     }
 
 }

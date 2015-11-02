@@ -37,14 +37,20 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
             UNUSED_VOLUME_NAME = DEFAULT_VOLUME_NAME + "_";
 
     protected final Configuration conf;
+    
+    // whether to set xtreemfs.defaultVolumeName during setUp, defaults to true
+    protected boolean setXtreemFSDefaultVolumeName;
+    
+    // whether to instantiate the file system using FileSystem.get, defaults to true
+    protected boolean useFSFactory;
 
     public XtreemFSFileSystemContractTest() {
         this("xtreemfs://localhost:32638", "xtreemfs://localhost:32638",
-                "xtreemfs://localhost:32636", true);
+                "xtreemfs://localhost:32636");
     }
 
     protected XtreemFSFileSystemContractTest(String fileSystemUri,
-            String dirUri, String mrcUri, boolean setXtreemFSDefaultVolumeName) {
+            String dirUri, String mrcUri) {
         this.fileSystemPath = new Path(fileSystemUri);
         this.dirPath = new Path(dirUri);
         this.mrcPath = new Path(mrcUri);
@@ -52,17 +58,15 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         Configuration.addDefaultResource(XtreemFSFileSystemContractTest.class
                 .getClassLoader().getResource("core-site.xml").getPath());
         conf = new Configuration();
-        conf.set("xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
-                + "/cpp/build");
-        if (setXtreemFSDefaultVolumeName) {
-            conf.set("xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
-        }
 
         userCredentials = UserCredentials.newBuilder().setUsername("test")
                 .addGroups("test").build();
 
         client = ClientFactory.createClient(ClientFactory.ClientType.NATIVE,
                 dirPath.toUri().getAuthority(), userCredentials, null, new Options());
+        
+        setXtreemFSDefaultVolumeName = true;
+        useFSFactory = true;
     }
 
     @Override
@@ -74,8 +78,19 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
                 userCredentials, DEFAULT_VOLUME_NAME);
         client.createVolume(mrcPath.toUri().getAuthority(), RPCAuthentication.authNone,
                 userCredentials, UNUSED_VOLUME_NAME);
+        
+        conf.set("xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
+                + "/cpp/build");
+        if (setXtreemFSDefaultVolumeName) {
+            conf.set("xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
+        }
 
-        fs = FileSystem.get(fileSystemPath.toUri(), conf);
+        if (useFSFactory) {
+            fs = FileSystem.get(fileSystemPath.toUri(), conf);
+        } else {
+            fs = new XtreemFSFileSystem();
+            fs.initialize(fileSystemPath.toUri(), conf);
+        }
 
         super.setUp();
     }

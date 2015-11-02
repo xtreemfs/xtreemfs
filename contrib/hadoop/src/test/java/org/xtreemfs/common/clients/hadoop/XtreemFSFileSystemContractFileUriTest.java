@@ -14,7 +14,8 @@ public class XtreemFSFileSystemContractFileUriTest extends XtreemFSFileSystemCon
 
     public XtreemFSFileSystemContractFileUriTest() {
         super("xtreemfs://localhost:32638/" + DEFAULT_VOLUME_NAME + "/path/to/file",
-                "xtreemfs://localhost:32638", "xtreemfs://localhost:32636", false);
+                "xtreemfs://localhost:32638", "xtreemfs://localhost:32636");
+        setXtreemFSDefaultVolumeName = false;
     }
 
 }
