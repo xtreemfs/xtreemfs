@@ -86,9 +86,54 @@ public class XtreemFSFileSystem extends FileSystem {
 
         String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
         if (defaultVolumeName == null) {
-            throw new IOException("You have to specify a default volume via "
-                    + "xtreemfs.defaultVolumeName.");
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "The preferred way of specifying the XtreemFS default volume"
+                            + " is via xtreemfs.defaultVolumeName. Trying to"
+                            + " extract the default volume from file URI '%s'.",
+                    uri.toString());
+            if (uri.getAuthority() != null) {
+                // if the authority is set on this file URI, then the path
+                // starts with a slash followed by the default volume
+                defaultVolumeName = uri.getPath().split("/")[1];
+            } else {
+                Logging.logMessage(Logging.LEVEL_WARN, this, "Extracting the"
+                        + " default volume from file URI '%s', failed. Trying"
+                        + " to obtain it from the default file system URI in"
+                        + " 'core-site.xml' if it  is an XtreemFS file system.",
+                        uri.toString());
+                String defaultFS = conf.get(FS_DEFAULT_NAME_KEY,
+                        conf.get("fs.default.name"));
+                if (defaultFS != null) {
+                    URI defaultFSUri = URI.create(defaultFS);
+                    if ("xtreemfs".equals(defaultFSUri.getScheme())
+                            && defaultFSUri.getPath() != null) {
+                        String[] splitPath = defaultFSUri.getPath().split("/");
+                        if (splitPath.length > 1) {
+                            defaultVolumeName = splitPath[1];
+                        } else {
+                            Logging.logMessage(Logging.LEVEL_WARN, this, "The" +
+                                    " XtreemFS default file system in 'cire-site.xml'"
+                                    + " does not specify a default volume.");
+                        }
+                    } else {
+                        Logging.logMessage(Logging.LEVEL_WARN, this, "The default"
+                                + " file system in 'core-site.xml' is not an"
+                                + " XtreemFS file system.");
+                    }
+                } else {
+                    Logging.logMessage(Logging.LEVEL_WARN, this, "No default file"
+                            + " system specified in 'core-site.xml'.");
+                }
+            }
         }
+        
+        if (defaultVolumeName == null) {
+            throw new IOException("Could not obtain XtreemFS default"
+                    + " volume name from either xtreemfs.defaultVolumeName"
+                    + ", file URI '" + uri.toString() + "' or the default"
+                    + " file system URI.");
+        }
+        
         if(Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Default Volume: '%s'",
                     defaultVolumeName);
