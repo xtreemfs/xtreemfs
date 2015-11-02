@@ -3185,7 +3185,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	\begin{enumerate}
 	\item The first two properties are required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access
 	XtreemFS by the Hadoop binary using the \textit{fs} argument.
-	\item The next property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here named \mbox{\textit{volumeName}}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
+	\item The next property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here named \mbox{\textit{volumeName}}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS. You can also specify the default volume as part of the \texttt{fs.defaultFS} configuration parameter, or always use fully qualified file URIs (see below).
 	\item The fourth property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
@@ -3390,12 +3390,12 @@ For Hadoop 2.x you have to add the following property to the \textit{etc/hadoop/
   \begin{verbatim}
   <property>
     <name>fs.defaultFS</name>
-    <value>xtreemfs://<dir-address>:<dir-port></value>
+    <value>xtreemfs://<dir-address>:<dir-port>/<volume></value>
     <description>Address for the DIR.</description>
   </property>
   \end{verbatim}
 
-  in your \textit{core-site.xml} to define XtreemFS as the default file system when no scheme is given in the file URI.
+  in your \textit{core-site.xml} to define XtreemFS as the default file system and the volume to use when no scheme is given in the file URI.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
