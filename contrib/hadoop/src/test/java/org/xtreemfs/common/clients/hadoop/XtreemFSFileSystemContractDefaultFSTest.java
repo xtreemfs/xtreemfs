@@ -13,7 +13,8 @@ package org.xtreemfs.common.clients.hadoop;
 public class XtreemFSFileSystemContractDefaultFSTest extends XtreemFSFileSystemContractTest {
 
     public XtreemFSFileSystemContractDefaultFSTest() {
-        super("/", "xtreemfs://localhost:32638", "xtreemfs://localhost:32636", false);
+        super("/path/to/file", "xtreemfs://localhost:32638",
+                "xtreemfs://localhost:32636", false);
         conf.set("fs.defaultFS", "xtreemfs://localhost:32638/" + DEFAULT_VOLUME_NAME);
     }
 
