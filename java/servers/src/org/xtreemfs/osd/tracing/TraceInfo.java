@@ -8,7 +8,6 @@
 
 package org.xtreemfs.osd.tracing;
 
-import com.sun.jdmk.tools.mibgen.Trace;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
