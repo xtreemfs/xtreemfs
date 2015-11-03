@@ -6,19 +6,19 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'full' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'short-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     # contains only multi-threaded benchmarks. set option "-t" accordingly.
     'ssd' : {
@@ -39,47 +39,53 @@ TestSets = {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     # This configuration is used for manual test environment set-ups (option -e).
     'manual' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': True,
+                'snmp': True
     },
     # This configuration is used for manual test environment set-ups with SSL enabled (option -f).
     'manual-ssl' : {
                 'ssl': True,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': True,
+                'snmp': True
     },
     # This configuration is used to run the tests on the Travis CI build environment.
     'travis' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-junit' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-cpp' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
     'travis-valgrind' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
-                'snmp': False,
+                'snmp': False
     },
+    'travis-contrib' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    }
 }
 
 VolumeConfigs = {
@@ -148,7 +154,7 @@ VolumeConfigs = {
                     'ronly_factor': 0,
                     'mount_options': [ '--max-tries=240', '--max-read-tries=240', '--max-write-tries=240' ],
                     'mkfs_options':  [ '--max-tries=10']
-                },
+                }
 }
 
 Tests = [
@@ -329,6 +335,12 @@ Tests = [
         'file': 'system_chstatus_test.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl' ]
+    },
+    {
+        'name': 'hadoop adapter junit tests',
+        'file': 'hadoop_junit_tests.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'full', 'travis-contrib' ]
     },
     {
         'name': 'Coverity Scan Test',

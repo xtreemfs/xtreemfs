@@ -3127,7 +3127,7 @@ For Hadoop you have so set the following environment variable:
       \end{verbatim}
    \end{itemize}
 
-\item Configure Hadoop to use XtreemFS instead of HDFS:
+\item Configure Hadoop to understand XtreemFS file URIs (\texttt{xtreemfs://...}) in addition to HDFS file URIs (\texttt{hdfs://...}):
 	\begin{enumerate}
 	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package.
 	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 2.x, or to symlink it there.
@@ -3158,14 +3158,12 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <description>
         The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
     </description>
-</property>
-
+  </property>
+  
   <property>
-    <name>fs.default.name</name>
-    <value>xtreemfs://localhost:32638/defaultVolumeName</value>
-    <description>
-        Address for the DIR with the default volume name to use.
-    </description>
+    <name>xtreemfs.defaultVolumeName</name>
+    <value>volumeName</value>
+    <description>Name of the default volume to use within XtreemFS.</description>
   </property>
 
   <property>
@@ -3173,19 +3171,25 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <value>131072</value>
     <description>Default buffer size when accessing files.</description>
   </property>
+  
+  <property>
+    <name>xtreemfs.rename.overwrite</name>
+    <value>false</value>
+    <description>
+      Overwrite existing files on rename.
+    </description>
+  </property>
 
 </configuration>
 	\end{verbatim}
 	\begin{enumerate}
-	\item The first property is required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access
+	\item The first two properties are required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access
 	XtreemFS by the Hadoop binary using the \textit{fs} argument.
-	\item The next property makes Hadoop use the DIR instead of a
-	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at
-	\textit{localhost:32638}.
-	It also specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
-	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
+	\item The next property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here named \mbox{\textit{volumeName}}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS. You can also specify the default volume as part of the \texttt{fs.defaultFS} configuration parameter, or always use fully qualified file URIs (see below).
+	\item The fourth property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
+	\item Set the fifth property to true if an existing file should be overwritten when another file is renamed to the existing file's path. Defaults to false for Hadoop FileSystem Contract conformance; for POSIX conformance, set this to true.
 	\end{enumerate}
 
   Hint: By default Hadoop uses the current user as user ID and \textit{users} as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties:
@@ -3380,6 +3384,18 @@ For Hadoop 2.x you have to add the following property to the \textit{etc/hadoop/
   </property>
    \end{verbatim}
 \item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' (Hadoop 1.x) or the ResourceManager and Nodemanager by running '\textit{sbin/start-yarn.sh} (Hadoop 2.x) from within the Hadoop root-directory.
+
+\item Be sure to use fully qualified file URIs in your programs, i.e.\\\texttt{xtreemfs://<dir-host>:<dir-port>/<volume>/path/to/file}. Alternatively, specify:
+
+  \begin{verbatim}
+  <property>
+    <name>fs.defaultFS</name>
+    <value>xtreemfs://<dir-address>:<dir-port>/<volume></value>
+    <description>Address for the DIR.</description>
+  </property>
+  \end{verbatim}
+
+  in your \textit{core-site.xml} to define XtreemFS as the default file system and the volume to use when no scheme is given in the file URI.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
