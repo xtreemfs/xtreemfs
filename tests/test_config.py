@@ -212,7 +212,7 @@ Tests = [
         'name': 'DBench',
         'file': '13_dbench.py',
         'VolumeConfigs': [ 'regular', 'directio', 'striped2', 'nomdcache' ],
-        'TestSets': [ 'full' ]
+        'TestSets': [ ]
     },
     {
         'name': 'make xtreemfs',
@@ -279,13 +279,13 @@ Tests = [
         'name': 'hadoop test',
         'file': 'hadoop_test.sh',
         'VolumeConfigs': ['regular'],
-        'TestSets': [ 'full' ] 
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'hadoop2 test',
         'file': 'hadoop2_test.sh',
         'VolumeConfigs': ['regular'],
-        'TestSets': [ 'full' ] 
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'hadoop with ssl test',
