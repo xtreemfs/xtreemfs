@@ -13,13 +13,13 @@ addons:
   apt:
     packages:
       - libboost-all-dev
-      - libfuse-dev 
-      - fuse 
+      - libfuse-dev
+      - fuse
       - libssl-dev
       - libattr1-dev
       - make
       - cmake
-      - automake 
+      - automake
       - python
       - valgrind
       - net-tools
@@ -29,7 +29,7 @@ addons:
       description: Distributed Fault-Tolerant File System http://www.xtreemfs.org
     notification_email: xtreemfs-test@googlegroups.com
     build_command_prepend: make distclean
-    build_command: make
+    build_command: BUILD_CLIENT_TESTS=true make client_debug server jni-client
     branch_pattern: coverity_scan
 
 
