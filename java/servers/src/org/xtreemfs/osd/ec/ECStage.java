@@ -89,6 +89,10 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         return files.get(fileId);
     }
 
+    protected RedundantFileState removeState(String fileId) {
+        return files.remove(fileId);
+    }
+
     private StripedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,
                                          boolean invalidated) throws IOException {
 

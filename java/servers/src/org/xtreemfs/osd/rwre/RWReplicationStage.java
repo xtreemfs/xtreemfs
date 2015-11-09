@@ -506,21 +506,12 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
     }
 
-    private void closeFileState(String fileId, boolean returnLease) {
-        ReplicatedFileState state = files.remove(fileId);
-        if (state != null) {
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
-            }
-            state.getPolicy().closeFile();
-            if (state.getPolicy().requiresLease())
-                closeFleaseCell(state.getPolicy().getCellId(), returnLease);
-            cellToFileId.remove(state.getPolicy().getCellId());
-        }
-    }
-
     protected RedundantFileState getState(String fileId) {
         return files.get(fileId);
+    }
+
+    protected RedundantFileState removeState(String fileId) {
+        return files.remove(fileId);
     }
 
     private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,

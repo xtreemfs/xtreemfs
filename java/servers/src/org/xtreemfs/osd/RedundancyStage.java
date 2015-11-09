@@ -145,6 +145,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
     protected abstract RedundantFileState getState(String fileId);
 
+    protected abstract RedundantFileState removeState(String fileId);
+
     @Override
     public void start() {
         masterEpochStage.start();
