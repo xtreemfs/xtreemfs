@@ -48,7 +48,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 /**
  * 
@@ -490,7 +489,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
             case STAGEOP_FORCE_RESET: processForceReset(method); break;
             case STAGEOP_GETSTATUS: processGetStatus(method); break;
-            case STAGEOP_SETVIEW: processSetFleaseView(method); break;
             case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
             case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
             default : super.processMethod(method);
@@ -669,47 +667,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             ex.printStackTrace();
             callback.statusComplete(null);
         }
-    }
-
-    /**
-     * Set the viewId associated with the fileId/cellId. This will close open cells.
-     */
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
-    }
-
-    private void processSetFleaseView(StageRequest method) {
-        final Object[] args = method.getArgs();
-        final String fileId = (String) args[0];
-        final ASCIIString cellId = (ASCIIString) args[1];
-        final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
-
-        int viewId;
-        if (versionState.getInvalidated()) {
-            viewId = FleaseMessage.VIEW_ID_INVALIDATED;
-        } else {
-            viewId = versionState.getVersion();
-        }
-
-        // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
-        ReplicatedFileState state = files.get(fileId);
-        if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
-            closeFileState(fileId, true);
-        }
-
-        setFleaseViewId(cellId, viewId, new FleaseListener() {
-
-            @Override
-            public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
-                                       long masterEpochNumber) {
-                // Ignore because #setFleaseView is never used with a callback.
-            }
-
-            @Override
-            public void proposalFailed(ASCIIString cellId, Throwable cause) {
-                // Ignore because proposalFailed will never be called in #setViewId
-            }
-        });
     }
 
     /**

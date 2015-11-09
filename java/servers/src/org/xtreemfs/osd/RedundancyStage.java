@@ -37,8 +37,9 @@ import org.xtreemfs.osd.rwre.RetryException;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.RedundantFileState.LocalState;
+import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -631,6 +632,60 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
+    /**
+     * Set the viewId associated with the fileId/cellId. This will close open cells.
+     */
+    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
+        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
+    }
+
+    private void processSetFleaseView(StageRequest method) {
+        final Object[] args = method.getArgs();
+        final String fileId = (String) args[0];
+        final ASCIIString cellId = (ASCIIString) args[1];
+        final XLocSetVersionState versionState = (XLocSetVersionState) args[2];
+
+        int viewId;
+        if (versionState.getInvalidated()) {
+            viewId = FleaseMessage.VIEW_ID_INVALIDATED;
+        } else {
+            viewId = versionState.getVersion();
+        }
+
+        // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
+        RedundantFileState state = getState(fileId);
+        if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
+            closeFileState(fileId, true);
+        }
+
+        setFleaseViewId(cellId, viewId, new FleaseListener() {
+
+            @Override
+            public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
+                                       long masterEpochNumber) {
+                // Ignore because #setFleaseView is never used with a callback.
+            }
+
+            @Override
+            public void proposalFailed(ASCIIString cellId, Throwable cause) {
+                // Ignore because proposalFailed will never be called in #setViewId
+            }
+        });
+    }
+
+    protected void closeFileState(String fileId, boolean returnLease) {
+        RedundantFileState state = removeState(fileId);
+        if (state != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
+            }
+            state.getPolicy().closeFile();
+            if (state.getPolicy().requiresLease())
+                closeFleaseCell(state.getPolicy().getCellId(), returnLease);
+            cellToFileId.remove(state.getPolicy().getCellId());
+        }
+    }
+
     public void closeFleaseCell(ASCIIString cellId, boolean returnedLease) {
         fleaseStage.closeCell(cellId, returnedLease);
     }
@@ -694,6 +749,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 processPrepareOp(method);
                 break;
             }
+            case STAGEOP_SETVIEW: processSetFleaseView(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
     }
