@@ -89,14 +89,16 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     private final OSDServiceClient              fleaseOsdClient;
     private final FleaseStage                   fleaseStage;
     protected final ASCIIString                 localID;
+    protected final Category                    logCategory;
     private final OSDRequestDispatcher          master;
     private final FleaseMasterEpochStage        masterEpochStage;
     protected final OSDServiceClient            osdClient;
     private static final int                    MAX_EXTERNAL_REQUESTS_IN_Q = 250;
     private static final int                    MAX_PENDING_PER_FILE       = 10;
 
-    public RedundancyStage(String name, OSDRequestDispatcher master, SSLOptions sslOpts, int queueCapacity) throws IOException {
+    public RedundancyStage(String name, OSDRequestDispatcher master, SSLOptions sslOpts, int queueCapacity, Category logCategory) throws IOException {
         super(name, queueCapacity);
+        this.logCategory = logCategory;
 
         externalRequestsInQueue = new AtomicInteger(0);
         cellToFileId = new HashMap<ASCIIString, String>();
@@ -199,7 +201,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
             } else {
                 file.setCellOpen(true);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                             "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
                             file.getState(), LocalState.WAITING_FOR_LEASE);
                 }
@@ -248,7 +250,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 doReset(file, ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                             "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
                             file.getState(), LocalState.PRIMARY);
                 }
@@ -268,7 +270,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         assert (!file.isLocalIsPrimary());
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                     "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
                     LocalState.BACKUP);
         }
@@ -286,7 +288,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         if (file.isInvalidatedReset()) {
             // The AuthState has been set and the file is up to date.
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                         "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
                         file.getState(), LocalState.INVALIDATED);
             }
@@ -304,18 +306,18 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
         if (file.getState() == LocalState.RESET) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "file %s is already in RESET",
+                Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this, "file %s is already in RESET",
                         file.getFileId());
             return;
         }
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                     "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
                     LocalState.RESET);
         }
         file.setState(LocalState.RESET);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                     "(R:%s) replica RESET started: %s (update objVer=%d)", localID, file.getFileId(), updateObjVer);
         }
 
@@ -345,11 +347,11 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
             if (error == null) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                             "(R:%s) lease change event: %s, %s", localID, cellId, lease);
                 }
             } else {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) lease error in cell %s: %s",
+                Logging.logMessage(Logging.LEVEL_WARN, logCategory, this, "(R:%s) lease error in cell %s: %s",
                         localID, cellId, error);
             }
 
@@ -374,7 +376,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                     if (oldState == LocalState.PRIMARY
                             && lease.getLeaseHolder() == null
                             && lease.getLeaseTimeout_ms() == 0) {
-                        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                        Logging.logMessage(Logging.LEVEL_ERROR, logCategory, this,
                                 "(R:%s) was primary, lease error in cell %s, restarting replication: %s", localID,
                                 cellId, lease, error);
                         failed(state,
@@ -469,12 +471,12 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
             final Long maxObjVersion = (Long) method.getArgs()[1];
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: "
+                Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this, "(R:%s) max obj avail for file: "
                         + fileId + " max=" + maxObjVersion, localID);
 
             RedundantFileState state = getState(fileId);
             if (state == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, logCategory, this,
                         "received maxObjAvail event for unknown file: %s", fileId);
                 return;
             }
@@ -483,7 +485,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 state.getPolicy().setLocalObjectVersion(maxObjVersion);
                 doOpen(state);
             } else {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                Logging.logMessage(Logging.LEVEL_ERROR, logCategory, this,
                         "LocalState is %s instead of INITIALIZING, maxObjectVersion=%d", state.getState().name(),
                         maxObjVersion);
                 return;
@@ -518,7 +520,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                     case RESET:
                     case OPEN: {
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
                                     "enqeue update for %s (state is %s)", fileId, state.getState());
                         }
                         if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
@@ -543,7 +545,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
                 // does this internal update have an acceptable version
                 if (!state.getPolicy().acceptRemoteUpdate(objVersion)) {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
+                    Logging.logMessage(Logging.LEVEL_WARN, logCategory, this,
                             "received outdated object version %d for file %s", objVersion, fileId);
                     callback.failed(ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                             "outdated object version for update rejected"));
@@ -553,7 +555,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 // or does it need to be reset first
                 boolean needsReset = state.getPolicy().onRemoteUpdate(objVersion, state.getState());
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s needs reset: %s", fileId,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this, "%s needs reset: %s", fileId,
                             needsReset);
                 }
                 if (needsReset) {
@@ -668,7 +670,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     public void failed(RedundantFileState file, ErrorResponse ex, String methodName) {
-        Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
+        Logging.logMessage(Logging.LEVEL_WARN, logCategory, this,
                 "(R:%s) replica for file %s failed (in method: %s): %s", localID, file.getFileId(), methodName,
                 ErrorUtils.formatError(ex));
         file.setPrimaryReset(false);

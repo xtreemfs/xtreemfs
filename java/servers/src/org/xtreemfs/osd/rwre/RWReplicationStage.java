@@ -66,7 +66,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
             throws IOException {
-        super("RWReplSt", master, sslOpts, maxRequestsQueueLength);
+        super("RWReplSt", master, sslOpts, maxRequestsQueueLength, Category.replication);
         this.master = master;
         files = new HashMap<String, ReplicatedFileState>();
         numObjsInFlight = 0;

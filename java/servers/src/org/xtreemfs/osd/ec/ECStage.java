@@ -10,30 +10,16 @@ package org.xtreemfs.osd.ec;
 
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
-import org.xtreemfs.foundation.buffer.ASCIIString;
-import org.xtreemfs.foundation.buffer.BufferPool;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.*;
-import org.xtreemfs.foundation.flease.comm.FleaseMessage;
-import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
-import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.*;
-import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
-import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 
@@ -89,7 +75,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     public ECStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
             throws IOException {
-        super("ECSt", master, sslOpts, maxRequestsQueueLength);
+        super("ECSt", master, sslOpts, maxRequestsQueueLength, Category.ec);
         this.master = master;
         files = new HashMap<String, StripedFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
@@ -188,7 +174,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         StripedFileState state = files.get(fileId);
         if (state == null) {
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this, "open file: " + fileId);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "open file: " + fileId);
             // "open" file
             state = new StripedFileState(fileId, loc, master.getConfig().getUUID(), osdClient);
             files.put(fileId, state);
