@@ -82,18 +82,18 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
     public static final int STAGEOP_FETCHINVALIDATED          = 23;
 
-    public final Map<ASCIIString, String>               cellToFileId;
-    public final RPCNIOSocketClient                     client;
-    public final AtomicInteger                          externalRequestsInQueue;
-    private final RPCNIOSocketClient                    fleaseClient;
-    private final OSDServiceClient                      fleaseOsdClient;
-    private final FleaseStage                           fleaseStage;
-    public final ASCIIString                            localID;
-    private final OSDRequestDispatcher                  master;
-    private final FleaseMasterEpochStage                masterEpochStage;
-    private static final int                            MAX_EXTERNAL_REQUESTS_IN_Q = 250;
-    private static final int                            MAX_PENDING_PER_FILE       = 10;
-    public final OSDServiceClient                       osdClient;
+    protected final Map<ASCIIString, String>    cellToFileId;
+    protected final RPCNIOSocketClient          client;
+    protected final AtomicInteger               externalRequestsInQueue;
+    private final RPCNIOSocketClient            fleaseClient;
+    private final OSDServiceClient              fleaseOsdClient;
+    private final FleaseStage                   fleaseStage;
+    protected final ASCIIString                 localID;
+    private final OSDRequestDispatcher          master;
+    private final FleaseMasterEpochStage        masterEpochStage;
+    protected final OSDServiceClient            osdClient;
+    private static final int                    MAX_EXTERNAL_REQUESTS_IN_Q = 250;
+    private static final int                    MAX_PENDING_PER_FILE       = 10;
 
     public RedundancyStage(String name, OSDRequestDispatcher master, SSLOptions sslOpts, int queueCapacity) throws IOException {
         super(name, queueCapacity);

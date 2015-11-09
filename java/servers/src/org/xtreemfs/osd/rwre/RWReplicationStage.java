@@ -58,17 +58,11 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
 
 
-    private final HashMap<String, ReplicatedFileState>   files;
-    private int                                    numObjsInFlight;
-
-    private static final int                       MAX_OBJS_IN_FLIGHT         = 10;
-
-    private static final int                       MAX_PENDING_PER_FILE       = 10;
-
-
-    private final Queue<ReplicatedFileState>       filesInReset;
-
-    private final OSDRequestDispatcher             master;
+    private final HashMap<String, ReplicatedFileState>  files;
+    private int                                         numObjsInFlight;
+    private final Queue<ReplicatedFileState>            filesInReset;
+    private final OSDRequestDispatcher                  master;
+    private static final int                            MAX_OBJS_IN_FLIGHT         = 10;
 
     public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
             throws IOException {
@@ -102,7 +96,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 null);
     }
 
-    void eventMaxObjAvail(String fileId, long maxObjVer, long fileSize, long truncateEpoch, ErrorResponse error) {
+    void eventMaxObjAvail(String fileId, long maxObjVer, ErrorResponse error) {
         this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[] { fileId, maxObjVer, error }, null, null);
     }
 
@@ -217,7 +211,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
             final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
 
-            ReplicatedFileState state = (ReplicatedFileState) files.get(fileId);
+            ReplicatedFileState state = files.get(fileId);
             if (state == null) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                         "(R:%s) set AUTH for unknown file: %s", localID, fileId);
@@ -553,7 +547,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                         @Override
                         public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch,
                                                          ErrorResponse error) {
-                            eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
+                            eventMaxObjAvail(fileId, maxObjNo, error);
                         }
                     });
         }
@@ -564,7 +558,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
             final Long objNo = (Long) method.getArgs()[2];
             final Long objVersion = (Long) method.getArgs()[3];
             final InternalObjectData objData = (InternalObjectData) method.getArgs()[4];
@@ -604,7 +597,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-            final XLocations loc = (XLocations) method.getArgs()[1];
             final Long newFileSize = (Long) method.getArgs()[2];
             final Long newObjVersion = (Long) method.getArgs()[3];
 
@@ -690,10 +682,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     /**
      * Set the viewId associated with the fileId/cellId. This will close open cells.
-     *
-     * @param fileId
-     * @param cellId
-     * @param versionState
      */
     public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
         enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
