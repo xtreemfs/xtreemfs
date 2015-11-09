@@ -56,9 +56,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
  */
 public class RWReplicationStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
-    private final Map<String, ReplicatedFileState> files;
 
 
+    private final HashMap<String, ReplicatedFileState>   files;
     private int                                    numObjsInFlight;
 
     private static final int                       MAX_OBJS_IN_FLIGHT         = 10;
@@ -217,7 +217,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
             final ReplicaStatus localState = (ReplicaStatus) method.getArgs()[2];
             final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
 
-            ReplicatedFileState state = files.get(fileId);
+            ReplicatedFileState state = (ReplicatedFileState) files.get(fileId);
             if (state == null) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                         "(R:%s) set AUTH for unknown file: %s", localID, fileId);
@@ -523,6 +523,10 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 closeFleaseCell(state.getPolicy().getCellId(), returnLease);
             cellToFileId.remove(state.getPolicy().getCellId());
         }
+    }
+
+    protected RedundantFileState getState(String fileId) {
+        return files.get(fileId);
     }
 
     private ReplicatedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,

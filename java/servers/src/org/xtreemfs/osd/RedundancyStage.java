@@ -85,7 +85,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public final Map<ASCIIString, String>               cellToFileId;
     public final RPCNIOSocketClient                     client;
     public final AtomicInteger                          externalRequestsInQueue;
-    private final HashMap<String, RedundantFileState>   files;
     private final RPCNIOSocketClient                    fleaseClient;
     private final OSDServiceClient                      fleaseOsdClient;
     private final FleaseStage                           fleaseStage;
@@ -100,7 +99,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         super(name, queueCapacity);
 
         externalRequestsInQueue = new AtomicInteger(0);
-        files = new HashMap<String, RedundantFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
         this.master = master;
         localID = new ASCIIString(master.getConfig().getUUID().toString());
@@ -141,6 +139,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
         fleaseStage.setLifeCycleListener(master);
     }
+
+    protected abstract RedundantFileState getState(String fileId);
 
     @Override
     public void start() {
@@ -327,7 +327,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public String getPrimary(final String fileId) {
         String primary = null;
 
-        final RedundantFileState fState = files.get(fileId);
+        final RedundantFileState fState = getState(fileId);
 
         if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
             if (fState.getLease().isValid()) {
@@ -355,7 +355,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
             final String fileId = cellToFileId.get(cellId);
             if (fileId != null) {
-                RedundantFileState state = files.get(fileId);
+                RedundantFileState state = getState(fileId);
                 assert (state != null);
 
                 // Ignore any leaseStateChange if the replica is invalidated
@@ -472,7 +472,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) max obj avail for file: "
                         + fileId + " max=" + maxObjVersion, localID);
 
-            RedundantFileState state = files.get(fileId);
+            RedundantFileState state = getState(fileId);
             if (state == null) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
                         "received maxObjAvail event for unknown file: %s", fileId);

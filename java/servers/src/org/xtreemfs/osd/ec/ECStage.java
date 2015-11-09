@@ -23,10 +23,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.FileOperationCallback;
-import org.xtreemfs.osd.OSDRequest;
-import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.RedundancyStage;
+import org.xtreemfs.osd.*;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -177,6 +174,10 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
     }
 
     private void processECWrite(StageRequest method) {
+    }
+
+    protected RedundantFileState getState(String fileId) {
+        return files.get(fileId);
     }
 
     private StripedFileState getState(FileCredentials credentials, XLocations loc, boolean forceReset,
