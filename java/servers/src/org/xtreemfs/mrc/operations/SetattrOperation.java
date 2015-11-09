@@ -125,7 +125,7 @@ public class SetattrOperation extends MRCOperation {
                         "changing owners is restricted to superusers");
 
                 // transfer file space information from old owner to new owner
-                if (!file.isDirectory()) {
+                if (!file.isDirectory() && file.getXLocList() != null) {
                     QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
                             file);
                     master.getMrcVoucherManager().transferOwnerSpace(quotaFileInformation,
