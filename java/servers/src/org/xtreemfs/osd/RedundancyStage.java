@@ -187,8 +187,13 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     void eventLeaseStateChanged(ASCIIString cellId, Flease lease, FleaseException error) {
         this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId, lease, error}, null, null);
     }
+
     void eventViewIdChanged(ASCIIString cellId, int viewId) {
         master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+    }
+
+    protected void eventMaxObjAvail(String fileId, long maxObjVer, ErrorResponse error) {
+        this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[] { fileId, maxObjVer, error }, null, null);
     }
 
     public void doWaitingForLease(final RedundantFileState file) {

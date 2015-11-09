@@ -95,10 +95,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 null);
     }
 
-    void eventMaxObjAvail(String fileId, long maxObjVer, ErrorResponse error) {
-        this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[] { fileId, maxObjVer, error }, null, null);
-    }
-
     public void eventBackupReplicaReset(String fileId, AuthoritativeReplicaState authState, ReplicaStatus localState,
             FileCredentials credentials, XLocations xloc) {
         this.enqueueOperation(STAGEOP_INTERNAL_BACKUP_AUTHSTATE, new Object[]{fileId, authState, localState,

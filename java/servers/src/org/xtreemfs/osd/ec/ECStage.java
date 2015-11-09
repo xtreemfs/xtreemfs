@@ -13,8 +13,10 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.flease.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.*;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 
 import java.io.IOException;
@@ -109,15 +111,15 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
             //state.setInvalidated(invalidated);
             //cellToFileId.put(state.getPolicy().getCellId(), fileId);
 
-            //master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(),
-                    //new InternalGetMaxObjectNoCallback() {
+            master.getStorageStage().internalGetMaxObjectNo(fileId, loc.getLocalReplica().getStripingPolicy(),
+                    new InternalGetMaxObjectNoCallback() {
 
-                        //@Override
-                        //public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch,
-                                                         //ErrorResponse error) {
-                            //eventMaxObjAvail(fileId, maxObjNo, fileSize, truncateEpoch, error);
-                        //}
-                    //});
+                        @Override
+                        public void maxObjectNoCompleted(long maxObjNo, long fileSize, long truncateEpoch,
+                                                         ErrorResponse error) {
+                            eventMaxObjAvail(fileId, maxObjNo, error);
+                        }
+                    });
         }
         return state;
     }
