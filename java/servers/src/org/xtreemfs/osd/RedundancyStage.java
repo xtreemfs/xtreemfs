@@ -67,6 +67,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public static final int STAGEOP_PREPAREOP                 = 5;
     public static final int STAGEOP_TRUNCATE                  = 6;
     public static final int STAGEOP_GETSTATUS                 = 7;
+    public static final int STAGEOP_EC_WRITE                  = 8;
 
     public static final int STAGEOP_INTERNAL_AUTHSTATE        = 10;
     public static final int STAGEOP_INTERNAL_OBJFETCHED       = 11;
