@@ -41,7 +41,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateRecord;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
- *
  * @author bjko
  */
 public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy {
@@ -49,27 +48,26 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     private final OSDServiceClient client;
 
     public CoordinatedReplicaUpdatePolicy(List<ServiceUUID> remoteOSDUUIDs, String localUUID, String fileId,
-            OSDServiceClient client) {
+                                          OSDServiceClient client) {
         super(remoteOSDUUIDs, fileId, localUUID);
         this.client = client;
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) created %s for %s",localUUID,this.getClass().getSimpleName(),cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) created %s for %s", localUUID, this.getClass().getSimpleName(), cellId);
     }
 
     /**
-     *
      * @param operation
      * @return number of external acks required for an operation (majority minus local replica).
      */
     public abstract int getNumRequiredAcks(Operation operation);
 
     public abstract boolean backupCanRead();
-   
+
 
     @Override
     public void closeFile() {
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) closed %s for %s",localUUID,this.getClass().getSimpleName(),cellId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) closed %s for %s", localUUID, this.getClass().getSimpleName(), cellId);
     }
 
     @Override
@@ -85,7 +83,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         final int maxErrors = numRequests - numAcksRequired;
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) fetching replica state for %s from %d replicas (majority: %d), local max: %d",
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) fetching replica state for %s from %d replicas (majority: %d), local max: %d",
                     localUUID, fileId, numRequests, numAcksRequired, this.localObjVersion);
         }
 
@@ -97,7 +95,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                         0);  // maxObjVer = 0 => let the remote OSD assume that we don't have any objects yet. Important to detect wholes (writes not seen by this replica).
             }
         } catch (IOException ex) {
-            callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(),ex));
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString(), ex));
             return;
         }
 
@@ -117,17 +115,17 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             break;
                         }
                     }
-                    assert(osdNum > -1);
+                    assert (osdNum > -1);
                     try {
-                        states[osdNum] = (ReplicaStatus)r.get();
+                        states[osdNum] = (ReplicaStatus) r.get();
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received status response for %s from %s", localUUID, fileId, remoteOSDUUIDs.get(osdNum));
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) received status response for %s from %s", localUUID, fileId, remoteOSDUUIDs.get(osdNum));
                         }
                         numResponses++;
                     } catch (Exception ex) {
                         numErrors++;
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"no status response from %s fro %s due to exception: %s (acks: %d, errs: %d, maxErrs: %d)",
-                                               remoteOSDUUIDs.get(osdNum), fileId, ex.toString(), numResponses, numErrors, maxErrors);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "no status response from %s fro %s due to exception: %s (acks: %d, errs: %d, maxErrs: %d)",
+                                remoteOSDUUIDs.get(osdNum), fileId, ex.toString(), numResponses, numErrors, maxErrors);
                         if (numErrors > maxErrors) {
                             if (!exceptionSent) {
                                 exceptionSent = true;
@@ -155,7 +153,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 if (numResponses == numAcksRequired) {
                     states[states.length - 1] = localReplicaState;
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) received enough status responses for %s",localUUID, fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) received enough status responses for %s", localUUID, fileId);
                     }
                     AuthoritativeReplicaState auth = CalculateAuthoritativeState(states, fileId);
                     final RPCResponseAvailableListener listener2 = new RPCResponseAvailableListener() {
@@ -165,7 +163,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                             r.freeBuffers();
                         }
                     };
-                    
+
                     // TODO(mberlin): Send auth state only to those backups which don't have the latest state.
                     for (int i = 0; i < remoteOSDUUIDs.size(); i++) {
                         try {
@@ -173,10 +171,10 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                                     credentials, credentials.getXcap().getFileId(), auth);
                             r2.registerListener(listener2);
                             if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"sent auth state to backup %s for file %s",remoteOSDUUIDs.get(i), fileId);
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "sent auth state to backup %s for file %s", remoteOSDUUIDs.get(i), fileId);
                             }
                         } catch (Exception ex) {
-                            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"(R:%s) cannot send auth state to backup: %s",localUUID, ex.toString());
+                            Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "(R:%s) cannot send auth state to backup: %s", localUUID, ex.toString());
                         }
                     }
 
@@ -191,7 +189,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
     }
-    
+
     private static final class ObjectMapRecord {
         public long version;
         public List<InetSocketAddress> osds;
@@ -204,23 +202,19 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     /**
      * Calculate the AuthoritativeReplicaState containing information about the latest version of the file's objects and
      * the replicas storing them.
-     * 
-     * @param states
-     *            The states array has to store at index i the ReplicaStatus returned by the replica managed by the OSD
-     *            identified by the UUID stored at position i in the remoteOSDUUIDs list.
-     * @param fileId
-     *            Identifier of the file the AuthoritativeReplicaState is calculated for.
-     * @param localUUID
-     *            Special UUID that is always linked to the last element in the states array.
-     * @param remoteOSDUUIDs
-     *            List of UUIDs that are corresponding to the entries in states.
+     *
+     * @param states         The states array has to store at index i the ReplicaStatus returned by the replica managed by the OSD
+     *                       identified by the UUID stored at position i in the remoteOSDUUIDs list.
+     * @param fileId         Identifier of the file the AuthoritativeReplicaState is calculated for.
+     * @param localUUID      Special UUID that is always linked to the last element in the states array.
+     * @param remoteOSDUUIDs List of UUIDs that are corresponding to the entries in states.
      * @return
      */
     public static AuthoritativeReplicaState CalculateAuthoritativeState(ReplicaStatus[] states, String fileId,
-            String localUUID, List<ServiceUUID> remoteOSDUUIDs) {
+                                                                        String localUUID, List<ServiceUUID> remoteOSDUUIDs) {
         StringBuilder stateStr = new StringBuilder();
-        Map<Long,TruncateRecord> truncateLog = new HashMap<Long, TruncateRecord>();
-        Map<Long,ObjectVersionMapping.Builder> all_objects = new HashMap<Long, Builder>();
+        Map<Long, TruncateRecord> truncateLog = new HashMap<Long, TruncateRecord>();
+        Map<Long, ObjectVersionMapping.Builder> all_objects = new HashMap<Long, Builder>();
         long maxTruncateEpoch = 0;
         long maxObjectVersion = 0;
 
@@ -264,7 +258,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             while (iter.hasNext()) {
                 final Entry<Long, ObjectVersionMapping.Builder> e = iter.next();
                 if (e.getKey() > trec.getLastObjectNumber() &&
-                    e.getValue().getObjectVersion() < trec.getVersion()) {
+                        e.getValue().getObjectVersion() < trec.getVersion()) {
                     iter.remove();
                 }
             }
@@ -321,7 +315,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         final int numAcksRequired = getNumRequiredAcks(Operation.WRITE);
         final int numRequests = remoteOSDUUIDs.size();
         final int maxErrors = numRequests - numAcksRequired;
-        
+
         final RPCResponse[] responses = new RPCResponse[remoteOSDUUIDs.size()];
         final RPCResponseAvailableListener l = getResponseListener(callback, maxErrors, numAcksRequired, fileId, Operation.WRITE);
         try {
@@ -340,7 +334,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) sent update for %s", localUUID, fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) sent update for %s", localUUID, fileId);
     }
 
     @Override
@@ -364,17 +358,17 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
 
         //callback.writeUpdateCompleted(null, null, null);
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) sent truncate update for %s", localUUID, fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) sent truncate update for %s", localUUID, fileId);
     }
 
     protected RPCResponseAvailableListener getResponseListener(final ClientOperationCallback callback,
-            final int maxErrors, final int numAcksRequired, final String fileId, final Operation operation) {
+                                                               final int maxErrors, final int numAcksRequired, final String fileId, final Operation operation) {
 
-        assert(numAcksRequired <= this.remoteOSDUUIDs.size());
+        assert (numAcksRequired <= this.remoteOSDUUIDs.size());
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) new response listener for %s (acks %d, errs %d)",localUUID,fileId,numAcksRequired,maxErrors);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) new response listener for %s (acks %d, errs %d)", localUUID, fileId, numAcksRequired, maxErrors);
 
-        assert(maxErrors >= 0);
+        assert (maxErrors >= 0);
         RPCResponseAvailableListener listener = new RPCResponseAvailableListener() {
             int numAcks = 0;
             int numErrors = 0;
@@ -387,13 +381,13 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                     numAcks++;
                 } catch (Exception ex) {
                     numErrors++;
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"exception for %s/%s (acks: %d, errs: %d, maxErrs: %d)",
-                                           operation, fileId, numAcks, numErrors, maxErrors);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "exception for %s/%s (acks: %d, errs: %d, maxErrs: %d)",
+                            operation, fileId, numAcks, numErrors, maxErrors);
                     if (numErrors > maxErrors) {
                         if (!responseSent) {
                             responseSent = true;
-                            Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"replicated %s FAILED for %s (acks: %d, errs: %d, maxErrs: %d)",
-                                               operation, fileId, numAcks, numErrors, maxErrors);
+                            Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this, "replicated %s FAILED for %s (acks: %d, errs: %d, maxErrs: %d)",
+                                    operation, fileId, numAcks, numErrors, maxErrors);
                             callback.failed(ErrorUtils.getInternalServerError(ex));
                         }
                     }
@@ -404,7 +398,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 if (numAcks == numAcksRequired) {
                     responseSent = true;
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"replicated %s successfull for %s",operation,fileId);
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "replicated %s successfull for %s", operation, fileId);
                     }
                     callback.finished();
                 }
@@ -422,7 +416,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 if (this.localObjVersion == -1) {
                     this.localObjVersion = 0;
                 }
-                assert(this.localObjVersion > -1);
+                assert (this.localObjVersion > -1);
                 tmpObjVer = ++this.localObjVersion;
             } else {
                 tmpObjVer = localObjVersion;
@@ -430,7 +424,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             final long nextObjVer = tmpObjVer;
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"(R:%s) prepared op for %s with objVer %d",localUUID, cellId,nextObjVer);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) prepared op for %s with objVer %d", localUUID, cellId, nextObjVer);
 
             return nextObjVer;
         } else if (currentState == ReplicatedFileState.LocalState.BACKUP) {
@@ -438,15 +432,15 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
                 return this.localObjVersion;
             } else {
                 if ((lease == null) || (lease.isEmptyLease())) {
-                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,"unknown lease state for %s: %s",this.cellId,lease);
-                    throw new RetryException("unknown lease state for cell "+this.cellId+", can't redirect to master. Please retry.");
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "unknown lease state for %s: %s", this.cellId, lease);
+                    throw new RetryException("unknown lease state for cell " + this.cellId + ", can't redirect to master. Please retry.");
                 } else
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) local is backup, redirecting for fileid %s to %s",
-                            localUUID, this.cellId,lease.getLeaseHolder().toString());
-                    throw new RedirectToMasterException(lease.getLeaseHolder().toString());
+                            localUUID, this.cellId, lease.getLeaseHolder().toString());
+                throw new RedirectToMasterException(lease.getLeaseHolder().toString());
             }
         } else {
-            throw new IOException("invalid state: "+currentState);
+            throw new IOException("invalid state: " + currentState);
         }
     }
 
@@ -461,7 +455,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
             localObjVersion = 1;
             return false;
         }
-        
+
         if (objVersion <= localObjVersion) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
                     "Received object version %d, local is %d for file %s",
@@ -471,10 +465,10 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
         if (objVersion > localObjVersion) {
             localObjVersion = objVersion;
         }
-        
+
         return false;
     }
-    
+
     @Override
     public boolean acceptRemoteUpdate(long objVersion) throws IOException {
         return objVersion >= localObjVersion;
@@ -484,7 +478,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     public boolean onPrimary(int masterEpoch) throws IOException {
         //no need to catch up on primary
         if (masterEpoch != FleaseMessage.IGNORE_MASTER_EPOCH) {
-            this.localObjVersion = (long)masterEpoch << 32;
+            this.localObjVersion = (long) masterEpoch << 32;
         }
         return true;
     }

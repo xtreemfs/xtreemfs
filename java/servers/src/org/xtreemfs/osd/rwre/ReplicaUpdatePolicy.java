@@ -36,7 +36,8 @@ public abstract class ReplicaUpdatePolicy {
     protected List<ServiceUUID> remoteOSDUUIDs;
 
     protected final ASCIIString cellId;
-    
+
+    // TODO{janf) splice in verionTree here...would then apply to replicas too...maybe possiblity for concurrent replica updates?
     protected long localObjVersion;
 
     protected final String localUUID;

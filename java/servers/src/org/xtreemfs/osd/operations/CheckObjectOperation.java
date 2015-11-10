@@ -58,16 +58,16 @@ public final class CheckObjectOperation extends OSDOperation {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "object number must be >= 0");
             return;
         }
-        
-        master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                0,StorageLayout.FULL_OBJECT_LENGTH, rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
-                    .getSnapTimestamp() : 0, rq, new ReadObjectCallback() {
 
-            @Override
-            public void readComplete(ObjectInformation result, ErrorResponse error) {
-                step2(rq, args, result, error);
-            }
-        });
+        master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                0, StorageLayout.FULL_OBJECT_LENGTH, rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
+                        .getSnapTimestamp() : 0, rq, new ReadObjectCallback() {
+
+                    @Override
+                    public void readComplete(ObjectInformation result, ErrorResponse error) {
+                        step2(rq, args, result, error);
+                    }
+                });
     }
 
     public void step2(final OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result, ErrorResponse error) {
@@ -97,7 +97,7 @@ public final class CheckObjectOperation extends OSDOperation {
         final long objNo = args.getObjectNumber();
         final long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
         final boolean isLastObjectLocallyKnown = lastKnownObject <= objNo;
-        //check if GMAX must be fetched to determin EOF
+        //check if GMAX must be fetched to determine EOF
         if ((objNo > lastKnownObject) ||
                 (objNo == lastKnownObject) && (result.getData() != null) && (result.getData().remaining() < result.getStripeSize())) {
             try {
@@ -126,7 +126,7 @@ public final class CheckObjectOperation extends OSDOperation {
     }
 
     private void stripedCheckObjectAnalyzeGmax(final OSDRequest rq, final xtreemfs_check_objectRequest args,
-            final ObjectInformation result, RPCResponse[] gmaxRPCs) {
+                                               final ObjectInformation result, RPCResponse[] gmaxRPCs) {
         long maxObjNo = -1;
         long maxTruncate = -1;
 
@@ -155,9 +155,9 @@ public final class CheckObjectOperation extends OSDOperation {
     private void readFinish(OSDRequest rq, xtreemfs_check_objectRequest args, ObjectInformation result, boolean isLastObjectOrEOF) {
 
         InternalObjectData data;
-        data = result.getObjectData(isLastObjectOrEOF,0,result.getStripeSize());
+        data = result.getObjectData(isLastObjectOrEOF, 0, result.getStripeSize());
         if (data.getData() != null) {
-            data.setZero_padding(data.getZero_padding()+data.getData().remaining());
+            data.setZero_padding(data.getZero_padding() + data.getData().remaining());
             BufferPool.free(data.getData());
             data.setData(null);
         }
@@ -165,7 +165,7 @@ public final class CheckObjectOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, InternalObjectData result) {
-        rq.sendSuccess(result.getMetadata(),null);
+        rq.sendSuccess(result.getMetadata(), null);
     }
 
     @Override

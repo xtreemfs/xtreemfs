@@ -168,7 +168,7 @@ public final class ReadOperation extends OSDOperation {
         final long objNo = args.getObjectNumber();
         final long lastKnownObject = Math.max(result.getLastLocalObjectNo(), result.getGlobalLastObjectNo());
         final boolean isLastObjectLocallyKnown = lastKnownObject <= objNo;
-        //check if GMAX must be fetched to determin EOF
+        //check if GMAX must be fetched to determine EOF
         if ((objNo > lastKnownObject) ||
                 (objNo == lastKnownObject) && (result.getData() != null) && (result.getData().remaining() < result.getStripeSize())) {
             try {
