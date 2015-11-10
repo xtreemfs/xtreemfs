@@ -78,7 +78,6 @@ public class Replica {
     /**
      * Provides the responsible OSD for this offset.
      * 
-     * @param objectID
      * @return
      */
     public ServiceUUID getOSDForOffset(long offset) {
