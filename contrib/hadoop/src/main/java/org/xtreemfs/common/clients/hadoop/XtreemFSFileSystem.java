@@ -610,7 +610,17 @@ public class XtreemFSFileSystem extends FileSystem {
                 throw new IOException("Cannot make subdirectory of existing file " + dirString);
             }
             if (isXtreemFSDirectory(dirString, xtreemfsVolume) == false) { // stringPath does not exist, create it
-                xtreemfsVolume.createDirectory(userCredentials, dirString, mode);
+                try {
+                    xtreemfsVolume.createDirectory(userCredentials, dirString, mode);
+                } catch (PosixErrorException e) {
+                    if (e.getPosixError() != POSIXErrno.POSIX_ERROR_EEXIST) {
+                        throw e;
+                    } else {
+                        // don't abort when concurrently creating directories
+                        Logging.logMessage(Logging.LEVEL_WARN, this,
+                                "Directory '%s' has just been created by another process.", dirString);
+                    }
+                }
             }
         }
         if (Logging.isDebug()) {
