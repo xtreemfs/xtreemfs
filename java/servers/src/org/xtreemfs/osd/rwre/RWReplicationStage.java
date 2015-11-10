@@ -73,6 +73,33 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     }
 
+    @Override
+    protected void processMethod(StageRequest method) {
+        switch (method.getStageMethod()) {
+            case STAGEOP_REPLICATED_WRITE: {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedWrite(method);
+                break;
+            }
+            case STAGEOP_TRUNCATE: {
+                externalRequestsInQueue.decrementAndGet();
+                processReplicatedTruncate(method);
+                break;
+            }
+            case STAGEOP_CLOSE: processFileClosed(method); break;
+            case STAGEOP_INTERNAL_AUTHSTATE: processSetAuthoritativeState(method); break;
+            case STAGEOP_INTERNAL_OBJFETCHED: processObjectFetched(method); break;
+            case STAGEOP_INTERNAL_STATEAVAIL: processReplicaStateAvailExecReset(method); break;
+            case STAGEOP_INTERNAL_DELETE_COMPLETE: processDeleteObjectsComplete(method); break;
+            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
+            case STAGEOP_FORCE_RESET: processForceReset(method); break;
+            case STAGEOP_GETSTATUS: processGetStatus(method); break;
+            case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
+            case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
+            default : super.processMethod(method);
+        }
+    }
+
     public void eventReplicaStateAvailable(String fileId, ReplicaStatus localState, ErrorResponse error) {
         this.enqueueOperation(STAGEOP_INTERNAL_STATEAVAIL, new Object[] { fileId, localState, error }, null, null);
     }
@@ -462,33 +489,6 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
 
     public static interface StatusCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
-    }
-
-    @Override
-    protected void processMethod(StageRequest method) {
-        switch (method.getStageMethod()) {
-            case STAGEOP_REPLICATED_WRITE: {
-                externalRequestsInQueue.decrementAndGet();
-                processReplicatedWrite(method);
-                break;
-            }
-            case STAGEOP_TRUNCATE: {
-                externalRequestsInQueue.decrementAndGet();
-                processReplicatedTruncate(method);
-                break;
-            }
-            case STAGEOP_CLOSE: processFileClosed(method); break;
-            case STAGEOP_INTERNAL_AUTHSTATE: processSetAuthoritativeState(method); break;
-            case STAGEOP_INTERNAL_OBJFETCHED: processObjectFetched(method); break;
-            case STAGEOP_INTERNAL_STATEAVAIL: processReplicaStateAvailExecReset(method); break;
-            case STAGEOP_INTERNAL_DELETE_COMPLETE: processDeleteObjectsComplete(method); break;
-            case STAGEOP_INTERNAL_BACKUP_AUTHSTATE: processBackupAuthoritativeState(method); break;
-            case STAGEOP_FORCE_RESET: processForceReset(method); break;
-            case STAGEOP_GETSTATUS: processGetStatus(method); break;
-            case STAGEOP_INVALIDATEVIEW: processInvalidateReplica(method); break;
-            case STAGEOP_FETCHINVALIDATED: processFetchInvalidated(method); break;
-            default : super.processMethod(method);
-        }
     }
 
     private void processFileClosed(StageRequest method) {

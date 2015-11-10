@@ -43,6 +43,26 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     }
 
+    @Override
+    protected void processMethod(StageRequest method) {
+        switch (method.getStageMethod()) {
+            case STAGEOP_EC_WRITE: {
+                externalRequestsInQueue.decrementAndGet();
+                processECWrite(method);
+                break;
+            }
+            case STAGEOP_TRUNCATE: {
+                externalRequestsInQueue.decrementAndGet();
+                break;
+            }
+            case STAGEOP_CLOSE:  break;
+            case STAGEOP_INTERNAL_STATEAVAIL:  break;
+            case STAGEOP_INTERNAL_DELETE_COMPLETE:  break;
+            case STAGEOP_GETSTATUS:  break;
+            default : super.processMethod(method);
+        }
+    }
+
     public void processPrepareOp(StageRequest method) {
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 
@@ -62,26 +82,6 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     public static interface StatusCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
-    }
-
-    @Override
-    protected void processMethod(StageRequest method) {
-        switch (method.getStageMethod()) {
-            case STAGEOP_EC_WRITE: {
-                externalRequestsInQueue.decrementAndGet();
-                processECWrite(method);
-                break;
-            }
-            case STAGEOP_TRUNCATE: {
-                externalRequestsInQueue.decrementAndGet();
-                break;
-            }
-            case STAGEOP_CLOSE:  break;
-            case STAGEOP_INTERNAL_STATEAVAIL:  break;
-            case STAGEOP_INTERNAL_DELETE_COMPLETE:  break;
-            case STAGEOP_GETSTATUS:  break;
-            default : super.processMethod(method);
-        }
     }
 
     private void processECWrite(StageRequest method) {

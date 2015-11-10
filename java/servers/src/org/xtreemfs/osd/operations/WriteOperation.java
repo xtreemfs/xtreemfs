@@ -121,7 +121,7 @@ public final class WriteOperation extends OSDOperation {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                     "erasure coded write started");
         }
-        master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
+        master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
                 args.getObjectVersion(), ECStage.Operation.WRITE,
                 new FileOperationCallback() {
 
@@ -182,7 +182,7 @@ public final class WriteOperation extends OSDOperation {
     public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
         //prepareWrite first
 
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),args.getObjectNumber(),
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
                 args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
                 new FileOperationCallback() {
 
