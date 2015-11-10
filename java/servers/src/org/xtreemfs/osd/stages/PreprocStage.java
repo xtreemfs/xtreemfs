@@ -543,7 +543,7 @@ public class PreprocStage extends Stage {
     private boolean parseRequest(OSDRequest rq) {
 
         //TODO jan: first two tests are already done by OSDRequestDispatcher...check if necessary
-        RPCHeader hdr = rq.getRpcRequest().getHeader();
+        RPCHeader hdr = rq.getRPCRequest().getHeader();
 
         if (hdr.getMessageType() != MessageType.RPC_REQUEST) {
             rq.sendError(ErrorType.GARBAGE_ARGS, POSIXErrno.POSIX_ERROR_EIO, "expected RPC request message type but got "+hdr.getMessageType());
@@ -598,7 +598,7 @@ public class PreprocStage extends Stage {
             }
             ErrorResponse err = op.parseRPCMessage(rq);
             if (err != null) {
-                rq.getRpcRequest().sendError(err);
+                rq.getRPCRequest().sendError(err);
                 return false;
             }
             
@@ -606,7 +606,7 @@ public class PreprocStage extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, OutputUtils
                         .stackTraceToString(ex));
-            rq.getRpcRequest().sendError(ErrorUtils.getInternalServerError(ex));
+            rq.getRPCRequest().sendError(ErrorUtils.getInternalServerError(ex));
             return false;
         }
         if (Logging.isDebug()) {

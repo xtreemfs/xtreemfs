@@ -26,7 +26,7 @@ import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
  * Request object.
- * 
+ *
  * @author bjko
  */
 public final class OSDRequest {
@@ -56,10 +56,6 @@ public final class OSDRequest {
         this.requestId = rqIdCounter++;
     }
 
-    public RPCServerRequest getRPCRequest() {
-        return this.getRpcRequest();
-    }
-
     public void sendSuccess(Message response, ReusableBuffer data) {
         try {
             rpcRequest.sendResponse(response, data);
@@ -69,7 +65,7 @@ public final class OSDRequest {
     }
 
     public void sendInternalServerError(Throwable cause) {
-        if (getRpcRequest() != null) {
+        if (getRPCRequest() != null) {
             rpcRequest.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "internal server error:" + cause, OutputUtils.stackTraceToString(cause));
         } else {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error on internal request: %s",
@@ -96,8 +92,8 @@ public final class OSDRequest {
     /**
      * @return the rpcRequest
      */
-    public RPCServerRequest getRpcRequest() {
-        return rpcRequest;
+    public RPCServerRequest getRPCRequest() {
+        return this.rpcRequest;
     }
 
     /**

@@ -40,9 +40,9 @@ public class FleaseMessageOperation extends OSDOperation {
             if (rq.getLocationList().getNumReplicas() == 1 &&
                 rq.getLocationList().getLocalReplica().getStripingPolicy().getPolicy().getType() ==
                     GlobalTypes.StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
-                master.getECStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(), sender);
+                master.getECStage().receiveFleaseMessage(rq.getRPCRequest().getData().createViewBuffer(), sender);
             } else {
-                master.getRWReplicationStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(), sender);
+                master.getRWReplicationStage().receiveFleaseMessage(rq.getRPCRequest().getData().createViewBuffer(), sender);
             }
             rq.sendSuccess(null,null);
         } catch (Exception ex) {
