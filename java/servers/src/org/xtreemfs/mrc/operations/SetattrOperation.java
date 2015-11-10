@@ -146,7 +146,7 @@ public class SetattrOperation extends MRCOperation {
                         "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
 
                 // transfer file space information from old owner group to new owner group
-                if (!file.isDirectory()) {
+                if (!file.isDirectory() && file.getXLocList() != null) {
                     QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
                             file);
                     master.getMrcVoucherManager().transferOwnerGroupSpace(quotaFileInformation,
