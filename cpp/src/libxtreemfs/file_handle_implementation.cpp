@@ -1513,18 +1513,18 @@ bool VoucherManager::checkResponseConsistency() {
 
   bool consistentResponses = true;
 
-  if (osdCount == 1){ // nothing to check
-    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-      Logging::log->getLog(LEVEL_DEBUG)
-          << "Skipped checkResponseConsistency: only one OSD involved. "
-          << endl;
-    }
-
-    return consistentResponses;
-  }
-
   // Check whether the response data matches the data of the other responses
-  if (osdFinalizeVoucherResponseVector_.size() == osdCount){
+  if (osdFinalizeVoucherResponseVector_.size() == osdCount) {
+
+    if (osdCount == 1) {  // nothing to check
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+            << "Skipped checkResponseConsistency: only one OSD involved. "
+            << endl;
+      }
+
+      return consistentResponses;
+    }
 
     // local compare to reduce unnecessary messages to the MRC
     ::google::protobuf::uint64 truncEpoch = -1;
