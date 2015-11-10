@@ -615,7 +615,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         }
     }
 
-    public void processPrepareOp(StageRequest method) {
+    protected void processPrepareOp(StageRequest method) {
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];

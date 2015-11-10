@@ -63,7 +63,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         }
     }
 
-    public void processPrepareOp(StageRequest method) {
+    protected void processPrepareOp(StageRequest method) {
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 
         try {

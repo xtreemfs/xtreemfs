@@ -211,7 +211,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    public void processFleaseMessage(StageRequest method) {
+    private void processFleaseMessage(StageRequest method) {
         try {
             final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
             final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
@@ -232,9 +232,13 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 request, null, callback);
     }
 
-    public abstract void processPrepareOp(StageRequest method);
+    /*
+     * implementations of processPrepareOp/1 should retrieve the correct state
+     * and call processPrepareOp/2 below
+     */
+    protected abstract void processPrepareOp(StageRequest method);
 
-    public void processPrepareOp(RedundantFileState state, StageRequest method) {
+    protected void processPrepareOp(RedundantFileState state, StageRequest method) {
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
         try {
             final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
@@ -409,7 +413,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         this.enqueueOperation(STAGEOP_LEASE_STATE_CHANGED, new Object[]{cellId, lease, error}, null, null);
     }
 
-    public void processLeaseStateChanged(StageRequest method) {
+    private void processLeaseStateChanged(StageRequest method) {
         try {
             final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
             final Flease lease = (Flease) method.getArgs()[1];
@@ -491,7 +495,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         this.enqueueOperation(STAGEOP_INTERNAL_MAXOBJ_AVAIL, new Object[] { fileId, maxObjVer, error }, null, null);
     }
 
-    public void processMaxObjAvail(StageRequest method) {
+    private void processMaxObjAvail(StageRequest method) {
         try {
             final String fileId = (String) method.getArgs()[0];
             final Long maxObjVersion = (Long) method.getArgs()[1];
@@ -522,7 +526,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    public void doWaitingForLease(final RedundantFileState file) {
+    private void doWaitingForLease(final RedundantFileState file) {
         // If the file is invalidated a XLocSetChange is in progress and we can assume, that no primary exists.
         if (file.isInvalidated()) {
             doInvalidated(file);
@@ -566,7 +570,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    public void doOpen(final RedundantFileState file) {
+    protected void doOpen(final RedundantFileState file) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
                     file.getFileId(), file.getState(), LocalState.OPEN);
@@ -637,7 +641,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    public void doReset(final RedundantFileState file, long updateObjVer) {
+    protected void doReset(final RedundantFileState file, long updateObjVer) {
 
         if (file.getState() == LocalState.RESET) {
             if (Logging.isDebug())
