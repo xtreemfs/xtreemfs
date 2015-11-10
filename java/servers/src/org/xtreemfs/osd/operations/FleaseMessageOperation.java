@@ -13,6 +13,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -36,7 +37,13 @@ public class FleaseMessageOperation extends OSDOperation {
         xtreemfs_rwr_flease_msgRequest args = (xtreemfs_rwr_flease_msgRequest) rq.getRequestArgs();
         try {
             InetSocketAddress sender = new InetSocketAddress(args.getSenderHostname(), args.getSenderPort());
-            master.getRWReplicationStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(),sender);
+            if (rq.getLocationList().getNumReplicas() == 1 &&
+                rq.getLocationList().getLocalReplica().getStripingPolicy().getPolicy().getType() ==
+                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                master.getECStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(), sender);
+            } else {
+                master.getRWReplicationStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(), sender);
+            }
             rq.sendSuccess(null,null);
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_WARN, this,ex);
