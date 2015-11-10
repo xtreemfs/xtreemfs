@@ -336,7 +336,8 @@ void AsyncWriteHandler::HandleCallback(
           // AND it is an recoverable error.
           (error->error_type() == xtreemfs::pbrpc::IO_ERROR ||
            error->error_type() == xtreemfs::pbrpc::INTERNAL_SERVER_ERROR ||
-           error->error_type() == xtreemfs::pbrpc::REDIRECT)) {
+           error->error_type() == xtreemfs::pbrpc::REDIRECT ||
+           error->error_type() == xtreemfs::pbrpc::INSUFFICIENT_VOUCHER)) {
         std::string error_str;
         xtreemfs::util::LogLevel level = xtreemfs::util::LEVEL_ERROR;
 
@@ -368,6 +369,17 @@ void AsyncWriteHandler::HandleCallback(
                write_buffer->request_sent_time)) {
             worst_error_.CopyFrom(*error);
             worst_write_buffer_ = write_buffer;
+          }
+        } else if (error->error_type() == xtreemfs::pbrpc::INSUFFICIENT_VOUCHER) {
+          PosixErrorException p(POSIX_ERROR_NONE, "");
+          RPCOptions renewOptions(volume_options_.max_write_tries, volume_options_.retry_delay_s, false, NULL);
+          XCapHandler* xcap_handler = write_buffer->xcap_handler_;
+          XCapManager* xcap_manager_ = dynamic_cast<XCapManager*>(xcap_handler);
+          xcap_manager_->RenewXCapAsync(renewOptions, true, &p);
+          xcap_manager_->WaitForPendingXCapRenewal();
+
+          if(p.posix_errno() != POSIX_ERROR_NONE){
+              throw p;
           }
         } else {
           // Communication error or Internal Server Error.
