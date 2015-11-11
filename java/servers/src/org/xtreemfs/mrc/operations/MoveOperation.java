@@ -291,11 +291,13 @@ public class MoveOperation extends MRCOperation {
                     creds = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(
                         Converter.xLocListToXLocSet(target.getXLocList()));
                 }
-                
+
                 // delete quota information
                 FileMetadata metadata = sMan.getMetadata(tRes.getParentDirId(), tRes.getFileName());
-                QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), metadata);
-                master.getMrcVoucherManager().deleteFile(quotaFileInformation, update);
+                if(metadata.getXLocList() != null) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(volume.getId(), metadata);
+                    master.getMrcVoucherManager().deleteFile(quotaFileInformation, update);
+                }
 
                 // delete the target
                 sMan.delete(tRes.getParentDirId(), tRes.getFileName(), update);
