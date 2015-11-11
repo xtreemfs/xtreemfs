@@ -39,6 +39,7 @@ import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.RedundantFileState.LocalState;
 import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
 import java.io.IOException;
@@ -372,7 +373,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
      * Set the viewId associated with the fileId/cellId. This will close open cells.
      */
     public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
-        enqueueOperation(STAGEOP_SETVIEW, new Object[] { fileId, cellId, versionState }, null, null);
+        enqueueOperation(STAGEOP_SETVIEW, new Object[]{fileId, cellId, versionState}, null, null);
     }
 
     private void processSetFleaseView(StageRequest method) {
@@ -684,15 +685,27 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         message.serialize(data);
         data.flip();
         try {
-            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), data);
-            r.registerListener(new RPCResponseAvailableListener() {
+            if (this.getClass().getName() == "ECStage") {
+                RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
+                        RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), OSD.flease_destination.EC, data);
+                r.registerListener(new RPCResponseAvailableListener() {
 
-                @Override
-                public void responseAvailable(RPCResponse r) {
-                    r.freeBuffers();
-                }
-            });
+                    @Override
+                    public void responseAvailable(RPCResponse r) {
+                        r.freeBuffers();
+                    }
+                });
+            } else {
+                RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
+                        RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), OSD.flease_destination.RWR, data);
+                r.registerListener(new RPCResponseAvailableListener() {
+
+                    @Override
+                    public void responseAvailable(RPCResponse r) {
+                        r.freeBuffers();
+                    }
+                });
+            }
         } catch (IOException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }

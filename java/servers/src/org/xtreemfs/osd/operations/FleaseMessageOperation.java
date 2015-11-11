@@ -13,7 +13,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.flease_destination;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_flease_msgRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -34,14 +34,29 @@ public class FleaseMessageOperation extends OSDOperation {
 
     @Override
     public void startRequest(OSDRequest rq) {
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this,
+                    "start flease operation");
+        }
         xtreemfs_rwr_flease_msgRequest args = (xtreemfs_rwr_flease_msgRequest) rq.getRequestArgs();
+        // destination rwreplication is default for backwards compatibility
+        flease_destination dest = flease_destination.RWR;
+        if (args.hasDestination()) {
+            dest = args.getDestination();
+        }
         try {
             InetSocketAddress sender = new InetSocketAddress(args.getSenderHostname(), args.getSenderPort());
-            if (rq.getLocationList().getNumReplicas() == 1 &&
-                rq.getLocationList().getLocalReplica().getStripingPolicy().getPolicy().getType() ==
-                    GlobalTypes.StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+            if (dest == flease_destination.EC) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this,
+                            "relaying Flease message to ECStage");
+                }
                 master.getECStage().receiveFleaseMessage(rq.getRPCRequest().getData().createViewBuffer(), sender);
             } else {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
+                            "relaying Flease message to RwReplicationStage");
+                }
                 master.getRWReplicationStage().receiveFleaseMessage(rq.getRPCRequest().getData().createViewBuffer(), sender);
             }
             rq.sendSuccess(null,null);
