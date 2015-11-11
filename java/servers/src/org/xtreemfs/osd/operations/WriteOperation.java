@@ -123,37 +123,28 @@ public final class WriteOperation extends OSDOperation {
         }
         master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
                 args.getObjectVersion(), ECStage.Operation.WRITE,
-                new FileOperationCallback() {
+                rq, new FileOperationCallback() {
 
                     @Override
                     public void success(final long newObjectVersion) {
-                        assert(newObjectVersion > 0);
+                        assert (newObjectVersion > 0);
 
                         // TODO(jan) when we have new version distribute updates
+                        master.getECStage().ecWrite(null, rq,
+                                new FileOperationCallback() {
+                                    @Override
+                                    public void success(long newObjectVersion) {
 
-                        //FIXME: ignore canExecOperation for now...
-                        ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
-                        master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(),
-                                rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                                args.getOffset(), viewBuffer, rq.getCowPolicy(),
-                                rq.getLocationList(), syncWrite, newObjectVersion, rq, viewBuffer, new WriteObjectCallback() {
+                                    }
 
                                     @Override
-                                    public void writeComplete(OSDWriteResponse result, ErrorResponse error) {
-                                        if (error != null) {
-                                            if (Logging.isDebug()) {
-                                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                                        "erasure coded write failed");
-                                            }
-                                            sendResult(rq, null, error);
-                                            // TODO: distributed updates here
-                                        } else {
-                                            if (Logging.isDebug()) {
-                                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                                        "erasure coded write was successful");
-                                            }
-                                            sendResult(rq, result, null);
-                                        }
+                                    public void redirect(String redirectTo) {
+
+                                    }
+
+                                    @Override
+                                    public void failed(ErrorResponse ex) {
+
                                     }
                                 });
                     }
@@ -175,7 +166,7 @@ public final class WriteOperation extends OSDOperation {
                         }
                         rq.sendError(err);
                     }
-                }, rq);
+                });
 
     }
 
@@ -184,7 +175,7 @@ public final class WriteOperation extends OSDOperation {
 
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
                 args.getObjectVersion(), RWReplicationStage.Operation.WRITE,
-                new FileOperationCallback() {
+                rq, new FileOperationCallback() {
 
             @Override
             public void success(final long newObjectVersion) {
@@ -216,7 +207,7 @@ public final class WriteOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                 rq.sendError(err);
             }
-        }, rq);
+        });
 
     }
 
@@ -247,7 +238,7 @@ public final class WriteOperation extends OSDOperation {
             final InternalObjectData data, final ReusableBuffer createdViewBuffer) {
         master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
                     args.getObjectNumber(), newObjVersion, data, createdViewBuffer,
-                    new FileOperationCallback() {
+                rq, new FileOperationCallback() {
 
             @Override
             public void success(long newObjectVersion) {
@@ -263,7 +254,7 @@ public final class WriteOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                rq.sendError(err);
             }
-        }, rq);
+        });
     }
 
 

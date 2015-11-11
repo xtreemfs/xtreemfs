@@ -73,7 +73,7 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
 
     public void prepareLocalWrite(final OSDRequest rq, final xtreemfs_rwr_updateRequest args) {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
-                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, new FileOperationCallback() {
+                args.getObjectNumber(), args.getObjectVersion(), RWReplicationStage.Operation.INTERNAL_UPDATE, rq, new FileOperationCallback() {
 
             @Override
             public void success(long newObjectVersion) {
@@ -89,7 +89,7 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                 rq.sendError(err);
             }
-        }, rq);
+        });
     }
 
     public void sendResult(final OSDRequest rq, ErrorResponse error) {

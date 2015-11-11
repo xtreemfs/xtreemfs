@@ -142,7 +142,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(),
  rq.getLocationList(), 0, 0,
                 RWReplicationStage.Operation.READ,
-                new FileOperationCallback() {
+                rq, new FileOperationCallback() {
 
                     @Override
                     public void success(long newObjectVersion) {
@@ -173,7 +173,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                     public void failed(ErrorResponse err) {
                         rq.sendError(err);
                     }
-                }, rq);
+                });
     }
 
     public void sendResponse(OSDRequest rq, long fileSize) {

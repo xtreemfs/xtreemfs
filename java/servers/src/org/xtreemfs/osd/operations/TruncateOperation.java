@@ -92,7 +92,7 @@ public final class TruncateOperation extends OSDOperation {
 
     public void rwReplicatedTruncate(final OSDRequest rq,
             final truncateRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0, RWReplicationStage.Operation.TRUNCATE, new FileOperationCallback() {
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0, RWReplicationStage.Operation.TRUNCATE, rq, new FileOperationCallback() {
 
             @Override
             public void success(final long newObjectVersion) {
@@ -120,7 +120,7 @@ public final class TruncateOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                 rq.sendError(err);
             }
-        }, rq);
+        });
     }
 
     public void replicateTruncate(final OSDRequest rq,

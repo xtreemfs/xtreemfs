@@ -103,7 +103,7 @@ public final class ReadOperation extends OSDOperation {
 
     public void rwReplicatedRead(final OSDRequest rq, final readRequest args) {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(), args.getObjectVersion(),
-                RWReplicationStage.Operation.READ, new FileOperationCallback() {
+                RWReplicationStage.Operation.READ, rq, new FileOperationCallback() {
 
             @Override
             public void success(long newObjectVersion) {
@@ -131,7 +131,7 @@ public final class ReadOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                 rq.sendError(err);
             }
-        }, rq);
+        });
     }
 
     public void postRead(final OSDRequest rq, readRequest args, ObjectInformation result, ErrorResponse error) {

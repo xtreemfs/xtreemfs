@@ -10,6 +10,7 @@ package org.xtreemfs.osd.ec;
 
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -82,6 +83,10 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
 
     public static interface StatusCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
+    }
+
+    public void ecWrite(ReusableBuffer createdViewBuffer, OSDRequest rq, FileOperationCallback callback) {
+        this.enqueueOperation(STAGEOP_EC_WRITE, new Object[]{}, rq, createdViewBuffer, callback);
     }
 
     private void processECWrite(StageRequest method) {

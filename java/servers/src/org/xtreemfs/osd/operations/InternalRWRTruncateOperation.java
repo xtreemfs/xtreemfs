@@ -75,7 +75,7 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
 
     public void prepareLocalTruncate(final OSDRequest rq, final xtreemfs_rwr_truncateRequest args) {
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, args.getObjectVersion(),
-                RWReplicationStage.Operation.INTERNAL_TRUNCATE, new FileOperationCallback() {
+                RWReplicationStage.Operation.INTERNAL_TRUNCATE, rq, new FileOperationCallback() {
 
             @Override
             public void success(long newObjectVersion) {
@@ -91,7 +91,7 @@ public final class InternalRWRTruncateOperation extends OSDOperation {
             public void failed(ErrorResponse err) {
                 rq.sendError(err);
             }
-        }, rq);
+        });
     }
 
 

@@ -467,8 +467,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
     }
 
     public void replicatedWrite(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-            InternalObjectData data, ReusableBuffer createdViewBuffer, FileOperationCallback callback,
-            OSDRequest request) {
+                                InternalObjectData data, ReusableBuffer createdViewBuffer, OSDRequest request, FileOperationCallback callback) {
         this.enqueueExternalOperation(STAGEOP_REPLICATED_WRITE, new Object[]{credentials, xloc, objNo, objVersion,
                 data}, request, createdViewBuffer, callback);
     }

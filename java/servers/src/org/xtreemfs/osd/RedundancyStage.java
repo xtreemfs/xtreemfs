@@ -228,7 +228,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     public void prepareOperation(FileCredentials credentials, XLocations xloc, long objNo, long objVersion,
-                                 Operation op, FileOperationCallback callback, OSDRequest request) {
+                                 Operation op, OSDRequest request, FileOperationCallback callback) {
         this.enqueueExternalOperation(STAGEOP_PREPAREOP, new Object[]{credentials, xloc, objNo, objVersion, op},
                 request, null, callback);
     }
