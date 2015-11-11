@@ -81,6 +81,25 @@ class xtreemfs_rwr_reset_completeRequest;
 class xtreemfs_xloc_set_invalidateRequest;
 class xtreemfs_xloc_set_invalidateResponse;
 
+enum flease_destination {
+  RWR = 0,
+  EC = 1
+};
+bool flease_destination_IsValid(int value);
+const flease_destination flease_destination_MIN = RWR;
+const flease_destination flease_destination_MAX = EC;
+const int flease_destination_ARRAYSIZE = flease_destination_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* flease_destination_descriptor();
+inline const ::std::string& flease_destination_Name(flease_destination value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    flease_destination_descriptor(), value);
+}
+inline bool flease_destination_Parse(
+    const ::std::string& name, flease_destination* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<flease_destination>(
+    flease_destination_descriptor(), name, value);
+}
 enum OSDHealthResult {
   OSD_HEALTH_RESULT_PASSED = 0,
   OSD_HEALTH_RESULT_WARNING = 1,
@@ -2895,20 +2914,30 @@ class xtreemfs_rwr_flease_msgRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 sender_port() const;
   inline void set_sender_port(::google::protobuf::uint32 value);
 
+  // optional .xtreemfs.pbrpc.flease_destination destination = 3 [default = RWR];
+  inline bool has_destination() const;
+  inline void clear_destination();
+  static const int kDestinationFieldNumber = 3;
+  inline ::xtreemfs::pbrpc::flease_destination destination() const;
+  inline void set_destination(::xtreemfs::pbrpc::flease_destination value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_rwr_flease_msgRequest)
  private:
   inline void set_has_sender_hostname();
   inline void clear_has_sender_hostname();
   inline void set_has_sender_port();
   inline void clear_has_sender_port();
+  inline void set_has_destination();
+  inline void clear_has_destination();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::std::string* sender_hostname_;
   ::google::protobuf::uint32 sender_port_;
+  int destination_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -7398,6 +7427,29 @@ inline void xtreemfs_rwr_flease_msgRequest::set_sender_port(::google::protobuf::
   sender_port_ = value;
 }
 
+// optional .xtreemfs.pbrpc.flease_destination destination = 3 [default = RWR];
+inline bool xtreemfs_rwr_flease_msgRequest::has_destination() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_rwr_flease_msgRequest::set_has_destination() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_rwr_flease_msgRequest::clear_has_destination() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_rwr_flease_msgRequest::clear_destination() {
+  destination_ = 0;
+  clear_has_destination();
+}
+inline ::xtreemfs::pbrpc::flease_destination xtreemfs_rwr_flease_msgRequest::destination() const {
+  return static_cast< ::xtreemfs::pbrpc::flease_destination >(destination_);
+}
+inline void xtreemfs_rwr_flease_msgRequest::set_destination(::xtreemfs::pbrpc::flease_destination value) {
+  assert(::xtreemfs::pbrpc::flease_destination_IsValid(value));
+  set_has_destination();
+  destination_ = value;
+}
+
 // -------------------------------------------------------------------
 
 // xtreemfs_rwr_set_primary_epochRequest
@@ -9332,6 +9384,10 @@ inline void xtreemfs_xloc_set_invalidateResponse::set_allocated_replica_status(:
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::flease_destination>() {
+  return ::xtreemfs::pbrpc::flease_destination_descriptor();
+}
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::OSDHealthResult>() {
   return ::xtreemfs::pbrpc::OSDHealthResult_descriptor();

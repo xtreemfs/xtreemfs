@@ -1,4 +1,4 @@
-//automatically generated from DIR.proto at Mon Oct 26 10:41:57 CET 2015
+//automatically generated from DIR.proto at Wed Nov 11 16:01:25 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef DIRSERVICECLIENT_H
@@ -9,9 +9,10 @@
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
+#include "xtreemfs/OSD.pb.h"
 #include "include/Common.pb.h"
-#include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/DIR.pb.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 
 
 namespace xtreemfs {

@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Mon Oct 26 10:41:58 CET 2015
+//automatically generated from OSD.proto at Wed Nov 11 16:01:26 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -227,8 +227,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse xtreemfs_rwr_flease_msg(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String sender_hostname, int sender_port, ReusableBuffer data) throws IOException {
-         final OSD.xtreemfs_rwr_flease_msgRequest msg = OSD.xtreemfs_rwr_flease_msgRequest.newBuilder().setSenderHostname(sender_hostname).setSenderPort(sender_port).build();
+    public RPCResponse xtreemfs_rwr_flease_msg(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String sender_hostname, int sender_port, OSD.flease_destination destination, ReusableBuffer data) throws IOException {
+         final OSD.xtreemfs_rwr_flease_msgRequest msg = OSD.xtreemfs_rwr_flease_msgRequest.newBuilder().setSenderHostname(sender_hostname).setSenderPort(sender_port).setDestination(destination).build();
          return xtreemfs_rwr_flease_msg(server, authHeader, userCreds,msg, data);
     }
 

@@ -263,10 +263,18 @@ message xtreemfs_repair_objectRequest {
   required fixed64 object_version = 4;
 }
 
+enum flease_destination {
+  RWR = 0;
+  EC = 1;
+}
+
+// note that message should be named xtreemfs_redundancy_flease_message since flease is also used to replicate state of erasure coded files
+// the message was name when flease was only used for read write replication. old name is kept for backwards compatibility reasons.
 message xtreemfs_rwr_flease_msgRequest {
   // The actual flease message is sent in data.
   required string sender_hostname = 1;
   required fixed32 sender_port = 2;
+  optional flease_destination destination = 3 [default = RWR]; // destination field is used to distinguish for what flease message is used
 }
 
 message xtreemfs_rwr_set_primary_epochRequest {
@@ -479,6 +487,7 @@ service OSDService {
 
   // Wrapper for flease messages. Flease is used for primary election
   // in the rw-replication.
+  // note: flease is also used in erasure codeing and the rpc should be renamed. name is kept for compatibility reasons
   rpc xtreemfs_rwr_flease_msg(xtreemfs_rwr_flease_msgRequest) returns(emptyResponse) {
     option(proc_id)=71;
     option(data_in)=true;
