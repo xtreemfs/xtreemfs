@@ -241,8 +241,10 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
 
         // remove replica from voucher service
-        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
-        master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+        if(file.getXLocList() != null) {
+            QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+            master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+        }
 
         // Unlock the replica.
         master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
