@@ -377,7 +377,6 @@ void AsyncWriteHandler::HandleCallback(
           XCapManager* xcap_manager_ = dynamic_cast<XCapManager*>(xcap_handler);
           xcap_manager_->RenewXCapAsync(renewOptions, true, &p);
           xcap_manager_->WaitForPendingXCapRenewal();
-          write_buffer->retry_count_--;
 
           if(p.posix_errno() != POSIX_ERROR_NONE){
               throw p;
