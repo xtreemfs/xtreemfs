@@ -9,6 +9,7 @@ package org.xtreemfs.test.osd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
@@ -440,6 +441,15 @@ public class OSDDrainTest {
 
             for (int j = 0; j < SIZE; j++) {
                 assertEquals('f', data[j]);
+            }
+        }
+        
+        // ensure the removed replica is no longer in the replica set
+        String removedOSDUUID = osdConfig1.getUUID().toString();
+        for (File file : files) {
+            for (org.xtreemfs.common.clients.Replica replica: file.getReplicas()) {
+                assertEquals(1, replica.getStripeWidth());
+                assertNotEquals(removedOSDUUID, replica.getOSDUuid(0));
             }
         }
 

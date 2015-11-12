@@ -66,7 +66,6 @@ public class ReselectOSDsTest {
     @BeforeClass
     public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL);
-        // Logging.start(Logging.LEVEL_DEBUG);
     }
 
     @Before
@@ -144,6 +143,7 @@ public class ReselectOSDsTest {
         printReplicaList(replicas1);
         printReplicaList(replicas2);
 
+        // Assert, that there are no replicas contained in both lists.
         HashSet<Replica> replicaSet = new HashSet<Replica>();
         replicaSet.addAll(replicas1);
         replicaSet.addAll(replicas2);
@@ -235,9 +235,14 @@ public class ReselectOSDsTest {
     }
 
     private void printReplicaList(List<Replica> replicas) {
-        for (int i = 0, m = replicas.size(); i < m; ++i) {
-            System.out.print(replicas.get(i).getOsdUuids(0));
-            System.out.print((i + 1) < m ? ", " : "\n");
+        if (Logging.isDebug()) {
+            StringBuilder str = new StringBuilder();
+            for (int i = 0, m = replicas.size(); i < m; ++i) {
+                str.append(replicas.get(i).getOsdUuids(0));
+                if ((i + 1) < m)
+                    str.append(", ");
+            }
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Replicas: %s", str.toString());
         }
     }
 }

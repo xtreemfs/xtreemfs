@@ -39081,7 +39081,7 @@ public final class MRC {
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_addRequest}
    *
    * <pre>
-   * adds a replica to a file
+   * request the addition of a replica to a file
    * </pre>
    */
   public static final class xtreemfs_replica_addRequest extends
@@ -39532,7 +39532,7 @@ public final class MRC {
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_addRequest}
      *
      * <pre>
-     * adds a replica to a file
+     * request the addition of a replica to a file
      * </pre>
      */
     public static final class Builder extends
@@ -40164,6 +40164,11 @@ public final class MRC {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_addResponse}
+   *
+   * <pre>
+   * response to a replica_add request, containing the xLocSet version that is
+   * expected to be installed on successful replica removal.
+   * </pre>
    */
   public static final class xtreemfs_replica_addResponse extends
       com.google.protobuf.GeneratedMessage
@@ -40449,6 +40454,11 @@ public final class MRC {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_addResponse}
+     *
+     * <pre>
+     * response to a replica_add request, containing the xLocSet version that is
+     * expected to be installed on successful replica removal.
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
@@ -43122,7 +43132,7 @@ public final class MRC {
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_removeRequest}
    *
    * <pre>
-   * removes a replica from a file
+   * requests the removal of a replica from a file
    * </pre>
    */
   public static final class xtreemfs_replica_removeRequest extends
@@ -43582,7 +43592,7 @@ public final class MRC {
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_removeRequest}
      *
      * <pre>
-     * removes a replica from a file
+     * requests the removal of a replica from a file
      * </pre>
      */
     public static final class Builder extends
@@ -44176,6 +44186,12 @@ public final class MRC {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_removeResponse}
+   *
+   * <pre>
+   * response to a replica_remova request, containing the xLocSet version that is
+   * expected to be installed on successful replica removal and a xLocSet and a
+   * xCap which can be used to unlink the data objects from the removed replica.
+   * </pre>
    */
   public static final class xtreemfs_replica_removeResponse extends
       com.google.protobuf.GeneratedMessage
@@ -44563,6 +44579,12 @@ public final class MRC {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_replica_removeResponse}
+     *
+     * <pre>
+     * response to a replica_remova request, containing the xLocSet version that is
+     * expected to be installed on successful replica removal and a xLocSet and a
+     * xCap which can be used to unlink the data objects from the removed replica.
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
@@ -51674,6 +51696,10 @@ public final class MRC {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_reselect_osdsRequest}
+   *
+   * <pre>
+   * requests to reapply the volumes current OSD selection policy to a file
+   * </pre>
    */
   public static final class xtreemfs_reselect_osdsRequest extends
       com.google.protobuf.GeneratedMessage
@@ -52062,6 +52088,10 @@ public final class MRC {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_reselect_osdsRequest}
+     *
+     * <pre>
+     * requests to reapply the volumes current OSD selection policy to a file
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
@@ -52598,6 +52628,11 @@ public final class MRC {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_reselect_osdsResponse}
+   *
+   * <pre>
+   * response to a reselect_osds request, containing the xLocSet version that is
+   * expected to be installed on successful replica removal.
+   * </pre>
    */
   public static final class xtreemfs_reselect_osdsResponse extends
       com.google.protobuf.GeneratedMessage
@@ -52883,6 +52918,11 @@ public final class MRC {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_reselect_osdsResponse}
+     *
+     * <pre>
+     * response to a reselect_osds request, containing the xLocSet version that is
+     * expected to be installed on successful replica removal.
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>

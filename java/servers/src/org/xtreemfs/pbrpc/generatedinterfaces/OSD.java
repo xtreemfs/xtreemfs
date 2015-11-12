@@ -33492,6 +33492,10 @@ public final class OSD {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_rwr_reset_statusRequest}
+   *
+   * <pre>
+   * request the reset status in regard to the transmitted AuthState
+   * </pre>
    */
   public static final class xtreemfs_rwr_reset_statusRequest extends
       com.google.protobuf.GeneratedMessage
@@ -33846,6 +33850,10 @@ public final class OSD {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_rwr_reset_statusRequest}
+     *
+     * <pre>
+     * request the reset status in regard to the transmitted AuthState
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>
@@ -34364,6 +34372,11 @@ public final class OSD {
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_rwr_reset_statusResponse}
+   *
+   * <pre>
+   * response to a reset_statuts requests containing if the reset is still running
+   * and if it is complete.
+   * </pre>
    */
   public static final class xtreemfs_rwr_reset_statusResponse extends
       com.google.protobuf.GeneratedMessage
@@ -34622,6 +34635,11 @@ public final class OSD {
     }
     /**
      * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_rwr_reset_statusResponse}
+     *
+     * <pre>
+     * response to a reset_statuts requests containing if the reset is still running
+     * and if it is complete.
+     * </pre>
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder>

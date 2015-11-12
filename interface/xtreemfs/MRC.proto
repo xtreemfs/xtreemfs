@@ -516,7 +516,7 @@ message xtreemfs_listdirResponse {
   repeated string names = 1;
 }
 
-// adds a replica to a file
+// request the addition of a replica to a file
 message xtreemfs_replica_addRequest {
   // the file ID
   optional string file_id = 1;
@@ -527,6 +527,8 @@ message xtreemfs_replica_addRequest {
   required Replica new_replica = 2;
 }
 
+// response to a replica_add request, containing the xLocSet version that is
+// expected to be installed on successful replica removal.
 message xtreemfs_replica_addResponse {
   required string file_id = 1;
   required int32 expected_xlocset_version = 2;
@@ -555,7 +557,7 @@ message xtreemfs_get_xlocsetRequest {
   optional VivaldiCoordinates coordinates = 5;
 }
 
-// removes a replica from a file
+// requests the removal of a replica from a file
 message xtreemfs_replica_removeRequest {
   // the file ID
   optional string file_id = 1;
@@ -566,6 +568,9 @@ message xtreemfs_replica_removeRequest {
   required string osd_uuid = 2;
 }
 
+// response to a replica_remova request, containing the xLocSet version that is
+// expected to be installed on successful replica removal and a xLocSet and a
+// xCap which can be used to unlink the data objects from the removed replica.
 message xtreemfs_replica_removeResponse {
   required string file_id = 1;
   required int32 expected_xlocset_version = 2;
@@ -643,7 +648,7 @@ message xtreemfs_get_file_credentialsRequest {
   required string file_id = 1;
 }
 
-
+// requests to reapply the volumes current OSD selection policy to a file
 message xtreemfs_reselect_osdsRequest {
   // path and volume_name to file.
   required string path = 1;
@@ -654,6 +659,8 @@ message xtreemfs_reselect_osdsRequest {
   optional VivaldiCoordinates coordinates = 3;
 }
 
+// response to a reselect_osds request, containing the xLocSet version that is
+// expected to be installed on successful replica removal.
 message xtreemfs_reselect_osdsResponse {
   required string file_id = 1;
   required int32 expected_xlocset_version = 2;
@@ -821,7 +828,7 @@ service MRCService {
     option(proc_id)=38;
   };
  
-  // adds a replica to a file
+  // requests the addition of a replica to a file
   rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(xtreemfs_replica_addResponse) {
     option(proc_id)=39;
   };
@@ -831,7 +838,7 @@ service MRCService {
     option(proc_id)=40;
   };
 
-  // removes a replica from a file
+  // requests to remove a replica from a file
   rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(xtreemfs_replica_removeResponse) {
     option(proc_id)=41;
   };
@@ -881,6 +888,7 @@ service MRCService {
     option(proc_id)=51;
   };
 
+  // requests to reapply the volumes current OSD selection policy to a file
   rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(xtreemfs_reselect_osdsResponse) {
     option(proc_id)=54;
   };

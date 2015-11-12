@@ -73,6 +73,10 @@ public class ReselectOSDsOperation extends MRCOperation implements XLocSetCoordi
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "file '" + p + "' is a symbolic link");
         }
         
+        if (file.getXLocList() == null) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "file '" + p + "' is a hard link");
+        }
+
         // Check if a xLocSetChange is already in progress.
         XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
         if (lock.isLocked()) {
