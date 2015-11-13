@@ -49,8 +49,6 @@ public class ClearVouchersOperation extends MRCOperation {
 
         final xtreemfs_clear_vouchersRequest cvRequest = (xtreemfs_clear_vouchersRequest) rq.getRequestArgs();
 
-        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Got a clear voucher Request! " + cvRequest.toString());
-
         Capability cap = new Capability(cvRequest.getCreds().getXcap(), master.getConfig().getCapabilitySecret());
         Set<Long> expireTimeSet = new HashSet<Long>(cvRequest.getExpireTimeMsList());
         List<OSDFinalizeVouchersResponse> osdFinalizeVouchersResponseList = cvRequest

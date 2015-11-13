@@ -53,7 +53,7 @@ public class RabbitMQOutputTracingPolicy implements TracingPolicy {
                 this.channels.put(target, channel);
                 return channel;
             } else {
-                throw new Exception("Canno create RabbitMQ channel");
+                throw new Exception("Cannot create RabbitMQ channel");
             }
 
         }
