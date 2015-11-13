@@ -85,11 +85,33 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         public void statusComplete(Map<String, Map<String, String>> status);
     }
 
-    public void ecWrite(ReusableBuffer createdViewBuffer, OSDRequest rq, FileOperationCallback callback) {
-        this.enqueueOperation(STAGEOP_EC_WRITE, new Object[]{}, rq, createdViewBuffer, callback);
+    public void ecWrite(ReusableBuffer createdViewBuffer, ReusableBuffer existing_data, OSDRequest rq, FileOperationCallback callback) {
+        this.enqueueOperation(STAGEOP_EC_WRITE, new Object[]{existing_data, createdViewBuffer}, rq, null, callback);
     }
 
     private void processECWrite(StageRequest method) {
+        try {
+            ReusableBuffer existingData = (ReusableBuffer) method.getArgs()[0];
+            ReusableBuffer newData = (ReusableBuffer) method.getArgs()[1];
+
+            if (existingData == null) {
+                // object content is new
+                // get state for file and distribute data to coding devices
+            } else {
+                // object is updated
+                // xor and send diff to coding devices
+                while (newData.remaining() > 0) {
+                    newData.put(newData.position() - 1, (byte)(existingData.get() ^ newData.get()));
+                }
+            }
+
+            // now distribute newData to coding devices
+            // call callback and give control back to WriteOperation
+            // from there call back into ECStage and use replicaupdate policy to distribute xor and verions
+
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+        }
     }
 
     protected RedundantFileState getState(String fileId) {

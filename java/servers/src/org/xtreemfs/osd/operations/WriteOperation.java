@@ -17,6 +17,7 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -114,39 +115,20 @@ public final class WriteOperation extends OSDOperation {
         }
     }
 
-    public void ecWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
-        // TODO(jan): add write code..see how replicatedWrite interacts with RWReplicationStage
+    public void ecWrite(final OSDRequest request, final writeRequest args, final boolean syncWrite) {
 
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                     "erasure coded write started");
         }
-        master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
+        master.getECStage().prepareOperation(args.getFileCredentials(), request.getLocationList(), args.getObjectNumber(),
                 args.getObjectVersion(), ECStage.Operation.WRITE,
-                rq, new FileOperationCallback() {
+                request, new FileOperationCallback() {
 
                     @Override
                     public void success(final long newObjectVersion) {
                         assert (newObjectVersion > 0);
-
-                        // TODO(jan) when we have new version distribute updates
-                        master.getECStage().ecWrite(null, rq,
-                                new FileOperationCallback() {
-                                    @Override
-                                    public void success(long newObjectVersion) {
-
-                                    }
-
-                                    @Override
-                                    public void redirect(String redirectTo) {
-
-                                    }
-
-                                    @Override
-                                    public void failed(ErrorResponse ex) {
-
-                                    }
-                                });
+                        sendDiffs(request, args, newObjectVersion);
                     }
 
                     @Override
@@ -155,7 +137,8 @@ public final class WriteOperation extends OSDOperation {
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                                     "write was redirected...NOT IMPLEMENTED YET");
                         }
-                        rq.getRPCRequest().sendRedirect(redirectTo);
+                        request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
+                        //rq.getRPCRequest().sendRedirect(redirectTo);
                     }
 
                     @Override
@@ -164,13 +147,82 @@ public final class WriteOperation extends OSDOperation {
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                                     "write failed");
                         }
-                        rq.sendError(err);
+                        request.sendError(err);
                     }
                 });
 
     }
 
-    public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
+    private void sendDiffs(final OSDRequest request, final writeRequest args, final long newObjVersion) {
+        final StripingPolicyImpl sp = request.getLocationList().getLocalReplica().getStripingPolicy();
+
+        // TODO(jan) when we have new version distribute updates
+        if (newObjVersion == 1) {
+            // new object, diff is equal to new data
+            ReusableBuffer viewBuffer = request.getRPCRequest().getData().createViewBuffer();
+            master.getECStage().ecWrite(viewBuffer, null, request, new FileOperationCallback() {
+                @Override
+                public void success(long newObjectVersion) {
+
+                }
+
+                @Override
+                public void redirect(String redirectTo) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                "write was redirected...NOT IMPLEMENTED YET");
+                    }
+                    request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
+                }
+
+                @Override
+                public void failed(ErrorResponse err) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                "write failed");
+                    }
+                    request.sendError(err);
+                }
+            });
+        } else {
+            // object is updated, read old object and XOR
+
+            master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, 0, -1, 0l, request, new ReadObjectCallback() {
+                @Override
+                public void readComplete(ObjectInformation result, ErrorResponse error) {
+                    assert (result.getStatus() != ObjectInformation.ObjectStatus.DOES_NOT_EXIST);
+                    ReusableBuffer viewBuffer = request.getRPCRequest().getData().createViewBuffer();
+                    master.getECStage().ecWrite(viewBuffer, result.getData(), request, new FileOperationCallback() {
+                        @Override
+                        public void success(long newObjectVersion) {
+
+                        }
+
+                        @Override
+                        public void redirect(String redirectTo) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                        "write was redirected...NOT IMPLEMENTED YET");
+                            }
+                            request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
+                        }
+
+                        @Override
+                        public void failed(ErrorResponse err) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                        "write failed");
+                            }
+                            request.sendError(err);
+                        }
+                    });
+                    //ECStage ecwrite
+                }
+            });
+        }
+    }
+
+    private void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
         //prepareWrite first
 
         master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), args.getObjectNumber(),
@@ -211,7 +263,7 @@ public final class WriteOperation extends OSDOperation {
 
     }
 
-    public void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion) {
+    private void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion) {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         if (rq.getRPCRequest().getData().remaining() == sp.getStripeSizeForObject(args.getObjectNumber())) {
 
@@ -234,7 +286,7 @@ public final class WriteOperation extends OSDOperation {
             });
         }
     }
-    public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
+    private void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
             final InternalObjectData data, final ReusableBuffer createdViewBuffer) {
         master.getRWReplicationStage().replicatedWrite(args.getFileCredentials(),rq.getLocationList(),
                     args.getObjectNumber(), newObjVersion, data, createdViewBuffer,

@@ -351,7 +351,16 @@ public final class ReusableBuffer {
         buffer.put(b);
         return this;
     }
-    
+
+    /**
+     * @see java.nio.ByteBuffer#put(int, byte)
+     */
+    public ReusableBuffer put(int p, byte b) {
+        assert (!returned) : "Buffer was already freed and cannot be used anymore" + this.freeStack;
+        buffer.put(p, b);
+        return this;
+    }
+
     /**
      * @see java.nio.ByteBuffer#put(byte[])
      */
