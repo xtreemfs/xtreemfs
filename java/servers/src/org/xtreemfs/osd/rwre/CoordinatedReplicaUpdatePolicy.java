@@ -409,7 +409,7 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public long onClientOperation(Operation operation, long objVersion, ReplicatedFileState.LocalState currentState, Flease lease) throws RedirectToMasterException, IOException {
+    public long getVersion(Operation operation, ReplicatedFileState.LocalState currentState, Flease lease) throws RedirectToMasterException, IOException {
         if (currentState == ReplicatedFileState.LocalState.PRIMARY) {
             long tmpObjVer;
             if (operation != Operation.READ) {

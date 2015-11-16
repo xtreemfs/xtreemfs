@@ -348,7 +348,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                  */
 
                 try {
-                    long newVersion = state.getPolicy().onClientOperation(op, objVersion, state.getState(),
+                    long newVersion = state.getPolicy().getVersion(op, state.getState(),
                             state.getLease());
                     callback.success(newVersion);
                 } catch (RedirectToMasterException ex) {

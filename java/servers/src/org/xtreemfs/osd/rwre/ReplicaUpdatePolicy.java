@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.RedundancyStage.Operation;
+import org.xtreemfs.osd.RedundantFileState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
@@ -148,11 +149,19 @@ public abstract class ReplicaUpdatePolicy {
         public void failed(ErrorResponse error);
     }
 
-    public abstract long onClientOperation(
-        Operation operation,
-        long objVersion,
-        ReplicatedFileState.LocalState currentState,
-        Flease lease) throws RedirectToMasterException, IOException;
+    /**
+     *
+     * @param operation The operation that needs to be executed
+     * @param currentState the files state
+     * @param lease the current lease object
+     * @return depending on the operation the current version (read) or next version (write/truncate)
+     * @throws RedirectToMasterException
+     * @throws IOException
+     */
+    public abstract long getVersion(
+            Operation operation,
+            ReplicatedFileState.LocalState currentState,
+            Flease lease) throws RedirectToMasterException, IOException;
 
     public abstract boolean onRemoteUpdate(long objVersion, ReplicatedFileState.LocalState currentState)
         throws IOException;
