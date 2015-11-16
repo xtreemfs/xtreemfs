@@ -87,15 +87,12 @@ public class FileVoucherManager {
      */
     public boolean checkMaxVoucherSize(String clientId, long expireTime, long newFileSize) throws VoucherErrorException {
 
-        if (!clientExpireTimeSet.contains(expireTime + "." + clientId)) {
-            if (invalidClientExpireTimeSet.contains(expireTime + "." + clientId)) {
-                throw new VoucherErrorException(String.format(
-                        "The given xcap has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]",
-                        fileId, clientId, expireTime));
-            } else {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this,
-                        "Unregistered voucher! [FileID: %s, ClientId %s, expireTime: %s]", fileId, clientId, expireTime);
-            }
+        if (!clientExpireTimeSet.contains(expireTime + "." + clientId) &&
+                invalidClientExpireTimeSet.contains(expireTime + "." + clientId)) {
+            throw new VoucherErrorException(String.format(
+                    "The given xcap has already been invalidated! [FielID: %s, ClientId: %s, expireTime: %s]",
+                    fileId, clientId, expireTime));
+            // TODO: Only the first condition becomes true very frequently, check this!
         }
 
         // check for maximum allowed size
