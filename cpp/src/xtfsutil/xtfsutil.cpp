@@ -1652,7 +1652,6 @@ int main(int argc, char **argv) {
       vm.count("disable-tracing") > 0) {
     ++operationsCount;
     failedOperationsCount += EnableDisableTracing(xctl_file, path_on_volume, vm) ? 0 : 1;
-    failedOperationsCount += SetQuota(xctl_file, path_on_volume, vm) ? 0 : 1;
   }
   if(operationsCount == 0){
     ++operationsCount;
