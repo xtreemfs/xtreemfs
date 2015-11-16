@@ -48,7 +48,7 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    <property>
-    <name>fs.default.name</name>
+    <name>fs.defaultFS</name>
     <value>xtreemfs://localhost:32638</value>
     <description>Address for the DIR.</description>
    </property>
@@ -61,7 +61,7 @@ for VERSION in $HADOOP_VERSIONS; do
 
    <property>
     <name>xtreemfs.client.debug</name>
-    <value>true</value>
+    <value>false</value>
    </property>
 
    <property>
