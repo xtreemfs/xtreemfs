@@ -54,7 +54,7 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    <property>
-    <name>fs.default.name</name>
+    <name>fs.defaultFS</name>
     <value>xtreemfs://localhost:32638</value>
     <description>Address for the DIR.</description>
    </property>
@@ -106,6 +106,16 @@ for VERSION in $HADOOP_VERSIONS; do
     <description>
       Buffer size of the write buffer in the XtreemFSHadoopClient
     </description>
+   </property>
+
+   <property>
+     <name>xtreemfs.jni.enabled</name>
+     <value>true</value>
+   </property>
+
+   <property>
+     <name>xtreemfs.jni.libraryPath</name>
+     <value>$XTREEMFS/cpp/build</value>
    </property>
 
    </configuration>"
