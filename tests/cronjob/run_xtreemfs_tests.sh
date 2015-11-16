@@ -17,7 +17,7 @@ export LANG=en_US.UTF-8
 
 # Global variables
 TEST_ID=`date +%Y%m%dT%H%M%S`
-DIR_PREFIX="/scratch/autotests"
+DIR_PREFIX="/tmp"
 XTREEMFS_DIR="$DIR_PREFIX/checkouts/xtreemfs_checkout-$TEST_ID"
 TEST_DIR="$DIR_PREFIX/tests/xtreemfs_test-$TEST_ID"
 TEST_LOG="$TEST_DIR/test.log"
@@ -132,7 +132,8 @@ mkdir -p $TEST_DIR
 
 # Check out using SSH for passwordless push using deploy keys.
 cd $XTREEMFS_DIR
-git clone git@github.com:xtreemfs/xtreemfs.git . &> $TEST_LOG
+git clone git@github.com:robert-schmidtke/xtreemfs.git . &> $TEST_LOG
+git checkout testing
 
 # Compile
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
@@ -151,6 +152,6 @@ fi
 # Run xtfs_test
 # rm $TEST_LOG
 cd $XTREEMFS_DIR/tests
-python -u xtestenv -t $TEST_DIR full &> $TEST_SUMMARY
+python -u xtestenv -t $TEST_DIR testing &> $TEST_SUMMARY
 result=$?
-sendresult $result
+#sendresult $result

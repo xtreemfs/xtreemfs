@@ -61,7 +61,7 @@ for VERSION in $HADOOP_VERSIONS; do
 
    <property>
     <name>xtreemfs.client.debug</name>
-    <value>false</value>
+    <value>true</value>
    </property>
 
    <property>
@@ -100,6 +100,16 @@ for VERSION in $HADOOP_VERSIONS; do
     <description>
       Buffer size of the write buffer in the XtreemFSHadoopClient
     </description>
+   </property>
+
+   <property>
+     <name>xtreemfs.jni.enabled</name>
+     <value>true</value>
+   </property>
+
+   <property>
+     <name>xtreemfs.jni.libraryPath</name>
+     <value>$XTREEMFS/cpp/build</value>
    </property>
 
    </configuration>"
