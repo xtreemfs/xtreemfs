@@ -97,10 +97,8 @@
     </target>
 
     <!-- Sets Hadoop Classpaths for Test Compilation if not in NetBeans -->
-    <target name="-set-hadoop-compile-classpaths" unless="netbeans.home">
+    <target name="-check-environment,-set-hadoop-compile-classpaths" if="hadoop.external">
         <property environment="env"/>
-
-        <echo level="info" message="Not in NetBeans; test compilation will fail if HADOOP_PREFIX is not set; your HADOOP_PREFIX points to: '${env.HADOOP_PREFIX}'."/>
 
         <path id="hadoop_common_tests_jar">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
@@ -109,15 +107,25 @@
     </target>
 
     <!-- Sets Hadoop Classpaths for Test Execution if not in NetBeans -->
-    <target name="-set-hadoop-run-classpaths" unless="netbeans.home">
+    <target name="-check-environment,-set-hadoop-run-classpaths" if="hadoop.external">
         <property environment="env"/>
-
-        <echo level="info" message="Not in NetBeans; test execution will fail if HADOOP_PREFIX is not set; your HADOOP_PREFIX points to: '${env.HADOOP_PREFIX}'."/>
 
         <path id="hadoop_common_dependency_jars">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
         </path>
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
+    </target>
+
+    <target name="-check-environment">
+        <property environment="env"/>
+        <condition property="hadoop.external">
+            <and>
+                <isset property="env.HADOOP_PREFIX"/>
+                <not>
+                    <isset property="netbeans.home"/>
+                </not>
+            </and>
+        </condition>
     </target>
 
     <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
