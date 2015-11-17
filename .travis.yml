@@ -30,7 +30,7 @@ addons:
       description: Distributed Fault-Tolerant File System http://www.xtreemfs.org
     notification_email: xtreemfs-test@googlegroups.com
     build_command_prepend: make distclean
-    build_command: make client_debug server jni-client
+    build_command: make client_debug server jni-client hadoop-client pbrpcgen
     branch_pattern: coverity_scan
 
 
