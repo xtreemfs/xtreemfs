@@ -30,6 +30,7 @@ for VERSION in $HADOOP_VERSIONS; do
   ant test -f $XTREEMFS/contrib/hadoop/build.xml 2>&1 > $TEST_DIR/log/hadoop-$VERSION-junit.log
 
   grep "BUILD SUCCESSFUL" $TEST_DIR/log/hadoop-$VERSION-junit.log >/dev/null
+  cat $TEST_DIR/log/hadoop-$VERSION-junit.log
   if [ $? -eq 0 ]; then
     echo "JUnit Tests for Hadoop Adapter and Hadoop $VERSION successful."
   else
