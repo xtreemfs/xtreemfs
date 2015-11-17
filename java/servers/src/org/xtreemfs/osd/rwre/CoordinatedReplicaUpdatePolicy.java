@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
@@ -310,7 +311,39 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public void executeWrite(FileCredentials credentials, long objNo, long objVersion, InternalObjectData data, final ClientOperationCallback callback) {
+    public void executeDiffDistribute(FileCredentials credentials, long objNumber, long objectVersion, ReusableBuffer data,
+                                      final ClientOperationCallback callback) {
+        final String fileId = credentials.getXcap().getFileId();
+        final int numAcksRequired = getNumRequiredAcks(Operation.WRITE);
+        final int numRequests = remoteOSDUUIDs.size();
+        final int maxErrors = numRequests - numAcksRequired;
+
+        //TODO(janf) make sure only coding devices get the XOR data. for devices that only get the version update either make new message or make data optional?
+        final RPCResponse[] responses = new RPCResponse[remoteOSDUUIDs.size()];
+        final RPCResponseAvailableListener l = getResponseListener(callback, maxErrors, numAcksRequired, fileId, Operation.WRITE);
+        try {
+            for (int i = 0; i < responses.length; i++) {
+                responses[i] = client.xtreemfs_ec_diff_distribute(remoteOSDUUIDs.get(i).getAddress(),
+                        RPCAuthentication.authNone, RPCAuthentication.userService,
+                        credentials, credentials.getXcap().getFileId(), 0,
+                        objNumber, objectVersion, 0, data);
+                responses[i].registerListener(l);
+            }
+        } catch (IOException ex) {
+            callback.failed(ErrorUtils.getInternalServerError(ex));
+        } finally {
+            BufferPool.free(data);
+        }
+
+        //callback.writeUpdateCompleted(null, null, null);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) sent update for %s", localUUID, fileId);
+        }
+    }
+
+    @Override
+    public void executeWrite(FileCredentials credentials, long objNo, long objVersion, InternalObjectData data,
+                             final ClientOperationCallback callback) {
         final String fileId = credentials.getXcap().getFileId();
         final int numAcksRequired = getNumRequiredAcks(Operation.WRITE);
         final int numRequests = remoteOSDUUIDs.size();
@@ -338,7 +371,8 @@ public abstract class CoordinatedReplicaUpdatePolicy extends ReplicaUpdatePolicy
     }
 
     @Override
-    public void executeTruncate(FileCredentials credentials, long newFileSize, long newObjectVersion, final ClientOperationCallback callback) {
+    public void executeTruncate(FileCredentials credentials, long newFileSize, long newObjectVersion,
+                                final ClientOperationCallback callback) {
         final String fileId = credentials.getXcap().getFileId();
         final int numAcksRequired = getNumRequiredAcks(Operation.TRUNCATE);
         final int numRequests = remoteOSDUUIDs.size();

@@ -14,6 +14,7 @@ import java.util.List;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.buffer.ASCIIString;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
@@ -127,6 +128,13 @@ public abstract class ReplicaUpdatePolicy {
 
         public void failed(ErrorResponse error);
     }
+
+    public abstract void executeDiffDistribute(
+            FileCredentials credentials,
+            long objNo,
+            long objVersion,
+            ReusableBuffer data,
+            ClientOperationCallback callback);
 
     /**
      * called to execute a client write operation
