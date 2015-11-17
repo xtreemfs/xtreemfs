@@ -116,6 +116,8 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
+    <!-- Sets project property 'hadoop.external' to true if not executed within NetBeans -->
+    <!-- and the environment variable 'HADOOP_PREFIX' is set -->
     <target name="-check-environment">
         <property environment="env"/>
         <condition property="hadoop.external">
