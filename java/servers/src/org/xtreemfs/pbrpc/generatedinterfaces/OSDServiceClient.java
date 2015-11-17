@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 11 16:01:26 CET 2015
+//automatically generated from OSD.proto at Tue Nov 17 15:29:23 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -321,6 +321,19 @@ public class OSDServiceClient {
     public RPCResponse xtreemfs_rwr_reset_complete(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, int primary_epoch) throws IOException {
          final OSD.xtreemfs_rwr_reset_completeRequest msg = OSD.xtreemfs_rwr_reset_completeRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setPrimaryEpoch(primary_epoch).build();
          return xtreemfs_rwr_reset_complete(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse xtreemfs_ec_diff_distribute(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_diffs input, ReusableBuffer data) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 23, input, data, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_ec_diff_distribute(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size, long object_number, long object_version, int offset, ReusableBuffer data) throws IOException {
+         final OSD.xtreemfs_ec_diffs msg = OSD.xtreemfs_ec_diffs.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).setObjectNumber(object_number).setObjectVersion(object_version).setOffset(offset).build();
+         return xtreemfs_ec_diff_distribute(server, authHeader, userCreds,msg, data);
     }
 
     public RPCResponse<OSD.InternalGmax> xtreemfs_internal_get_gmax(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_internal_get_gmaxRequest input) throws IOException {

@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 11 16:01:26 CET 2015
+//automatically generated from OSD.proto at Tue Nov 17 15:29:23 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -31,6 +31,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_RWR_UPDATE = 72;
     public static final int PROC_ID_XTREEMFS_RWR_AUTH_STATE = 79;
     public static final int PROC_ID_XTREEMFS_RWR_RESET_COMPLETE = 80;
+    public static final int PROC_ID_XTREEMFS_EC_DIFF_DISTRIBUTE = 23;
     public static final int PROC_ID_XTREEMFS_INTERNAL_GET_GMAX = 40;
     public static final int PROC_ID_XTREEMFS_INTERNAL_TRUNCATE = 41;
     public static final int PROC_ID_XTREEMFS_INTERNAL_GET_FILE_SIZE = 42;
@@ -70,6 +71,7 @@ public class OSDServiceConstants {
            case 72: return OSD.xtreemfs_rwr_updateRequest.getDefaultInstance();
            case 79: return OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
            case 80: return OSD.xtreemfs_rwr_reset_completeRequest.getDefaultInstance();
+           case 23: return OSD.xtreemfs_ec_diffs.getDefaultInstance();
            case 40: return OSD.xtreemfs_internal_get_gmaxRequest.getDefaultInstance();
            case 41: return OSD.truncateRequest.getDefaultInstance();
            case 42: return OSD.xtreemfs_internal_get_file_sizeRequest.getDefaultInstance();
@@ -113,6 +115,7 @@ public class OSDServiceConstants {
            case 72: return null;
            case 79: return null;
            case 80: return null;
+           case 23: return null;
            case 40: return OSD.InternalGmax.getDefaultInstance();
            case 41: return GlobalTypes.OSDWriteResponse.getDefaultInstance();
            case 42: return OSD.xtreemfs_internal_get_file_sizeResponse.getDefaultInstance();

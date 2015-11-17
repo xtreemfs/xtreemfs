@@ -68,6 +68,7 @@ class xtreemfs_rwr_set_primary_epochRequest;
 class xtreemfs_rwr_statusRequest;
 class xtreemfs_rwr_truncateRequest;
 class xtreemfs_rwr_updateRequest;
+class xtreemfs_ec_diffs;
 class xtreemfs_internal_get_gmaxRequest;
 class xtreemfs_internal_get_file_sizeRequest;
 class xtreemfs_internal_get_file_sizeResponse;
@@ -3433,6 +3434,145 @@ class xtreemfs_rwr_updateRequest : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_rwr_updateRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_ec_diffs : public ::google::protobuf::Message {
+ public:
+  xtreemfs_ec_diffs();
+  virtual ~xtreemfs_ec_diffs();
+
+  xtreemfs_ec_diffs(const xtreemfs_ec_diffs& from);
+
+  inline xtreemfs_ec_diffs& operator=(const xtreemfs_ec_diffs& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_ec_diffs& default_instance();
+
+  void Swap(xtreemfs_ec_diffs* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_ec_diffs* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_ec_diffs& from);
+  void MergeFrom(const xtreemfs_ec_diffs& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  inline ::xtreemfs::pbrpc::FileCredentials* release_file_credentials();
+  inline void set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials);
+
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required fixed64 new_file_size = 3;
+  inline bool has_new_file_size() const;
+  inline void clear_new_file_size();
+  static const int kNewFileSizeFieldNumber = 3;
+  inline ::google::protobuf::uint64 new_file_size() const;
+  inline void set_new_file_size(::google::protobuf::uint64 value);
+
+  // required fixed64 object_number = 4;
+  inline bool has_object_number() const;
+  inline void clear_object_number();
+  static const int kObjectNumberFieldNumber = 4;
+  inline ::google::protobuf::uint64 object_number() const;
+  inline void set_object_number(::google::protobuf::uint64 value);
+
+  // required fixed64 object_version = 5;
+  inline bool has_object_version() const;
+  inline void clear_object_version();
+  static const int kObjectVersionFieldNumber = 5;
+  inline ::google::protobuf::uint64 object_version() const;
+  inline void set_object_version(::google::protobuf::uint64 value);
+
+  // required fixed32 offset = 6;
+  inline bool has_offset() const;
+  inline void clear_offset();
+  static const int kOffsetFieldNumber = 6;
+  inline ::google::protobuf::uint32 offset() const;
+  inline void set_offset(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_diffs)
+ private:
+  inline void set_has_file_credentials();
+  inline void clear_has_file_credentials();
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_new_file_size();
+  inline void clear_has_new_file_size();
+  inline void set_has_object_number();
+  inline void clear_has_object_number();
+  inline void set_has_object_version();
+  inline void clear_has_object_version();
+  inline void set_has_offset();
+  inline void clear_has_offset();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+  ::google::protobuf::uint64 new_file_size_;
+  ::google::protobuf::uint64 object_number_;
+  ::google::protobuf::uint64 object_version_;
+  ::google::protobuf::uint32 offset_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_ec_diffs* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -8110,6 +8250,206 @@ inline void xtreemfs_rwr_updateRequest::set_allocated_obj(::xtreemfs::pbrpc::Obj
   } else {
     clear_has_obj();
   }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_ec_diffs
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool xtreemfs_ec_diffs::has_file_credentials() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_file_credentials() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_ec_diffs::clear_has_file_credentials() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_ec_diffs::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  clear_has_file_credentials();
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_diffs::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_diffs::mutable_file_credentials() {
+  set_has_file_credentials();
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_diffs::release_file_credentials() {
+  clear_has_file_credentials();
+  ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
+  file_credentials_ = NULL;
+  return temp;
+}
+inline void xtreemfs_ec_diffs::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+  delete file_credentials_;
+  file_credentials_ = file_credentials;
+  if (file_credentials) {
+    set_has_file_credentials();
+  } else {
+    clear_has_file_credentials();
+  }
+}
+
+// required string file_id = 2;
+inline bool xtreemfs_ec_diffs::has_file_id() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_file_id() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_ec_diffs::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_ec_diffs::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_ec_diffs::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_ec_diffs::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_diffs::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_diffs::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_ec_diffs::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_ec_diffs::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_ec_diffs::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required fixed64 new_file_size = 3;
+inline bool xtreemfs_ec_diffs::has_new_file_size() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_new_file_size() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_ec_diffs::clear_has_new_file_size() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_ec_diffs::clear_new_file_size() {
+  new_file_size_ = GOOGLE_ULONGLONG(0);
+  clear_has_new_file_size();
+}
+inline ::google::protobuf::uint64 xtreemfs_ec_diffs::new_file_size() const {
+  return new_file_size_;
+}
+inline void xtreemfs_ec_diffs::set_new_file_size(::google::protobuf::uint64 value) {
+  set_has_new_file_size();
+  new_file_size_ = value;
+}
+
+// required fixed64 object_number = 4;
+inline bool xtreemfs_ec_diffs::has_object_number() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_object_number() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_ec_diffs::clear_has_object_number() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void xtreemfs_ec_diffs::clear_object_number() {
+  object_number_ = GOOGLE_ULONGLONG(0);
+  clear_has_object_number();
+}
+inline ::google::protobuf::uint64 xtreemfs_ec_diffs::object_number() const {
+  return object_number_;
+}
+inline void xtreemfs_ec_diffs::set_object_number(::google::protobuf::uint64 value) {
+  set_has_object_number();
+  object_number_ = value;
+}
+
+// required fixed64 object_version = 5;
+inline bool xtreemfs_ec_diffs::has_object_version() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_object_version() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void xtreemfs_ec_diffs::clear_has_object_version() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void xtreemfs_ec_diffs::clear_object_version() {
+  object_version_ = GOOGLE_ULONGLONG(0);
+  clear_has_object_version();
+}
+inline ::google::protobuf::uint64 xtreemfs_ec_diffs::object_version() const {
+  return object_version_;
+}
+inline void xtreemfs_ec_diffs::set_object_version(::google::protobuf::uint64 value) {
+  set_has_object_version();
+  object_version_ = value;
+}
+
+// required fixed32 offset = 6;
+inline bool xtreemfs_ec_diffs::has_offset() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void xtreemfs_ec_diffs::set_has_offset() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void xtreemfs_ec_diffs::clear_has_offset() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void xtreemfs_ec_diffs::clear_offset() {
+  offset_ = 0u;
+  clear_has_offset();
+}
+inline ::google::protobuf::uint32 xtreemfs_ec_diffs::offset() const {
+  return offset_;
+}
+inline void xtreemfs_ec_diffs::set_offset(::google::protobuf::uint32 value) {
+  set_has_offset();
+  offset_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -1,4 +1,4 @@
-//automatically generated at Wed Nov 11 16:01:25 CET 2015
+//automatically generated at Tue Nov 17 15:29:22 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
@@ -108,6 +108,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 80: {
           return new xtreemfs::pbrpc::xtreemfs_rwr_reset_completeRequest();
+          break;
+        }
+        case 23: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_diffs();
           break;
         }
         case 40: {

@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 11 16:01:25 CET 2015
+//automatically generated from OSD.proto at Tue Nov 17 15:29:22 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -547,6 +547,27 @@ namespace pbrpc {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 80,
+                     creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_ec_diff_distribute(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_ec_diffs* request,const char* data, uint32_t data_length,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                client_->sendRequest(address, 30001, 23,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_ec_diff_distribute_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_ec_diffs* request, const char* data, uint32_t data_length) {
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 30001, 23,
                      creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;

@@ -307,6 +307,15 @@ message xtreemfs_rwr_updateRequest {
   required ObjectData obj = 6;
 }
 
+message xtreemfs_ec_diffs {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required fixed64 new_file_size = 3;
+  required fixed64 object_number = 4;
+  required fixed64 object_version = 5;
+  required fixed32 offset = 6;
+}
+
 message xtreemfs_internal_get_gmaxRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -496,7 +505,7 @@ service OSDService {
   // No-op used to inform an OSD that the replica set changed.
   rpc xtreemfs_rwr_notify(FileCredentials) returns(emptyResponse) {
     option(proc_id)=75;
-  }
+  };
 
   // Stores the primary epoch on the OSD.
   rpc xtreemfs_rwr_set_primary_epoch(xtreemfs_rwr_set_primary_epochRequest) returns(ObjectData) {
@@ -532,6 +541,13 @@ service OSDService {
     option(proc_id)=80;
   };
 
+  // XtreemFS erasure coding ops ----------------------------------------
+
+  // sends diff updates to all responsible coding osds; also contains the version update
+  rpc xtreemfs_ec_diff_distribute(xtreemfs_ec_diffs) returns(emptyResponse) {
+    option(proc_id)=23;
+    option(data_in)=true;
+  };
   // Returns the local file size information on an OSD.
   // Used to determine the real file size of a striped file.
   rpc xtreemfs_internal_get_gmax(xtreemfs_internal_get_gmaxRequest) returns(InternalGmax) {

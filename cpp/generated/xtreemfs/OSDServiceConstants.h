@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Nov 11 16:01:25 CET 2015
+//automatically generated from OSD.proto at Tue Nov 17 15:29:22 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECONSTANTS_H_
@@ -32,6 +32,7 @@ const uint32_t PROC_ID_XTREEMFS_RWR_TRUNCATE = 74;
 const uint32_t PROC_ID_XTREEMFS_RWR_UPDATE = 72;
 const uint32_t PROC_ID_XTREEMFS_RWR_AUTH_STATE = 79;
 const uint32_t PROC_ID_XTREEMFS_RWR_RESET_COMPLETE = 80;
+const uint32_t PROC_ID_XTREEMFS_EC_DIFF_DISTRIBUTE = 23;
 const uint32_t PROC_ID_XTREEMFS_INTERNAL_GET_GMAX = 40;
 const uint32_t PROC_ID_XTREEMFS_INTERNAL_TRUNCATE = 41;
 const uint32_t PROC_ID_XTREEMFS_INTERNAL_GET_FILE_SIZE = 42;
