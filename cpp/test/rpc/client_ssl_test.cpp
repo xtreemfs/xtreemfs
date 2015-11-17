@@ -124,12 +124,14 @@ public:
       // Redirect stdout and stderr to file
       int log_fd = open(log_file_name_.c_str(),
                         O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
-      dup2(log_fd, 1);
-      dup2(log_fd, 2);
-      close(log_fd);
+      if (log_fd >= 0) {
+        dup2(log_fd, 1);
+        dup2(log_fd, 2);
+        close(log_fd);
       
-      // execve does not return control upon successful completion.
-      execve((java_home_ + "bin/java").c_str(), argv_, envp);
+        // execve does not return control upon successful completion.
+        execve((java_home_ + "bin/java").c_str(), argv_, envp);
+      }
       exit(errno);
     } else {
       /* This block is executed by the parent. */
