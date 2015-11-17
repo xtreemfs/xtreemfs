@@ -120,14 +120,8 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
-    <target name="-pre-compile-test" depends="-set-junit-classpath,-set-hadoop-compile-classpaths">
+    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
         <!-- Empty target -->
-    </target>
-
-    <target name="-pre-test-run" depends="-set-hadoop-run-classpaths">
-        <!-- Empty target -->
-    </target>
-    <target name="-pre-test-run-single" depends="-set-hadoop-run-classpaths">
-        <!-- Empty target -->
+        <!-- Simply triggers invocation of the depending targets -->
     </target>
 </project>
