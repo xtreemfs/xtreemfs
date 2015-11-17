@@ -1248,7 +1248,8 @@ is divided into following sections:
         <mkdir dir="${build.test.classes.dir}"/>
     </target>
     <target name="-pre-compile-test">
-        <!-- This target is overridden in ../build.xml -->
+        <!-- Empty placeholder for easier customization. -->
+        <!-- You can override this target in the ../build.xml file. -->
     </target>
     <target if="do.depend.true" name="-compile-test-depend">
         <j2seproject3:depend classpath="${javac.test.classpath}" destdir="${build.test.classes.dir}" srcdir="${test.java.dir}"/>

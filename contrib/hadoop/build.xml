@@ -100,7 +100,7 @@
     <target name="-set-hadoop-compile-classpaths" unless="netbeans.home">
         <property environment="env"/>
 
-        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
+        <echo level="info" message="Not in NetBeans; test compilation will fail if HADOOP_PREFIX is not set; your HADOOP_PREFIX points to: '${env.HADOOP_PREFIX}'."/>
 
         <path id="hadoop_common_tests_jar">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
@@ -112,7 +112,7 @@
     <target name="-set-hadoop-run-classpaths" unless="netbeans.home">
         <property environment="env"/>
 
-        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
+        <echo level="info" message="Not in NetBeans; test execution will fail if HADOOP_PREFIX is not set; your HADOOP_PREFIX points to: '${env.HADOOP_PREFIX}'."/>
 
         <path id="hadoop_common_dependency_jars">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
@@ -120,12 +120,7 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
-    <target name="-pre-init" depends="-set-junit-classpath">
-        <!-- Empty target -->
-        <!-- Simply triggers invocation of the depending targets -->
-    </target>
-
-    <target name="-pre-compile-test" depends="-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
+    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
         <!-- Empty target -->
         <!-- Simply triggers invocation of the depending targets -->
     </target>
