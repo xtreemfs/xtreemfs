@@ -10,14 +10,19 @@ package org.xtreemfs.osd.ec;
 
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.*;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 
 import java.io.IOException;
@@ -68,7 +73,7 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 
         try {
-            final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+            final FileCredentials credentials = (GlobalTypes.FileCredentials) method.getArgs()[0];
             final XLocations loc = (XLocations) method.getArgs()[1];
 
             StripedFileState state = getState(credentials, loc, false, false);
@@ -85,14 +90,27 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         public void statusComplete(Map<String, Map<String, String>> status);
     }
 
-    public void ecWrite(ReusableBuffer createdViewBuffer, ReusableBuffer existing_data, OSDRequest rq, FileOperationCallback callback) {
-        this.enqueueOperation(STAGEOP_EC_WRITE, new Object[]{existing_data, createdViewBuffer}, rq, null, callback);
+    /**
+     * TODO(janf):
+     * check why queued operations carry seemingly redundant information. i.e. often the OSDRequest is attached to the
+     * stage request. it has information like the XLocations. nevertheless xlocations are frequently attached to the
+     * StageRequest as well. does this serve a purpose or is it simply laziness?
+     */
+    public void ecWrite(final long newObjectVersion, ReusableBuffer createdViewBuffer, ReusableBuffer existing_data,
+                        FileCredentials credentials, final long objectNumber, OSDRequest rq, FileOperationCallback callback) {
+        this.enqueueOperation(STAGEOP_EC_WRITE, new Object[]{existing_data, createdViewBuffer, newObjectVersion, credentials, objectNumber},
+                              rq, null, callback);
     }
 
     private void processECWrite(StageRequest method) {
         try {
             ReusableBuffer existingData = (ReusableBuffer) method.getArgs()[0];
             ReusableBuffer newData = (ReusableBuffer) method.getArgs()[1];
+            final long newObjectVersion = (long) method.getArgs()[2];
+            FileCredentials credentials = (FileCredentials) method.getArgs()[3];
+            final long objectNumber = (long) method.getArgs()[4];
+            String fileId = method.getRequest().getFileId();
+            final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 
             if (existingData == null) {
                 // object content is new
@@ -108,6 +126,28 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
             // now distribute newData to coding devices
             // call callback and give control back to WriteOperation
             // from there call back into ECStage and use replicaupdate policy to distribute xor and verions
+            StripedFileState state = files.get(fileId);
+            if (state == null) {
+                BufferPool.free(newData);
+                callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                        POSIXErrno.POSIX_ERROR_EIO, "file is not open!"));
+                return;
+            }
+            state.setCredentials(credentials);
+
+            state.getPolicy().executeDiffDistribute(credentials, objectNumber, newObjectVersion, newData,
+                    new ReplicaUpdatePolicy.ClientOperationCallback() {
+
+                        @Override
+                        public void finished() {
+                            callback.success(newObjectVersion);
+                        }
+
+                        @Override
+                        public void failed(ErrorResponse error) {
+                            callback.failed(error);
+                        }
+                    });
 
         } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);

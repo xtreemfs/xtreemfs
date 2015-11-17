@@ -17,7 +17,6 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -128,7 +127,7 @@ public final class WriteOperation extends OSDOperation {
                     @Override
                     public void success(final long newObjectVersion) {
                         assert (newObjectVersion > 0);
-                        sendDiffs(request, args, newObjectVersion);
+                        makeDiff(request, args, newObjectVersion);
                     }
 
                     @Override
@@ -153,73 +152,50 @@ public final class WriteOperation extends OSDOperation {
 
     }
 
-    private void sendDiffs(final OSDRequest request, final writeRequest args, final long newObjVersion) {
+    private void makeDiff(final OSDRequest request, final writeRequest args, final long newObjVersion) {
         final StripingPolicyImpl sp = request.getLocationList().getLocalReplica().getStripingPolicy();
-
-        // TODO(jan) when we have new version distribute updates
         if (newObjVersion == 1) {
             // new object, diff is equal to new data
-            ReusableBuffer viewBuffer = request.getRPCRequest().getData().createViewBuffer();
-            master.getECStage().ecWrite(viewBuffer, null, request, new FileOperationCallback() {
-                @Override
-                public void success(long newObjectVersion) {
-
-                }
-
-                @Override
-                public void redirect(String redirectTo) {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                "write was redirected...NOT IMPLEMENTED YET");
-                    }
-                    request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
-                }
-
-                @Override
-                public void failed(ErrorResponse err) {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                "write failed");
-                    }
-                    request.sendError(err);
-                }
-            });
+            sendDiff(null, request, args, newObjVersion);
         } else {
-            // object is updated, read old object and XOR
-
+            // object is updated, read old object
             master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, 0, -1, 0l, request, new ReadObjectCallback() {
                 @Override
                 public void readComplete(ObjectInformation result, ErrorResponse error) {
                     assert (result.getStatus() != ObjectInformation.ObjectStatus.DOES_NOT_EXIST);
-                    ReusableBuffer viewBuffer = request.getRPCRequest().getData().createViewBuffer();
-                    master.getECStage().ecWrite(viewBuffer, result.getData(), request, new FileOperationCallback() {
-                        @Override
-                        public void success(long newObjectVersion) {
-
-                        }
-
-                        @Override
-                        public void redirect(String redirectTo) {
-                            if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                        "write was redirected...NOT IMPLEMENTED YET");
-                            }
-                            request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
-                        }
-
-                        @Override
-                        public void failed(ErrorResponse err) {
-                            if (Logging.isDebug()) {
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                        "write failed");
-                            }
-                            request.sendError(err);
-                        }
-                    });
-                    //ECStage ecwrite
+                    ReusableBuffer oldData = request.getRPCRequest().getData().createViewBuffer();
+                    sendDiff(oldData, request, args, newObjVersion);
                 }
             });
         }
+    }
+
+    private void sendDiff(final ReusableBuffer oldData, final OSDRequest request, final writeRequest args, final long newObjVersion) {
+        ReusableBuffer newData = request.getRPCRequest().getData().createViewBuffer();
+        master.getECStage().ecWrite(newObjVersion, newData, oldData, args.getFileCredentials(), args.getObjectNumber(), request, new FileOperationCallback() {
+            @Override
+            public void success(long newObjectVersion) {
+
+            }
+
+            @Override
+            public void redirect(String redirectTo) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "write was redirected...NOT IMPLEMENTED YET");
+                }
+                request.sendError(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE, "redirect not implemented yet");
+            }
+
+            @Override
+            public void failed(ErrorResponse err) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "write failed");
+                }
+                request.sendError(err);
+            }
+        });
     }
 
     private void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
