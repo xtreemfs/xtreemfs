@@ -13,6 +13,7 @@
 #include <boost/asio.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
+#include <boost/utility/enable_if.hpp>
 #include <cerrno>
 #include <fcntl.h>
 #include <fstream>
@@ -392,6 +393,24 @@ protected:
 
 template<TestCertificateType t>
 class ClientSSLTestShortChain : public ClientTest {
+private:
+  template<TestCertificateType T>
+  void set_paths (typename boost::enable_if_c<T == kPKCS12, void>::type*) {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
+  }
+  
+  template<TestCertificateType T>
+  void set_paths (typename boost::enable_if_c<T == kPEM, void>::type*) {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Root.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+  }
+  
+  template<TestCertificateType T>
+  void set_paths (typename boost::enable_if_c<T == None, void>::type*) {}
+  
 protected:
   virtual void SetUp() {
     // Root signed, root trusted
@@ -405,20 +424,7 @@ protected:
     options_.log_level_string = "DEBUG";
     
     // Root signed, only root as additional certificate.
-    switch (t) {
-      case kPKCS12:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pkcs12");
-        options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
-        break;
-      case kPEM:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pem");
-        options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
-        options_.ssl_pem_key_path = cert_path("Client_Root.key");
-        options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
-        break;
-      case None:
-        break;
-    }
+    set_paths<t>(0);
     
     options_.ssl_verify_certificates = true;
         
