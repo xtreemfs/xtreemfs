@@ -6,6 +6,7 @@ env:
   global:
     # encrypted COVERITY_SCAN_TOKEN
     - secure: "WkngHI6zO+6m8ZNqrbFZN+V8xCUxXVUMzLGBcOMa2/iiSDGxnRRpGU2jH+4Uf4ChCE4dXLrTXvs4vDjUT7aZ9KVFzcTo4HYejdLeMayFPLeztSYdFUG7EYtambZlh1Ldp67+ZBXLJ152iTWvCm5t/JXs3tA+Q5puZ24OO+U5xAE="
+    - BUILD_CLIENT_TESTS=true
 
 sudo: false
 
@@ -29,7 +30,7 @@ addons:
       description: Distributed Fault-Tolerant File System http://www.xtreemfs.org
     notification_email: xtreemfs-test@googlegroups.com
     build_command_prepend: make distclean
-    build_command: BUILD_CLIENT_TESTS=true make client_debug server jni-client
+    build_command: make client_debug server jni-client
     branch_pattern: coverity_scan
 
 
