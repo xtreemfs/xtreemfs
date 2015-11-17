@@ -27,7 +27,7 @@ for VERSION in $HADOOP_VERSIONS; do
   echo "Set HADOOP_HOME=HADOOP_PREFIX=$HADOOP_PREFIX"
 
   echo "Running JUnit Tests for Hadoop Adapter and Hadoop $VERSION..."
-  ant test -v -d -f $XTREEMFS/contrib/hadoop/build.xml 2>&1 > $TEST_DIR/log/hadoop-$VERSION-junit.log
+  ant test -v -d -f $XTREEMFS/contrib/hadoop/build.xml -Djava.library.path=$XTREEMFS/cpp/build 2>&1 > $TEST_DIR/log/hadoop-$VERSION-junit.log
 
   grep "BUILD SUCCESSFUL" $TEST_DIR/log/hadoop-$VERSION-junit.log >/dev/null
   cat $TEST_DIR/log/hadoop-$VERSION-junit.log
