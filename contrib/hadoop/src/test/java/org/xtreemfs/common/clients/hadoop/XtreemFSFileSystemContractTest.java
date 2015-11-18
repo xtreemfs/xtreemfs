@@ -20,7 +20,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
- * Executes file system contract tests with XtreemFS initialized from
+ * Executes Hadoop 2 file system contract tests with XtreemFS initialized from
  * <code>xtreemfs.defaultVolumeName</code>.
  */
 public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {

@@ -6,13 +6,10 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
-import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.FileSystemContractBaseTest;
+import org.apache.hadoop.fs.Hadoop1FileSystemContractBaseTest;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.contract.ContractTestUtils;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -20,42 +17,30 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
- * Executes file system contract tests with XtreemFS initialized from
+ * Executes Hadoop 1 file system contract tests with XtreemFS initialized from
  * <code>xtreemfs.defaultVolumeName</code>.
  */
-public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
+public final class XtreemFSHadoop1FileSystemContractTest extends Hadoop1FileSystemContractBaseTest {
 
-    protected final Client client;
+    private final Client client;
 
-    protected final UserCredentials userCredentials;
+    private final UserCredentials userCredentials;
 
-    protected final Path fileSystemPath;
+    private final Path fileSystemPath;
 
-    protected final Path dirPath, mrcPath;
+    private final Path dirPath, mrcPath;
 
-    protected static final String DEFAULT_VOLUME_NAME = "hadoopJUnitTest",
+    private static final String DEFAULT_VOLUME_NAME = "hadoopJUnitTest",
             UNUSED_VOLUME_NAME = DEFAULT_VOLUME_NAME + "_";
 
-    protected final Configuration conf;
-    
-    // whether to set xtreemfs.defaultVolumeName during setUp, defaults to true
-    protected boolean setXtreemFSDefaultVolumeName;
-    
-    // whether to instantiate the file system using FileSystem.get, defaults to true
-    protected boolean useFSFactory;
+    private final Configuration conf;
 
-    public XtreemFSFileSystemContractTest() {
-        this("xtreemfs://localhost:32638", "xtreemfs://localhost:32638",
-                "xtreemfs://localhost:32636");
-    }
+    public XtreemFSHadoop1FileSystemContractTest() {
+        this.fileSystemPath = new Path("xtreemfs://localhost:32638");
+        this.dirPath = new Path("xtreemfs://localhost:32638");
+        this.mrcPath = new Path("xtreemfs://localhost:32636");
 
-    protected XtreemFSFileSystemContractTest(String fileSystemUri,
-            String dirUri, String mrcUri) {
-        this.fileSystemPath = new Path(fileSystemUri);
-        this.dirPath = new Path(dirUri);
-        this.mrcPath = new Path(mrcUri);
-
-        Configuration.addDefaultResource(XtreemFSFileSystemContractTest.class
+        Configuration.addDefaultResource(XtreemFSHadoop1FileSystemContractTest.class
                 .getClassLoader().getResource("core-site.xml").getPath());
         conf = new Configuration();
 
@@ -64,9 +49,6 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
 
         client = ClientFactory.createClient(ClientFactory.ClientType.NATIVE,
                 dirPath.toUri().getAuthority(), userCredentials, null, new Options());
-        
-        setXtreemFSDefaultVolumeName = true;
-        useFSFactory = true;
     }
 
     @Override
@@ -78,82 +60,15 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
                 userCredentials, DEFAULT_VOLUME_NAME);
         client.createVolume(mrcPath.toUri().getAuthority(), RPCAuthentication.authNone,
                 userCredentials, UNUSED_VOLUME_NAME);
-        
+
         conf.set("xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
                 + "/cpp/build");
-        if (setXtreemFSDefaultVolumeName) {
-            conf.set("xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
-        }
+        conf.set("xtreemfs.defaultVolumeName", DEFAULT_VOLUME_NAME);
+        conf.set("xtreemfs.hadoop.version", "1");
 
-        if (useFSFactory) {
-            fs = FileSystem.get(fileSystemPath.toUri(), conf);
-        } else {
-            fs = new XtreemFSFileSystem();
-            fs.initialize(fileSystemPath.toUri(), conf);
-        }
+        fs = FileSystem.get(fileSystemPath.toUri(), conf);
 
         super.setUp();
-    }
-
-    /**
-     * Tests proper handling of correct URIs, in particular:<br />
-     * <code>
-     * xtreemfs://server:port/volume/path/to/file<br />
-     * xtreemfs://server/volume/path/to/file<br />
-     * xtreemfs:/path/to/file<br />
-     * //server:port/volume/path/to/file<br />
-     * //server/volume/path/to/file<br />
-     * /path/to/file<br />
-     * path/to/file<br />
-     * ./path/to/file<br />
-     * ../path/to/file
-     * </code>
-     *
-     * @throws Exception
-     */
-    public void testFileURIs() throws Exception {
-        String expected = "xtreemfs://" + dirPath.toUri().getAuthority() + "/"
-                + DEFAULT_VOLUME_NAME + "/path/to/file";
-
-        // xtreemfs://localhost:32638/hadoopJUnitTest/path/to/file
-        assertFileCreated(expected, expected);
-
-        // xtreemfs://localhost/hadoopJUnitTest/path/to/file
-        assertFileCreated(
-                "xtreemfs://" + dirPath.toUri().getHost() + "/" + DEFAULT_VOLUME_NAME + "/path/to/file",
-                expected);
-
-        // xtreemfs:/path/to/file
-        assertFileCreated("xtreemfs:/path/to/file", expected);
-
-        // //localhost:32638/hadoopJUnitTest/path/to/file
-        assertFileCreated(
-                "//" + dirPath.toUri().getAuthority() + "/" + DEFAULT_VOLUME_NAME + "/path/to/file",
-                expected);
-
-        // //localhost/hadoopJUnitTest/path/to/file
-        assertFileCreated(
-                "//" + dirPath.toUri().getHost() + "/" + DEFAULT_VOLUME_NAME + "/path/to/file",
-                expected);
-
-        // /path/to/file
-        assertFileCreated("/path/to/file", expected);
-
-        expected = "xtreemfs://" + dirPath.toUri().getAuthority() + "/"
-                + DEFAULT_VOLUME_NAME + "/user/" + System.getProperty("user.name")
-                + "/path/to/file";
-
-        // path/to/file
-        assertFileCreated("path/to/file", expected);
-
-        // ./path/to/file
-        assertFileCreated("./path/to/file", expected);
-
-        expected = "xtreemfs://" + dirPath.toUri().getAuthority() + "/"
-                + DEFAULT_VOLUME_NAME + "/user/path/to/file";
-
-        // ../path/to/file
-        assertFileCreated("../path/to/file", expected);
     }
 
     @Override
@@ -165,13 +80,6 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         client.deleteVolume(mrcPath.toUri().getAuthority(), RPCAuthentication.authNone,
                 userCredentials, UNUSED_VOLUME_NAME);
         client.shutdown();
-    }
-
-    protected void assertFileCreated(String path, String expected) throws IOException {
-        FSDataOutputStream file = fs.create(new Path(path));
-        ContractTestUtils.assertIsFile(fs, new Path(expected));
-        ContractTestUtils.assertDeleted(fs, new Path(expected), true);
-        file.close();
     }
 
 }
