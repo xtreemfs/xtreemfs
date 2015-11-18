@@ -20,7 +20,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 
 /**
- * Executes file system contract tests with XtreemFS initialized from
+ * Executes Hadoop 2 file system contract tests with XtreemFS initialized from
  * <code>xtreemfs.defaultVolumeName</code>.
  */
 public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
@@ -37,10 +37,10 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
             UNUSED_VOLUME_NAME = DEFAULT_VOLUME_NAME + "_";
 
     protected final Configuration conf;
-    
+
     // whether to set xtreemfs.defaultVolumeName during setUp, defaults to true
     protected boolean setXtreemFSDefaultVolumeName;
-    
+
     // whether to instantiate the file system using FileSystem.get, defaults to true
     protected boolean useFSFactory;
 
@@ -64,7 +64,7 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
 
         client = ClientFactory.createClient(ClientFactory.ClientType.NATIVE,
                 dirPath.toUri().getAuthority(), userCredentials, null, new Options());
-        
+
         setXtreemFSDefaultVolumeName = true;
         useFSFactory = true;
     }
@@ -78,7 +78,7 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
                 userCredentials, DEFAULT_VOLUME_NAME);
         client.createVolume(mrcPath.toUri().getAuthority(), RPCAuthentication.authNone,
                 userCredentials, UNUSED_VOLUME_NAME);
-        
+
         conf.set("xtreemfs.jni.libraryPath", System.getenv("XTREEMFS")
                 + "/cpp/build");
         if (setXtreemFSDefaultVolumeName) {

@@ -48,7 +48,7 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    <property>
-    <name>fs.defaultFS</name>
+    <name>fs.default.name</name>
     <value>xtreemfs://localhost:32638</value>
     <description>Address for the DIR.</description>
    </property>
@@ -110,6 +110,11 @@ for VERSION in $HADOOP_VERSIONS; do
    <property>
      <name>xtreemfs.jni.libraryPath</name>
      <value>$XTREEMFS/cpp/build</value>
+   </property>
+
+   <property>
+     <name>xtreemfs.hadoop.version</name>
+     <value>$VERSION</value>
    </property>
 
    </configuration>"
