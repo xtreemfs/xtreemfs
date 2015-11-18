@@ -279,7 +279,7 @@ Tests = [
         'name': 'hadoop test',
         'file': 'hadoop_test.sh',
         'VolumeConfigs': ['regular'],
-        'TestSets': [ ]
+        'TestSets': [ 'full' ]
     },
     {
         'name': 'hadoop2 test',
