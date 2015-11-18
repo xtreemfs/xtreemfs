@@ -3179,6 +3179,14 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
       Overwrite existing files on rename.
     </description>
   </property>
+  
+  <property>
+    <name>xtreemfs.hadoop.version</name>
+    <value>2.2.0</value>
+    <description>
+      Hadoop version to be compatible with.
+    </description>
+  </property>
 
 </configuration>
 	\end{verbatim}
@@ -3190,6 +3198,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
 	\item Set the fifth property to true if an existing file should be overwritten when another file is renamed to the existing file's path. Defaults to false for Hadoop FileSystem Contract conformance; for POSIX conformance, set this to true.
+	\item The sixth property specifies the Hadoop version to be compatible with. There are subtle differences in how Hadoop 0.x, 1.x and 2.x expect third-party file systems to behave, most notably on how rigorous operations on non-existing files should be treated. Be sure to set this property to the version you are using (version strings with patterns 'x', 'x.y' and 'x.y.z' are accepted), otherwise Hadoop might fail to properly start up.
 	\end{enumerate}
 
   Hint: By default Hadoop uses the current user as user ID and \textit{users} as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties:
