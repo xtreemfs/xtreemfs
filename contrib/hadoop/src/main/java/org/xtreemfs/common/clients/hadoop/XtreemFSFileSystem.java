@@ -72,7 +72,7 @@ public class XtreemFSFileSystem extends FileSystem {
     private static final int[]  MIN_HADOOP_VERSION = { 0, 0, 0 };
     private static final int[]  MAX_HADOOP_VERSION =
             { 2, Integer.MAX_VALUE, Integer.MAX_VALUE };
-    private static String STANDARD_HADOOP_VERSION = "2.2.0";
+    private static final String STANDARD_HADOOP_VERSION = "2.2.0";
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
