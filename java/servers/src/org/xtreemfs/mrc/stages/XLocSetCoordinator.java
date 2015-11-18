@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -31,9 +32,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -42,25 +41,24 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.MRCOperation;
-import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.osd.rwre.CoordinatedReplicaUpdatePolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.AuthoritativeReplicaState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_statusRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_statusResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_xloc_set_invalidateResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -73,10 +71,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResultListener<Object> {
     private enum RequestType {
-        ADD_REPLICAS, REMOVE_REPLICAS
+        XLOCSET_CHANGE
     };
 
     public final static String           XLOCSET_CHANGE_ATTR_KEY = "xlocsetchange";
+    private final static long            STATUS_RETRY_DELAY_MS   = 5000;
 
     protected volatile boolean           quit;
     private final MRCRequestDispatcher   master;
@@ -120,18 +119,13 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     /**
      * Choose the matching method and process the request.
      * 
-     * ErrorHandling is done separately in the handleError method.
-     * 
      * @param m
      */
     private void processRequest(RequestMethod m) throws InterruptedException {
         try {
             switch (m.getRequestType()) {
-            case ADD_REPLICAS:
-                processAddReplicas(m);
-                break;
-            case REMOVE_REPLICAS:
-                processRemoveReplicas(m);
+            case XLOCSET_CHANGE:
+                processXLocSetChange(m);
                 break;
             default:
                 throw new Exception("unknown stage operation");
@@ -139,7 +133,13 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable e) {
-            handleError(m, e);
+            // Try to handle the error
+            Logging.logError(Logging.LEVEL_WARN, this, e);
+            try {
+                m.getCallback().handleInstallXLocSetError(e, m.getFileId(), m.getNewXLocList(), m.getCurXLocList());
+            } catch (Throwable e2) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e2);
+            }
         }
     }
 
@@ -212,98 +212,61 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             return newXLocList;
         }
     }
+    
 
-    public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod addReplicas(String fileId,
-            FileMetadata file, XLocList curXLocList, XLocList extXLocList, MRCRequest rq, O op)
-            throws DatabaseException {
-        return addReplicas(fileId, file, curXLocList, extXLocList, rq, op, op);
-    }
-
-    public RequestMethod addReplicas(String fileId, FileMetadata file, XLocList curXLocList, XLocList extXLocList,
-            MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
-
-        Capability cap = buildCapability(fileId, file);
-        RequestMethod m = new RequestMethod(RequestType.ADD_REPLICAS, fileId, rq, op, callback, cap, curXLocList,
-                extXLocList);
-
-        return m;
-    }
-
-    private void processAddReplicas(final RequestMethod m) throws Throwable {
-        final MRCRequest rq = m.getRequest();
-
-        final String fileId = m.getFileId();
-        final Capability cap = m.getCapability();
-
-        final XLocList curXLocList = m.getCurXLocList();
-        final XLocList extXLocList = m.getNewXLocList();
-
-        final XLocSet curXLocSet = Converter.xLocListToXLocSet(curXLocList).build();
-        // Ensure the next view won't be propagated until it is installed at the MRC.
-        final XLocSet extXLocSet = Converter.xLocListToXLocSet(extXLocList).setVersion(curXLocSet.getVersion()).build();
-
-        // TODO(jdillmann): Use centralized method to check if a lease is required.
-        if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
-                || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
-                || extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
-
-            // Invalidate the majority of the replicas and get their ReplicaStatus.
-            int curNumRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
-            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, curNumRequiredAcks);
-
-            // Calculate the AuthState and determine how many replicas have to be updated.
-            AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
-            Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
-
-            // Calculate the number of required updates and send them an update request.
-            int extNumRequiredAcks = calculateNumRequiredAcks(fileId, extXLocSet);
-            updateReplicas(fileId, cap, extXLocSet, authState, extNumRequiredAcks, replicasUpToDate);
-
-        } else if (extXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
-            // at the client by libxtreemfs.
-            // The INVALIDATION request will be send to every replica, but the coordination continues on the first
-            // response.
-            invalidateReplicas(fileId, cap, curXLocSet, 1);
-
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "replication policy (%s) will be handled by VolumeImplementation",
-                        extXLocSet.getReplicaUpdatePolicy());
-            }
-        } else {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Unknown replica update policy: "
-                    + extXLocSet.getReplicaUpdatePolicy());
-        }
-
-        // Call the installXLocSet method in the context of the ProcessingStage.
-        master.getProcStage().enqueueInternalCallbackOperation(rq, new InternalCallbackInterface() {
-            @Override
-            public void execute(MRCRequest rq) throws Throwable {
-                m.getCallback().installXLocSet(rq, fileId, extXLocList, curXLocList);
-            }
-        });
-    }
-
-    public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod removeReplicas(String fileId,
+    /**
+     * @see {@link XLocSetCoordinator#requestXLocSetChange(String, FileMetadata, XLocList, XLocList, MRCRequest, MRCOperation, XLocSetCoordinatorCallback)}
+     * @param fileId
+     * @param file
+     * @param curXLocList
+     * @param newXLocList
+     * @param rq
+     * @param op
+     *            An MRCOperation that is also implementing the XLocSetCoordinatorCallback interface.
+     * @return
+     * @throws DatabaseException
+     */
+    public <O extends MRCOperation & XLocSetCoordinatorCallback> RequestMethod requestXLocSetChange(String fileId,
             FileMetadata file, XLocList curXLocList, XLocList newXLocList, MRCRequest rq, O op)
-            throws DatabaseException {
-        return removeReplicas(fileId, file, curXLocList, newXLocList, rq, op, op);
+                    throws DatabaseException {
+        return requestXLocSetChange(fileId, file, curXLocList, newXLocList, rq, op, op);
     }
 
-    public RequestMethod removeReplicas(String fileId, FileMetadata file, XLocList curXLocList, XLocList newXLocList,
+    /**
+     * Returns a {@link RequestMethod} which can be used a context for {@link StorageManager#createAtomicDBUpdate}, if
+     * the DBAccessResultListener is a {@link XLocSetCoordinator}. The XLocSet modification will be coordinated when the
+     * DBUpdate is done. <br>
+     * 
+     * It is advised to lock the xLocSet on the same update with {@link #lockXLocSet}.
+     * 
+     * @param fileId
+     * @param file
+     *            FileMetadata Object
+     * @param curXLocList
+     *            The current xLocList
+     * @param newXLocList
+     *            The to be installed xLocList
+     * @param rq
+     *            MRCRrequest
+     * @param op
+     *            MRCOperation
+     * @param callback
+     *            Called when the new XLocList can be safely installed
+     * @return RequestMethod
+     * @throws DatabaseException
+     */
+    public RequestMethod requestXLocSetChange(String fileId, FileMetadata file, XLocList curXLocList,
+            XLocList newXLocList,
             MRCRequest rq, MRCOperation op, XLocSetCoordinatorCallback callback) throws DatabaseException {
 
         Capability cap = buildCapability(fileId, file);
-        RequestMethod m = new RequestMethod(RequestType.REMOVE_REPLICAS, fileId, rq, op, callback, cap, curXLocList,
+        RequestMethod m = new RequestMethod(RequestType.XLOCSET_CHANGE, fileId, rq, op, callback, cap, curXLocList,
                 newXLocList);
 
         return m;
     }
 
-    private void processRemoveReplicas(final RequestMethod m) throws Throwable {
-        final MRCRequest rq = m.getRequest();
-
+    private void processXLocSetChange(final RequestMethod m) throws Throwable {
         final String fileId = m.getFileId();
         final Capability cap = m.getCapability();
 
@@ -314,60 +277,47 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // Ensure the next view won't be propagated until it is installed at the MRC.
         final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).setVersion(curXLocSet.getVersion()).build();
 
-        
+        // TODO(jdillmann): Use centralized method to check if a lease is required.
         if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
                 || curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
                 || curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
 
-            // Invalidate the majority of the replicas and get their ReplicaStatus
+            // Invalidate the majority of the replicas, get their ReplicaStatus and calculate the AuthState.
             int numRequiredAcks = calculateNumRequiredAcks(fileId, curXLocSet);
             ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numRequiredAcks);
-
-            // Calculate the AuthState and determine how many replicas have to be updated.
             AuthoritativeReplicaState authState = calculateAuthoritativeState(fileId, curXLocSet, states);
-            Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
 
-            // Remove the replicas, that will be removed from the xLocSet, from the set containing up to date replicas.
-            HashSet<String> newReplicas = new HashSet<String>();
-            for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
-                String OSDUUID = Helper.getOSDUUIDFromXlocSet(curXLocSet, i, 0);
-                newReplicas.add(OSDUUID);
-            }
-
-            Iterator<String> iterator = replicasUpToDate.iterator();
-            while (iterator.hasNext()) {
-                String OSDUUID = iterator.next();
-                if (!newReplicas.contains(OSDUUID)) {
-                    iterator.remove();
-                }
-            }
-
-            // Calculate the number of required updates and send them an update request.
-            int newNumRequiredAcks = calculateNumRequiredAcks(fileId, newXLocSet);
-            updateReplicas(fileId, cap, newXLocSet, authState, newNumRequiredAcks, replicasUpToDate);
+            // Update the required number of replicas while they are invalidated.
+            updateReplicas(fileId, cap, newXLocSet, curXLocSet, authState);
 
         } else if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
             // at the client by libxtreemfs.
             // The INVALIDATION request will be send to every replica, but the coordination continues on the first
             // response.
-            ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, 1);
+            invalidateReplicas(fileId, cap, curXLocSet, 1);
 
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "replication policy (%s) will be handled by VolumeImplementation",
-                        curXLocSet.getReplicaUpdatePolicy());
+                                   "replication policy (%s) will be handled by VolumeImplementation",
+                                   curXLocSet.getReplicaUpdatePolicy());
             }
+
         } else {
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM, "Unknown replica update policy: "
                     + curXLocSet.getReplicaUpdatePolicy());
         }
 
         // Call the installXLocSet method in the context of the ProcessingStage.
-        master.getProcStage().enqueueInternalCallbackOperation(rq, new InternalCallbackInterface() {
+        master.getProcStage().enqueueInternalCallbackOperation(new InternalCallbackInterface() {
             @Override
-            public void execute(MRCRequest rq) throws Throwable {
-                m.getCallback().installXLocSet(rq, fileId, newXLocList, curXLocList);
+            public void execute() throws Throwable {
+                final XLocSetCoordinatorCallback callback = m.getCallback();
+                try {
+                    callback.installXLocSet(fileId, newXLocList, curXLocList);
+                } catch (Throwable e) {
+                    callback.handleInstallXLocSetError(e, fileId, newXLocList, curXLocList);
+                }
             }
         });
     }
@@ -378,31 +328,63 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * Currently the lock is saving the {@link MRCRequestDispatcher#hashCode()} to be able to identify if a previous MRC
      * instance crashed while a xLocSet change was in progress.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @param update
      * @throws DatabaseException
      */
-    public void lockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+    public void lockXLocSet(long fileId, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
         byte[] hashValue = new byte[4];
         ByteBuffer hashByte = ByteBuffer.wrap(hashValue).putInt(master.hashCode());
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+        sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, hashValue, update);
         hashByte.clear();
     }
 
     /**
+     * @see #lockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void lockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+        lockXLocSet(file.getId(), sMan, update);
+    }
+
+    /**
+     * @see #lockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void lockXLocSet(String fileId, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException,
+            UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        lockXLocSet(idRes.getLocalFileId(), sMan, update);
+    }
+
+    /**
      * Unlock the xLocSet for a file. This will clear the lock in the database.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @param update
      * @throws DatabaseException
      */
-    public void unlockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update)
+    public void unlockXLocSet(long fileId, StorageManager sMan, AtomicDBUpdate update)
             throws DatabaseException {
-        sMan.setXAttr(file.getId(), StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
+        sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, StorageManager.SYS_ATTR_KEY_PREFIX
                 + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY, null, update);
+    }
+
+    /**
+     * @see #unlockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void unlockXLocSet(FileMetadata file, StorageManager sMan, AtomicDBUpdate update) throws DatabaseException {
+        unlockXLocSet(file.getId(), sMan, update);
+    }
+
+    /**
+     * @see #unlockXLocSet(long, StorageManager, AtomicDBUpdate)
+     */
+    public void unlockXLocSet(String fileId, StorageManager sMan, AtomicDBUpdate update)
+            throws DatabaseException, UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        unlockXLocSet(idRes.getLocalFileId(), sMan, update);
     }
 
     /**
@@ -410,16 +392,16 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * the case, it can be assumed the previous MRC crashed and the {@link XLocSetLock} should be released and replicas
      * revalidated.
      * 
-     * @param file
+     * @param fileId
      * @param sMan
      * @return XLocSetLock
      * @throws DatabaseException
      */
-    public XLocSetLock getXLocSetLock(FileMetadata file, StorageManager sMan) throws DatabaseException {
+    public XLocSetLock getXLocSetLock(long fileId, StorageManager sMan) throws DatabaseException {
         XLocSetLock lock;
 
         // Check if a hashCode has been saved to to the files XAttr to lock the xLocSet.
-        byte[] prevHashBytes = sMan.getXAttr(file.getId(), StorageManager.SYSTEM_UID,
+        byte[] prevHashBytes = sMan.getXAttr(fileId, StorageManager.SYSTEM_UID,
                 StorageManager.SYS_ATTR_KEY_PREFIX + XLocSetCoordinator.XLOCSET_CHANGE_ATTR_KEY);
         if (prevHashBytes != null) {
             // Check if the saved hashCode differs from the current one. If this is the case, the MRC has crashed.
@@ -439,6 +421,20 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         return lock;
     }
 
+    /**
+     * @see #getXLocSetLock(long, StorageManager)
+     */
+    public XLocSetLock getXLocSetLock(FileMetadata file, StorageManager sMan) throws DatabaseException {
+        return getXLocSetLock(file.getId(), sMan);
+    }
+
+    /**
+     * @see #getXLocSetLock(long, StorageManager)
+     */
+    public XLocSetLock getXLocSetLock(String fileId, StorageManager sMan) throws DatabaseException, UserException {
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        return getXLocSetLock(idRes.getLocalFileId(), sMan);
+    }
 
     /**
      * Build a valid Capability for the given file
@@ -484,6 +480,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      */
     private ReplicaStatus[] invalidateReplicas(String fileId, Capability cap, XLocSet xLocSet, int numAcksRequired)
             throws InterruptedException, MRCException {
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalidateReplicas called with %d numAcksRequired",
+                numAcksRequired);
 
         @SuppressWarnings("unchecked")
         final RPCResponse<xtreemfs_xloc_set_invalidateResponse>[] responses = new RPCResponse[xLocSet
@@ -496,8 +494,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             ServiceUUID OSDServiceUUID = new ServiceUUID(Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0));
             try {
                 responses[i] = client.xtreemfs_xloc_set_invalidate(OSDServiceUUID.getAddress(),
-                        RPCAuthentication.authNone,
-                        RPCAuthentication.userService, creds, fileId);
+                        RPCAuthentication.authNone, RPCAuthentication.userService, creds, fileId);
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
                     Logging.logError(Logging.LEVEL_DEBUG, this, ex);
@@ -550,6 +547,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
                     if (response.getLeaseState() == LeaseState.PRIMARY) {
                         primaryResponded = true;
+                        primaryExists = true;
                     } else if (response.getLeaseState() == LeaseState.BACKUP) {
                         primaryExists = true;
                     }
@@ -586,16 +584,26 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        // If a primary exists, wait until either the primary responded, every replica responded or the lease has timed out.
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalidateReplicas invalidated %d replicas",
+                    listener.numResponses);
+        }
+
+        // If a primary exists, wait until the lease has timed out.
+        // This is required, since the lease can't be actively returned.
+        // TODO (jdillmann): If the primary did response we could continue to update phase (but still would have to wait
+        // until leaseTO before finally installing the new xLoc)
         synchronized (listener) {
             if (listener.primaryExists) {
                 long now = System.currentTimeMillis();
-                long leaseEndTimeMs = now + leaseToMS;
+                long leaseEndTimeMS = now + leaseToMS;
                 
-                while (!listener.primaryResponded
-                        && now < leaseEndTimeMs
-                        && (listener.numResponses + listener.numErrors) < responses.length) {
-                    listener.wait(leaseEndTimeMs - now);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "invalidateReplicas is waiting on the primary (now: %d, until: %d, timeout: %d ).", now,
+                        leaseEndTimeMS, leaseToMS);
+
+                while (now < leaseEndTimeMS) {
+                    listener.wait(leaseEndTimeMS - now);
                     now = System.currentTimeMillis();
                 }
             }
@@ -611,40 +619,55 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
      * 
      * @param fileId
      * @param cap
-     * @param xLocSet
+     * @param newXLocSet
+     * @param curXLocSet
      * @param authState
-     * @param numAcksRequired
-     * @param replicasUpToDate
      * @throws InterruptedException
      * @throws MRCException
      */
-    private void updateReplicas(String fileId, Capability cap, XLocSet xLocSet, AuthoritativeReplicaState authState,
-            int numAcksRequired, Set<String> replicasUpToDate) throws InterruptedException, MRCException {
+    private void updateReplicas(String fileId, Capability cap, XLocSet newXLocSet, XLocSet curXLocSet,
+            AuthoritativeReplicaState authState) throws InterruptedException, MRCException {
         final OSDServiceClient client = master.getOSDClient();
 
         // Create a list of OSDs which should be updated. Replicas that are up to date will be filtered.
-        ArrayList<ServiceUUID> OSDServiceUUIDs = new ArrayList<ServiceUUID>();
-        for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
-            String OSDUUID = Helper.getOSDUUIDFromXlocSet(xLocSet, i, 0);
-            if (!replicasUpToDate.contains(OSDUUID.toString())) {
+        Set<String> replicasUpToDate = calculateReplicasUpToDate(authState);
+
+        List<ServiceUUID> OSDServiceUUIDs = new ArrayList<ServiceUUID>();
+        int numUpToDate = 0;
+        for (int i = 0; i < newXLocSet.getReplicasCount(); i++) {
+            String OSDUUID = Helper.getOSDUUIDFromXlocSet(newXLocSet, i, 0);
+
+            if (replicasUpToDate.contains(OSDUUID.toString())) {
+                numUpToDate++;
+            } else  {
                 OSDServiceUUIDs.add(new ServiceUUID(OSDUUID));
             }
         }
 
+        // Calculate the number of required updates. OSDs already up to date will be ignored.
+        int numAcksRequired = calculateNumRequiredAcks(fileId, newXLocSet);
+        int numRequiredUpdates = numAcksRequired - numUpToDate;
+        int numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
+
+        // Create the Union of the current and the new XLocSet to ensure setting the AuthState is successful.
+        XLocSet unionXLocSet = xLocSetUnion(curXLocSet, newXLocSet);
+
         // Build the authState request.
-        FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(xLocSet).setXcap(cap.getXCap()).build();
+        FileCredentials fileCredentials = FileCredentials.newBuilder().setXlocs(unionXLocSet).setXcap(cap.getXCap())
+                .build();
         xtreemfs_rwr_auth_stateRequest authStateRequest = xtreemfs_rwr_auth_stateRequest.newBuilder()
                 .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
 
-        // Send the request to every replica not up to date yet.
+        // Send the request to every replica from new new XLocSet not up to date yet.
         @SuppressWarnings("unchecked")
-        final RPCResponse<emptyResponse>[] responses = new RPCResponse[OSDServiceUUIDs.size()];
+        final RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses = new RPCResponse[OSDServiceUUIDs.size()];
         for (int i = 0; i < OSDServiceUUIDs.size(); i++) {
             try {
                 final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
                 @SuppressWarnings("unchecked")
-                final RPCResponse<emptyResponse> rpcResponse = client.xtreemfs_rwr_auth_state_invalidated(
-                        OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, authStateRequest);
+                final RPCResponse<xtreemfs_rwr_reset_statusResponse> rpcResponse = client
+                        .xtreemfs_rwr_auth_state_invalidated(OSDUUID.getAddress(), RPCAuthentication.authNone,
+                                RPCAuthentication.userService, authStateRequest);
                 responses[i] = rpcResponse;
             } catch (IOException ex) {
                 if (Logging.isDebug()) {
@@ -654,54 +677,178 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             }
         }
 
-        /**
-         * This local class is used to collect responses to the asynchronous update requests.<br>
-         * It counts the number of errors and successful requests.
-         */
-        class FetchInvalidatedResponseListener implements RPCResponseAvailableListener<emptyResponse> {
-            private int numResponses = 0;
-            private int numErrors    = 0;
-
-            FetchInvalidatedResponseListener(RPCResponse<emptyResponse>[] responses) {
-                for (int i = 0; i < responses.length; i++) {
-                    responses[i].registerListener(this);
-                }
-            }
-
-            @Override
-            synchronized public void responseAvailable(RPCResponse<emptyResponse> r) {
-                try {
-                    r.get();
-                    numResponses++;
-                } catch (Exception ex) {
-                    numErrors++;
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "no fetchInvalidated response from replica due to exception: %s", ex.toString());
-                } finally {
-                    r.freeBuffers();
-                    this.notifyAll();
-                }
-            }
-        }
-        FetchInvalidatedResponseListener listener = new FetchInvalidatedResponseListener(responses);
-
-
-        // Wait until the required number of updates has been successfully executed.
-        int numRequiredUpdates = numAcksRequired - replicasUpToDate.size();
-        int numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
+        // Analyze the results and abort if too many errors occurred.
+        RWRResetStatusResponseListener listener = new RWRResetStatusResponseListener(OSDServiceUUIDs, responses);
+        int numRemainingUpdates = 0;
+        List<ServiceUUID> OSDsInReset;
         synchronized (listener) {
-            while (listener.numResponses < numRequiredUpdates) {
+            while (listener.numErrors <= numMaxErrors && !listener.allResponsesAvailable()) {
                 listener.wait();
+            }
 
-                if (listener.numErrors > numMaxErrors) {
-                    throw new MRCException(
-                            "XLocSetCoordinator failed because too many replicas didn't respond to the update request.");
-                }
+            if (listener.numErrors > numMaxErrors) {
+                throw new MRCException(
+                        "XLocSetCoordinator failed because too many replicas didn't respond to the update request.");
+            }
+
+            numRemainingUpdates = numRequiredUpdates - listener.numComplete;
+            // listener.OSDsInReset won't change anymore, since all responses are available.
+            OSDsInReset = listener.OSDsInReset;
+        }
+        
+        
+        // If there are still required updates remaining, wait for the updates to complete and poll the reset status.
+        if (numRemainingUpdates > 0) {
+            xtreemfs_rwr_reset_statusRequest resetStatusRequest = xtreemfs_rwr_reset_statusRequest.newBuilder()
+                    .setFileId(fileId).setFileCredentials(fileCredentials).setState(authState).build();
+            boolean complete = waitForReset(OSDsInReset, numRemainingUpdates, resetStatusRequest);
+
+            if (!complete) {
+                throw new MRCException(
+                        "XLocSetCoordinator failed because too many replicas didn't complete the update request.");
             }
         }
     }
-    
-    
+
+    private boolean waitForReset(List<ServiceUUID> OSDServiceUUIDs, int numRequiredUpdates,
+            final xtreemfs_rwr_reset_statusRequest resetStatusRequest) throws MRCException, InterruptedException {
+        final OSDServiceClient client = master.getOSDClient();
+
+        RWRResetStatusResponseListener listener;
+        int numMaxErrors;
+        long nextPollTime = System.currentTimeMillis() + STATUS_RETRY_DELAY_MS;
+        // long nextPollTime = -1;
+
+        while (numRequiredUpdates <= OSDServiceUUIDs.size()) {
+            // delay the next poll.
+            long now = System.currentTimeMillis();
+            if (now < nextPollTime) {
+                sleep(nextPollTime - now);
+            }
+            nextPollTime = System.currentTimeMillis() + STATUS_RETRY_DELAY_MS;
+
+            listener = new RWRResetStatusResponseListener(OSDServiceUUIDs, resetStatusRequest, client);
+            numMaxErrors = OSDServiceUUIDs.size() - numRequiredUpdates;
+
+            synchronized (listener) {
+                // Wait until every request is finished.
+                while (!listener.allResponsesAvailable()) {
+                    listener.wait();
+
+                    // Return on success.
+                    if (listener.numComplete >= numRequiredUpdates) {
+                        return true;
+                    }
+
+                    // Abort if too many errors occured.
+                    if (listener.numErrors > numMaxErrors) {
+                        return false;
+                    }
+                }
+
+                // Adapt to the responses and poll the status after a delay.
+                OSDServiceUUIDs = listener.OSDsInReset;
+                numRequiredUpdates = numRequiredUpdates - listener.numComplete;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * This local class is used to collect responses to the asynchronous status requests.<br>
+     * It counts the number of errors and successful requests.
+     */
+    private static class RWRResetStatusResponseListener
+            implements RPCResponseAvailableListener<xtreemfs_rwr_reset_statusResponse> {
+        private int                                              numAcks     = 0;
+        private int                                              numErrors   = 0;
+        private RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses;
+
+        private List<ServiceUUID>                                OSDServiceUUIDs;
+        private List<ServiceUUID>                                OSDsInReset;
+
+        private int                                              numComplete  = 0;
+
+        public RWRResetStatusResponseListener(List<ServiceUUID> OSDServiceUUIDs,
+                RPCResponse<xtreemfs_rwr_reset_statusResponse>[] responses) throws MRCException {
+            this.OSDServiceUUIDs = OSDServiceUUIDs;
+            this.responses = responses;
+
+            // Attach this as the listener.
+            OSDsInReset = new LinkedList<ServiceUUID>();
+            for (int i = 0; i < responses.length; i++) {
+                responses[i].registerListener(this);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public RWRResetStatusResponseListener(List<ServiceUUID> OSDServiceUUIDs,
+                xtreemfs_rwr_reset_statusRequest resetStatusRequest, final OSDServiceClient client)
+                        throws MRCException {
+            this.OSDServiceUUIDs = OSDServiceUUIDs;
+
+            // Send the request to every replica from new new XLocSet not up to date yet.
+            responses = new RPCResponse[OSDServiceUUIDs.size()];
+            for (int i = 0; i < OSDServiceUUIDs.size(); i++) {
+                try {
+                    final ServiceUUID OSDUUID = OSDServiceUUIDs.get(i);
+                    final RPCResponse<xtreemfs_rwr_reset_statusResponse> rpcResponse = client.xtreemfs_rwr_reset_status(
+                            OSDUUID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                            resetStatusRequest);
+                    responses[i] = rpcResponse;
+                } catch (IOException ex) {
+                    if (Logging.isDebug()) {
+                        Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+                    }
+                    throw new MRCException(ex);
+                }
+            }
+
+            // Attach this as the listener.
+            OSDsInReset = new LinkedList<ServiceUUID>();
+            for (int i = 0; i < responses.length; i++) {
+                responses[i].registerListener(this);
+            }
+        }
+
+        @Override
+        synchronized public void responseAvailable(RPCResponse<xtreemfs_rwr_reset_statusResponse> r) {
+            // Get the index of the responding OSD.
+            int osdNum = -1;
+            for (int i = 0; i < responses.length; i++) {
+                if (responses[i] == r) {
+                    osdNum = i;
+                    break;
+                }
+            }
+            assert (osdNum > -1);
+
+            try {
+                xtreemfs_rwr_reset_statusResponse response = r.get();
+                numAcks++;
+
+                if (response.getRunning()) {
+                    ServiceUUID osd = OSDServiceUUIDs.get(osdNum);
+                    OSDsInReset.add(osd);
+                } else if (response.getComplete()) {
+                    numComplete++;
+                }
+            } catch (Exception ex) {
+                numErrors++;
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "no response from replica due to exception: %s", ex.toString());
+            } finally {
+                r.freeBuffers();
+                this.notifyAll();
+            }
+        }
+
+        synchronized boolean allResponsesAvailable() {
+            return ((numAcks + numErrors) == responses.length);
+        }
+    }
+
 
     /**
      * Calculate the set of replicas that are up-to-date, which means they have the latest version of every
@@ -787,6 +934,48 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
     }
 
     /**
+     * Build the union of both XLocSets if they have the ReplicaUpdatePolicy and none of the replicas is striped.
+     * Replicas of the first XLocSet are kept in order, then non duplicate Replicas of the second XLocSet are
+     * appended in order. The version is inherited from xLocSet1.
+     * 
+     * @throws RuntimeException
+     *             if assertions are enabled and a replica is striped.
+     * 
+     * @param xLocSet1
+     * @param xLocSet2
+     * @return Union of xLocSet1 and xLocSet2
+     */
+    private XLocSet xLocSetUnion(XLocSet xLocSet1, XLocSet xLocSet2) {
+        assert(xLocSet1.getReadOnlyFileSize() == xLocSet2.getReadOnlyFileSize());
+        assert(xLocSet1.getReplicaUpdatePolicy().equals(xLocSet2.getReplicaUpdatePolicy()));
+        
+        XLocSet.Builder xLocSetBuilder = XLocSet.newBuilder()
+                .setReadOnlyFileSize(xLocSet1.getReadOnlyFileSize())
+                .setReplicaUpdatePolicy(xLocSet1.getReplicaUpdatePolicy())
+                .setVersion(xLocSet1.getVersion());
+        
+        for (int i = 0; i < xLocSet1.getReplicasCount(); i++) {
+            Replica replica = xLocSet1.getReplicas(i);
+            assert (replica.getStripingPolicy().getWidth() == 1);
+            xLocSetBuilder.addReplicas(replica);
+        }
+
+        
+        HashSet<String> osdUUIDSet = new HashSet<String>();
+        osdUUIDSet.addAll(Helper.getOSDUUIDsFromXlocSet(xLocSet1));
+        for (int i = 0; i < xLocSet2.getReplicasCount(); i++) {
+            Replica replica = xLocSet2.getReplicas(i);
+            assert (replica.getStripingPolicy().getWidth() == 1);
+            if (!osdUUIDSet.contains(replica.getOsdUuids(0))) {
+                xLocSetBuilder.addReplicas(replica);
+            }
+        }
+        
+        return xLocSetBuilder.build();
+    }
+
+
+    /**
      * Add the RequestMethod saved as context in the local queue when the update operation completes. <br />
      * Attention the context of the DB operation calling this, has to be a {@link RequestMethod}.
      */
@@ -799,6 +988,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         RequestMethod m = (RequestMethod) context;
         q.add(m);
+
+        // The request can be finished as soon as the xlocset is locked.
+        master.finished(result, m.getRequest());
     }
 
     @Override
@@ -811,76 +1003,4 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         RequestMethod m = (RequestMethod) context;
         master.failed(error, m.getRequest());
     }
-
-    // TODO(jdillmann): Share error reporting between ProcessingStage.parseAndExecure and this
-    private void handleError(RequestMethod m, Throwable err) {
-        MRCOperation op = m.getOperation();
-        MRCRequest rq = m.getRequest();
-        try {
-
-            // remove already added replica from quota via voucher management
-            if (m.getRequestType().equals(RequestType.ADD_REPLICAS)) {
-                VolumeManager vMan = master.getVolumeManager();
-                GlobalFileIdResolver idRes = new GlobalFileIdResolver(m.getFileId());
-                StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
-
-                FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-                if(file != null) {
-                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
-
-                    AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
-                    master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
-                    update.execute();
-                }
-            }
-
-            // simply rethrow the exception
-            throw err;
-
-        } catch (UserException exc) {
-            reportUserError(op, rq, exc, exc.getErrno());
-
-        } catch (MRCException exc) {
-            Throwable cause = exc.getCause();
-            if (cause instanceof DatabaseException
-                    && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED)
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
-            else
-                reportServerError(op, rq, exc);
-
-        } catch (DatabaseException exc) {
-            if (exc.getType() == ExceptionType.NOT_ALLOWED) {
-                reportUserError(op, rq, exc, POSIXErrno.POSIX_ERROR_EPERM);
-            } else if (exc.getType() == ExceptionType.REDIRECT) {
-                try {
-                    redirect(rq,
-                            exc.getAttachment() != null ? (String) exc.getAttachment() : master.getReplMasterUUID());
-                } catch (MRCException e) {
-                    reportServerError(op, rq, e);
-                }
-            } else
-                reportServerError(op, rq, exc);
-
-        } catch (Throwable exc) {
-            reportServerError(op, rq, exc);
-        }
-    }
-
-    private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, POSIXErrno errno) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.ERRNO, errno, exc.getMessage(), exc));
-    }
-
-    private void reportServerError(MRCOperation op, MRCRequest rq, Throwable exc) {
-        if (Logging.isDebug())
-            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-        op.finishRequest(rq, new ErrorRecord(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
-                "An error has occurred at the MRC. Details: " + exc.getMessage(), exc));
-    }
-
-    private void redirect(MRCRequest rq, String uuid) {
-        rq.getRPCRequest().sendRedirect(uuid);
-    }
-
 }

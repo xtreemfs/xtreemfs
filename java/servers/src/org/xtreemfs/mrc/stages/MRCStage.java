@@ -112,14 +112,22 @@ public abstract class MRCStage extends LifeCycleThread {
             try {
                 final StageMethod op = q.take();
                 
-                rq = op.getRq();
-                
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "processing request XID=%d method %d",
-                        rq.getRPCRequest().getHeader().getCallId(), op.getStageMethod());
-                
-                processMethod(op);
+                if (op.isInternalRequest()) {
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                                "processing internal request method %d", op.getStageMethod());
+                    processInternalRequest(op);
+
+                } else {
+                    rq = op.getRq();
+
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                                "processing request XID=%d method %d", rq.getRPCRequest().getHeader().getCallId(),
+                                op.getStageMethod());
+
+                    processMethod(op);
+                }
                 
             } catch (InterruptedException ex) {
                 break;
@@ -141,15 +149,34 @@ public abstract class MRCStage extends LifeCycleThread {
      */
     protected abstract void processMethod(StageMethod method);
     
+    /**
+     * Handles the actual execution of an internal request method. Must be implemented by
+     * all stages.
+     * 
+     * @param method
+     *            the stage method to execute
+     */
+    protected abstract void processInternalRequest(StageMethod method);
+
     protected static final class StageMethod {
         private MRCRequest                rq;
-        
+
+        private MRCInternalRequest        internalRq;
+
         private int                       stageMethod;
-        
+
         private MRCStageCallbackInterface callback;
         
         public StageMethod(MRCRequest rq, int stageMethod, MRCStageCallbackInterface callback) {
             this.rq = rq;
+            this.internalRq = null;
+            this.stageMethod = stageMethod;
+            this.callback = callback;
+        }
+
+        public StageMethod(MRCInternalRequest internalRq, int stageMethod, MRCStageCallbackInterface callback) {
+            this.rq = null;
+            this.internalRq = internalRq;
             this.stageMethod = stageMethod;
             this.callback = callback;
         }
@@ -162,6 +189,14 @@ public abstract class MRCStage extends LifeCycleThread {
             this.stageMethod = stageMethod;
         }
         
+        public boolean isInternalRequest() {
+            return (internalRq != null);
+        }
+
+        public MRCInternalRequest getInternalRequest() {
+            return internalRq;
+        }
+
         public MRCRequest getRq() {
             return rq;
         }

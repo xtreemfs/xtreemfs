@@ -16,6 +16,6 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
  */
 public interface FleaseViewChangeListenerInterface {
 
-    public void viewIdChangeEvent(ASCIIString cellId, int viewId);
+    public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal);
 
 }

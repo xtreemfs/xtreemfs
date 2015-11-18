@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Mon Oct 26 10:41:57 CET 2015
+//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -834,21 +834,44 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest* request,
-                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 30001, 82,
-                     creds, auth, request, data, data_length, NULL,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
                      context, callback);
             }
 
-            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_rwr_auth_state_invalidated_sync(const std::string &address,
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* xtreemfs_rwr_auth_state_invalidated_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest* request) {
                 const char* data = NULL; uint32_t data_length = 0;
-                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>();
                 client_->sendRequest(address, 30001, 82,
-                     creds, auth, request, data, data_length, NULL,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_rwr_reset_status(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 83,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* xtreemfs_rwr_reset_status_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>();
+                client_->sendRequest(address, 30001, 83,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }

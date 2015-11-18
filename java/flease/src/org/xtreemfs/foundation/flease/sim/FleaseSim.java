@@ -102,7 +102,7 @@ public class FleaseSim {
                     }
                 }, true, new FleaseViewChangeListenerInterface() {
 
-                    public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+                    public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
                     }
                 },new FleaseStatusListener() {
 

@@ -25,7 +25,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationCallback;
+import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationFailableCallback;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
@@ -41,9 +41,10 @@ public class ReplicatedFileState {
         INITIALIZING, 
         OPEN, 
         RESET, 
+        RESET_COMPLETE,
         WAITING_FOR_LEASE, 
         BACKUP, 
-        PRIMARY, 
+        PRIMARY,
         INVALIDATED
     };
 
@@ -86,7 +87,7 @@ public class ReplicatedFileState {
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID, FleaseStage fstage,
             OSDServiceClient client) throws UnknownUUIDException, IOException {
         queuedData = new AtomicInteger();
-        pendingRequests = new LinkedList();
+        pendingRequests = new LinkedList<StageRequest>();
         this.fileId = fileId;
         this.state = ReplicaState.INITIALIZING;
         this.primaryReset = false;
@@ -97,7 +98,7 @@ public class ReplicatedFileState {
         this.invalidated = false;
         this.invalidatedReset = false;
 
-        remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
+        remoteOSDs = new ArrayList<ServiceUUID>(locations.getNumReplicas() - 1);
         for (Replica r : locations.getReplicas()) {
             final ServiceUUID headOSD = r.getHeadOsd();
             if (headOSD.equals(localUUID))
@@ -151,11 +152,12 @@ public class ReplicatedFileState {
         return numObjectsPending;
     }
 
-    /**
-     * @param numObjectsPending the numObjectsPending to set
-     */
-    public void setNumObjectsPending(int numObjectsPending) {
-        this.numObjectsPending = numObjectsPending;
+    public void incrementNumObjectsPending() {
+        ++numObjectsPending;
+    }
+
+    public void decrementNumObjectsPending() {
+        --numObjectsPending;
     }
 
     /**
@@ -254,8 +256,8 @@ public class ReplicatedFileState {
             // Respond with the error, if a callback of type RWReplicationCallback exists.
             for (StageRequest rq : pendingRequests) {
                 Object callback = rq.getCallback();
-                if (callback != null && callback instanceof RWReplicationCallback) {
-                    ((RWReplicationCallback) callback).failed(error);
+                if (callback != null && callback instanceof RWReplicationFailableCallback) {
+                    ((RWReplicationFailableCallback) callback).failed(error);
                 }
             }
         }
@@ -289,7 +291,8 @@ public class ReplicatedFileState {
      */
     public void setState(ReplicaState state) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"fileId %s changed state from: %s to: %s",this.fileId,this.state, state);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "fileId %s changed state from: %s to: %s", this.fileId, this.state, state);
         }
         this.state = state;
     }

@@ -8,29 +8,42 @@
 
 package org.xtreemfs.test.osd;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.xtreemfs.common.libxtreemfs.*;
+import org.junit.rules.TestRule;
+import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.osd.operations.*;
 import org.xtreemfs.osd.tracing.TraceInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.TestEnvironment;
-
-import java.io.*;
-import java.net.Socket;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.Assert.*;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
 public class TracingTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
+
     private TestEnvironment env;
     private Client client;
     private RPC.UserCredentials uc;

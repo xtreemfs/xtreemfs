@@ -6,7 +6,6 @@
  */
 package org.xtreemfs.mrc.stages;
 
-import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.operations.AddReplicaOperation;
 
@@ -16,6 +15,8 @@ import org.xtreemfs.mrc.operations.AddReplicaOperation;
  * The callback is intended to be implemented by an operation such as {@link AddReplicaOperation}.
  */
 public interface XLocSetCoordinatorCallback {
-    public void installXLocSet(MRCRequest rq, String fileId, XLocList newXLocList, XLocList prevXLocList)
+    public void installXLocSet(String fileId, XLocList newXLocList, XLocList prevXLocList) throws Throwable;
+
+    public void handleInstallXLocSetError(Throwable error, String fileId, XLocList newXLocList, XLocList prevXLocList)
             throws Throwable;
 }

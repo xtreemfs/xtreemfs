@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Mon Oct 26 10:41:58 CET 2015
+//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -51,6 +51,7 @@ public class MRCServiceConstants {
     public static final int PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR = 49;
     public static final int PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS = 50;
     public static final int PROC_ID_XTREEMFS_GET_XLOCSET = 51;
+    public static final int PROC_ID_XTREEMFS_RESELECT_OSDS = 54;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -97,6 +98,7 @@ public class MRCServiceConstants {
            case 49: return MRC.xtreemfs_set_read_only_xattrRequest.getDefaultInstance();
            case 50: return MRC.xtreemfs_get_file_credentialsRequest.getDefaultInstance();
            case 51: return MRC.xtreemfs_get_xlocsetRequest.getDefaultInstance();
+           case 54: return MRC.xtreemfs_reselect_osdsRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -135,9 +137,9 @@ public class MRCServiceConstants {
            case 37: return GlobalTypes.XCap.getDefaultInstance();
            case 53: return GlobalTypes.XCap.getDefaultInstance();
            case 38: return null;
-           case 39: return null;
+           case 39: return MRC.xtreemfs_replica_addResponse.getDefaultInstance();
            case 40: return GlobalTypes.Replicas.getDefaultInstance();
-           case 41: return GlobalTypes.FileCredentials.getDefaultInstance();
+           case 41: return MRC.xtreemfs_replica_removeResponse.getDefaultInstance();
            case 42: return null;
            case 43: return null;
            case 44: return null;
@@ -147,6 +149,7 @@ public class MRCServiceConstants {
            case 49: return MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance();
            case 50: return GlobalTypes.FileCredentials.getDefaultInstance();
            case 51: return GlobalTypes.XLocSet.getDefaultInstance();
+           case 54: return MRC.xtreemfs_reselect_osdsResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

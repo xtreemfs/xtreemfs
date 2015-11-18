@@ -457,6 +457,14 @@ public class OptionsProxy {
     return xtreemfs_jniJNI.OptionsProxy_vivaldi_zipf_generator_skew_get(swigCPtr, this);
   }
 
+  public void setXLoc_install_poll_interval_s(int value) {
+    xtreemfs_jniJNI.OptionsProxy_xLoc_install_poll_interval_s_set(swigCPtr, this, value);
+  }
+
+  public int getXLoc_install_poll_interval_s() {
+    return xtreemfs_jniJNI.OptionsProxy_xLoc_install_poll_interval_s_get(swigCPtr, this);
+  }
+
   public void setAlternative_options_list(StringVector value) {
     xtreemfs_jniJNI.OptionsProxy_alternative_options_list_set(swigCPtr, this, StringVector.getCPtr(value), value);
   }
