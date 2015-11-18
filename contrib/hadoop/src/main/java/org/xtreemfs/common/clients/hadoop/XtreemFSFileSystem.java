@@ -70,7 +70,7 @@ public class XtreemFSFileSystem extends FileSystem {
     private Volume              defaultVolume;
     private static final int    STANDARD_DIR_PORT = 32638;
     private static final int[]  MIN_HADOOP_VERSION = { 0, 0, 0 };
-    private static final int[] MAX_HADOOP_VERSION =
+    private static final int[]  MAX_HADOOP_VERSION =
             { 2, Integer.MAX_VALUE, Integer.MAX_VALUE };
     private static String STANDARD_HADOOP_VERSION = "2.2.0";
 
