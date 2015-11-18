@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.util.VersionInfo;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -72,7 +73,6 @@ public class XtreemFSFileSystem extends FileSystem {
     private static final int[]  MIN_HADOOP_VERSION = { 0, 0, 0 };
     private static final int[]  MAX_HADOOP_VERSION =
             { 2, Integer.MAX_VALUE, Integer.MAX_VALUE };
-    private static final String STANDARD_HADOOP_VERSION = "2.2.0";
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -93,8 +93,21 @@ public class XtreemFSFileSystem extends FileSystem {
         }
         
         // Check which Hadoop version this adapter has to support
-        String hadoopVersionString = conf.get("xtreemfs.hadoop.version",
-                STANDARD_HADOOP_VERSION);
+        String hadoopVersionString = conf.get("xtreemfs.hadoop.version");
+        if (hadoopVersionString != null) {
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "You have manually set the Hadoop version to '%s'."
+                            + " This overrides the default of '%s'.",
+                    hadoopVersionString, VersionInfo.getVersion());
+        } else {
+            hadoopVersionString = VersionInfo.getVersion();
+            // take care of SNAPSHOT builds that append -SNAPSHOT to the version
+            int dashPosition = hadoopVersionString.indexOf("-");
+            if (dashPosition != -1) {
+                hadoopVersionString = hadoopVersionString.substring(0, dashPosition);
+            }
+        }
+        
         String[] hadoopVersionSplit = hadoopVersionString.split("\\.");
         if (hadoopVersionSplit.length < 1 || hadoopVersionSplit.length > 3) {
             throw new IOException("Unsupported Hadoop version: '"
