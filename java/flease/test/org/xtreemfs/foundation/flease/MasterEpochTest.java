@@ -73,7 +73,7 @@ public class MasterEpochTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -174,7 +174,7 @@ public class MasterEpochTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -235,7 +235,7 @@ public class MasterEpochTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 

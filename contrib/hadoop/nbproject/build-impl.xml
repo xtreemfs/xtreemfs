@@ -1291,7 +1291,7 @@ is divided into following sections:
         <mkdir dir="${build.test.results.dir}"/>
     </target>
     <target depends="init,compile-test,-pre-test-run" if="have.tests" name="-do-test-run">
-        <j2seproject3:test includes="${includes}" testincludes="**/*Test.java"/>
+        <j2seproject3:test includes="${includes}" testincludes="org/xtreemfs/**/*Test.java"/>
     </target>
     <target depends="init,compile-test,-pre-test-run,-do-test-run" if="have.tests" name="-post-test-run">
         <fail if="tests.failed" unless="ignore.failing.tests">Some tests failed; see details above.</fail>

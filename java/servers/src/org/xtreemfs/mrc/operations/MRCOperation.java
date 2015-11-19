@@ -43,7 +43,15 @@ public abstract class MRCOperation {
      *            the new request
      */
     public abstract void startRequest(MRCRequest rq) throws Throwable;
-    
+
+    /**
+     * Called for internally requested operations.
+     */
+    public void startInternalRequest(Object[] args) throws Throwable {
+        Logging.logMessage(Logging.LEVEL_INFO, Category.stage, this,
+                "Tried to start internal request on non internal operation.");
+    }
+
     /**
      * Parses the request arguments.
      * 

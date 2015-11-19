@@ -2894,6 +2894,34 @@ SWIGEXPORT jdouble JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xt
 }
 
 
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1xLoc_1install_1poll_1interval_1s_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
+  int arg2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::Options **)&jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->xLoc_install_poll_interval_s = arg2;
+}
+
+
+SWIGEXPORT jint JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1xLoc_1install_1poll_1interval_1s_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jint jresult = 0 ;
+  xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::Options **)&jarg1; 
+  result = (int) ((arg1)->xLoc_install_poll_interval_s);
+  jresult = (jint)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_OptionsProxy_1alternative_1options_1list_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   xtreemfs::Options *arg1 = (xtreemfs::Options *) 0 ;
   std::vector< std::string > *arg2 = (std::vector< std::string > *) 0 ;

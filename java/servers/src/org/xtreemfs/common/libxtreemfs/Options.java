@@ -91,35 +91,7 @@ public class Options {
      * The RPC Client closes connections after "linger_timeout_s" time of inactivity. Default: 600
      */
     private final int  lingerTimeout_s       = 600;
-
-    public int getMetadataCacheSize() {
-        return metadataCacheSize;
-    }
     
-    public void setMetadataCacheSize(int metadataCacheSize) {
-        this.metadataCacheSize = metadataCacheSize;
-    }
-
-    public long getMetadataCacheTTLs() {
-        return metadataCacheTTLs;
-    }
-
-    public int getInterruptSignal() {
-        return interruptSignal;
-    }
-
-    public int getConnectTimeout_s() {
-        return connectTimeout_s;
-    }
-
-    public int getRequestTimeout_s() {
-        return requestTimeout_s;
-    }
-
-    public int getLingerTimeout_s() {
-        return lingerTimeout_s;
-    }
-
     // SSL options.
     private final String  sslPemCertPath                    = "";
     private final String  sslPemPath                        = "";
@@ -170,13 +142,8 @@ public class Options {
      */
     private final int     periodicXcapRenewalIntervalS      = 60;
 
-    public int getPeriodicXcapRenewalIntervalS() {
-        return periodicXcapRenewalIntervalS;
-    }
-
-    public int getPeriodicFileSizeUpdatesIntervalS() {
-        return periodicFileSizeUpdatesIntervalS;
-    }
+    /** Interval between requests while waiting for the installation of a new xLocSet. Default: 5 */
+    private final int     xLocInstallPollIntervalS          = 5;
 
     /**
      * Returns the version string and prepends "component".
@@ -282,4 +249,45 @@ public class Options {
     public int getMaxReadTries() {
         return maxReadTries;
     }
+
+    public int getMetadataCacheSize() {
+        return metadataCacheSize;
+    }
+
+    public void setMetadataCacheSize(int metadataCacheSize) {
+        this.metadataCacheSize = metadataCacheSize;
+    }
+
+    public long getMetadataCacheTTLs() {
+        return metadataCacheTTLs;
+    }
+
+    public int getInterruptSignal() {
+        return interruptSignal;
+    }
+
+    public int getConnectTimeout_s() {
+        return connectTimeout_s;
+    }
+
+    public int getRequestTimeout_s() {
+        return requestTimeout_s;
+    }
+
+    public int getLingerTimeout_s() {
+        return lingerTimeout_s;
+    }
+
+    public int getPeriodicXcapRenewalIntervalS() {
+        return periodicXcapRenewalIntervalS;
+    }
+
+    public int getPeriodicFileSizeUpdatesIntervalS() {
+        return periodicFileSizeUpdatesIntervalS;
+    }
+
+    public int getXLocInstallPollIntervalS() {
+        return xLocInstallPollIntervalS;
+    }
+
 }

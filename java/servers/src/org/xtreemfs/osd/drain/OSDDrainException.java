@@ -39,7 +39,8 @@ public class OSDDrainException extends Exception {
         UNSET_RONLY,
         UNSET_UPDATE_POLICY,
         DELETE_FILES,
-        SHUTDOWN_OSD
+        SHUTDOWN_OSD,
+        WAIT_FOR_XLOCSET_INSTALLATION
     }
     
     /**

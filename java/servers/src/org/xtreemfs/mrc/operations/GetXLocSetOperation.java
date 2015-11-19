@@ -6,6 +6,9 @@
  */
 package org.xtreemfs.mrc.operations;
 
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -13,6 +16,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
@@ -20,6 +24,7 @@ import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
@@ -41,6 +46,7 @@ public class GetXLocSetOperation extends MRCOperation {
 
         final FileAccessManager faMan = master.getFileAccessManager();
         final VolumeManager vMan = master.getVolumeManager();
+        final VolumeInfo volume;
 
         StorageManager sMan = null;
         FileMetadata file = null;
@@ -78,6 +84,7 @@ public class GetXLocSetOperation extends MRCOperation {
                 throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + idRes.getLocalFileId()
                         + "' does not exist");
             }
+            volume = sMan.getVolumeInfo();
 
         } else if (rqArgs.hasVolumeName() && rqArgs.hasPath()) {
 
@@ -92,6 +99,7 @@ public class GetXLocSetOperation extends MRCOperation {
             // Check whether the path prefix is searchable.
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser,
                     rq.getDetails().groupIds);
+            volume = sMan.getVolumeInfo();
 
         } else {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
@@ -110,10 +118,19 @@ public class GetXLocSetOperation extends MRCOperation {
         // Get the XLocSet from the XLocList.
         XLocList xLocList = file.getXLocList();
         assert (xLocList != null);
-        XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList).build();
+        XLocSet.Builder xLocSetBuilder = Converter.xLocListToXLocSet(xLocList);
         
+        // Sort the XLocSet according to the policy.
+        List<Replica> sortedReplList = master.getOSDStatusManager()
+                .getSortedReplicaList(volume.getId(),
+                        ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(),
+                        rqArgs.getCoordinates(), xLocSetBuilder.getReplicasList(), xLocList)
+                .getReplicasList();
+        xLocSetBuilder.clearReplicas();
+        xLocSetBuilder.addAllReplicas(sortedReplList);
+
         // Set the response.
-        rq.setResponse(xLocSet);
+        rq.setResponse(xLocSetBuilder.build());
         finishRequest(rq);
     }
 
