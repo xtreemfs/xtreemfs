@@ -917,7 +917,7 @@ public class OSDDrain {
     }
 
     /**
-     * Polls MRC regularly to discover if replication is complete. Blocks until this event happens.
+     * Polls OSDs regularly to discover if replication is complete. Blocks until this event happens.
      *
      * @param fileIDList
      * @throws Exception
@@ -952,7 +952,7 @@ public class OSDDrain {
                         ObjectList ol = r.get();
 
                         byte[] serializedBitSet = ol.getSet().toByteArray();
-                        oSet = new ObjectSet(sp.getWidth(), osdRelPos, serializedBitSet);
+                        oSet = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
                     } catch (Exception e) {
                         if (Logging.isDebug()) {
                             Logging.logError(Logging.LEVEL_WARN, this, e);
@@ -988,7 +988,7 @@ public class OSDDrain {
                 return finishedFileInfos;
 
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                               "waiting 10secs for replication to be finished");
+                               "waiting %d secs for replication to be finished", WAIT_FOR_REPLICA_COMPLETE_DELAY_S);
             try {
                 // wait until next poll
                 Thread.sleep(WAIT_FOR_REPLICA_COMPLETE_DELAY_S * 1000);
