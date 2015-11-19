@@ -100,10 +100,10 @@
     <target name="-set-hadoop-compile-classpaths" depends="-check-environment" if="hadoop.external">
         <property environment="env"/>
 
-        <path id="hadoop_common_tests_jar">
-            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
+        <path id="hadoop_common_jars">
+            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*.jar"/>
         </path>
-        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_tests_jar"/>
+        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_jars"/>
     </target>
 
     <!-- Sets Hadoop Classpaths for Test Execution if not in NetBeans -->
