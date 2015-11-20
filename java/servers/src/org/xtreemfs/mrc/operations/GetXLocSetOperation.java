@@ -128,6 +128,7 @@ public class GetXLocSetOperation extends MRCOperation {
                 .getReplicasList();
         xLocSetBuilder.clearReplicas();
         xLocSetBuilder.addAllReplicas(sortedReplList);
+        xLocSetBuilder.setReadOnlyFileSize(file.getSize());
 
         // Set the response.
         rq.setResponse(xLocSetBuilder.build());

@@ -8,6 +8,7 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -1207,7 +1208,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             ObjectSet oset = null;
 
             try {
-                oset = new ObjectSet(replica.getStripingPolicy().getWidth(), osdRelPos, serializedBitSet);
+                oset = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
             } catch (Exception e) {
                 throw new IOException("cannot deserialize object set: " + e, e);
             }
