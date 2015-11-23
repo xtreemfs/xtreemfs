@@ -8,27 +8,12 @@
 
 package org.xtreemfs.test.osd;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Socket;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-import org.xtreemfs.common.libxtreemfs.Client;
-import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.FileHandle;
-import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
@@ -37,6 +22,13 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
+
+import java.io.*;
+import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
@@ -92,7 +84,7 @@ public class TracingTest {
         }
     }
 
-    private void readWriteFile(Volume volume) throws IOException {
+    private void writeFile(Volume volume) throws IOException {
          FileHandle f = volume.openFile(uc, TEST_FILE,
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber());
@@ -108,31 +100,33 @@ public class TracingTest {
         client.deleteVolume(auth, uc, SOURCE_VOLUME);
     }
 
-    private Volume createVolume(String tracingPolicy, String tracingPolicyConfig) throws IOException {
+    private Volume createVolume(String tracingPolicy, String tracingPolicyConfig, boolean useStriping) throws IOException {
         client.createVolume(env.getMRCAddress().getHostName() + ":" + env.getMRCAddress().getPort(), auth, uc,
                 SOURCE_VOLUME);
-        Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
+        Volume volume = client.openVolume(SOURCE_VOLUME, null, new Options());
 
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
+        volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
                 MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         if(tracingPolicyConfig != null) {
-            sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy_config", tracingPolicyConfig,
+            volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy_config", tracingPolicyConfig,
                     MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         }
 
         if(tracingPolicy != null) {
-            sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", tracingPolicy,
+            volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", tracingPolicy,
                     MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
         }
 
-        return sourceVolume;
+        if(useStriping) {
+            volume.setXAttr(uc, auth, "/", "xtreemfs.default_sp",
+                    "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"width\":3,\"size\":128}",
+                    MRC.XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+        }
+
+        return volume;
     }
 
-    @Test
-    public void testFileBasedTracing() throws Exception {
-        Volume sourceVolume = createVolume(FILE_BASED_TRACING_POLICY, FILE_BASED_TRACING_CONFIG);
-        readWriteFile(sourceVolume);
-
+    private void checkTraceFile() throws IOException {
         File traceFile = new File(FILE_BASED_TRACING_CONFIG);
         assertTrue(traceFile.exists());
 
@@ -146,6 +140,22 @@ public class TracingTest {
         }
 
         assertTrue(lines >= MAX_WRITES);
+    }
+
+    @Test
+    public void testFileBasedTracing() throws Exception {
+        Volume sourceVolume = createVolume(FILE_BASED_TRACING_POLICY, FILE_BASED_TRACING_CONFIG, false);
+        writeFile(sourceVolume);
+        checkTraceFile();
+    }
+
+    @Test
+    public void testFileBasedTracingWithStriping() throws Exception {
+        Volume sourceVolume = createVolume(FILE_BASED_TRACING_POLICY, FILE_BASED_TRACING_CONFIG, true);
+        String dsp = sourceVolume.getXAttr(uc, "/", "xtreemfs.default_sp");
+        assertTrue(dsp.contains("3"));
+        writeFile(sourceVolume);
+        checkTraceFile();
     }
 
     @Test
@@ -183,9 +193,9 @@ public class TracingTest {
         Thread t = new Thread(reader);
         t.start();
 
-        Volume sourceVolume = createVolume(SOCKET_BASED_TRACING_POLICY, null);
+        Volume sourceVolume = createVolume(SOCKET_BASED_TRACING_POLICY, null, false);
 
-        readWriteFile(sourceVolume);
+        writeFile(sourceVolume);
 
         Thread.sleep(1000);
         assertTrue(tracedLines.get() > 0L);
