@@ -639,8 +639,8 @@ class ClientSSLTestShortChainVerificationPKCS12 :
     public ClientSSLTestShortChainVerification<kPKCS12> {
 protected:
   void set_cert_log_paths () {
-    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pkcs12");
-    options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_verification_pkcs12");		
+    options_.ssl_pkcs12_path = cert_path("Client_Leaf.p12");
   }
 };
 
@@ -648,10 +648,9 @@ class ClientSSLTestShortChainVerificationPEM :
     public ClientSSLTestShortChainVerification<kPEM> {
 protected:
   void set_cert_log_paths () {
-    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pem");
-    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_verification_pem");		
+    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");		
     options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
-    options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
   }
 };
 
