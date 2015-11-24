@@ -13,7 +13,6 @@
 #include <boost/asio.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
-#include <boost/utility/enable_if.hpp>
 #include <cerrno>
 #include <fcntl.h>
 #include <fstream>
@@ -221,7 +220,7 @@ public:
 };
 
 enum TestCertificateType {
-  None, kPKCS12, kPEM
+  kPKCS12, kPEM
 };
 
 char g_ssl_tls_version_sslv3[] = "sslv3";
@@ -393,25 +392,11 @@ protected:
 
 template<TestCertificateType t>
 class ClientSSLTestShortChain : public ClientTest {
-private:
-  template<TestCertificateType T>
-  void set_paths (typename boost::enable_if_c<T == kPKCS12, void>::type*) {
-    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pkcs12");
-    options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
-  }
-  
-  template<TestCertificateType T>
-  void set_paths (typename boost::enable_if_c<T == kPEM, void>::type*) {
-    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pem");
-    options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
-    options_.ssl_pem_key_path = cert_path("Client_Root.key");
-    options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
-  }
-  
-  template<TestCertificateType T>
-  void set_paths (typename boost::enable_if_c<T == None, void>::type*) {}
-  
 protected:
+  virtual void set_cert_log_paths () = 0;
+  
+  virtual void assert_cert_occurences () = 0;
+  
   virtual void SetUp() {
     // Root signed, root trusted
     dir_config_file_ = config_path("dirconfig_ssl_short_chain.test");
@@ -424,7 +409,7 @@ protected:
     options_.log_level_string = "DEBUG";
     
     // Root signed, only root as additional certificate.
-    set_paths<t>(0);
+    set_cert_log_paths();
     
     options_.ssl_verify_certificates = true;
         
@@ -438,25 +423,7 @@ protected:
         options_.log_file_path,
         "SSL support activated"));
     
-    switch (t) {
-      case kPKCS12:
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "SSL support using PKCS#12 file "
-            "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "Writing 1 verification certificates to " + tmpdir_ + "ca"));
-        break;
-      case kPEM:
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "SSL support using PEM private key file "
-            "../../tests/certs/client_ssl_test/Client_Root.key"));
-        break;
-      case None:
-        break;
-    }
+    assert_cert_occurences();
 
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
@@ -480,12 +447,48 @@ protected:
   }
 };
 
-class ClientSSLTestShortChainPKCS12 : public ClientSSLTestShortChain<kPKCS12> {};
-class ClientSSLTestShortChainPEM : public ClientSSLTestShortChain<kPEM> {};
+class ClientSSLTestShortChainPKCS12 : public ClientSSLTestShortChain<kPKCS12> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Root_Root.p12");
+  }
+  
+  void assert_cert_occurences () {
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support using PKCS#12 file "
+        "../../tests/certs/client_ssl_test/Client_Root_Root.p12"));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Writing 1 verification certificates to " + tmpdir_ + "ca"));
+  }
+};
+
+class ClientSSLTestShortChainPEM : public ClientSSLTestShortChain<kPEM> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_short_chain_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Root.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Root.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+  }
+  
+  void assert_cert_occurences () {
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support using PEM private key file "
+        "../../tests/certs/client_ssl_test/Client_Root.key"));
+  }
+};
 
 template<TestCertificateType t>
 class ClientSSLTestLongChain : public ClientTest {
 protected:
+  virtual void set_cert_log_paths() = 0;
+  
+  virtual void assert_cert_occurences() = 0;
+  
   virtual void SetUp() {
     // All service certificates are signed with Leaf CA, which is signed with
     // Intermediate CA, which is signed with Root CA. The keystore contains
@@ -501,20 +504,7 @@ protected:
     
     // Client certificate is signed with Leaf CA. Contains the entire chain
     // as additional certificates.
-    switch (t) {
-      case kPKCS12:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pkcs12");
-        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
-        break;
-      case kPEM:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pem");
-        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
-        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
-        options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
-        break;
-      case None:
-        break;
-    }
+    set_cert_log_paths();
     
     options_.ssl_verify_certificates = true;
     
@@ -529,25 +519,7 @@ protected:
         options_.log_file_path,
         "SSL support activated"));
     
-    switch (t) {
-      case kPKCS12:
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "SSL support using PKCS#12 file "
-            "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "Writing 3 verification certificates to " + tmpdir_ + "ca"));
-        break;
-      case kPEM:
-        ASSERT_EQ(2, count_occurrences_in_file(
-            options_.log_file_path,
-            "SSL support using PEM private key file "
-            "../../tests/certs/client_ssl_test/Client_Leaf.key"));
-        break;
-      case None:
-        break;
-    }
+    assert_cert_occurences();
 
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
@@ -573,12 +545,46 @@ protected:
   }
 };
 
-class ClientSSLTestLongChainPKCS12 : public ClientSSLTestLongChain<kPKCS12> {};
-class ClientSSLTestLongChainPEM : public ClientSSLTestLongChain<kPEM> {};
+class ClientSSLTestLongChainPKCS12 : public ClientSSLTestLongChain<kPKCS12> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
+  }
+  
+  void assert_cert_occurences () {
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support using PKCS#12 file "
+        "../../tests/certs/client_ssl_test/Client_Leaf_Chain.p12"));
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "Writing 3 verification certificates to " + tmpdir_ + "ca"));
+  }
+};
+
+class ClientSSLTestLongChainPEM : public ClientSSLTestLongChain<kPEM> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
+  }
+  
+  void assert_cert_occurences () {
+    ASSERT_EQ(2, count_occurrences_in_file(
+        options_.log_file_path,
+        "SSL support using PEM private key file "
+        "../../tests/certs/client_ssl_test/Client_Leaf.key"));
+  }
+};
 
 template<TestCertificateType t>
 class ClientSSLTestShortChainVerification : public ClientTest {
 protected:
+  virtual void set_cert_log_paths() = 0;
+  
   virtual void SetUp() {
     dir_config_file_ = config_path("dirconfig_ssl_short_chain.test");
     mrc_config_file_ = config_path("mrcconfig_ssl_short_chain.test");
@@ -591,19 +597,7 @@ protected:
     
     // Server does not know client's certificate, client does not know server's
     // certificate.
-    switch (t) {
-      case kPKCS12:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_verification_pkcs12");
-        options_.ssl_pkcs12_path = cert_path("Client_Leaf.p12");
-        break;
-      case kPEM:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_verification_pem");
-        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
-        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
-        break;
-      case None:
-        break;
-    }
+    set_cert_log_paths();
     
     options_.ssl_verify_certificates = true;
     
@@ -642,13 +636,30 @@ protected:
 };
 
 class ClientSSLTestShortChainVerificationPKCS12 :
-    public ClientSSLTestShortChainVerification<kPKCS12> {};
+    public ClientSSLTestShortChainVerification<kPKCS12> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Leaf_Chain.p12");
+  }
+};
+
 class ClientSSLTestShortChainVerificationPEM :
-    public ClientSSLTestShortChainVerification<kPEM> {};
+    public ClientSSLTestShortChainVerification<kPEM> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_long_chain_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Chain.pem");
+  }
+};
 
 template<TestCertificateType t>
 class ClientSSLTestLongChainVerificationIgnoreErrors : public ClientTest {
 protected:
+  virtual void set_cert_log_paths() = 0;
+  
   virtual void SetUp() {
     dir_config_file_ = config_path("dirconfig_ssl_ignore_errors.test");
     mrc_config_file_ = config_path("mrcconfig_ssl_ignore_errors.test");
@@ -661,22 +672,7 @@ protected:
     
     // Server knows client's certificate, client does not know server's
     // certificate.
-    switch (t) {
-      case kPKCS12:
-        options_.log_file_path =
-            log_path("xtreemfs_client_ssl_test_verification_ignore_errors_pkcs12");
-        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Root.p12");
-        break;
-      case kPEM:
-        options_.log_file_path =
-            log_path("xtreemfs_client_ssl_test_verification_ignore_errors_pem");
-        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
-        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
-        options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
-        break;
-      case None:
-        break;
-    }
+    set_cert_log_paths();
     
     options_.ssl_verify_certificates = true;
     
@@ -717,13 +713,32 @@ protected:
 };
 
 class ClientSSLTestLongChainVerificationIgnoreErrorsPKCS12 :
-    public ClientSSLTestLongChainVerificationIgnoreErrors<kPKCS12> {};
+    public ClientSSLTestLongChainVerificationIgnoreErrors<kPKCS12> {
+protected:
+  void set_cert_log_paths () {
+    options_.log_file_path =
+        log_path("xtreemfs_client_ssl_test_verification_ignore_errors_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Leaf_Root.p12");
+  }
+};
+    
 class ClientSSLTestLongChainVerificationIgnoreErrorsPEM :
-    public ClientSSLTestLongChainVerificationIgnoreErrors<kPEM> {};
+    public ClientSSLTestLongChainVerificationIgnoreErrors<kPEM> {
+protected:
+  void set_cert_log_paths() {
+    options_.log_file_path =
+        log_path("xtreemfs_client_ssl_test_verification_ignore_errors_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Root.pem");
+  }
+};
 
 template<TestCertificateType t>
 class ClientSSLTestLongChainNoVerification : public ClientTest {
 protected:
+  virtual void set_cert_log_paths () = 0;
+  
   virtual void SetUp() {
     dir_config_file_ = config_path("dirconfig_ssl_no_verification.test");
     mrc_config_file_ = config_path("mrcconfig_ssl_no_verification.test");
@@ -736,20 +751,7 @@ protected:
     
     // Server knows client's certificate, client does not know all of server's
     // certificate.
-    switch (t) {
-      case kPKCS12:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_no_verification_pkcs12");
-        options_.ssl_pkcs12_path = cert_path("Client_Leaf_Leaf.p12");
-        break;
-      case kPEM:
-        options_.log_file_path = log_path("xtreemfs_client_ssl_test_no_verification_pem");
-        options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
-        options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
-        options_.ssl_pem_trusted_certs_path = cert_path("CA_Leaf.pem");
-        break;
-      case None:
-        break;
-    }
+    set_cert_log_paths();
                 
     ClientTest::SetUp();
   }
@@ -782,9 +784,24 @@ protected:
 };
 
 class ClientSSLTestLongChainNoVerificationPKCS12 :
-    public ClientSSLTestLongChainNoVerification<kPKCS12> {};
+    public ClientSSLTestLongChainNoVerification<kPKCS12> {
+protected:
+  void set_cert_log_paths() {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_no_verification_pkcs12");
+    options_.ssl_pkcs12_path = cert_path("Client_Leaf_Leaf.p12");
+  }
+};
+    
 class ClientSSLTestLongChainNoVerificationPEM :
-    public ClientSSLTestLongChainNoVerification<kPEM> {};
+    public ClientSSLTestLongChainNoVerification<kPEM> {
+protected:
+  void set_cert_log_paths() {
+    options_.log_file_path = log_path("xtreemfs_client_ssl_test_no_verification_pem");
+    options_.ssl_pem_cert_path = cert_path("Client_Leaf.pem");
+    options_.ssl_pem_key_path = cert_path("Client_Leaf.key");
+    options_.ssl_pem_trusted_certs_path = cert_path("CA_Leaf.pem");
+  }
+};
     
 template<char const *client_ssl_method_string,
          char const *server_ssl_method_string>
