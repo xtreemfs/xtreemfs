@@ -582,8 +582,12 @@ public class XtreemFSFileSystem extends FileSystem {
                         .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(), stat
                         .getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             } else {
+                StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
+                if (statVFS == null) {
+                    throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
+                }
                 // for files, set blocksize to stripeSize of the volume
-                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, xtreemfsVolume.statFS(userCredentials)
+                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, statVFS
                         .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                         (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                         stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
@@ -689,11 +693,11 @@ public class XtreemFSFileSystem extends FileSystem {
             return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
                     new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeQualified(path));
         } else {
-            // for files, set blocksize to stripesize of the volume
             StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
             if (statVFS == null) {
                 throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
             }
+            // for files, set blocksize to stripesize of the volume
             return new FileStatus(stat.getSize(), isDir, 1, statVFS
                     .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                     (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
