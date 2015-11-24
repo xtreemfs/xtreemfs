@@ -31,7 +31,6 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.REPL_FLAG;
@@ -40,6 +39,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_sizeResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  *
@@ -586,9 +586,9 @@ public class RandomAccessFile {
                 byte[] serializedBitSet = ol.getSet().toByteArray();
                 ObjectSet oset = null;
                 try {
-                     oset = new ObjectSet(replicaNo, replicaNo, serializedBitSet);
+                    oset = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
                 } catch (Exception ex) {
-                    throw new IOException("cannot deserialize object set: "+ex,ex);
+                    throw new IOException("cannot deserialize object set: " + ex, ex);
                 }
                 for (long objNo = osdRelPos; objNo <= lastObjectNo; objNo += sp.getWidth()) {
                     if (oset.contains(objNo) == false)

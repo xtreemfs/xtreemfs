@@ -168,6 +168,8 @@ public class xtreemfs_jniJNI {
   public final static native int OptionsProxy_periodic_xcap_renewal_interval_s_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_vivaldi_zipf_generator_skew_set(long jarg1, OptionsProxy jarg1_, double jarg2);
   public final static native double OptionsProxy_vivaldi_zipf_generator_skew_get(long jarg1, OptionsProxy jarg1_);
+  public final static native void OptionsProxy_xLoc_install_poll_interval_s_set(long jarg1, OptionsProxy jarg1_, int jarg2);
+  public final static native int OptionsProxy_xLoc_install_poll_interval_s_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_alternative_options_list_set(long jarg1, OptionsProxy jarg1_, long jarg2, StringVector jarg2_);
   public final static native long OptionsProxy_alternative_options_list_get(long jarg1, OptionsProxy jarg1_);
   public final static native void OptionsProxy_additional_user_mapping_type_set(long jarg1, OptionsProxy jarg1_, int jarg2);

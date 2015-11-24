@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.util.VersionInfo;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
@@ -57,6 +58,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
  */
 public class XtreemFSFileSystem extends FileSystem {
 
+    private int[]               hadoopVersion;
     private URI                 fileSystemURI;
     private Client              xtreemfsClient;
     private Map<String, Volume> xtreemfsVolumes;
@@ -69,6 +71,9 @@ public class XtreemFSFileSystem extends FileSystem {
     private int                 writeBufferSize;
     private Volume              defaultVolume;
     private static final int    STANDARD_DIR_PORT = 32638;
+    private static final int[]  MIN_HADOOP_VERSION = { 0, 0, 0 };
+    private static final int[]  MAX_HADOOP_VERSION =
+            { 2, Integer.MAX_VALUE, Integer.MAX_VALUE };
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
@@ -86,6 +91,49 @@ public class XtreemFSFileSystem extends FileSystem {
         Logging.start(logLevel, Logging.Category.all);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "init : " + uri);
+        }
+        
+        // Check which Hadoop version this adapter has to support
+        String hadoopVersionString = conf.get("xtreemfs.hadoop.version");
+        if (hadoopVersionString != null) {
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "You have manually set the Hadoop version to '%s'."
+                            + " This overrides the default of '%s'.",
+                    hadoopVersionString, VersionInfo.getVersion());
+        } else {
+            hadoopVersionString = VersionInfo.getVersion();
+            // take care of SNAPSHOT builds that append -SNAPSHOT to the version
+            int dashPosition = hadoopVersionString.indexOf("-");
+            if (dashPosition != -1) {
+                hadoopVersionString = hadoopVersionString.substring(0, dashPosition);
+            }
+        }
+        
+        String[] hadoopVersionSplit = hadoopVersionString.split("\\.");
+        if (hadoopVersionSplit.length < 1 || hadoopVersionSplit.length > 3) {
+            throw new IOException("Unsupported Hadoop version: '"
+                + hadoopVersionString + "'");
+        }
+        hadoopVersion = new int[3];
+        for (int i = 0; i < 3; ++i) {
+            try {
+                hadoopVersion[i] = i < hadoopVersionSplit.length ?
+                        Integer.parseInt(hadoopVersionSplit[i]) : 0;
+            } catch (NumberFormatException e) {
+                throw new IOException("Unsupported Hadoop version: '"
+                        + hadoopVersionString + "'");
+            }
+        }
+        if (compareHadoopVersion(MIN_HADOOP_VERSION) == -1
+                || compareHadoopVersion(MAX_HADOOP_VERSION) == 1) {
+            throw new IOException("Unsupported Hadoop version: "
+                    + hadoopVersion[0] + "." + hadoopVersion[1] + "."
+                    + hadoopVersion[2]);
+        }
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                    "Running compatible to Hadoop %d.%d.%d",
+                    hadoopVersion[0], hadoopVersion[1], hadoopVersion[2]);
         }
 
         String defaultVolumeName = conf.get("xtreemfs.defaultVolumeName");
@@ -322,6 +370,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
+        statistics.incrementReadOps(1);
         
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -330,7 +379,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Opening file %s", pathString);
         }
-        statistics.incrementReadOps(1);
         return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString, useReadBuffer,
                 readBufferSize, statistics));
     }
@@ -341,6 +389,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
+        statistics.incrementWriteOps(1);
         
         // block replication for the file
         Volume xtreemfsVolume = getVolumeFromPath(path);
@@ -374,8 +423,9 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
-        
-    	Volume xtreemfsVolume = getVolumeFromPath(path);
+        statistics.incrementWriteOps(1);
+
+        Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         
         if (Logging.isDebug()) {
@@ -395,7 +445,8 @@ public class XtreemFSFileSystem extends FileSystem {
         if (src == null || dest == null) {
             throw new IllegalArgumentException("src/dest is null");
         }
-        
+        statistics.incrementWriteOps(1);
+
         Volume xtreemfsVolume = getVolumeFromPath(src);
         final String srcPath = preparePath(src, xtreemfsVolume);
         String destPath = preparePath(dest, xtreemfsVolume);
@@ -427,7 +478,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath, destPath);
         }
-        statistics.incrementWriteOps(1);
         return true;
     }
 
@@ -564,7 +614,20 @@ public class XtreemFSFileSystem extends FileSystem {
         }
 
         if (isXtreemFSDirectory(pathString, xtreemfsVolume) == false) {
-            throw new FileNotFoundException(pathString);
+            if (compareHadoopVersion(new int[] { 2, 0, 0 }) >= 0) {
+                // Hadoop 2.x expects a FNE
+                throw new FileNotFoundException(pathString);
+            } else if (compareHadoopVersion(new int[] { 1, 0, 0 }) >= 0) {
+                // Hadoop 1.x expects null
+                return null;
+            } else if (compareHadoopVersion(new int[] { 0, 21, 0 }) >= 0) {
+                // Hadoop 0.21 - 0.23.x expects a FNE
+                throw new FileNotFoundException(pathString);
+            } else {
+                // Hadoop 0.18 - 0.22.x expects null
+                // and Hadoop 0.0 - 0.17.x does not expect anything
+                return null;
+            }
         }
 
         DirectoryEntries dirEntries = xtreemfsVolume.readDir(userCredentials, pathString, 0, 0, false);
@@ -625,11 +688,11 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
+        statistics.incrementWriteOps(1);
         
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final String[] dirs = pathString.split("/");
-        statistics.incrementWriteOps(1);
 
         final short mode = applyUMask(fp).toShort();
         String dirString = "";
@@ -668,6 +731,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (path == null) {
             throw new IllegalArgumentException("path is null");
         }
+        statistics.incrementReadOps(1);
         
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -722,6 +786,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (file == null) {
             return null;
         }
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(file.getPath());
         String pathString = preparePath(file.getPath(), xtreemfsVolume);
         List<StripeLocation> stripeLocations = xtreemfsVolume.getStripeLocations(userCredentials, pathString, start,
@@ -826,5 +891,16 @@ public class XtreemFSFileSystem extends FileSystem {
             return true;
         } else
             return false;
+    }
+    
+    private int compareHadoopVersion(int[] version) {
+        for (int i = 0; i < 3; ++i) {
+            if (hadoopVersion[i] < version[i]) {
+                return -1;
+            } else if (hadoopVersion[i] > version[i]) {
+                return 1;
+            }
+        }
+        return 0;
     }
 }

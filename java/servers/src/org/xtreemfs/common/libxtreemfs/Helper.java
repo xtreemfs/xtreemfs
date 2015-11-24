@@ -226,6 +226,10 @@ public class Helper {
 
     static public long extractFileIdFromXcap(XCap xcap) {
         String fileId = xcap.getFileId();
+        return extractFileIdFromGlobalFileId(fileId);
+    }
+
+    static public long extractFileIdFromGlobalFileId(String fileId) {
         int start = fileId.indexOf(':');
         return Long.parseLong(fileId.substring(start + 1, fileId.length()));
     }

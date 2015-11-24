@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.xtreemfs.common.statusserver.StatusServerModule;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 
@@ -71,12 +72,23 @@ class ReplicatedFileStatusPage extends StatusServerModule {
                         result.notifyAll();
                     }
                 }
+
+                @Override
+                public void failed(ErrorResponse ex) {
+                    result.set(null);
+                    result.notifyAll();
+                }
             });
             synchronized (result) {
                 if (result.get() == null)
                     result.wait();
             }
             Map<String, Map<String, String>> status = result.get();
+
+            if (status == null) {
+                throw new Throwable("Error on getting RWReplication status.");
+            }
+
             for (String fileId : status.keySet()) {
                 sb.append("<TR><TD>");
                 sb.append(fileId);

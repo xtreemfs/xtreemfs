@@ -43,6 +43,10 @@ int CompareOSDWriteResponses(
     const xtreemfs::pbrpc::OSDWriteResponse* new_response,
     const xtreemfs::pbrpc::OSDWriteResponse* current_response);
 
+/** The global file id  contains the Volume UUID and File ID concatenated by a ":". */
+uint64_t ExtractFileIdFromGlobalFileId(std::string global_file_id);
+
+/** The XCap contains the global file id. */
 uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap);
 
 /** Same as dirname(): Returns the path to the parent directory of a path. */

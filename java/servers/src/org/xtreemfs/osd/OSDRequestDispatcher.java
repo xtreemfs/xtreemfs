@@ -83,6 +83,7 @@ import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateInvalidatedOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
+import org.xtreemfs.osd.operations.InternalRWRResetStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
 import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
@@ -102,7 +103,14 @@ import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.quota.OSDVoucherManager;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
-import org.xtreemfs.osd.stages.*;
+import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple;
+import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple.ReplicatedFileStateSimpleFuture;
+import org.xtreemfs.osd.stages.DeletionStage;
+import org.xtreemfs.osd.stages.PreprocStage;
+import org.xtreemfs.osd.stages.ReplicationStage;
+import org.xtreemfs.osd.stages.StorageStage;
+import org.xtreemfs.osd.stages.TracingStage;
+import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
@@ -922,6 +930,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new InternalRWRAuthStateInvalidatedOperation(this);
         operations.put(op.getProcedureId(), op);
 
+        op = new InternalRWRResetStatusOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         // --internal events here--
 
         op = new EventCloseFile(this);
@@ -1119,7 +1130,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      * @param fileId
      */
     public String getPrimary(String fileId) {
-        return rwrStage.getPrimary(fileId);
+        try {
+            ReplicatedFileStateSimpleFuture future = new ReplicatedFileStateSimpleFuture(rwrStage, fileId);
+            ReplicatedFileStateSimple state = future.get();
+            return state != null ? state.getPrimary() : null;
+        } catch (InterruptedException ex) {
+            return null;
+        }
     }
 
 }

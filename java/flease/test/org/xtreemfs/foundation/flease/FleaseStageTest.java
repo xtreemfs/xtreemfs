@@ -75,7 +75,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -149,7 +149,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -201,7 +201,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
