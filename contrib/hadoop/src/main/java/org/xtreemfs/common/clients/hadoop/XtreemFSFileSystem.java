@@ -319,6 +319,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
@@ -334,6 +338,10 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
             long blockSize, Progressable p) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         // block replication for the file
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -363,6 +371,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataOutputStream append(Path path, int bufferSize, Progressable p) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
     	Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         
@@ -380,6 +392,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean rename(Path src, Path dest) throws IOException {
+        if (src == null || dest == null) {
+            throw new IllegalArgumentException("src/dest is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(src);
         final String srcPath = preparePath(src, xtreemfsVolume);
         String destPath = preparePath(dest, xtreemfsVolume);
@@ -422,6 +438,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean delete(Path path, boolean recursive) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         statistics.incrementWriteOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -533,8 +553,9 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FileStatus[] listStatus(Path path) throws IOException {
         if (path == null) {
-            return null;
+            throw new IllegalArgumentException("path is null");
         }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
 
@@ -573,6 +594,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public void setWorkingDirectory(Path path) {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         this.workingDirectory = new Path(preparePath(path, xtreemfsVolume))
                 .makeQualified(this.fileSystemURI, this.workingDirectory);
@@ -593,6 +618,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final String[] dirs = pathString.split("/");
@@ -632,6 +661,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FileStatus getFileStatus(Path path) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         if (Logging.isDebug()) {
