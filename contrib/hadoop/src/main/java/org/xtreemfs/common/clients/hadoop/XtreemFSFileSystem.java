@@ -366,6 +366,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
@@ -373,7 +374,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Opening file %s", pathString);
         }
-        statistics.incrementReadOps(1);
         return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString, useReadBuffer,
                 readBufferSize, statistics));
     }
@@ -381,6 +381,7 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
             long blockSize, Progressable p) throws IOException {
+        statistics.incrementWriteOps(1);
         // block replication for the file
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -410,6 +411,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataOutputStream append(Path path, int bufferSize, Progressable p) throws IOException {
+        statistics.incrementWriteOps(1);
     	Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         
@@ -427,6 +429,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean rename(Path src, Path dest) throws IOException {
+        statistics.incrementWriteOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(src);
         final String srcPath = preparePath(src, xtreemfsVolume);
         String destPath = preparePath(dest, xtreemfsVolume);
@@ -458,7 +461,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath, destPath);
         }
-        statistics.incrementWriteOps(1);
         return true;
     }
 
@@ -653,10 +655,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
+        statistics.incrementWriteOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final String[] dirs = pathString.split("/");
-        statistics.incrementWriteOps(1);
 
         final short mode = applyUMask(fp).toShort();
         String dirString = "";
@@ -692,6 +694,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FileStatus getFileStatus(Path path) throws IOException {
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         if (Logging.isDebug()) {
@@ -737,6 +740,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (file == null) {
             return null;
         }
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(file.getPath());
         String pathString = preparePath(file.getPath(), xtreemfsVolume);
         List<StripeLocation> stripeLocations = xtreemfsVolume.getStripeLocations(userCredentials, pathString, start,
