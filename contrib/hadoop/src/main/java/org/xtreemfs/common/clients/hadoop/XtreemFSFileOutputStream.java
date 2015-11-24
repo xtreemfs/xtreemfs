@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 
 /**
  * 
@@ -52,6 +53,10 @@ public class XtreemFSFileOutputStream extends OutputStream {
 
         // Set position to end of file for append operation.
         if (append) {
+            Stat stat = fileHandle.getAttr(userCredentials);
+            if (stat == null) {
+                throw new IOException("Cannot stat file '" + fileName + "'");
+            }
             position = fileHandle.getAttr(userCredentials).getSize();
         }
     }
