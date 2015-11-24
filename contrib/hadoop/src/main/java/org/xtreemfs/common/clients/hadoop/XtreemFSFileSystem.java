@@ -49,6 +49,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 
 /**
  * 
@@ -646,7 +647,7 @@ public class XtreemFSFileSystem extends FileSystem {
             throw pee;
         }
         if (stat == null) {
-            throw new IOException("Cannot stat '" + pathString + "'");
+            throw new IOException("Cannot stat file/directory '" + pathString + "'");
         }
         
         final boolean isDir = isXtreemFSDirectory(stat);
@@ -656,7 +657,11 @@ public class XtreemFSFileSystem extends FileSystem {
                     new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeQualified(path));
         } else {
             // for files, set blocksize to stripesize of the volume
-            return new FileStatus(stat.getSize(), isDir, 1, xtreemfsVolume.statFS(userCredentials)
+            StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
+            if (statVFS == null) {
+                throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
+            }
+            return new FileStatus(stat.getSize(), isDir, 1, statVFS
                     .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                     (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                     stat.getGroupId(), makeQualified(path));
