@@ -737,10 +737,10 @@ public class XtreemFSFileSystem extends FileSystem {
     
     @Override
     public BlockLocation[] getFileBlockLocations(FileStatus file, long start, long length) throws IOException {
-        statistics.incrementReadOps(1);
         if (file == null) {
             return null;
         }
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(file.getPath());
         String pathString = preparePath(file.getPath(), xtreemfsVolume);
         List<StripeLocation> stripeLocations = xtreemfsVolume.getStripeLocations(userCredentials, pathString, start,
