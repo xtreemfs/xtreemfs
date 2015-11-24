@@ -645,6 +645,10 @@ public class XtreemFSFileSystem extends FileSystem {
             }
             throw pee;
         }
+        if (stat == null) {
+            throw new IOException("Cannot stat '" + pathString + "'");
+        }
+        
         final boolean isDir = isXtreemFSDirectory(stat);
         if (isDir) {
             // for directories, set blocksize to 0
