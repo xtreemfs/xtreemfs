@@ -57,7 +57,7 @@ public class XtreemFSFileOutputStream extends OutputStream {
             if (stat == null) {
                 throw new IOException("Cannot stat file '" + fileName + "'");
             }
-            position = fileHandle.getAttr(userCredentials).getSize();
+            position = stat.getSize();
         }
     }
 
