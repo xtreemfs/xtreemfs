@@ -104,7 +104,7 @@ public class Capability {
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
         int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, boolean traceRequests,
-        String tracingPolicy,String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
+        String tracingPolicy, String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
 
         this.sharedSecret = sharedSecret;
 
