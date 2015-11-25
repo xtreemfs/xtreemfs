@@ -9,6 +9,8 @@
 
 #include <iostream>
 #include <string>
+#include <stdint.h>
+#include <algorithm>
 
 #include "libxtreemfs/client.h"
 #include "libxtreemfs/file_handle.h"
@@ -27,7 +29,38 @@ using namespace std;
 using namespace cb::time;
 namespace po = boost::program_options;
 
-// Args: runs, log file prefix, filename,  [volume address (://dir:port/volumename)]
+inline int64_t writeBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B) {
+  int64_t ret = 0;
+
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+    size_t size = min(size_B - offset, (int64_t) buffer_B);
+    int write_ret = file->Write(data, size, offset);
+
+    if (write_ret < 0) {
+      return write_ret;
+    }
+    ret = ret + write_ret;
+  }
+
+  return ret;
+}
+
+
+inline int64_t readBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B) {
+  int64_t ret = 0;
+
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+    size_t size = min(size_B - offset, (int64_t) buffer_B);
+    int read_ret = file->Read(data, size, offset);
+
+    if (read_ret < 0) {
+      return read_ret;
+    }
+    ret = ret + read_ret;
+  }
+
+  return ret;
+}
 
 int main(int argc, char* argv[]) {
   xtreemfs::pbrpc::UserCredentials user_credentials;
@@ -37,6 +70,7 @@ int main(int argc, char* argv[]) {
   // Options
   int runs;
   int size_MiB;
+  int buffer_KiB;
   string raw_log;
   string path;
   string xtreemfs_url;
@@ -47,6 +81,7 @@ int main(int argc, char* argv[]) {
     ("xtreemfs_url", po::value(&xtreemfs_url)->required(), "Volume to use (proto://dirhost:port/volume)")
     ("runs", po::value<int>(&runs)->required(), "Times to run the benchmarks.")
     ("size", po::value<int>(&size_MiB)->required(), "Number of MiB to write")
+    ("buffer", po::value<int>(&buffer_KiB)->required(), "Size of the buffer to read/write at once")
     ("path",  po::value<string>(&path)->required(), "Path to file to write and read" )
   ;
 
@@ -54,6 +89,7 @@ int main(int argc, char* argv[]) {
   p.add("xtreemfs_url", 1);
   p.add("runs", 1);
   p.add("size", 1);
+  p.add("buffer", 1);
   p.add("path", 1);
 
   po::variables_map vm;
@@ -91,8 +127,9 @@ int main(int argc, char* argv[]) {
   }
 
   // Allocate memory to write/read
-  unsigned int size_B = 1024 * 1024 * size_MiB;
-  char* data = new char[size_B];
+  int64_t size_B = 1024 * 1024 * (int64_t) size_MiB;
+  size_t buffer_B = 1024 * (size_t) buffer_KiB;
+  char* data = new char[buffer_B];
 
   TimeAverageVariance in_time(runs);
   TimeAverageVariance out_time(runs);
@@ -124,15 +161,16 @@ int main(int argc, char* argv[]) {
 
     // Do 5 warmup write runs
     for (int i = 0; i < 5; ++i) {
-      in_file->Write(data, size_B, 0);
+      writeBuffered(in_file, data, size_B, buffer_B);
     }
+    in_file->Flush();
 
 
     // Run the write benchmarks
     for (int i = 0; i < runs; ++i)
     {
         WallClock clock;
-        in_file->Write(data, size_B, 0);
+        writeBuffered(in_file, data, size_B, buffer_B);
         in_file->Flush();
         in_time.add(clock);
     }
@@ -144,7 +182,7 @@ int main(int argc, char* argv[]) {
 
     // Do 5 warmup read runs
     for (int i = 0; i < 5; ++i) {
-      out_file->Read(data, size_B, 0);
+      readBuffered(out_file, data, size_B, buffer_B);
     }
     out_file->Flush();
 
@@ -152,7 +190,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < runs; ++i)
     {
         WallClock clock;
-        out_file->Read(data, size_B, 0);
+        readBuffered(out_file, data, size_B, buffer_B);
         out_file->Flush();
         out_time.add(clock);
     }
@@ -179,18 +217,18 @@ int main(int argc, char* argv[]) {
 
 
   // Return the results
-  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tthroughput (MiB/s)" << endl
-     << "libxtreemfs\t" << "in\t" << in_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
-     << "libxtreemfs\t" << "out\t" << out_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (out_time.average() * 0.000001)) << endl;
+  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tbufsize (KiB)" << "\tthroughput (MiB/s)" << endl
+     << "libxtreemfs\t" << "write\t" << in_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
+     << "libxtreemfs\t" << "read\t" << out_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" << (size_MiB / (out_time.average() * 0.000001)) << endl;
 
   // Write raw results if log prefix is set
   if (vm.count("raw_log")) {
     int raw_log_len = raw_log.length();
-    raw_log.append("-in");
+    raw_log.append("-write");
     in_time.toFile(raw_log);
 
     raw_log.resize(raw_log_len);
-    raw_log.append("-out");
+    raw_log.append("-read");
     out_time.toFile(raw_log);
   }
 

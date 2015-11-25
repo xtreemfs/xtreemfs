@@ -11,6 +11,8 @@
 #include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <algorithm>
 
 #include <boost/program_options.hpp>
 
@@ -22,11 +24,44 @@ using namespace cb::time;
 
 namespace po = boost::program_options;
 
+inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer_B) {
+  int64_t ret = 0;
+
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+    size_t size = min(size_B - offset, (int64_t) buffer_B);
+    ssize_t write_ret = write(file, (void*) data, size);
+
+    if (write_ret < 0) {
+      return write_ret;
+    }
+    ret = ret + write_ret;
+  }
+
+  return ret;
+}
+
+inline int64_t readBuffered(int file, char* data, int64_t size_B, size_t buffer_B) {
+  int64_t ret = 0;
+
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+    size_t size = min(size_B - offset, (int64_t) buffer_B);
+    ssize_t read_ret = read(file, (void*) data, size);
+
+    if (read_ret < 0) {
+      return read_ret;
+    }
+    ret = ret + read_ret;
+  }
+
+  return ret;
+}
+
 
 int main(int argc, char* argv[]) {
 
   int runs;
   int size_MiB;
+  int buffer_KiB;
   string raw_log;
   string path;
   string access;
@@ -37,6 +72,7 @@ int main(int argc, char* argv[]) {
     ("access",  po::value<string>(&access)->required(), "Required for logging." )
     ("runs", po::value<int>(&runs)->required(), "Times to run the benchmarks.")
     ("size", po::value<int>(&size_MiB)->required(), "Number of MiB to write")
+    ("buffer", po::value<int>(&buffer_KiB)->required(), "Size of the buffer to read/write at once")
     ("path",  po::value<string>(&path)->required(), "Path to file to write and read" )
   ;
 
@@ -44,6 +80,7 @@ int main(int argc, char* argv[]) {
   p.add("access", 1);
   p.add("runs", 1);
   p.add("size", 1);
+  p.add("buffer", 1);
   p.add("path", 1);
 
   po::variables_map vm;
@@ -61,8 +98,9 @@ int main(int argc, char* argv[]) {
   }
 
   // Allocate memory to write/read
-  unsigned int size_B = 1024 * 1024 * size_MiB;
-  char* data = new char[size_B];
+  int64_t size_B = 1024 * 1024 * (int64_t) size_MiB;
+  size_t buffer_B = 1024 * (size_t) buffer_KiB;
+  char* data = new char[buffer_B];
 
 
 
@@ -71,19 +109,24 @@ int main(int argc, char* argv[]) {
 
   // Do 5 warmup write runs
   for (int i = 0; i < 5; ++i) {
-    ssize_t write_ret = write(in_file, (void*) data, size_B);
     lseek(in_file, 0, SEEK_SET);
+    writeBuffered(in_file, data, size_B, buffer_B);
   }
 
   // Run the write benchmarks
   TimeAverageVariance in_time(runs);
-  for (int i = 0; i < runs; ++i)
-  {
-      WallClock clock;
-      ssize_t write_ret = write(in_file, (void*)data, size_B);
-      fsync(in_file);
-      in_time.add(clock);
-      lseek(in_file, 0, SEEK_SET);
+  for (int i = 0; i < runs; ++i) {
+    lseek(in_file, 0, SEEK_SET);
+
+    WallClock clock;
+    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B);
+    fsync(in_file);
+    in_time.add(clock);
+
+    if (write_ret < 0) {
+      perror("Write error:");
+      return 1;
+    }
   }
 
   // Close the file
@@ -96,20 +139,25 @@ int main(int argc, char* argv[]) {
 
   // Do 5 warmup read runs
   for (int i = 0; i < 5; ++i) {
-    ssize_t read_ret = read(out_file, (void*)data, size_B);
-    lseek(in_file, 0, SEEK_SET);
+    lseek(out_file, 0, SEEK_SET);
+    int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B);
   }
   fsync(out_file);
 
   // Run the read benchmarks
   TimeAverageVariance out_time(runs);
-  for (int i = 0; i < runs; ++i)
-  {
-      WallClock clock;
-      ssize_t read_ret = read(out_file, (void*)data, size_B);
-      fsync(out_file);
-      out_time.add(clock);
-      lseek(out_file, 0, SEEK_SET);
+  for (int i = 0; i < runs; ++i) {
+    lseek(out_file, 0, SEEK_SET);
+
+    WallClock clock;
+    int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B);
+    fsync(out_file);
+    out_time.add(clock);
+
+    if (read_ret < 0) {
+      perror("Read error:");
+      return 1;
+    }
   }
 
   // Close the file
@@ -118,19 +166,19 @@ int main(int argc, char* argv[]) {
 
 
   // Return the results
-  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tthroughput (MiB/s)" << endl
-   << access << "\t" << "in\t" << in_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
-   << access << "\t" << "out\t" << out_time.toString() << "\t" << size_MiB << "\t" << (size_MiB / (out_time.average() * 0.000001)) << endl;
+  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tbufsize (KiB)" << "\tthroughput (MiB/s)" << endl
+   << access << "\t" << "write\t" << in_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
+   << access << "\t" << "read\t" << out_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" <<(size_MiB / (out_time.average() * 0.000001)) << endl;
 
 
   // Write raw results if log prefix is set
   if (vm.count("raw_log")) {
     int raw_log_len = raw_log.length();
-    raw_log.append("-in");
+    raw_log.append("-write");
     in_time.toFile(raw_log);
 
     raw_log.resize(raw_log_len);
-    raw_log.append("-out");
+    raw_log.append("-read");
     out_time.toFile(raw_log);
   }
 
