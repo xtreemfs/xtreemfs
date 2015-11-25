@@ -50,6 +50,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 
 /**
  * 
@@ -366,6 +367,11 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataInputStream open(Path path, int bufferSize) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        statistics.incrementReadOps(1);
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final FileHandle fileHandle = xtreemfsVolume.openFile(userCredentials, pathString,
@@ -373,7 +379,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Opening file %s", pathString);
         }
-        statistics.incrementReadOps(1);
         return new FSDataInputStream(new XtreemFSInputStream(userCredentials, fileHandle, pathString, useReadBuffer,
                 readBufferSize, statistics));
     }
@@ -381,6 +386,11 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FSDataOutputStream create(Path path, FsPermission fp, boolean overwrite, int bufferSize, short replication,
             long blockSize, Progressable p) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        statistics.incrementWriteOps(1);
+        
         // block replication for the file
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -410,7 +420,12 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FSDataOutputStream append(Path path, int bufferSize, Progressable p) throws IOException {
-    	Volume xtreemfsVolume = getVolumeFromPath(path);
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        statistics.incrementWriteOps(1);
+
+        Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         
         if (Logging.isDebug()) {
@@ -427,6 +442,11 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean rename(Path src, Path dest) throws IOException {
+        if (src == null || dest == null) {
+            throw new IllegalArgumentException("src/dest is null");
+        }
+        statistics.incrementWriteOps(1);
+
         Volume xtreemfsVolume = getVolumeFromPath(src);
         final String srcPath = preparePath(src, xtreemfsVolume);
         String destPath = preparePath(dest, xtreemfsVolume);
@@ -458,7 +478,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renamed file/dir. src: %s, dst: %s", srcPath, destPath);
         }
-        statistics.incrementWriteOps(1);
         return true;
     }
 
@@ -469,6 +488,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean delete(Path path, boolean recursive) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         statistics.incrementWriteOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
@@ -580,8 +603,9 @@ public class XtreemFSFileSystem extends FileSystem {
     @Override
     public FileStatus[] listStatus(Path path) throws IOException {
         if (path == null) {
-            return null;
+            throw new IllegalArgumentException("path is null");
         }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
 
@@ -621,8 +645,12 @@ public class XtreemFSFileSystem extends FileSystem {
                         .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(), stat
                         .getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             } else {
+                StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
+                if (statVFS == null) {
+                    throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
+                }
                 // for files, set blocksize to stripeSize of the volume
-                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, xtreemfsVolume.statFS(userCredentials)
+                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, statVFS
                         .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                         (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                         stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
@@ -633,6 +661,10 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public void setWorkingDirectory(Path path) {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         this.workingDirectory = new Path(preparePath(path, xtreemfsVolume))
                 .makeQualified(this.fileSystemURI, this.workingDirectory);
@@ -653,10 +685,14 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean mkdirs(Path path, FsPermission fp) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        statistics.incrementWriteOps(1);
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         final String[] dirs = pathString.split("/");
-        statistics.incrementWriteOps(1);
 
         final short mode = applyUMask(fp).toShort();
         String dirString = "";
@@ -692,6 +728,11 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FileStatus getFileStatus(Path path) throws IOException {
+        if (path == null) {
+            throw new IllegalArgumentException("path is null");
+        }
+        statistics.incrementReadOps(1);
+        
         Volume xtreemfsVolume = getVolumeFromPath(path);
         final String pathString = preparePath(path, xtreemfsVolume);
         if (Logging.isDebug()) {
@@ -706,14 +747,22 @@ public class XtreemFSFileSystem extends FileSystem {
             }
             throw pee;
         }
+        if (stat == null) {
+            throw new IOException("Cannot stat file/directory '" + pathString + "'");
+        }
+        
         final boolean isDir = isXtreemFSDirectory(stat);
         if (isDir) {
             // for directories, set blocksize to 0
             return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
                     new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeQualified(path));
         } else {
+            StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
+            if (statVFS == null) {
+                throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
+            }
             // for files, set blocksize to stripesize of the volume
-            return new FileStatus(stat.getSize(), isDir, 1, xtreemfsVolume.statFS(userCredentials)
+            return new FileStatus(stat.getSize(), isDir, 1, statVFS
                     .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                     (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                     stat.getGroupId(), makeQualified(path));
@@ -737,6 +786,7 @@ public class XtreemFSFileSystem extends FileSystem {
         if (file == null) {
             return null;
         }
+        statistics.incrementReadOps(1);
         Volume xtreemfsVolume = getVolumeFromPath(file.getPath());
         String pathString = preparePath(file.getPath(), xtreemfsVolume);
         List<StripeLocation> stripeLocations = xtreemfsVolume.getStripeLocations(userCredentials, pathString, start,
