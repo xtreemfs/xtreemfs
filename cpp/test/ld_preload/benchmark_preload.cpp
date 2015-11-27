@@ -45,10 +45,11 @@ inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer
   return ret;
 }
 
-inline int64_t readBuffered(int file, char* data, int64_t size_B, size_t buffer_B) {
+inline int64_t readBuffered(int file, char* data, int64_t size_B, size_t buffer_B, WallClock* clock = 0, std::vector<Clock::TimeT>* times_per_buffer = 0) {
   int64_t ret = 0;
 
-  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+  int i = 0;
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B, ++i) {
     size_t size = min(size_B - offset, (int64_t) buffer_B);
     ssize_t read_ret = read(file, (void*) data, size);
 
@@ -56,6 +57,9 @@ inline int64_t readBuffered(int file, char* data, int64_t size_B, size_t buffer_
       return read_ret;
     }
     ret = ret + read_ret;
+
+    if (clock && times_per_buffer)
+      (*times_per_buffer)[i] = clock->elapsed();
   }
 
   return ret;
@@ -107,16 +111,6 @@ int main(int argc, char* argv[]) {
   size_t buffer_B = 1024 * (size_t) buffer_KiB;
   char* data = new char[buffer_B];
 
-  // Open the per_buffer_log
-  ofstream per_buf_log;
-  if (vm.count("raw_log")) {
-    string per_buf_log_file(raw_log + "-per_buf_log.csv");
-    per_buf_log.open(per_buf_log_file.c_str(), ios::trunc);
-
-    per_buf_log << "run\tmin\tmax" << endl;
-  }
-
-
   // Open the in_file
   int in_file = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0777);
 
@@ -126,76 +120,119 @@ int main(int argc, char* argv[]) {
     writeBuffered(in_file, data, size_B, buffer_B);
   }
 
-  // Run the write benchmarks
   TimeAverageVariance in_time(runs);
-  size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
-  std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
-  for (int i = 0; i < runs; ++i) {
-    lseek(in_file, 0, SEEK_SET);
+  {
+    // Initialize stats
+    size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
+    std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
+    TimeAverageVariance ta_alloc(runs);
+    std::vector<TimeAverageVariance> stats_per_buffer(tpf_size, ta_alloc);
+//    std::vector<TimeAverageVariance> stats_per_buffer;
+//    stats_per_buffer.reserve(tpf_size);
+//    for (size_t j=0; j < tpf_size; ++j)
+//      stats_per_buffer.push_back(TimeAverageVariance(runs));
 
-    WallClock clock;
-    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B, &clock, &times_per_buffer);
-    fsync(in_file);
-    in_time.add(clock);
+    // Run the write benchmarks
+    for (int i = 0; i < runs; ++i) {
+      lseek(in_file, 0, SEEK_SET);
 
-    if (write_ret < 0) {
-      perror("Write error:");
-      return 1;
-    }
-    
-    // times_per_buffer contains times from start until writing to end of the n-th buffer
-    Clock::TimeT min = times_per_buffer.back();
-    Clock::TimeT max = times_per_buffer.back();
-    for (int j = (times_per_buffer.size() - 1); j > 0; --j)  // compute times for the n-th buffer only
-    {
-      times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
-      if (times_per_buffer[j] < min)
-        min = times_per_buffer[j];
-      if (times_per_buffer[j] > max)
-        max = times_per_buffer[j];
-      // if hypothesis of partially cached applies, create a vector of time average variance above of some size (every buffer, or every n buffers) and fill it here
-    }
-    
-    // output min max,
-    if (per_buf_log.is_open()) {
-      per_buf_log << i << "\t" << min << "\t" << max << endl;
+      WallClock clock;
+      int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B, &clock, &times_per_buffer);
+      fsync(in_file);
+      in_time.add(clock);
+
+      if (write_ret < 0) {
+        perror("Write error:");
+        return 1;
+      }
+
+      // times_per_buffer contains times from start until writing to end of the n-th buffer
+      for (size_t k = 0, j = (times_per_buffer.size() - 1); k < times_per_buffer.size(); ++k, --j)  // compute times for the n-th buffer only
+      {
+        if (j > 0)
+          times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
+
+        stats_per_buffer[j].add(times_per_buffer[j]);
+      }
     }
 
+    // Close the file
+    close(in_file);
+
+    // Write per buffer stats
+    if (vm.count("raw_log")) {
+      string per_buf_log_file(raw_log + "-per_buf_log-write.csv");
+      ofstream per_buf_log(per_buf_log_file.c_str(), ios::trunc);
+      per_buf_log << "block\toffset\t" << stats_per_buffer.begin()->getHeaderString() << endl;
+
+      for (size_t j = 0; j < stats_per_buffer.size(); ++j) {
+        per_buf_log << j << "\t" << ((j+1) * buffer_KiB) << "\t" << stats_per_buffer[j].toString() << endl;
+      }
+      per_buf_log.close();
+    }
   }
 
-  // Close the file
-  close(in_file);
 
-  // Open the out_file
-  int out_file = open(path.c_str(), O_RDONLY);
-
-  // Do 5 warmup read runs
-  for (int i = 0; i < 5; ++i) {
-    lseek(out_file, 0, SEEK_SET);
-    int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B);
-  }
-  fsync(out_file);
-
-  // Run the read benchmarks
   TimeAverageVariance out_time(runs);
-  for (int i = 0; i < runs; ++i) {
-    lseek(out_file, 0, SEEK_SET);
+  {
+    // Open the out_file
+    int out_file = open(path.c_str(), O_RDONLY);
 
-    WallClock clock;
-    int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B);
+    // Do 5 warmup read runs
+    for (int i = 0; i < 5; ++i) {
+      lseek(out_file, 0, SEEK_SET);
+      int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B);
+    }
     fsync(out_file);
-    out_time.add(clock);
 
-    if (read_ret < 0) {
-      perror("Read error:");
-      return 1;
+    // Initialize stats
+    size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
+    std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
+    TimeAverageVariance ta_alloc(runs);
+    std::vector<TimeAverageVariance> stats_per_buffer(tpf_size, ta_alloc);
+//    std::vector<TimeAverageVariance> stats_per_buffer;
+//    stats_per_buffer.reserve(tpf_size);
+//    for (size_t j=0; j < tpf_size; ++j)
+//      stats_per_buffer.push_back(TimeAverageVariance(runs));
+    
+    // Run the read benchmarks
+    for (int i = 0; i < runs; ++i) {
+      lseek(out_file, 0, SEEK_SET);
+
+      WallClock clock;
+      int64_t read_ret = readBuffered(out_file, data, size_B, buffer_B, &clock, &times_per_buffer);
+      fsync(out_file);
+      out_time.add(clock);
+
+      if (read_ret < 0) {
+        perror("Read error:");
+        return 1;
+      }
+
+      // times_per_buffer contains times from start until writing to end of the n-th buffer
+      for (size_t k = 0, j = (times_per_buffer.size() - 1); k < times_per_buffer.size(); ++k, --j)
+      {
+        if (j > 0)
+          times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
+        stats_per_buffer[j].add(times_per_buffer[j]);
+      }
+    }
+
+    // Close the file
+    close(out_file);
+
+    // Write per buffer stats
+    if (vm.count("raw_log")) {
+      string per_buf_log_file(raw_log + "-per_buf_log-read.csv");
+      ofstream per_buf_log(per_buf_log_file.c_str(), ios::trunc);
+      per_buf_log << "block\toffset\t" << stats_per_buffer.begin()->getHeaderString() << endl;
+
+      for (size_t j = 0; j < stats_per_buffer.size(); ++j) {
+        per_buf_log << j << "\t" << ((j+1) * buffer_KiB) << "\t" << stats_per_buffer[j].toString() << endl;
+      }
+      per_buf_log.close();
     }
   }
-
-  // Close the file
-  close(out_file);
-
-
 
   // Return the results
   cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString()
@@ -217,10 +254,6 @@ int main(int argc, char* argv[]) {
     raw_log.resize(raw_log_len);
     raw_log.append("-read");
     out_time.toFile(raw_log);
-  }
-
-  if (per_buf_log.is_open()) {
-    per_buf_log.close();
   }
 
 

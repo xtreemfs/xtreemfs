@@ -29,10 +29,12 @@ using namespace std;
 using namespace cb::time;
 namespace po = boost::program_options;
 
-inline int64_t writeBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B) {
+
+inline int64_t writeBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B, WallClock* clock = 0, std::vector<Clock::TimeT>* times_per_buffer = 0) {
   int64_t ret = 0;
 
-  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+  int i = 0;
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B, ++i) {
     size_t size = min(size_B - offset, (int64_t) buffer_B);
     int write_ret = file->Write(data, size, offset);
 
@@ -40,16 +42,20 @@ inline int64_t writeBuffered(xtreemfs::FileHandle* file, char* data, int64_t siz
       return write_ret;
     }
     ret = ret + write_ret;
+
+    if (clock && times_per_buffer)
+      (*times_per_buffer)[i] = clock->elapsed();
   }
 
   return ret;
 }
 
 
-inline int64_t readBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B) {
+inline int64_t readBuffered(xtreemfs::FileHandle* file, char* data, int64_t size_B, size_t buffer_B, WallClock* clock = 0, std::vector<Clock::TimeT>* times_per_buffer = 0) {
   int64_t ret = 0;
 
-  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+  int i = 0;
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B, ++i) {
     size_t size = min(size_B - offset, (int64_t) buffer_B);
     int read_ret = file->Read(data, size, offset);
 
@@ -57,6 +63,9 @@ inline int64_t readBuffered(xtreemfs::FileHandle* file, char* data, int64_t size
       return read_ret;
     }
     ret = ret + read_ret;
+
+    if (clock && times_per_buffer)
+      (*times_per_buffer)[i] = clock->elapsed();
   }
 
   return ret;
@@ -166,13 +175,46 @@ int main(int argc, char* argv[]) {
     in_file->Flush();
 
 
-    // Run the write benchmarks
-    for (int i = 0; i < runs; ++i)
     {
-        WallClock clock;
-        writeBuffered(in_file, data, size_B, buffer_B);
-        in_file->Flush();
-        in_time.add(clock);
+      // Initialize stats
+      size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
+      std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
+      TimeAverageVariance ta_alloc(runs);
+      std::vector<TimeAverageVariance> stats_per_buffer(tpf_size, ta_alloc);
+//      std::vector<TimeAverageVariance> stats_per_buffer;
+//      stats_per_buffer.reserve(tpf_size);
+//      for (size_t j=0; j < tpf_size; ++j)
+//        stats_per_buffer.push_back(TimeAverageVariance(runs));
+
+
+      // Run the write benchmarks
+      for (int i = 0; i < runs; ++i)
+      {
+          WallClock clock;
+          writeBuffered(in_file, data, size_B, buffer_B, &clock, &times_per_buffer);
+          in_file->Flush();
+          in_time.add(clock);
+
+          // times_per_buffer contains times from start until writing to end of the n-th buffer
+          for (size_t k = 0, j = (times_per_buffer.size() - 1); k < times_per_buffer.size(); ++k, --j)
+          {
+            if (j > 0)
+              times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
+            stats_per_buffer[j].add(times_per_buffer[j]);
+          }
+      }
+
+      // Write per buffer stats
+      if (vm.count("raw_log")) {
+        string per_buf_log_file(raw_log + "-per_buf_log-read.csv");
+        ofstream per_buf_log(per_buf_log_file.c_str(), ios::trunc);
+        per_buf_log << "block\toffset\t" << stats_per_buffer.begin()->getHeaderString() << endl;
+
+        for (size_t j = 0; j < stats_per_buffer.size(); ++j) {
+          per_buf_log << j << "\t" << ((j+1) * buffer_KiB) << "\t" << stats_per_buffer[j].toString() << endl;
+        }
+        per_buf_log.close();
+      }
     }
 
     // Open out file.
@@ -186,13 +228,45 @@ int main(int argc, char* argv[]) {
     }
     out_file->Flush();
 
-    // Run the read benchmarks
-    for (int i = 0; i < runs; ++i)
     {
-        WallClock clock;
-        readBuffered(out_file, data, size_B, buffer_B);
-        out_file->Flush();
-        out_time.add(clock);
+      // Initialize stats
+      size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
+      std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
+      TimeAverageVariance ta_alloc(runs);
+      std::vector<TimeAverageVariance> stats_per_buffer(tpf_size, ta_alloc);
+//      std::vector<TimeAverageVariance> stats_per_buffer;
+//      stats_per_buffer.reserve(tpf_size);
+//      for (size_t j=0; j < tpf_size; ++j)
+//        stats_per_buffer.push_back(TimeAverageVariance(runs));
+
+      // Run the read benchmarks
+      for (int i = 0; i < runs; ++i)
+      {
+          WallClock clock;
+          readBuffered(out_file, data, size_B, buffer_B, &clock, &times_per_buffer);
+          out_file->Flush();
+          out_time.add(clock);
+
+          // times_per_buffer contains times from start until writing to end of the n-th buffer
+          for (size_t k = 0, j = (times_per_buffer.size() - 1); k < times_per_buffer.size(); ++k, --j)
+          {
+            if (j > 0)
+              times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
+            stats_per_buffer[j].add(times_per_buffer[j]);
+          }
+      }
+
+      // Write per buffer stats
+      if (vm.count("raw_log")) {
+        string per_buf_log_file(raw_log + "-per_buf_log-read.csv");
+        ofstream per_buf_log(per_buf_log_file.c_str(), ios::trunc);
+        per_buf_log << "block\toffset\t" << stats_per_buffer.begin()->getHeaderString() << endl;
+
+        for (size_t j = 0; j < stats_per_buffer.size(); ++j) {
+          per_buf_log << j << "\t" << ((j+1) * buffer_KiB) << "\t" << stats_per_buffer[j].toString() << endl;
+        }
+        per_buf_log.close();
+      }
     }
 
 
