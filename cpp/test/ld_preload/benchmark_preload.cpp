@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <algorithm>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
@@ -24,10 +25,11 @@ using namespace cb::time;
 
 namespace po = boost::program_options;
 
-inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer_B) {
+inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer_B, WallClock* clock = 0, std::vector<Clock::TimeT>* times_per_buffer = 0) {
   int64_t ret = 0;
 
-  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B) {
+  int i = 0;
+  for (int64_t offset = 0; offset < size_B; offset = offset + buffer_B, ++i) {
     size_t size = min(size_B - offset, (int64_t) buffer_B);
     ssize_t write_ret = write(file, (void*) data, size);
 
@@ -37,6 +39,8 @@ inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer
     ret = ret + write_ret;
   }
 
+  if (clock && times_per_buffer)
+    (*times_per_buffer)[i] = clock->elapsed();
   return ret;
 }
 
@@ -115,11 +119,13 @@ int main(int argc, char* argv[]) {
 
   // Run the write benchmarks
   TimeAverageVariance in_time(runs);
+  size_t tpf_size = (size_B / buffer_B) + ((size_B % buffer_B != 0) ? 1 : 0); // add one buffer if not evenly dividable
+  std::vector<Clock::TimeT> times_per_buffer(tpf_size, 0.0); // times after each buffer, presized and 0-initialised
   for (int i = 0; i < runs; ++i) {
     lseek(in_file, 0, SEEK_SET);
 
     WallClock clock;
-    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B);
+    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B, &times_per_buffer, &clock);
     fsync(in_file);
     in_time.add(clock);
 
@@ -127,12 +133,26 @@ int main(int argc, char* argv[]) {
       perror("Write error:");
       return 1;
     }
+    
+      // times_per_buffer contains times from start until writing to end of the n-th buffer
+      Clock::TimeT min = times_per_buffer.back();
+      Clock::TimeT max = times_per_buffer.back();
+      for (int i = times_per_buffer.size(); i > 0; --i)  // compute times for the n-th buffer only
+      {
+        times_per_buffers[i] = times_per_buffers[i] - times_per_buffers[i-1];
+        if (times_per_buffer[i] < min) 
+          min = times_per_buffer;
+        if (times_per_buffer[i] > max) 
+          max = times_per_buffer;
+        // if hypothesis of partially cached applies, create a vector of time average variance above of some size (every buffer, or every n buffers) and fill it here
+      }
+    
+      // TODO(kleingeist): output min max, 
+
   }
 
   // Close the file
   close(in_file);
-
-
 
   // Open the out_file
   int out_file = open(path.c_str(), O_RDONLY);
