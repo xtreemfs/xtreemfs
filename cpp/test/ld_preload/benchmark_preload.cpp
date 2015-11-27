@@ -7,6 +7,7 @@
  */
 
 #include <iostream>
+#include <fstream>
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
@@ -106,6 +107,14 @@ int main(int argc, char* argv[]) {
   size_t buffer_B = 1024 * (size_t) buffer_KiB;
   char* data = new char[buffer_B];
 
+  // Open the per_buffer_log
+  ofstream per_buf_log;
+  if (vm.count("raw_log")) {
+    string per_buf_log_file(raw_log + "-per_buf_log.csv");
+    per_buf_log.open(per_buf_log_file.c_str(), ios::trunc);
+
+    per_buf_log << "run\tmin\tmax" << endl;
+  }
 
 
   // Open the in_file
@@ -125,7 +134,7 @@ int main(int argc, char* argv[]) {
     lseek(in_file, 0, SEEK_SET);
 
     WallClock clock;
-    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B, &times_per_buffer, &clock);
+    int64_t write_ret = writeBuffered(in_file, data, size_B, buffer_B, &clock, &times_per_buffer);
     fsync(in_file);
     in_time.add(clock);
 
@@ -134,20 +143,23 @@ int main(int argc, char* argv[]) {
       return 1;
     }
     
-      // times_per_buffer contains times from start until writing to end of the n-th buffer
-      Clock::TimeT min = times_per_buffer.back();
-      Clock::TimeT max = times_per_buffer.back();
-      for (int i = times_per_buffer.size(); i > 0; --i)  // compute times for the n-th buffer only
-      {
-        times_per_buffers[i] = times_per_buffers[i] - times_per_buffers[i-1];
-        if (times_per_buffer[i] < min) 
-          min = times_per_buffer;
-        if (times_per_buffer[i] > max) 
-          max = times_per_buffer;
-        // if hypothesis of partially cached applies, create a vector of time average variance above of some size (every buffer, or every n buffers) and fill it here
-      }
+    // times_per_buffer contains times from start until writing to end of the n-th buffer
+    Clock::TimeT min = times_per_buffer.back();
+    Clock::TimeT max = times_per_buffer.back();
+    for (int j = times_per_buffer.size(); j > 0; --j)  // compute times for the n-th buffer only
+    {
+      times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
+      if (times_per_buffer[j] < min)
+        min = times_per_buffer[j];
+      if (times_per_buffer[j] > max)
+        max = times_per_buffer[j];
+      // if hypothesis of partially cached applies, create a vector of time average variance above of some size (every buffer, or every n buffers) and fill it here
+    }
     
-      // TODO(kleingeist): output min max, 
+    // output min max,
+    if (per_buf_log.is_open()) {
+      per_buf_log << i << "\t" << min << "\t" << max << endl;
+    }
 
   }
 
@@ -186,9 +198,14 @@ int main(int argc, char* argv[]) {
 
 
   // Return the results
-  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString() << "\tsize (MiB)" << "\tbufsize (KiB)" << "\tthroughput (MiB/s)" << endl
-   << access << "\t" << "write\t" << in_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
-   << access << "\t" << "read\t" << out_time.toString() << "\t" << size_MiB << "\t" << buffer_KiB << "\t" <<(size_MiB / (out_time.average() * 0.000001)) << endl;
+  cout << "access\t" << "benchmark\t" << TimeAverageVariance::getHeaderString()
+         << "\tsize (MiB)" << "\tbufsize (KiB)" << "\tthroughput (MiB/s)" << endl
+
+       << access << "\t" << "write\t" << in_time.toString() << "\t"
+         << size_MiB << "\t" << buffer_KiB << "\t" << (size_MiB / (in_time.average() * 0.000001)) << endl
+
+       << access << "\t" << "read\t" << out_time.toString() << "\t"
+         << size_MiB << "\t" << buffer_KiB << "\t" <<(size_MiB / (out_time.average() * 0.000001)) << endl;
 
 
   // Write raw results if log prefix is set
@@ -201,6 +218,11 @@ int main(int argc, char* argv[]) {
     raw_log.append("-read");
     out_time.toFile(raw_log);
   }
+
+  if (per_buf_log.is_open()) {
+    per_buf_log.close();
+  }
+
 
   return 0;
 }
