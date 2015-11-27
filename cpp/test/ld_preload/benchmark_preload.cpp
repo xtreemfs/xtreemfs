@@ -38,10 +38,10 @@ inline int64_t writeBuffered(int file, char* data, int64_t size_B, size_t buffer
       return write_ret;
     }
     ret = ret + write_ret;
-  }
 
-  if (clock && times_per_buffer)
-    (*times_per_buffer)[i] = clock->elapsed();
+    if (clock && times_per_buffer)
+      (*times_per_buffer)[i] = clock->elapsed();
+  }
   return ret;
 }
 
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     // times_per_buffer contains times from start until writing to end of the n-th buffer
     Clock::TimeT min = times_per_buffer.back();
     Clock::TimeT max = times_per_buffer.back();
-    for (int j = times_per_buffer.size(); j > 0; --j)  // compute times for the n-th buffer only
+    for (int j = (times_per_buffer.size() - 1); j > 0; --j)  // compute times for the n-th buffer only
     {
       times_per_buffer[j] = times_per_buffer[j] - times_per_buffer[j - 1];
       if (times_per_buffer[j] < min)
