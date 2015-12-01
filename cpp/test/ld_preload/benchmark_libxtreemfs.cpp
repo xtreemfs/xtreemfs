@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
 
       // Write per buffer stats
       if (vm.count("raw_log")) {
-        string per_buf_log_file(raw_log + "-per_buf_log-read.csv");
+        string per_buf_log_file(raw_log + "-per_buf_log-write.csv");
         ofstream per_buf_log(per_buf_log_file.c_str(), ios::trunc);
         per_buf_log << "block\toffset\t" << stats_per_buffer.begin()->getHeaderString() << endl;
 
