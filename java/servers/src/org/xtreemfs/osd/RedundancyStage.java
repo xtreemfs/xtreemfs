@@ -83,7 +83,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
     public static final int STAGEOP_SETVIEW                   = 21;
     public static final int STAGEOP_INVALIDATEVIEW            = 22;
-    public static final int STAGEOP_FETCHINVALIDATED          = 23;
+    public static final int STAGEOP_INVALIDATED_RESET         = 23;
+    public static final int STAGEOP_GET_REPLICATED_FILE_STATE = 24;
 
     protected final Map<ASCIIString, String>    cellToFileId;
     protected final RPCNIOSocketClient          client;
@@ -123,8 +124,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 new FleaseViewChangeListenerInterface() {
 
                     @Override
-                    public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
-                        eventViewIdChanged(cellId, viewId);
+                    public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
+                        eventViewIdChanged(cellId, viewId, onProposal);
                     }
                 }, new FleaseStatusListener() {
 
@@ -196,7 +197,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 processPrepareOp(method);
                 break;
             }
-            case STAGEOP_SETVIEW: processSetFleaseView(method); break;
+            case STAGEOP_SETVIEW: processSetView(method); break;
             default : throw new IllegalArgumentException("no such stageop");
         }
     }
@@ -372,11 +373,11 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     /**
      * Set the viewId associated with the fileId/cellId. This will close open cells.
      */
-    public void setFleaseView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
+    public void setView(String fileId, ASCIIString cellId, XLocSetVersionState versionState) {
         enqueueOperation(STAGEOP_SETVIEW, new Object[]{fileId, cellId, versionState}, null, null);
     }
 
-    private void processSetFleaseView(StageRequest method) {
+    private void processSetView(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
         final ASCIIString cellId = (ASCIIString) args[1];
@@ -391,16 +392,26 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
         // Close ReplicatedFileState opened in a previous view to ensure no outdated UUIDList can exist.
         RedundantFileState state = getState(fileId);
-        if (state != null && state.getLocations().getVersion() < versionState.getVersion()) {
-            closeFileState(fileId, true);
+        if (state != null) {
+            // Abort if the view to be set is older than the current one.
+            if (state.getLocations().getVersion() > versionState.getVersion()) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                        "(R:%s) requested to set an older view than stored in the ReplicatedFileState for %s.",
+                        localID, fileId);
+                return;
+            }
+
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
+                    "file has been closed due to a new view");
+            closeFileState(fileId, true, error);
         }
 
-        setFleaseViewId(cellId, viewId, new FleaseListener() {
+        fleaseStage.setViewId(cellId, viewId, new FleaseListener() {
 
             @Override
             public void proposalResult(ASCIIString cellId, ASCIIString leaseHolder, long leaseTimeout_ms,
                                        long masterEpochNumber) {
-                // Ignore because #setFleaseView is never used with a callback.
+                // Ignore because #setView is never used with a callback.
             }
 
             @Override
@@ -458,9 +469,9 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                                 ErrorUtils.getInternalServerError(new IOException(fileId
                                         + ": lease timed out, renew failed")), "processLeaseStateChanged");
                     } else {
-                        if ((state.getState() == LocalState.BACKUP)
-                                || (state.getState() == LocalState.PRIMARY)
-                                || (state.getState() == LocalState.WAITING_FOR_LEASE)) {
+                        if ((oldState == LocalState.BACKUP)
+                                || (oldState == LocalState.PRIMARY)
+                                || (oldState == LocalState.WAITING_FOR_LEASE)) {
                             if (localIsPrimary) {
                                 // notify onPrimary
                                 if (oldState != LocalState.PRIMARY) {
@@ -488,8 +499,16 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    void eventViewIdChanged(ASCIIString cellId, int viewId) {
-        master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+    void eventViewIdChanged(ASCIIString cellId, int viewId, boolean onProposal) {
+        if (onProposal) {
+            // Newer views encountered on lease proposals are ignored, because they could revalidate
+            // a removed Replica,
+            // that had been primary trying to renew its lease.
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "New view (%d) encountered on lease proposal for %s is ignored.", viewId, cellId);
+        } else {
+            master.getPreprocStage().updateXLocSetFromFlease(cellId, viewId);
+        }
     }
 
     protected void eventMaxObjAvail(String fileId, long maxObjVer, ErrorResponse error) {
@@ -528,10 +547,9 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     private void doWaitingForLease(final RedundantFileState file) {
-        // If the file is invalidated a XLocSetChange is in progress and we can assume, that no primary exists.
-        if (file.isInvalidated()) {
-            doInvalidated(file);
-        } else if (file.getPolicy().requiresLease()) {
+        assert (!file.isInvalidated());
+
+        if (file.getPolicy().requiresLease()) {
             if (file.isCellOpen()) {
                 if (file.isLocalIsPrimary()) {
                     doPrimary(file);
@@ -540,14 +558,9 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 }
             } else {
                 file.setCellOpen(true);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), LocalState.WAITING_FOR_LEASE);
-                }
                 try {
                     file.setState(LocalState.WAITING_FOR_LEASE);
-                    List<InetSocketAddress> osdAddresses = new ArrayList();
+                    List<InetSocketAddress> osdAddresses = new ArrayList<InetSocketAddress>();
                     for (ServiceUUID osd : file.getPolicy().getRemoteOSDUUIDs()) {
                         osdAddresses.add(osd.getAddress());
                     }
@@ -572,28 +585,24 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     protected void doOpen(final RedundantFileState file) {
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "(R:%s) replica state changed for %s from %s to %s", localID,
-                    file.getFileId(), file.getState(), LocalState.OPEN);
-        }
+        assert (!file.isInvalidated());
+
         file.setState(LocalState.OPEN);
+
         if (file.hasPendingRequests()) {
             doWaitingForLease(file);
         }
     }
 
     private void doPrimary(final RedundantFileState file) {
+        assert (!file.isInvalidated());
         assert (file.isLocalIsPrimary());
+
         try {
             if (file.getPolicy().onPrimary((int) file.getMasterEpoch()) && !file.isPrimaryReset()) {
                 file.setPrimaryReset(true);
                 doReset(file, ReplicaUpdatePolicy.UNLIMITED_RESET);
             } else {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
-                            "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                            file.getState(), LocalState.PRIMARY);
-                }
                 file.setPrimaryReset(false);
                 file.setState(LocalState.PRIMARY);
                 while (file.hasPendingRequests()) {
@@ -607,6 +616,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     private void doBackup(final RedundantFileState file) {
+        assert (!file.isInvalidated());
         assert (!file.isLocalIsPrimary());
 
         if (Logging.isDebug()) {
@@ -622,21 +632,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     }
 
     private void doInvalidated(final RedundantFileState file) {
-        assert (file.isInvalidated());
+        file.setState(LocalState.INVALIDATED);
 
-
-        if (file.isInvalidatedReset()) {
-            // The AuthState has been set and the file is up to date.
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
-                        "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(),
-                        file.getState(), LocalState.INVALIDATED);
-            }
-
-            file.setInvalidatedReset(false);
-            file.setState(LocalState.INVALIDATED);
-        }
-        file.setPrimaryReset(false);
         while (file.hasPendingRequests()) {
             enqueuePrioritized(file.removePendingRequest());
         }
@@ -665,6 +662,17 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         op.startInternalEvent(new Object[]{file.getFileId(), file.getStripingPolicy()});
 
     }
+
+    protected void doResetComplete(final RedundantFileState file) {
+	file.setState(LocalState.RESET_COMPLETE);
+
+	if (file.isInvalidated()) {
+	    doInvalidated(file);
+	} else {
+	    doOpen(file);
+	}
+    }
+
 
     public String getPrimary(final String fileId) {
         String primary = null;
@@ -711,24 +719,31 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         }
     }
 
-    protected void closeFileState(String fileId, boolean returnLease) {
+    protected void closeFileState(String fileId, boolean returnLease, ErrorResponse error) {
         RedundantFileState state = removeState(fileId);
         if (state != null) {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "closing file %s", fileId);
             }
+
+            if (error == null) {
+                error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                        "file has been closed");
+            }
+
+            state.clearPendingRequests(error);
             state.getPolicy().closeFile();
             if (state.getPolicy().requiresLease())
-                closeFleaseCell(state.getPolicy().getCellId(), returnLease);
+                closeCell(state.getPolicy().getCellId(), returnLease);
             cellToFileId.remove(state.getPolicy().getCellId());
         }
     }
 
-    public void closeFleaseCell(ASCIIString cellId, boolean returnedLease) {
+    public void closeCell(ASCIIString cellId, boolean returnedLease) {
         fleaseStage.closeCell(cellId, returnedLease);
     }
 
-    public void setFleaseViewId(ASCIIString cellId, int viewId, FleaseListener listener) {
+    public void setViewId(ASCIIString cellId, int viewId, FleaseListener listener) {
         fleaseStage.setViewId(cellId, viewId, listener);
     }
 
@@ -771,8 +786,9 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                 ErrorUtils.formatError(ex));
         file.setPrimaryReset(false);
         file.setState(LocalState.OPEN);
+        file.setInvalidatedReset(false);
         file.setCellOpen(false);
-        closeFleaseCell(file.getPolicy().getCellId(), false);
+        closeCell(file.getPolicy().getCellId(), false);
         file.clearPendingRequests(ex);
     }
 }

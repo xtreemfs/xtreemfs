@@ -7,13 +7,7 @@
  */
 package org.xtreemfs.osd;
 
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-
-/**
- * @author Jan Fajerski
- */
-public interface FileOperationCallback {
+public interface FileOperationCallback extends FailableFileOperationCallback{
     void success(long newObjectVersion);
     void redirect(String redirectTo);
-    void failed(ErrorResponse ex);
 }

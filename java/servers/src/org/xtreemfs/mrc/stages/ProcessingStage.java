@@ -60,6 +60,7 @@ import org.xtreemfs.mrc.operations.RemoveReplicaOperation;
 import org.xtreemfs.mrc.operations.RemoveXAttrOperation;
 import org.xtreemfs.mrc.operations.RenewCapabilityAndVoucherOperation;
 import org.xtreemfs.mrc.operations.RenewOperation;
+import org.xtreemfs.mrc.operations.ReselectOSDsOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
 import org.xtreemfs.mrc.operations.SetReadOnlyXattrOperation;
@@ -82,13 +83,13 @@ import com.google.protobuf.Descriptors.FieldDescriptor;
 public class ProcessingStage extends MRCStage {
     
     public static final int                  STAGEOP_PARSE_AND_EXECUTE = 1;
-    
+
     public static final int                  STAGEOP_INTERNAL_CALLBACK = 2;
 
     private final MRCRequestDispatcher       master;
     
     private final Map<Integer, MRCOperation> operations;
-
+        
     private final Map<Integer, Integer>      _opCountMap;
     
     private final boolean                    statisticsEnabled         = true;
@@ -157,6 +158,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RESELECT_OSDS, new ReselectOSDsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_CLEAR_VOUCHERS, new ClearVouchersOperation(master));
     }
     
@@ -176,16 +178,24 @@ public class ProcessingStage extends MRCStage {
             parseAndExecute(method);
             break;
 
-        case STAGEOP_INTERNAL_CALLBACK:
-            executeInternalCallback(method);
-            break;
-
         default:
             method.getRq().setError(ErrorType.INTERNAL_SERVER_ERROR, "unknown stage operation");
             master.requestFinished(method.getRq());
         }
     }
     
+    @Override
+    protected void processInternalRequest(StageMethod method) {
+        switch (method.getStageMethod()) {
+        case STAGEOP_INTERNAL_CALLBACK:
+            executeInternalCallback(method);
+            break;
+        default:
+            Logging.logMessage(Logging.LEVEL_WARN, Category.stage, this,
+                    "Unknown stage operation (%d) for an internal request.");
+        }
+    }
+
     /**
      * Parse request and execute method
      * 
@@ -337,31 +347,39 @@ public class ProcessingStage extends MRCStage {
      * @param rq
      *            The internal callback request.
      */
-    public void enqueueInternalCallbackOperation(MRCRequest rq, InternalCallbackInterface callback) {
-        InternalCallbackMRCRequest cbRq = new InternalCallbackMRCRequest(rq, callback);
-        q.add(new StageMethod(cbRq, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null));
+    void enqueueInternalCallbackOperation(InternalCallbackInterface callback) {
+        Object[] args = new Object[] { callback };
+        MRCInternalRequest rq = new MRCInternalRequest(args);
+        
+        q.add(new StageMethod(rq, ProcessingStage.STAGEOP_INTERNAL_CALLBACK, null));
     }
 
     /**
      * Execute an internal callback operation.
      * 
+     * 
      * @param method
      *            with an RPCRequest of type {@link InternalCallbackMRCRequest}.
      */
     private void executeInternalCallback(StageMethod method) {
-        // Call execute on an anonymous operation to avoid duplicating the error handling.
-        execute(new MRCOperation(master) {
-            @Override
-            public void startRequest(MRCRequest rq) throws Throwable {
-                if (!(rq instanceof InternalCallbackMRCRequest)) {
-                    throw new MRCException("InternalCallbackOperations must be called with a MRCCallbackRequest.");
-                }
 
-                InternalCallbackInterface callback = ((InternalCallbackMRCRequest) rq).getCallback();
-                callback.execute(rq);
-            }
-        }, method);
+        MRCInternalRequest rq = method.getInternalRequest();
+        Object[] args = rq.getArgs();
+        
+        if (args.length < 1 || !(args[0] instanceof InternalCallbackInterface)) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Internal callback called without a callback as an argument.");
+            return;
+        }
+
+        InternalCallbackInterface callback = (InternalCallbackInterface) args[0];
+        try {
+            callback.execute();
+        } catch (Throwable e) {
+            Logging.logMessage(Logging.LEVEL_INFO, this, "Internal callback failed with an exception");
+            Logging.logError(Logging.LEVEL_INFO, this, e);
+        }
     }
+
 
     private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, POSIXErrno errno) {
         if (Logging.isDebug())

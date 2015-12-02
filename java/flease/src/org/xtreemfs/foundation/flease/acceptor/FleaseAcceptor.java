@@ -295,7 +295,7 @@ public class FleaseAcceptor {
         if (cell.getViewId() < msg.getViewId()) {
             // If the local view is lower than the delivered one, the view listener has to be informed to update
             // the local view. But the request can still be answered.
-            viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId());
+            viewListener.viewIdChangeEvent(msg.getCellId(), msg.getViewId(), false);
 
         } else if (cell.getViewId() > msg.getViewId() || (cell.getViewId() == msg.getViewId() && cell.isViewInvalidated())) {
             // If the request is from an older view, or the a view that has been invalidated on this

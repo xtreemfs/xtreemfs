@@ -97,22 +97,18 @@
     </target>
 
     <!-- Sets Hadoop Classpaths for Test Compilation if not in NetBeans -->
-    <target name="-set-hadoop-compile-classpaths" unless="netbeans.home">
+    <target name="-set-hadoop-compile-classpaths" depends="-check-environment" if="hadoop.external">
         <property environment="env"/>
 
-        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
-
-        <path id="hadoop_common_tests_jar">
-            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*-tests.jar"/>
+        <path id="hadoop_common_jars">
+            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*.jar"/>
         </path>
-        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_tests_jar"/>
+        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_jars"/>
     </target>
 
     <!-- Sets Hadoop Classpaths for Test Execution if not in NetBeans -->
-    <target name="-set-hadoop-run-classpaths" unless="netbeans.home">
+    <target name="-set-hadoop-run-classpaths" depends="-check-environment" if="hadoop.external">
         <property environment="env"/>
-
-        <fail unless="env.HADOOP_PREFIX" message="Not in NetBeans and no HADOOP_PREFIX set."/>
 
         <path id="hadoop_common_dependency_jars">
             <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
@@ -120,14 +116,22 @@
         <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
     </target>
 
-    <target name="-pre-compile-test" depends="-set-junit-classpath,-set-hadoop-compile-classpaths">
-        <!-- Empty target -->
+    <!-- Sets project property 'hadoop.external' to true if not executed within NetBeans -->
+    <!-- and the environment variable 'HADOOP_PREFIX' is set -->
+    <target name="-check-environment">
+        <property environment="env"/>
+        <condition property="hadoop.external">
+            <and>
+                <isset property="env.HADOOP_PREFIX"/>
+                <not>
+                    <isset property="netbeans.home"/>
+                </not>
+            </and>
+        </condition>
     </target>
 
-    <target name="-pre-test-run" depends="-set-hadoop-run-classpaths">
+    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
         <!-- Empty target -->
-    </target>
-    <target name="-pre-test-run-single" depends="-set-hadoop-run-classpaths">
-        <!-- Empty target -->
+        <!-- Simply triggers invocation of the depending targets -->
     </target>
 </project>

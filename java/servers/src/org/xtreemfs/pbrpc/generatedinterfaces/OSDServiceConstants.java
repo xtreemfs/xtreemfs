@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Nov 17 15:29:23 CET 2015
+//automatically generated from OSD.proto at Wed Dec 02 12:27:00 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -45,6 +45,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_SHUTDOWN = 70;
     public static final int PROC_ID_XTREEMFS_XLOC_SET_INVALIDATE = 81;
     public static final int PROC_ID_XTREEMFS_RWR_AUTH_STATE_INVALIDATED = 82;
+    public static final int PROC_ID_XTREEMFS_RWR_RESET_STATUS = 83;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -85,6 +86,7 @@ public class OSDServiceConstants {
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateRequest.getDefaultInstance();
            case 82: return OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
+           case 83: return OSD.xtreemfs_rwr_reset_statusRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -128,7 +130,8 @@ public class OSDServiceConstants {
            case 60: return OSD.xtreemfs_pingMesssage.getDefaultInstance();
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance();
-           case 82: return null;
+           case 82: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
+           case 83: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

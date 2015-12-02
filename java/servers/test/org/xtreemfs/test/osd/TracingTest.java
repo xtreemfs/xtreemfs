@@ -10,27 +10,33 @@ package org.xtreemfs.test.osd;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.*;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.osd.operations.*;
 import org.xtreemfs.osd.tracing.TraceInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Christoph Kleineweber <kleineweber@zib.de>
  */
 public class TracingTest {
+    @Rule
+    public final TestRule testLog = TestHelper.testLog;
+
     private TestEnvironment env;
     private Client client;
     private RPC.UserCredentials uc;
@@ -53,7 +59,7 @@ public class TracingTest {
         Logging.start(Logging.LEVEL_ERROR, Logging.Category.all);
         env = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.TIME_SYNC,
                 TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.MRC,
-                TestEnvironment.Services.OSD});
+                TestEnvironment.Services.OSD, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD});
         env.start();
 
         uc = RPC.UserCredentials.newBuilder().setUsername("service")
@@ -71,33 +77,56 @@ public class TracingTest {
         deleteTraceFile();
    }
 
-    @Test
-    public void testFileBasedTracing() throws Exception {
-        client.createVolume(env.getMRCAddress().getHostName() + ":" + env.getMRCAddress().getPort(), auth, uc,
-                SOURCE_VOLUME);
-        Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
+    private void deleteTraceFile() {
+        File f = new File(FILE_BASED_TRACING_CONFIG);
+        if (f.exists()) {
+            f.delete();
+        }
+    }
 
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
-                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy_config", FILE_BASED_TRACING_CONFIG,
-                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", FILE_BASED_TRACING_POLICY,
-                              MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
-
-        FileHandle f = sourceVolume.openFile(uc, TEST_FILE,
+    private void writeFile(Volume volume) throws IOException {
+         FileHandle f = volume.openFile(uc, TEST_FILE,
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |
                                              GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber());
 
-        byte[] writeBuffer = new byte[255];
+        byte[] writeBuffer = new byte[256];
 
         for (long i=0; i<=MAX_WRITES; i++)
             f.write(uc, writeBuffer, writeBuffer.length, i * writeBuffer.length);
 
         f.close();
-        sourceVolume.unlink(uc, TEST_FILE);
+        volume.unlink(uc, TEST_FILE);
 
         client.deleteVolume(auth, uc, SOURCE_VOLUME);
+    }
 
+    private Volume createVolume(String tracingPolicy, String tracingPolicyConfig, boolean useStriping) throws IOException {
+        client.createVolume(env.getMRCAddress().getHostName() + ":" + env.getMRCAddress().getPort(), auth, uc,
+                SOURCE_VOLUME);
+        Volume volume = client.openVolume(SOURCE_VOLUME, null, new Options());
+
+        volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
+                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        if(tracingPolicyConfig != null) {
+            volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy_config", tracingPolicyConfig,
+                    MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        }
+
+        if(tracingPolicy != null) {
+            volume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", tracingPolicy,
+                    MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        }
+
+        if(useStriping) {
+            volume.setXAttr(uc, auth, "/", "xtreemfs.default_sp",
+                    "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"width\":3,\"size\":128}",
+                    MRC.XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+        }
+
+        return volume;
+    }
+
+    private void checkTraceFile() throws IOException {
         File traceFile = new File(FILE_BASED_TRACING_CONFIG);
         assertTrue(traceFile.exists());
 
@@ -113,11 +142,20 @@ public class TracingTest {
         assertTrue(lines >= MAX_WRITES);
     }
 
-    private void deleteTraceFile() {
-        File f = new File(FILE_BASED_TRACING_CONFIG);
-        if (f.exists()) {
-            f.delete();
-        }
+    @Test
+    public void testFileBasedTracing() throws Exception {
+        Volume sourceVolume = createVolume(FILE_BASED_TRACING_POLICY, FILE_BASED_TRACING_CONFIG, false);
+        writeFile(sourceVolume);
+        checkTraceFile();
+    }
+
+    @Test
+    public void testFileBasedTracingWithStriping() throws Exception {
+        Volume sourceVolume = createVolume(FILE_BASED_TRACING_POLICY, FILE_BASED_TRACING_CONFIG, true);
+        String dsp = sourceVolume.getXAttr(uc, "/", "xtreemfs.default_sp");
+        assertTrue(dsp.contains("3"));
+        writeFile(sourceVolume);
+        checkTraceFile();
     }
 
     @Test
@@ -148,34 +186,17 @@ public class TracingTest {
                     }
                     s.close();
                 } catch(Exception ex) {
-                    System.out.println(ex);
+                    System.out.println(ex.getMessage());
                 }
             }
         };
         Thread t = new Thread(reader);
         t.start();
 
-        client.createVolume(env.getMRCAddress().getHostName() + ":" + env.getMRCAddress().getPort(), auth, uc,
-                 SOURCE_VOLUME);
-        Volume sourceVolume = client.openVolume(SOURCE_VOLUME, null, new Options());
+        Volume sourceVolume = createVolume(SOCKET_BASED_TRACING_POLICY, null, false);
 
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_enabled", "1",
-                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
-        sourceVolume.setXAttr(uc, auth, "/", "xtreemfs.tracing_policy", SOCKET_BASED_TRACING_POLICY,
-                MRC.XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        writeFile(sourceVolume);
 
-        FileHandle f = sourceVolume.openFile(uc, TEST_FILE,
-                                             GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber() |
-                                             GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber());
-
-        byte[] writeBuffer = new byte[255];
-
-        for (long i=0; i<=MAX_WRITES; i++)
-            f.write(uc, writeBuffer, writeBuffer.length, i * writeBuffer.length);
-
-        f.close();
-
-        sourceVolume.unlink(uc, TEST_FILE);
         Thread.sleep(1000);
         assertTrue(tracedLines.get() > 0L);
     }

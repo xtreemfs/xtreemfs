@@ -81,7 +81,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequ
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -125,17 +127,17 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * The RPC Client.
      * */
-    private RPCNIOSocketClient                        networkClient;
+    private RPCNIOSocketClient                              networkClient;
 
     /**
      * An MRCServiceClient is a wrapper for an RPC Client.
      * */
-    private MRCServiceClient                          mrcServiceClient;
+    private MRCServiceClient                                mrcServiceClient;
 
     /**
      * A OSDServiceClient is a wrapper for an RPC Client.
      */
-    private OSDServiceClient                          osdServiceClient;
+    private OSDServiceClient                                osdServiceClient;
 
     /**
      * SSLOptions required for connections to the services.
@@ -155,7 +157,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * Concurrent map that stores all open files.
      */
-    private ConcurrentHashMap<Long, FileInfo>         openFileTable;
+    private ConcurrentHashMap<Long, FileInfo>               openFileTable;
 
     /**
      * MetadataCache to cache already fetches Metadata.
@@ -165,23 +167,23 @@ public class VolumeImplementation implements Volume, AdminVolume {
     /**
      * XCap renewal thread to renew Xcap periodically.
      */
-    private PeriodicXcapRenewalThread                 xcapRenewalThread;
+    private PeriodicXcapRenewalThread                       xcapRenewalThread;
 
     /**
      * FileSize update thread to update file size periodically.
      */
-    private PeriodicFileSizeUpdateThread              fileSizeUpdateThread;
+    private PeriodicFileSizeUpdateThread                    fileSizeUpdateThread;
 
     /**
      * Maps a StripingPolicyType to a StripeTranslator. Should be filled with all possible StripingPolicys.
      */
     private final Map<StripingPolicyType, StripeTranslator> stripeTranslators;
 
-    private static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
-    
-    private static final String OSD_SELECTION_POLICY = "xtreemfs.osel_policy";
-    private static final String REPLICA_SELECTION_POLICY = "xtreemfs.rsel_policy";
+    private static final String                             XTREEMFS_DEFAULT_RP      = "xtreemfs.default_rp";
 
+    private static final String                             OSD_SELECTION_POLICY     = "xtreemfs.osel_policy";
+    private static final String                             REPLICA_SELECTION_POLICY = "xtreemfs.rsel_policy";
+    
     /**
      * 
      */
@@ -1306,29 +1308,38 @@ public class VolumeImplementation implements Volume, AdminVolume {
         xtreemfs_replica_addRequest request = xtreemfs_replica_addRequest.newBuilder()
                 .setVolumeName(volumeName).setPath(path).setNewReplica(newReplica).build();
 
-        RPCCaller.<xtreemfs_replica_addRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials,
-                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
-                new CallGenerator<xtreemfs_replica_addRequest, emptyResponse>() {
-                    @SuppressWarnings("unchecked")
+        xtreemfs_replica_addResponse response;
+        response = RPCCaller.<xtreemfs_replica_addRequest, xtreemfs_replica_addResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<xtreemfs_replica_addRequest, xtreemfs_replica_addResponse>() {
                     @Override
-                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
-                            UserCredentials userCreds, xtreemfs_replica_addRequest input) throws IOException {
+                    public RPCResponse<xtreemfs_replica_addResponse> executeCall(InetSocketAddress server,
+                            Auth authHeader, UserCredentials userCreds, xtreemfs_replica_addRequest input)
+                            throws IOException {
                         return mrcServiceClient.xtreemfs_replica_add(server, authHeader, userCreds, input);
                     }
                 });
 
-        // Renew the local XLocSet by reopening the file.
-        // TODO(jdillmann): Return the updated XLocSet as a response to the addReplicaOperation.
-        AdminFileHandle fileHandle = openFile(userCredentials, path,
-                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+        
+        XLocSet newXLocSet = waitForXLocSetInstallation(userCredentials, response.getFileId(),
+                response.getExpectedXlocsetVersion());
 
-        // Only the files with the RONLY policy have to be pinged. WqRq, WaR1, WaRa policies handled on the MRC side by
-        // the XLocSetCoordinator.
-        if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            // Trigger the replication at this point by reading at least one byte.
-            fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+        // Update the local XLocSet cached at FileInfo if it exists.
+        FileInfo fi = openFileTable.get(Helper.extractFileIdFromGlobalFileId(response.getFileId()));
+        if (fi != null) {
+            fi.updateXLocSetAndRest(newXLocSet);
         }
-        fileHandle.close();
+        
+        // Trigger the ronly replication at this point by reading at least one byte.
+        if (newXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+            AdminFileHandle fileHandle = openFile(userCredentials, path,
+                    SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+            try {
+                fileHandle.pingReplica(userCredentials, newReplica.getOsdUuids(0));
+            } finally {
+                fileHandle.close();
+            }
+        }
     }
 
     /*
@@ -1368,17 +1379,18 @@ public class VolumeImplementation implements Volume, AdminVolume {
      * .pbrpc.generatedinterfaces .RPC.UserCredentials, java.lang.String, java.lang.String)
      */
     @Override
-    public void removeReplica(UserCredentials userCredentials, String path, String osdUuid)
-            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+    public void removeReplica(UserCredentials userCredentials, String path, String osdUuid) throws IOException,
+            PosixErrorException, AddressToUUIDNotFoundException {
         // remove the replica
-        xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder()
-                .setVolumeName(volumeName).setPath(path).setOsdUuid(osdUuid).build();
+        xtreemfs_replica_removeRequest request = xtreemfs_replica_removeRequest.newBuilder().setVolumeName(volumeName)
+                .setPath(path).setOsdUuid(osdUuid).build();
 
-        FileCredentials response = RPCCaller.<xtreemfs_replica_removeRequest, FileCredentials> syncCall(
-                SERVICES.MRC, userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator,
-                false, request, new CallGenerator<xtreemfs_replica_removeRequest, FileCredentials>() {
+        xtreemfs_replica_removeResponse response;
+        response = RPCCaller.<xtreemfs_replica_removeRequest, xtreemfs_replica_removeResponse> syncCall(SERVICES.MRC,
+                userCredentials, authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<xtreemfs_replica_removeRequest, xtreemfs_replica_removeResponse>() {
                     @Override
-                    public RPCResponse<FileCredentials> executeCall(InetSocketAddress server,
+                    public RPCResponse<xtreemfs_replica_removeResponse> executeCall(InetSocketAddress server,
                             Auth authHeader, UserCredentials userCreds, xtreemfs_replica_removeRequest input)
                             throws IOException {
                         return mrcServiceClient.xtreemfs_replica_remove(server, authHeader, userCreds, input);
@@ -1386,17 +1398,24 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 });
 
         assert (response != null);
+        assert (response.hasUnlinkXcap());
+        assert (response.hasUnlinkXloc());
 
         // Now unlink the replica at the OSD.
         UUIDIterator osdUuidIterator = new UUIDIterator();
         osdUuidIterator.addUUID(osdUuid);
 
-        unlink_osd_Request request2 = unlink_osd_Request.newBuilder()
-                .setFileId(response.getXcap().getFileId()).setFileCredentials(response).build();
+        XLocSet newXLocSet = waitForXLocSetInstallation(userCredentials, response.getFileId(),
+                response.getExpectedXlocsetVersion());
 
-        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus,
-                volumeOptions, uuidResolver, osdUuidIterator, false, request2,
-                new CallGenerator<unlink_osd_Request, emptyResponse>() {
+        FileCredentials.Builder fc = FileCredentials.newBuilder().setXlocs(response.getUnlinkXloc())
+                .setXcap(response.getUnlinkXcap());
+
+        unlink_osd_Request request2 = unlink_osd_Request.newBuilder().setFileId(response.getFileId())
+                .setFileCredentials(fc).build();
+
+        RPCCaller.<unlink_osd_Request, emptyResponse> syncCall(SERVICES.OSD, userCredentials, authBogus, volumeOptions,
+                uuidResolver, osdUuidIterator, false, request2, new CallGenerator<unlink_osd_Request, emptyResponse>() {
                     @SuppressWarnings("unchecked")
                     @Override
                     public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
@@ -1406,14 +1425,64 @@ public class VolumeImplementation implements Volume, AdminVolume {
                 });
 
         // Update the local XLocSet cached at FileInfo if it exists.
-        if (openFileTable.containsKey(response.getXcap().getFileId())) {
-            // File has already been opened: refresh the xlocset.
-            // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response.
-            FileHandle file = openFile(userCredentials, path, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
-            file.close();
+        FileInfo fi = openFileTable.get(Helper.extractFileIdFromGlobalFileId(response.getFileId()));
+        if (fi != null) {
+            fi.updateXLocSetAndRest(newXLocSet);
         }
     }
 
+    private XLocSet waitForXLocSetInstallation(UserCredentials userCredentials, String fileId, int expectedVersion)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        long delay_ms = volumeOptions.getXLocInstallPollIntervalS() * 1000L;
+        
+        // The initial call is made without delay.
+        XLocSet xLocSet = getXLocSet(userCredentials, fileId);
+
+        // Periodically ping the MRC to request the current XLocSet.
+        while (xLocSet.getVersion() < expectedVersion) {
+            try {
+                Thread.sleep(delay_ms);
+            } catch (InterruptedException e) {
+                String msg = "Caught interrupt while waiting for the next poll, abort waiting for xLocSet installation.";
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, e, msg);
+                }
+                throw new IOException(msg);
+            }
+
+            xLocSet = getXLocSet(userCredentials, fileId);
+        }
+
+        if (xLocSet.getVersion() > expectedVersion) {
+            String msg = "Missed the expected xLocSet after installing a new view. Please check if the xLocSet is correct.";
+            Logging.logMessage(Logging.LEVEL_NOTICE, this, msg);
+            throw new IOException(msg);
+        }
+
+        return xLocSet;
+    }
+
+    private XLocSet getXLocSet(UserCredentials userCredentials, String fileId) throws IOException,
+            PosixErrorException, AddressToUUIDNotFoundException {
+
+        xtreemfs_get_xlocsetRequest.Builder reqBuilder = xtreemfs_get_xlocsetRequest.newBuilder();
+        reqBuilder.setFileId(fileId);
+
+        XLocSet response;
+        response = RPCCaller.<xtreemfs_get_xlocsetRequest, XLocSet> syncCall(SERVICES.MRC, userCredentials, authBogus,
+                volumeOptions, uuidResolver, mrcUUIDIterator, false, reqBuilder.build(),
+                new CallGenerator<xtreemfs_get_xlocsetRequest, XLocSet>() {
+                    @Override
+                    public RPCResponse<XLocSet> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_get_xlocsetRequest input) throws IOException {
+                        return mrcServiceClient.xtreemfs_get_xlocset(server, authHeader, userCreds, input);
+                    }
+                });
+
+        assert (response != null);
+        return response;
+    }
+    
     @Override
     public void removeACL(UserCredentials userCreds, String path, String user) throws IOException {
         Set<String> elements = new HashSet<String>();

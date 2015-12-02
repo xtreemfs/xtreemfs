@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Tue Nov 17 15:29:23 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 12:27:00 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -427,15 +427,15 @@ public class MRCServiceClient {
          return xtreemfs_replication_to_master(server, authHeader, userCreds,null);
     }
 
-    public RPCResponse xtreemfs_replica_add(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_replica_addRequest input) throws IOException {
+    public RPCResponse<MRC.xtreemfs_replica_addResponse> xtreemfs_replica_add(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_replica_addRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse response = new RPCResponse(null);
+         RPCResponse<MRC.xtreemfs_replica_addResponse> response = new RPCResponse<MRC.xtreemfs_replica_addResponse>(MRC.xtreemfs_replica_addResponse.getDefaultInstance());
          client.sendRequest(server, authHeader, userCreds, 20001, 39, input, null, response, false);
          return response;
     }
 
-    public RPCResponse xtreemfs_replica_add(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.Replica new_replica) throws IOException {
+    public RPCResponse<MRC.xtreemfs_replica_addResponse> xtreemfs_replica_add(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.Replica new_replica) throws IOException {
          final MRC.xtreemfs_replica_addRequest msg = MRC.xtreemfs_replica_addRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setNewReplica(new_replica).build();
          return xtreemfs_replica_add(server, authHeader, userCreds,msg);
     }
@@ -453,15 +453,15 @@ public class MRCServiceClient {
          return xtreemfs_replica_list(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<GlobalTypes.FileCredentials> xtreemfs_replica_remove(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_replica_removeRequest input) throws IOException {
+    public RPCResponse<MRC.xtreemfs_replica_removeResponse> xtreemfs_replica_remove(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_replica_removeRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<GlobalTypes.FileCredentials> response = new RPCResponse<GlobalTypes.FileCredentials>(GlobalTypes.FileCredentials.getDefaultInstance());
+         RPCResponse<MRC.xtreemfs_replica_removeResponse> response = new RPCResponse<MRC.xtreemfs_replica_removeResponse>(MRC.xtreemfs_replica_removeResponse.getDefaultInstance());
          client.sendRequest(server, authHeader, userCreds, 20001, 41, input, null, response, false);
          return response;
     }
 
-    public RPCResponse<GlobalTypes.FileCredentials> xtreemfs_replica_remove(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, String osd_uuid) throws IOException {
+    public RPCResponse<MRC.xtreemfs_replica_removeResponse> xtreemfs_replica_remove(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, String osd_uuid) throws IOException {
          final MRC.xtreemfs_replica_removeRequest msg = MRC.xtreemfs_replica_removeRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setOsdUuid(osd_uuid).build();
          return xtreemfs_replica_remove(server, authHeader, userCreds,msg);
     }
@@ -578,9 +578,22 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap) throws IOException {
-         final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).build();
+    public RPCResponse<GlobalTypes.XLocSet> xtreemfs_get_xlocset(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, GlobalTypes.XCap xcap, GlobalTypes.VivaldiCoordinates coordinates) throws IOException {
+         final MRC.xtreemfs_get_xlocsetRequest msg = MRC.xtreemfs_get_xlocsetRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setXcap(xcap).setCoordinates(coordinates).build();
          return xtreemfs_get_xlocset(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<MRC.xtreemfs_reselect_osdsResponse> xtreemfs_reselect_osds(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_reselect_osdsRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<MRC.xtreemfs_reselect_osdsResponse> response = new RPCResponse<MRC.xtreemfs_reselect_osdsResponse>(MRC.xtreemfs_reselect_osdsResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 20001, 54, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<MRC.xtreemfs_reselect_osdsResponse> xtreemfs_reselect_osds(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String path, String volume_name, GlobalTypes.VivaldiCoordinates coordinates) throws IOException {
+         final MRC.xtreemfs_reselect_osdsRequest msg = MRC.xtreemfs_reselect_osdsRequest.newBuilder().setPath(path).setVolumeName(volume_name).setCoordinates(coordinates).build();
+         return xtreemfs_reselect_osds(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

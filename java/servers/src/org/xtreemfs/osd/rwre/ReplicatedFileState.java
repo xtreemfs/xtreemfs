@@ -24,11 +24,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  */
 public class ReplicatedFileState extends RedundantFileState {
 
-
-
     private List<ObjectVersionMapping> objectsToFetch;
-
-
 
     public ReplicatedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
                                OSDServiceClient client) throws UnknownUUIDException, IOException {
@@ -48,5 +44,4 @@ public class ReplicatedFileState extends RedundantFileState {
     public void setObjectsToFetch(List<ObjectVersionMapping> objectsToFetch) {
         this.objectsToFetch = objectsToFetch;
     }
-
 }

@@ -35,6 +35,7 @@ public abstract class RedundantFileState {
         INITIALIZING,
         OPEN,
         RESET,
+        RESET_COMPLETE,
         WAITING_FOR_LEASE,
         BACKUP,
         PRIMARY,
@@ -269,12 +270,12 @@ public abstract class RedundantFileState {
         return numObjectsPending;
     }
 
-    /**
-     * @param numObjectsPending the numObjectsPending to set
-     */
-    public void setNumObjectsPending(int numObjectsPending) {
-        this.numObjectsPending = numObjectsPending;
+    public void incrementNumObjectsPending() {
+        ++numObjectsPending;
     }
+    public void decrementNumObjectsPending() {
+       --numObjectsPending;
+     }
 
     /**
      * @return the primaryReset

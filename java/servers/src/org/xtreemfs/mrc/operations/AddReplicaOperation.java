@@ -33,9 +33,9 @@ import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 
 /**
  * 
@@ -131,6 +131,10 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         Replica newRepl = rqArgs.getNewReplica();
         org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp = newRepl.getStripingPolicy();
         
+        // if (sp.getWidth() > 1)
+        // throw new UserException(POSIXErrno.POSIX_ERROR_NONE,
+        // "adding replicas with a width > 1 is not supported yet");
+
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp
                 .getWidth(), sp.getParityWidth());
         
@@ -170,7 +174,8 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         XLocList extXLocList = sMan.createXLocList(repls, xLocList.getReplUpdatePolicy(), xLocList.getVersion() + 1);
 
         XLocSetCoordinator coordinator = master.getXLocSetCoordinator();
-        XLocSetCoordinator.RequestMethod m = coordinator.addReplicas(fileId, file, xLocList, extXLocList, rq, this);
+        XLocSetCoordinator.RequestMethod m = coordinator.requestXLocSetChange(fileId, file, xLocList, extXLocList, rq,
+                this);
         
         // Make an update with the RequestMethod as context and the Coordinator as callback. This will enqueue
         // the RequestMethod when the update is complete.
@@ -183,11 +188,18 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         // Lock the replica and start the coordination.
         coordinator.lockXLocSet(file, sMan, update);
 
+        // Return the expected xlocset version number to the client.
+        xtreemfs_replica_addResponse response = xtreemfs_replica_addResponse.newBuilder()
+                .setFileId(fileId)
+                .setExpectedXlocsetVersion(extXLocList.getVersion())
+                .build();
+        rq.setResponse(response);
+
         update.execute();
     }
 
     @Override
-    public void installXLocSet(MRCRequest rq, String fileId, XLocList xLocList, XLocList oldxLocList) throws Throwable {
+    public void installXLocSet(String fileId, XLocList xLocList, XLocList oldxLocList) throws Throwable {
 
         final VolumeManager vMan = master.getVolumeManager();
         final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
@@ -197,22 +209,52 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
         if (file == null)
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
-
-        file.setXLocList(xLocList);
         
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        // TODO (jdillmann): At least log the errors -> if the unlocking has not been successful, well then ehm not good.
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         
         // Update the X-Locations list.
+        file.setXLocList(xLocList);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
         // Unlock the replica.
         master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
-
-        // Set the response.
-        rq.setResponse(emptyResponse.getDefaultInstance());
         
         update.execute();
     }
 
+    @Override
+    public void handleInstallXLocSetError(Throwable error, String fileId, XLocList newXLocList, XLocList prevXLocList)
+            throws Throwable {
+        final VolumeManager vMan = master.getVolumeManager();
+        final GlobalFileIdResolver idRes = new GlobalFileIdResolver(fileId);
+        final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
+
+        // Retrieve the file metadata.
+        final FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
+        
+        // Try to unlock the xLocSet if an error occurred.
+        // Otherwise it will be locked until another XLocSet is installed.
+        // To unlock the version number has to be increased, but the promised version in newXLocList has to be skipped.
+        XLoc[] replicas = new XLoc[prevXLocList.getReplicaCount()];
+        for (int i = 0; i < prevXLocList.getReplicaCount(); i++) {
+            replicas[i] = prevXLocList.getReplica(i);
+        }
+        XLocList xLocList = sMan.createXLocList(replicas, prevXLocList.getReplUpdatePolicy(),
+                newXLocList.getVersion() + 1);
+        
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+        file.setXLocList(xLocList);
+        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+        master.getXLocSetCoordinator().unlockXLocSet(idRes.getLocalFileId(), sMan, update);
+
+        // remove already added replica from quota via voucher management
+        QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
+        master.getMrcVoucherManager().removeReplica(quotaFileInformation, update);
+
+        update.execute();
+    }
 
 }

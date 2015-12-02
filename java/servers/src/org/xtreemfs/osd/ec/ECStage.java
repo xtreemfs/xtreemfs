@@ -106,9 +106,9 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         try {
             ReusableBuffer existingData = (ReusableBuffer) method.getArgs()[0];
             ReusableBuffer newData = (ReusableBuffer) method.getArgs()[1];
-            final long newObjectVersion = (long) method.getArgs()[2];
+            final long newObjectVersion = (Long) method.getArgs()[2];
             FileCredentials credentials = (FileCredentials) method.getArgs()[3];
-            final long objectNumber = (long) method.getArgs()[4];
+            final long objectNumber = (Long) method.getArgs()[4];
             String fileId = method.getRequest().getFileId();
             final FileOperationCallback callback = (FileOperationCallback) method.getCallback();
 

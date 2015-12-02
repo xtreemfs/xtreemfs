@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Nov 17 15:29:23 CET 2015
+//automatically generated from OSD.proto at Wed Dec 02 12:27:00 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -492,17 +492,30 @@ public class OSDServiceClient {
          return xtreemfs_xloc_set_invalidate(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_auth_stateRequest input) throws IOException {
+    public RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_auth_stateRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse response = new RPCResponse(null);
+         RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> response = new RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse>(OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance());
          client.sendRequest(server, authHeader, userCreds, 30001, 82, input, null, response, false);
          return response;
     }
 
-    public RPCResponse xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
+    public RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> xtreemfs_rwr_auth_state_invalidated(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
          final OSD.xtreemfs_rwr_auth_stateRequest msg = OSD.xtreemfs_rwr_auth_stateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
          return xtreemfs_rwr_auth_state_invalidated(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> xtreemfs_rwr_reset_status(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_rwr_reset_statusRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> response = new RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse>(OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 83, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> xtreemfs_rwr_reset_status(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
+         final OSD.xtreemfs_rwr_reset_statusRequest msg = OSD.xtreemfs_rwr_reset_statusRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
+         return xtreemfs_rwr_reset_status(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

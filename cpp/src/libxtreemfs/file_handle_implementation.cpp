@@ -1348,10 +1348,12 @@ void VoucherManager::finalizeAndClear(){
         & (SYSTEM_V_FCNTL_H_O_WRONLY | SYSTEM_V_FCNTL_H_O_RDWR
             | SYSTEM_V_FCNTL_H_O_TRUNC | SYSTEM_V_FCNTL_H_O_CREAT)) != 0;
     if (!writeTruncateCreateMode) {
-      Logging::log->getLog(LEVEL_DEBUG)
-          << "Skip clear voucher, because the access mode doesn't match any write, "
-          "truncate or create mode."
-          << endl;
+      if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+        Logging::log->getLog(LEVEL_DEBUG)
+            << "Skip clear voucher, because the access mode doesn't match any write, "
+            "truncate or create mode."
+            << endl;
+      }
 
       xcap_manager_->GetOldExpireTimes().clear();
 

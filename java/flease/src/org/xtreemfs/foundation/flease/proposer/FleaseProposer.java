@@ -642,7 +642,7 @@ public class FleaseProposer {
                             cell.getViewId(),
                             maxViewId);
                 }
-                viewListener.viewIdChangeEvent(cell.getCellId(), maxViewId);
+                viewListener.viewIdChangeEvent(cell.getCellId(), maxViewId, true);
                 cell.addAction(ActionName.PROPOSER_PREPARE_FAILED);
                 cancel(cell, new FleaseException("local viewId is outdated"), 0);
                 return;
@@ -945,7 +945,7 @@ public class FleaseProposer {
                             cell.getViewId(),
                             maxViewId);
                 }
-                viewListener.viewIdChangeEvent(cell.getCellId(), maxViewId);
+                viewListener.viewIdChangeEvent(cell.getCellId(), maxViewId, true);
                 cancel(cell, new FleaseException("local viewId is outdated"), 0);
                 return;
             }

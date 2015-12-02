@@ -17,13 +17,12 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetReplicaStateCallback;
-import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_auth_stateRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_rwr_reset_statusResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /**
@@ -68,6 +67,7 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
 
     private void postInvalidation(final OSDRequest rq) {
         final String fileId = rq.getFileId();
+        final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
 
         master.getStorageStage().internalGetReplicaState(fileId,
                 rq.getLocationList().getLocalReplica().getStripingPolicy(), 0, new InternalGetReplicaStateCallback() {
@@ -77,41 +77,24 @@ public class InternalRWRAuthStateInvalidatedOperation extends OSDOperation {
 
                 if (error != null) {
                     rq.sendError(error);
+                } else if (InternalRWRResetStatusOperation.checkReplicaStateComplete(args.getState(), localState)) {
+                    respond(rq, false, true);
                 } else {
-                    startFetch(rq, localState);
+                    // Start the RESET asynchronously and respond immediately.
+                    master.getRWReplicationStage().invalidatedReplicaReset(fileId, args.getState(), localState,
+                            args.getFileCredentials(), rq.getLocationList(), rq);
+                    respond(rq, true, false);
                 }
             }
         });
     }
 
-    private void startFetch(final OSDRequest rq, final ReplicaStatus localState) {
-        final String fileId = rq.getFileId();
-        final XLocations xloc = rq.getLocationList();
-        final xtreemfs_rwr_auth_stateRequest args = (xtreemfs_rwr_auth_stateRequest) rq.getRequestArgs();
+    private void respond(final OSDRequest rq, boolean running, boolean complete) {
+        xtreemfs_rwr_reset_statusResponse response = xtreemfs_rwr_reset_statusResponse.newBuilder().setRunning(running)
+                .setComplete(complete).build();
 
-        master.getRWReplicationStage().fetchInvalidated(fileId, args.getState(), localState, args.getFileCredentials(),
-                xloc, new FileOperationCallback() {
-
-                    @Override
-                    public void success(long newObjectVersion) {
-                        rq.sendSuccess(emptyResponse.getDefaultInstance(), null);
-                    }
-
-                    @Override
-                    public void failed(ErrorResponse ex) {
-                        rq.sendError(ex);
-                    }
-
-                    @Override
-                    public void redirect(String redirectTo) {
-                        // Not used in fetchInvalidated
-                        rq.sendError(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                                POSIXErrno.POSIX_ERROR_NONE,
-                                "FetchInvalidated called the redirect method. This should never happen"));
-                    }
-                }, rq);
+        rq.sendSuccess(response, null);
     }
-
 
     @Override
     public void startInternalEvent(Object[] args) {

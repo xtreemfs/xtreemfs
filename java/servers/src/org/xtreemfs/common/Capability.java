@@ -16,8 +16,8 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 
 
 /**
@@ -86,9 +86,13 @@ public class Capability {
      *            the relative validity time span in seconds
      * @param expires
      *            the absolute expiration time stamp (seconds since 1970)
+     * @param clientIdentity
      * @param epochNo
      *            the epoch number associated with the capability; epoch numbers
      *            are incremented each time the file is truncated or deleted
+     * @param replicateOnClose
+     * @param snapConfig
+     * @param snapTimestamp
      * @param traceRequests
      *            trace IO requests on file / volume
      * @param tracingPolicyConfig
@@ -100,7 +104,7 @@ public class Capability {
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
         int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, boolean traceRequests,
-        String tracingPolicy,String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
+        String tracingPolicy, String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
 
         this.sharedSecret = sharedSecret;
 

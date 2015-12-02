@@ -382,6 +382,21 @@ message xtreemfs_xloc_set_invalidateResponse {
   optional ReplicaStatus replica_status = 2;
 }
 
+// request the reset status in regard to the transmitted AuthState
+message xtreemfs_rwr_reset_statusRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required AuthoritativeReplicaState state = 3;
+}
+
+// response to a reset_statuts requests containing if the reset is still running
+// and if it is complete.
+message xtreemfs_rwr_reset_statusResponse {
+  required bool running = 1;
+  required bool complete = 2;
+}
+
+
 // Status of OSD health test
 enum OSDHealthResult {
    OSD_HEALTH_RESULT_PASSED = 0;
@@ -613,7 +628,13 @@ service OSDService {
   // Sets the authoritative state on a replica during an xLocSet change. 
   // This operation invalidets replicas not yet invalidated and does not require
   // a valid view.
-  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(emptyResponse) {
+  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(xtreemfs_rwr_reset_statusResponse) { 
     option(proc_id)=82;
+  };
+
+  // Request the reset status in regard to the transmitted AuthState.
+  // Used for polling if a operation requires a certain AuthState to be available on a certain replica.
+  rpc xtreemfs_rwr_reset_status(xtreemfs_rwr_reset_statusRequest) returns (xtreemfs_rwr_reset_statusResponse) {
+    option(proc_id)=83;
   };
 }

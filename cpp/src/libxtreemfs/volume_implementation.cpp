@@ -1321,19 +1321,40 @@ void VolumeImplementation::AddReplica(
           uuid_resolver_,
           RPCOptionsFromOptions(volume_options_)));
 
+  xtreemfs_replica_addResponse* replica_addResponse;
+  replica_addResponse = static_cast<xtreemfs_replica_addResponse*>(response->response());
+
+  assert(replica_addResponse);
+
+  int expected_version = replica_addResponse->expected_xlocset_version();
+  string global_file_id(replica_addResponse->file_id());
+
   response->DeleteBuffers();
 
-  // Trigger the replication at this point by reading at least one byte.
-  FileHandle* file_handle = OpenFile(user_credentials,
-                                     path,
-                                     SYSTEM_V_FCNTL_H_O_RDONLY);
-  try {
-    file_handle->PingReplica(new_replica.osd_uuids(0));
-  } catch (const exception&) {
-    file_handle->Close();  // Cleanup temporary file handle.
-    throw;  // Rethrow exception.
+  XLocSet new_xlocset;
+  WaitForXLocSetInstallation(user_credentials, global_file_id, expected_version, &new_xlocset);
+
+  // Update the local XLocSet cached at FileInfo if it exists.
+  uint64_t file_id = ExtractFileIdFromGlobalFileId(global_file_id);
+  map<uint64_t, FileInfo*>::const_iterator it = open_file_table_.find(file_id);
+  if (it != open_file_table_.end()) {
+    // File has already been opened: refresh the xlocset.
+    it->second->UpdateXLocSetAndRest(new_xlocset);
   }
-  file_handle->Close();
+
+  // Trigger the ronly replication at this point by reading at least one byte.
+  if (new_xlocset.replica_update_policy() == "ronly") {
+    FileHandle* file_handle = OpenFile(user_credentials,
+                                       path,
+                                       SYSTEM_V_FCNTL_H_O_RDONLY);
+    try {
+      file_handle->PingReplica(new_replica.osd_uuids(0));
+    } catch (const exception&) {
+      file_handle->Close();  // Cleanup temporary file handle.
+      throw;  // Rethrow exception.
+    }
+    file_handle->Close();
+  }
 }
 
 xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
@@ -1373,6 +1394,34 @@ xtreemfs::pbrpc::Replicas* VolumeImplementation::ListReplicas(
   return replicas;
 }
 
+void VolumeImplementation::GetXLocSet(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& file_id,
+    xtreemfs::pbrpc::XLocSet* xlocset) {
+  xtreemfs_get_xlocsetRequest get_xlocsetRequest;
+  get_xlocsetRequest.set_file_id(file_id);
+
+  // Retrieve list of replicas.
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_get_xlocset_sync,
+              mrc_service_client_.get(),
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials),
+              &get_xlocsetRequest),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
+          RPCOptionsFromOptions(volume_options_)));
+
+  // Copy the xlocset
+  xlocset->CopyFrom(*(response->response()));
+
+  // Cleanup.
+  response->DeleteBuffers();
+}
+
 void VolumeImplementation::RemoveReplica(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     const std::string& path,
@@ -1395,17 +1444,30 @@ void VolumeImplementation::RemoveReplica(
           mrc_uuid_iterator_.get(),
           uuid_resolver_,
           RPCOptionsFromOptions(volume_options_)));
-  FileCredentials* creds = static_cast<FileCredentials*>(
-      response_mrc->response());
+
+  xtreemfs_replica_removeResponse* replica_removeResponse;
+  replica_removeResponse = static_cast<xtreemfs_replica_removeResponse*>(response_mrc->response());
+
+  assert(replica_removeResponse);
+  assert(replica_removeResponse->has_unlink_xloc());
+  assert(replica_removeResponse->has_unlink_xcap());
+
+  int expected_version = replica_removeResponse->expected_xlocset_version();
+  string global_file_id(replica_removeResponse->file_id());
+
+  XLocSet new_xlocset;
+  WaitForXLocSetInstallation(user_credentials, global_file_id, expected_version, &new_xlocset);
 
   // Now unlink the replica at the OSD.
   SimpleUUIDIterator osd_uuid_iterator;
   osd_uuid_iterator.AddUUID(osd_uuid);
 
   unlink_osd_Request unlink_osd_Request;
-  unlink_osd_Request.set_file_id(creds->xcap().file_id());
-  unlink_osd_Request.mutable_file_credentials()->CopyFrom(
-      *(response_mrc->response()));
+
+  unlink_osd_Request.set_file_id(global_file_id);
+  FileCredentials* creds = unlink_osd_Request.mutable_file_credentials();
+  creds->mutable_xlocs()->CopyFrom(replica_removeResponse->unlink_xloc());
+  creds->mutable_xcap()->CopyFrom(replica_removeResponse->unlink_xcap());
 
   OSDServiceClient osd_service_client(network_client_.get());
   boost::scoped_ptr<rpc::SyncCallbackBase> response_osd(
@@ -1422,20 +1484,43 @@ void VolumeImplementation::RemoveReplica(
           RPCOptionsFromOptions(volume_options_)));
 
   // Update the local XLocSet cached at FileInfo if it exists.
-  uint64_t file_id = ExtractFileIdFromXCap(creds->xcap());
+  uint64_t file_id = ExtractFileIdFromGlobalFileId(global_file_id);
   map<uint64_t, FileInfo*>::const_iterator it = open_file_table_.find(file_id);
   if (it != open_file_table_.end()) {
     // File has already been opened: refresh the xlocset.
-    // TODO(jdillmann): Return the new XLocSet and the replicateOnClose flag with the response. // NOLINT
-    FileHandle* file_handle = OpenFile(user_credentials,
-                                       path,
-                                       SYSTEM_V_FCNTL_H_O_RDONLY);
-    file_handle->Close();
+    it->second->UpdateXLocSetAndRest(new_xlocset);
   }
 
   // Cleanup.
   response_mrc->DeleteBuffers();
   response_osd->DeleteBuffers();
+}
+
+
+void VolumeImplementation::WaitForXLocSetInstallation(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    const std::string& file_id,
+    int expected_version,
+    xtreemfs::pbrpc::XLocSet* xlocset) {
+  // The delay to wait between two pings in seconds.
+  int64_t delay_ms = volume_options_.xLoc_install_poll_interval_s * 1000;
+
+  // The initial call is made without delay.
+  GetXLocSet(user_credentials, file_id, xlocset);
+
+  // Periodically ping the MRC to request the current XLocSet.
+  while (xlocset->version() < expected_version) {
+    // Delay the xLocSet renewal and the next run of the operation.
+    Interruptibilizer::SleepInterruptible(delay_ms, volume_options_.was_interrupted_function);
+
+    GetXLocSet(user_credentials, file_id, xlocset);
+  }
+
+  if (xlocset->version() > expected_version) {
+    string msg("Missed the expected xLocSet after installing a new view. Please check if the xLocSet is correct.");
+    Logging::log->getLog(LEVEL_NOTICE) << "WaitForXLocSetInstallation: " << msg << endl;
+    throw IOException(msg);
+  }
 }
 
 void VolumeImplementation::GetSuitableOSDs(
