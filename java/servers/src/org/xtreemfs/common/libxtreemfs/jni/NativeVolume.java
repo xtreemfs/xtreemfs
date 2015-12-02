@@ -350,6 +350,12 @@ public class NativeVolume implements Volume {
     }
 
     @Override
+    public void setReplicaUpdatePolicy(UserCredentials userCredentials, String path, String policy)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        proxy.setReplicaUpdatePolicy(userCredentials, path, policy);
+    }
+
+    @Override
     public List<StripeLocation> getStripeLocations(UserCredentials userCredentials, String path, long startSize,
             long length) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         Replicas replicas = listReplicas(userCredentials, path);

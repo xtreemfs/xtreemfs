@@ -1261,8 +1261,7 @@ public class QuotaTest {
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2,
                 repl_flagsX);
 
-        volume.setXAttr(userCredentials, fileName, "xtreemfs.set_repl_update_policy", "WqRq",
-                XATTR_FLAGS.XATTR_FLAGS_REPLACE);
+        volume.setReplicaUpdatePolicy(userCredentials, fileName, ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ);
 
         // Get a liste of suitable OSDs and ensure the requestes number of replicas can be added.
         List<String> osdUUIDs = volume.getSuitableOSDs(userCredentials, fileName, replicaNumber);

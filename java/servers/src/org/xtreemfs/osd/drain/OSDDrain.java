@@ -55,7 +55,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
@@ -167,11 +167,11 @@ public class OSDDrain {
             // Handle r/w coordinated files and remove them from the file info list.
             fileInfos = drainCoordinatedFiles(fileInfos);
 
-            // set ReplicationUpdatePolicy to RONLY
-            fileInfos = this.setReplicationUpdatePolicyRonly(fileInfos);
-
             // set Files read-only
             fileInfos = this.setFilesReadOnlyAttribute(fileInfos);
+
+            // set ReplicationUpdatePolicy to RONLY
+            fileInfos = this.setReplicationUpdatePolicyRonly(fileInfos);
 
             // create replications
             fileInfos = this.createReplicasForFiles(fileInfos);
@@ -185,11 +185,11 @@ public class OSDDrain {
             // remove replicas
             this.removeOriginalFromReplica(fileInfos);
 
-            // set every file to read/write again which wasn't set to read-only before
-            this.resetFilesReadOnlyAttribute(fileInfos);
-
             // set ReplicationUpdatePolicy to original value
             this.resetReplicationUpdatePolicy(fileInfos);
+
+            // set every file to read/write again which wasn't set to read-only before
+            this.resetFilesReadOnlyAttribute(fileInfos);
 
             // TODO: delete all files on osd
 
@@ -459,6 +459,8 @@ public class OSDDrain {
             fileInfo.isReplicaChangeCoordinated = (xlocset.getReplicasCount() > 1 
                     && ReplicaUpdatePolicies.isRwReplicated(xlocset.getReplicaUpdatePolicy()));
 
+            fileInfo.oldReplicationPolicy = xlocset.getReplicaUpdatePolicy();
+
             // find the replica for the given UUID
             for (Replica replica : xlocset.getReplicasList()) {
                 if (replica.getOsdUuidsList().contains(osdUUID.toString())) {
@@ -696,9 +698,7 @@ public class OSDDrain {
 
         for (FileInformation fileInfo : fileInfos) {
             try {
-                fileInfo.oldReplicationPolicy = changeReplicationUpdatePolicy(fileInfo,
-                                                                              ReplicaUpdatePolicies
-                                                                                      .REPL_UPDATE_PC_RONLY);
+                changeReplicationUpdatePolicy(fileInfo, ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
                 throw new OSDDrainException(e.getMessage(), ErrorState.SET_UPDATE_POLICY, fileInfos,
@@ -725,8 +725,7 @@ public class OSDDrain {
 
         for (FileInformation fileInfo : fileInfos) {
             try {
-                fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
-                                                                                   fileInfo.oldReplicationPolicy);
+                this.changeReplicationUpdatePolicy(fileInfo, fileInfo.oldReplicationPolicy);
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
                 erroneousFiles.add(fileInfo);
@@ -741,14 +740,13 @@ public class OSDDrain {
         return finishedFileInfos;
     }
 
-    private String changeReplicationUpdatePolicy(FileInformation fileInfo, String policy) throws Exception {
-
-        RPCResponse<xtreemfs_set_replica_update_policyResponse> respRepl = null;
-        xtreemfs_set_replica_update_policyResponse replSetResponse = null;
+    private void changeReplicationUpdatePolicy(FileInformation fileInfo, String policy) throws Exception {
+        RPCResponse<?> respRepl = null;
         try {
-            respRepl = mrcClient.xtreemfs_set_replica_update_policy(fileInfo.mrcAddress, password, userCreds,
-                                                                    fileInfo.fileID, policy);
-            replSetResponse = respRepl.get();
+            final xtreemfs_set_replica_update_policyRequest msg = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                    .setFileId(fileInfo.fileID).setUpdatePolicy(policy).build();
+            respRepl = mrcClient.xtreemfs_set_replica_update_policy(fileInfo.mrcAddress, password, userCreds, msg);
+            respRepl.get();
         } catch (Exception ioe) {
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_WARN, this, ioe);
@@ -758,8 +756,6 @@ public class OSDDrain {
             if (respRepl != null)
                 respRepl.freeBuffers();
         }
-
-        return replSetResponse.getOldUpdatePolicy();
     }
 
     /**
@@ -1249,6 +1245,9 @@ public class OSDDrain {
                 }
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
+
+            this.handleException(new OSDDrainException(ex.getMessage(), ErrorState.SET_RONLY, ex.getFileInfosAll(),
+                    ex.getFileInfosAll()), false);
             break;
 
         case SET_RONLY:
@@ -1274,10 +1273,6 @@ public class OSDDrain {
                 }
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
-
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.SET_UPDATE_POLICY,
-                            ex.getFileInfosAll(), ex.getFileInfosAll()), false);
             break;
 
         case CREATE_REPLICAS:
@@ -1363,7 +1358,7 @@ public class OSDDrain {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
             this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.CREATE_REPLICAS, ex.getFileInfosAll(),
+                    new OSDDrainException(ex.getMessage(), ErrorState.UNSET_RONLY, ex.getFileInfosAll(),
                             ex.getFileInfosAll()), false);
             break;
 
@@ -1385,7 +1380,7 @@ public class OSDDrain {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
 
             this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.REMOVE_REPLICAS, ex.getFileInfosAll(),
+                    new OSDDrainException(ex.getMessage(), ErrorState.CREATE_REPLICAS, ex.getFileInfosAll(),
                                           ex.getFileInfosAll()), false);
             break;
         }
