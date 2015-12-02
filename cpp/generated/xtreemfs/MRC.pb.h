@@ -91,7 +91,6 @@ class xtreemfs_restore_fileRequest;
 class xtreemfs_rmvolRequest;
 class xtreemfs_update_file_sizeRequest;
 class xtreemfs_set_replica_update_policyRequest;
-class xtreemfs_set_replica_update_policyResponse;
 class xtreemfs_set_read_only_xattrRequest;
 class xtreemfs_set_read_only_xattrResponse;
 class xtreemfs_get_file_credentialsRequest;
@@ -6178,7 +6177,7 @@ class xtreemfs_set_replica_update_policyRequest : public ::google::protobuf::Mes
 
   // accessors -------------------------------------------------------
 
-  // required string file_id = 1;
+  // optional string file_id = 1;
   inline bool has_file_id() const;
   inline void clear_file_id();
   static const int kFileIdFieldNumber = 1;
@@ -6190,10 +6189,34 @@ class xtreemfs_set_replica_update_policyRequest : public ::google::protobuf::Mes
   inline ::std::string* release_file_id();
   inline void set_allocated_file_id(::std::string* file_id);
 
-  // required string update_policy = 2;
+  // optional string path = 2;
+  inline bool has_path() const;
+  inline void clear_path();
+  static const int kPathFieldNumber = 2;
+  inline const ::std::string& path() const;
+  inline void set_path(const ::std::string& value);
+  inline void set_path(const char* value);
+  inline void set_path(const char* value, size_t size);
+  inline ::std::string* mutable_path();
+  inline ::std::string* release_path();
+  inline void set_allocated_path(::std::string* path);
+
+  // optional string volume_name = 3;
+  inline bool has_volume_name() const;
+  inline void clear_volume_name();
+  static const int kVolumeNameFieldNumber = 3;
+  inline const ::std::string& volume_name() const;
+  inline void set_volume_name(const ::std::string& value);
+  inline void set_volume_name(const char* value);
+  inline void set_volume_name(const char* value, size_t size);
+  inline ::std::string* mutable_volume_name();
+  inline ::std::string* release_volume_name();
+  inline void set_allocated_volume_name(::std::string* volume_name);
+
+  // required string update_policy = 4;
   inline bool has_update_policy() const;
   inline void clear_update_policy();
-  static const int kUpdatePolicyFieldNumber = 2;
+  static const int kUpdatePolicyFieldNumber = 4;
   inline const ::std::string& update_policy() const;
   inline void set_update_policy(const ::std::string& value);
   inline void set_update_policy(const char* value);
@@ -6206,16 +6229,22 @@ class xtreemfs_set_replica_update_policyRequest : public ::google::protobuf::Mes
  private:
   inline void set_has_file_id();
   inline void clear_has_file_id();
+  inline void set_has_path();
+  inline void clear_has_path();
+  inline void set_has_volume_name();
+  inline void clear_has_volume_name();
   inline void set_has_update_policy();
   inline void clear_has_update_policy();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::std::string* file_id_;
+  ::std::string* path_;
+  ::std::string* volume_name_;
   ::std::string* update_policy_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
@@ -6223,93 +6252,6 @@ class xtreemfs_set_replica_update_policyRequest : public ::google::protobuf::Mes
 
   void InitAsDefaultInstance();
   static xtreemfs_set_replica_update_policyRequest* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class xtreemfs_set_replica_update_policyResponse : public ::google::protobuf::Message {
- public:
-  xtreemfs_set_replica_update_policyResponse();
-  virtual ~xtreemfs_set_replica_update_policyResponse();
-
-  xtreemfs_set_replica_update_policyResponse(const xtreemfs_set_replica_update_policyResponse& from);
-
-  inline xtreemfs_set_replica_update_policyResponse& operator=(const xtreemfs_set_replica_update_policyResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _unknown_fields_;
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return &_unknown_fields_;
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_set_replica_update_policyResponse& default_instance();
-
-  void Swap(xtreemfs_set_replica_update_policyResponse* other);
-
-  // implements Message ----------------------------------------------
-
-  xtreemfs_set_replica_update_policyResponse* New() const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_set_replica_update_policyResponse& from);
-  void MergeFrom(const xtreemfs_set_replica_update_policyResponse& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string old_update_policy = 1;
-  inline bool has_old_update_policy() const;
-  inline void clear_old_update_policy();
-  static const int kOldUpdatePolicyFieldNumber = 1;
-  inline const ::std::string& old_update_policy() const;
-  inline void set_old_update_policy(const ::std::string& value);
-  inline void set_old_update_policy(const char* value);
-  inline void set_old_update_policy(const char* value, size_t size);
-  inline ::std::string* mutable_old_update_policy();
-  inline ::std::string* release_old_update_policy();
-  inline void set_allocated_old_update_policy(::std::string* old_update_policy);
-
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_set_replica_update_policyResponse)
- private:
-  inline void set_has_old_update_policy();
-  inline void clear_has_old_update_policy();
-
-  ::google::protobuf::UnknownFieldSet _unknown_fields_;
-
-  ::std::string* old_update_policy_;
-
-  mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
-
-  friend void  protobuf_AddDesc_xtreemfs_2fMRC_2eproto();
-  friend void protobuf_AssignDesc_xtreemfs_2fMRC_2eproto();
-  friend void protobuf_ShutdownFile_xtreemfs_2fMRC_2eproto();
-
-  void InitAsDefaultInstance();
-  static xtreemfs_set_replica_update_policyResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -15136,7 +15078,7 @@ inline void xtreemfs_update_file_sizeRequest::set_allocated_coordinates(::xtreem
 
 // xtreemfs_set_replica_update_policyRequest
 
-// required string file_id = 1;
+// optional string file_id = 1;
 inline bool xtreemfs_set_replica_update_policyRequest::has_file_id() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -15206,15 +15148,155 @@ inline void xtreemfs_set_replica_update_policyRequest::set_allocated_file_id(::s
   }
 }
 
-// required string update_policy = 2;
-inline bool xtreemfs_set_replica_update_policyRequest::has_update_policy() const {
+// optional string path = 2;
+inline bool xtreemfs_set_replica_update_policyRequest::has_path() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void xtreemfs_set_replica_update_policyRequest::set_has_update_policy() {
+inline void xtreemfs_set_replica_update_policyRequest::set_has_path() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void xtreemfs_set_replica_update_policyRequest::clear_has_update_policy() {
+inline void xtreemfs_set_replica_update_policyRequest::clear_has_path() {
   _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_set_replica_update_policyRequest::clear_path() {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    path_->clear();
+  }
+  clear_has_path();
+}
+inline const ::std::string& xtreemfs_set_replica_update_policyRequest::path() const {
+  return *path_;
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_path(const ::std::string& value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_path(const char* value) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(value);
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_path(const char* value, size_t size) {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  path_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_set_replica_update_policyRequest::mutable_path() {
+  set_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    path_ = new ::std::string;
+  }
+  return path_;
+}
+inline ::std::string* xtreemfs_set_replica_update_policyRequest::release_path() {
+  clear_has_path();
+  if (path_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = path_;
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_allocated_path(::std::string* path) {
+  if (path_ != &::google::protobuf::internal::kEmptyString) {
+    delete path_;
+  }
+  if (path) {
+    set_has_path();
+    path_ = path;
+  } else {
+    clear_has_path();
+    path_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// optional string volume_name = 3;
+inline bool xtreemfs_set_replica_update_policyRequest::has_volume_name() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_has_volume_name() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_set_replica_update_policyRequest::clear_has_volume_name() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_set_replica_update_policyRequest::clear_volume_name() {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    volume_name_->clear();
+  }
+  clear_has_volume_name();
+}
+inline const ::std::string& xtreemfs_set_replica_update_policyRequest::volume_name() const {
+  return *volume_name_;
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_volume_name(const ::std::string& value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_volume_name(const char* value) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(value);
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_volume_name(const char* value, size_t size) {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  volume_name_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_set_replica_update_policyRequest::mutable_volume_name() {
+  set_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    volume_name_ = new ::std::string;
+  }
+  return volume_name_;
+}
+inline ::std::string* xtreemfs_set_replica_update_policyRequest::release_volume_name() {
+  clear_has_volume_name();
+  if (volume_name_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = volume_name_;
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_allocated_volume_name(::std::string* volume_name) {
+  if (volume_name_ != &::google::protobuf::internal::kEmptyString) {
+    delete volume_name_;
+  }
+  if (volume_name) {
+    set_has_volume_name();
+    volume_name_ = volume_name;
+  } else {
+    clear_has_volume_name();
+    volume_name_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required string update_policy = 4;
+inline bool xtreemfs_set_replica_update_policyRequest::has_update_policy() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_set_replica_update_policyRequest::set_has_update_policy() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_set_replica_update_policyRequest::clear_has_update_policy() {
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void xtreemfs_set_replica_update_policyRequest::clear_update_policy() {
   if (update_policy_ != &::google::protobuf::internal::kEmptyString) {
@@ -15273,80 +15355,6 @@ inline void xtreemfs_set_replica_update_policyRequest::set_allocated_update_poli
   } else {
     clear_has_update_policy();
     update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  }
-}
-
-// -------------------------------------------------------------------
-
-// xtreemfs_set_replica_update_policyResponse
-
-// required string old_update_policy = 1;
-inline bool xtreemfs_set_replica_update_policyResponse::has_old_update_policy() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void xtreemfs_set_replica_update_policyResponse::set_has_old_update_policy() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void xtreemfs_set_replica_update_policyResponse::clear_has_old_update_policy() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void xtreemfs_set_replica_update_policyResponse::clear_old_update_policy() {
-  if (old_update_policy_ != &::google::protobuf::internal::kEmptyString) {
-    old_update_policy_->clear();
-  }
-  clear_has_old_update_policy();
-}
-inline const ::std::string& xtreemfs_set_replica_update_policyResponse::old_update_policy() const {
-  return *old_update_policy_;
-}
-inline void xtreemfs_set_replica_update_policyResponse::set_old_update_policy(const ::std::string& value) {
-  set_has_old_update_policy();
-  if (old_update_policy_ == &::google::protobuf::internal::kEmptyString) {
-    old_update_policy_ = new ::std::string;
-  }
-  old_update_policy_->assign(value);
-}
-inline void xtreemfs_set_replica_update_policyResponse::set_old_update_policy(const char* value) {
-  set_has_old_update_policy();
-  if (old_update_policy_ == &::google::protobuf::internal::kEmptyString) {
-    old_update_policy_ = new ::std::string;
-  }
-  old_update_policy_->assign(value);
-}
-inline void xtreemfs_set_replica_update_policyResponse::set_old_update_policy(const char* value, size_t size) {
-  set_has_old_update_policy();
-  if (old_update_policy_ == &::google::protobuf::internal::kEmptyString) {
-    old_update_policy_ = new ::std::string;
-  }
-  old_update_policy_->assign(reinterpret_cast<const char*>(value), size);
-}
-inline ::std::string* xtreemfs_set_replica_update_policyResponse::mutable_old_update_policy() {
-  set_has_old_update_policy();
-  if (old_update_policy_ == &::google::protobuf::internal::kEmptyString) {
-    old_update_policy_ = new ::std::string;
-  }
-  return old_update_policy_;
-}
-inline ::std::string* xtreemfs_set_replica_update_policyResponse::release_old_update_policy() {
-  clear_has_old_update_policy();
-  if (old_update_policy_ == &::google::protobuf::internal::kEmptyString) {
-    return NULL;
-  } else {
-    ::std::string* temp = old_update_policy_;
-    old_update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-    return temp;
-  }
-}
-inline void xtreemfs_set_replica_update_policyResponse::set_allocated_old_update_policy(::std::string* old_update_policy) {
-  if (old_update_policy_ != &::google::protobuf::internal::kEmptyString) {
-    delete old_update_policy_;
-  }
-  if (old_update_policy) {
-    set_has_old_update_policy();
-    old_update_policy_ = old_update_policy;
-  } else {
-    clear_has_old_update_policy();
-    old_update_policy_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   }
 }
 

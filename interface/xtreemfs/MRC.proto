@@ -621,15 +621,12 @@ message xtreemfs_update_file_sizeRequest {
 // sets the replica update policy of a file by ID
 message xtreemfs_set_replica_update_policyRequest {
   // the file ID
-  required string file_id = 1;
+  optional string file_id = 1;
+  // or path and volume_name to file.
+  optional string path = 2;
+  optional string volume_name = 3;
   // the new replica update policy
-  required string update_policy = 2;
-}
-
-// returns the old replica update policy when setting a new one
-message xtreemfs_set_replica_update_policyResponse {
-  // the old replica update policy
-  required string old_update_policy = 1;
+  required string update_policy = 4;
 }
 
 // sets the read-only flag of a file by ID
@@ -869,7 +866,7 @@ service MRCService {
   };
 
   // sets the replica update policy on a file identified by a file ID (privileged users only!)
-  rpc xtreemfs_set_replica_update_policy(xtreemfs_set_replica_update_policyRequest) returns(xtreemfs_set_replica_update_policyResponse) {
+  rpc xtreemfs_set_replica_update_policy(xtreemfs_set_replica_update_policyRequest) returns(emptyResponse) {
     option(proc_id)=48;
   };
 

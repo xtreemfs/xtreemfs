@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 14:27:50 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -531,16 +531,16 @@ public class MRCServiceClient {
          return xtreemfs_update_file_size(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<MRC.xtreemfs_set_replica_update_policyResponse> xtreemfs_set_replica_update_policy(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_set_replica_update_policyRequest input) throws IOException {
+    public RPCResponse xtreemfs_set_replica_update_policy(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_set_replica_update_policyRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<MRC.xtreemfs_set_replica_update_policyResponse> response = new RPCResponse<MRC.xtreemfs_set_replica_update_policyResponse>(MRC.xtreemfs_set_replica_update_policyResponse.getDefaultInstance());
+         RPCResponse response = new RPCResponse(null);
          client.sendRequest(server, authHeader, userCreds, 20001, 48, input, null, response, false);
          return response;
     }
 
-    public RPCResponse<MRC.xtreemfs_set_replica_update_policyResponse> xtreemfs_set_replica_update_policy(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String update_policy) throws IOException {
-         final MRC.xtreemfs_set_replica_update_policyRequest msg = MRC.xtreemfs_set_replica_update_policyRequest.newBuilder().setFileId(file_id).setUpdatePolicy(update_policy).build();
+    public RPCResponse xtreemfs_set_replica_update_policy(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, String update_policy) throws IOException {
+         final MRC.xtreemfs_set_replica_update_policyRequest msg = MRC.xtreemfs_set_replica_update_policyRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setUpdatePolicy(update_policy).build();
          return xtreemfs_set_replica_update_policy(server, authHeader, userCreds,msg);
     }
 

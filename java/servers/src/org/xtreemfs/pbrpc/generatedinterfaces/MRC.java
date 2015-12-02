@@ -48802,9 +48802,9 @@ public final class MRC {
   public interface xtreemfs_set_replica_update_policyRequestOrBuilder
       extends com.google.protobuf.MessageOrBuilder {
 
-    // required string file_id = 1;
+    // optional string file_id = 1;
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -48812,7 +48812,7 @@ public final class MRC {
      */
     boolean hasFileId();
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -48820,7 +48820,7 @@ public final class MRC {
      */
     java.lang.String getFileId();
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -48829,9 +48829,51 @@ public final class MRC {
     com.google.protobuf.ByteString
         getFileIdBytes();
 
-    // required string update_policy = 2;
+    // optional string path = 2;
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    boolean hasPath();
+    /**
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    java.lang.String getPath();
+    /**
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getPathBytes();
+
+    // optional string volume_name = 3;
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    boolean hasVolumeName();
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    java.lang.String getVolumeName();
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getVolumeNameBytes();
+
+    // required string update_policy = 4;
+    /**
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
@@ -48839,7 +48881,7 @@ public final class MRC {
      */
     boolean hasUpdatePolicy();
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
@@ -48847,7 +48889,7 @@ public final class MRC {
      */
     java.lang.String getUpdatePolicy();
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
@@ -48918,6 +48960,16 @@ public final class MRC {
             }
             case 18: {
               bitField0_ |= 0x00000002;
+              path_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              volumeName_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
               updatePolicy_ = input.readBytes();
               break;
             }
@@ -48961,11 +49013,11 @@ public final class MRC {
     }
 
     private int bitField0_;
-    // required string file_id = 1;
+    // optional string file_id = 1;
     public static final int FILE_ID_FIELD_NUMBER = 1;
     private java.lang.Object fileId_;
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -48975,7 +49027,7 @@ public final class MRC {
       return ((bitField0_ & 0x00000001) == 0x00000001);
     }
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -48996,7 +49048,7 @@ public final class MRC {
       }
     }
     /**
-     * <code>required string file_id = 1;</code>
+     * <code>optional string file_id = 1;</code>
      *
      * <pre>
      * the file ID
@@ -49016,21 +49068,119 @@ public final class MRC {
       }
     }
 
-    // required string update_policy = 2;
-    public static final int UPDATE_POLICY_FIELD_NUMBER = 2;
+    // optional string path = 2;
+    public static final int PATH_FIELD_NUMBER = 2;
+    private java.lang.Object path_;
+    /**
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    public boolean hasPath() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    public java.lang.String getPath() {
+      java.lang.Object ref = path_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          path_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string path = 2;</code>
+     *
+     * <pre>
+     * or path and volume_name to file.
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getPathBytes() {
+      java.lang.Object ref = path_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        path_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string volume_name = 3;
+    public static final int VOLUME_NAME_FIELD_NUMBER = 3;
+    private java.lang.Object volumeName_;
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    public boolean hasVolumeName() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    public java.lang.String getVolumeName() {
+      java.lang.Object ref = volumeName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          volumeName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string volume_name = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVolumeNameBytes() {
+      java.lang.Object ref = volumeName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        volumeName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // required string update_policy = 4;
+    public static final int UPDATE_POLICY_FIELD_NUMBER = 4;
     private java.lang.Object updatePolicy_;
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
      * </pre>
      */
     public boolean hasUpdatePolicy() {
-      return ((bitField0_ & 0x00000002) == 0x00000002);
+      return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
@@ -49051,7 +49201,7 @@ public final class MRC {
       }
     }
     /**
-     * <code>required string update_policy = 2;</code>
+     * <code>required string update_policy = 4;</code>
      *
      * <pre>
      * the new replica update policy
@@ -49073,6 +49223,8 @@ public final class MRC {
 
     private void initFields() {
       fileId_ = "";
+      path_ = "";
+      volumeName_ = "";
       updatePolicy_ = "";
     }
     private byte memoizedIsInitialized = -1;
@@ -49080,10 +49232,6 @@ public final class MRC {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized != -1) return isInitialized == 1;
 
-      if (!hasFileId()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
       if (!hasUpdatePolicy()) {
         memoizedIsInitialized = 0;
         return false;
@@ -49099,7 +49247,13 @@ public final class MRC {
         output.writeBytes(1, getFileIdBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeBytes(2, getUpdatePolicyBytes());
+        output.writeBytes(2, getPathBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getVolumeNameBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, getUpdatePolicyBytes());
       }
       getUnknownFields().writeTo(output);
     }
@@ -49116,7 +49270,15 @@ public final class MRC {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(2, getUpdatePolicyBytes());
+          .computeBytesSize(2, getPathBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getVolumeNameBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, getUpdatePolicyBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -49240,8 +49402,12 @@ public final class MRC {
         super.clear();
         fileId_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
-        updatePolicy_ = "";
+        path_ = "";
         bitField0_ = (bitField0_ & ~0x00000002);
+        volumeName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        updatePolicy_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -49277,6 +49443,14 @@ public final class MRC {
         if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
           to_bitField0_ |= 0x00000002;
         }
+        result.path_ = path_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.volumeName_ = volumeName_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
         result.updatePolicy_ = updatePolicy_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
@@ -49299,8 +49473,18 @@ public final class MRC {
           fileId_ = other.fileId_;
           onChanged();
         }
-        if (other.hasUpdatePolicy()) {
+        if (other.hasPath()) {
           bitField0_ |= 0x00000002;
+          path_ = other.path_;
+          onChanged();
+        }
+        if (other.hasVolumeName()) {
+          bitField0_ |= 0x00000004;
+          volumeName_ = other.volumeName_;
+          onChanged();
+        }
+        if (other.hasUpdatePolicy()) {
+          bitField0_ |= 0x00000008;
           updatePolicy_ = other.updatePolicy_;
           onChanged();
         }
@@ -49309,10 +49493,6 @@ public final class MRC {
       }
 
       public final boolean isInitialized() {
-        if (!hasFileId()) {
-          
-          return false;
-        }
         if (!hasUpdatePolicy()) {
           
           return false;
@@ -49339,10 +49519,10 @@ public final class MRC {
       }
       private int bitField0_;
 
-      // required string file_id = 1;
+      // optional string file_id = 1;
       private java.lang.Object fileId_ = "";
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49352,7 +49532,7 @@ public final class MRC {
         return ((bitField0_ & 0x00000001) == 0x00000001);
       }
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49370,7 +49550,7 @@ public final class MRC {
         }
       }
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49390,7 +49570,7 @@ public final class MRC {
         }
       }
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49407,7 +49587,7 @@ public final class MRC {
         return this;
       }
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49420,7 +49600,7 @@ public final class MRC {
         return this;
       }
       /**
-       * <code>required string file_id = 1;</code>
+       * <code>optional string file_id = 1;</code>
        *
        * <pre>
        * the file ID
@@ -49437,20 +49617,192 @@ public final class MRC {
         return this;
       }
 
-      // required string update_policy = 2;
+      // optional string path = 2;
+      private java.lang.Object path_ = "";
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public boolean hasPath() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public java.lang.String getPath() {
+        java.lang.Object ref = path_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          path_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getPathBytes() {
+        java.lang.Object ref = path_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          path_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public Builder setPath(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        path_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public Builder clearPath() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        path_ = getDefaultInstance().getPath();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string path = 2;</code>
+       *
+       * <pre>
+       * or path and volume_name to file.
+       * </pre>
+       */
+      public Builder setPathBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        path_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string volume_name = 3;
+      private java.lang.Object volumeName_ = "";
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public boolean hasVolumeName() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public java.lang.String getVolumeName() {
+        java.lang.Object ref = volumeName_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          volumeName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getVolumeNameBytes() {
+        java.lang.Object ref = volumeName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          volumeName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public Builder setVolumeName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        volumeName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public Builder clearVolumeName() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        volumeName_ = getDefaultInstance().getVolumeName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string volume_name = 3;</code>
+       */
+      public Builder setVolumeNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        volumeName_ = value;
+        onChanged();
+        return this;
+      }
+
+      // required string update_policy = 4;
       private java.lang.Object updatePolicy_ = "";
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
        * </pre>
        */
       public boolean hasUpdatePolicy() {
-        return ((bitField0_ & 0x00000002) == 0x00000002);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
@@ -49468,7 +49820,7 @@ public final class MRC {
         }
       }
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
@@ -49488,7 +49840,7 @@ public final class MRC {
         }
       }
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
@@ -49499,26 +49851,26 @@ public final class MRC {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000008;
         updatePolicy_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
        * </pre>
        */
       public Builder clearUpdatePolicy() {
-        bitField0_ = (bitField0_ & ~0x00000002);
+        bitField0_ = (bitField0_ & ~0x00000008);
         updatePolicy_ = getDefaultInstance().getUpdatePolicy();
         onChanged();
         return this;
       }
       /**
-       * <code>required string update_policy = 2;</code>
+       * <code>required string update_policy = 4;</code>
        *
        * <pre>
        * the new replica update policy
@@ -49529,7 +49881,7 @@ public final class MRC {
         if (value == null) {
     throw new NullPointerException();
   }
-  bitField0_ |= 0x00000002;
+  bitField0_ |= 0x00000008;
         updatePolicy_ = value;
         onChanged();
         return this;
@@ -49544,541 +49896,6 @@ public final class MRC {
     }
 
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_set_replica_update_policyRequest)
-  }
-
-  public interface xtreemfs_set_replica_update_policyResponseOrBuilder
-      extends com.google.protobuf.MessageOrBuilder {
-
-    // required string old_update_policy = 1;
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    boolean hasOldUpdatePolicy();
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    java.lang.String getOldUpdatePolicy();
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    com.google.protobuf.ByteString
-        getOldUpdatePolicyBytes();
-  }
-  /**
-   * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_set_replica_update_policyResponse}
-   *
-   * <pre>
-   * returns the old replica update policy when setting a new one
-   * </pre>
-   */
-  public static final class xtreemfs_set_replica_update_policyResponse extends
-      com.google.protobuf.GeneratedMessage
-      implements xtreemfs_set_replica_update_policyResponseOrBuilder {
-    // Use xtreemfs_set_replica_update_policyResponse.newBuilder() to construct.
-    private xtreemfs_set_replica_update_policyResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
-      super(builder);
-      this.unknownFields = builder.getUnknownFields();
-    }
-    private xtreemfs_set_replica_update_policyResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
-
-    private static final xtreemfs_set_replica_update_policyResponse defaultInstance;
-    public static xtreemfs_set_replica_update_policyResponse getDefaultInstance() {
-      return defaultInstance;
-    }
-
-    public xtreemfs_set_replica_update_policyResponse getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-
-    private final com.google.protobuf.UnknownFieldSet unknownFields;
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-        getUnknownFields() {
-      return this.unknownFields;
-    }
-    private xtreemfs_set_replica_update_policyResponse(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      initFields();
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-            case 10: {
-              bitField0_ |= 0x00000001;
-              oldUpdatePolicy_ = input.readBytes();
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e.getMessage()).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.MRC.internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor;
-    }
-
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.MRC.internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.class, org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.Builder.class);
-    }
-
-    public static com.google.protobuf.Parser<xtreemfs_set_replica_update_policyResponse> PARSER =
-        new com.google.protobuf.AbstractParser<xtreemfs_set_replica_update_policyResponse>() {
-      public xtreemfs_set_replica_update_policyResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new xtreemfs_set_replica_update_policyResponse(input, extensionRegistry);
-      }
-    };
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<xtreemfs_set_replica_update_policyResponse> getParserForType() {
-      return PARSER;
-    }
-
-    private int bitField0_;
-    // required string old_update_policy = 1;
-    public static final int OLD_UPDATE_POLICY_FIELD_NUMBER = 1;
-    private java.lang.Object oldUpdatePolicy_;
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    public boolean hasOldUpdatePolicy() {
-      return ((bitField0_ & 0x00000001) == 0x00000001);
-    }
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    public java.lang.String getOldUpdatePolicy() {
-      java.lang.Object ref = oldUpdatePolicy_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          oldUpdatePolicy_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>required string old_update_policy = 1;</code>
-     *
-     * <pre>
-     * the old replica update policy
-     * </pre>
-     */
-    public com.google.protobuf.ByteString
-        getOldUpdatePolicyBytes() {
-      java.lang.Object ref = oldUpdatePolicy_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        oldUpdatePolicy_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    private void initFields() {
-      oldUpdatePolicy_ = "";
-    }
-    private byte memoizedIsInitialized = -1;
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized != -1) return isInitialized == 1;
-
-      if (!hasOldUpdatePolicy()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        output.writeBytes(1, getOldUpdatePolicyBytes());
-      }
-      getUnknownFields().writeTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (((bitField0_ & 0x00000001) == 0x00000001)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(1, getOldUpdatePolicyBytes());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-
-    private static final long serialVersionUID = 0L;
-    @java.lang.Override
-    protected java.lang.Object writeReplace()
-        throws java.io.ObjectStreamException {
-      return super.writeReplace();
-    }
-
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseDelimitedFrom(input, extensionRegistry);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input);
-    }
-    public static org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return PARSER.parseFrom(input, extensionRegistry);
-    }
-
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_set_replica_update_policyResponse}
-     *
-     * <pre>
-     * returns the old replica update policy when setting a new one
-     * </pre>
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder>
-       implements org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.MRC.internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor;
-      }
-
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.MRC.internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.class, org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.Builder.class);
-      }
-
-      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
-        }
-      }
-      private static Builder create() {
-        return new Builder();
-      }
-
-      public Builder clear() {
-        super.clear();
-        oldUpdatePolicy_ = "";
-        bitField0_ = (bitField0_ & ~0x00000001);
-        return this;
-      }
-
-      public Builder clone() {
-        return create().mergeFrom(buildPartial());
-      }
-
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.MRC.internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor;
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse getDefaultInstanceForType() {
-        return org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.getDefaultInstance();
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse build() {
-        org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      public org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse buildPartial() {
-        org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse(this);
-        int from_bitField0_ = bitField0_;
-        int to_bitField0_ = 0;
-        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
-          to_bitField0_ |= 0x00000001;
-        }
-        result.oldUpdatePolicy_ = oldUpdatePolicy_;
-        result.bitField0_ = to_bitField0_;
-        onBuilt();
-        return result;
-      }
-
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse) {
-          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse other) {
-        if (other == org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse.getDefaultInstance()) return this;
-        if (other.hasOldUpdatePolicy()) {
-          bitField0_ |= 0x00000001;
-          oldUpdatePolicy_ = other.oldUpdatePolicy_;
-          onChanged();
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-
-      public final boolean isInitialized() {
-        if (!hasOldUpdatePolicy()) {
-          
-          return false;
-        }
-        return true;
-      }
-
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse) e.getUnfinishedMessage();
-          throw e;
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      // required string old_update_policy = 1;
-      private java.lang.Object oldUpdatePolicy_ = "";
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public boolean hasOldUpdatePolicy() {
-        return ((bitField0_ & 0x00000001) == 0x00000001);
-      }
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public java.lang.String getOldUpdatePolicy() {
-        java.lang.Object ref = oldUpdatePolicy_;
-        if (!(ref instanceof java.lang.String)) {
-          java.lang.String s = ((com.google.protobuf.ByteString) ref)
-              .toStringUtf8();
-          oldUpdatePolicy_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public com.google.protobuf.ByteString
-          getOldUpdatePolicyBytes() {
-        java.lang.Object ref = oldUpdatePolicy_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          oldUpdatePolicy_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public Builder setOldUpdatePolicy(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        oldUpdatePolicy_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public Builder clearOldUpdatePolicy() {
-        bitField0_ = (bitField0_ & ~0x00000001);
-        oldUpdatePolicy_ = getDefaultInstance().getOldUpdatePolicy();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required string old_update_policy = 1;</code>
-       *
-       * <pre>
-       * the old replica update policy
-       * </pre>
-       */
-      public Builder setOldUpdatePolicyBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000001;
-        oldUpdatePolicy_ = value;
-        onChanged();
-        return this;
-      }
-
-      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_set_replica_update_policyResponse)
-    }
-
-    static {
-      defaultInstance = new xtreemfs_set_replica_update_policyResponse(true);
-      defaultInstance.initFields();
-    }
-
-    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_set_replica_update_policyResponse)
   }
 
   public interface xtreemfs_set_read_only_xattrRequestOrBuilder
@@ -53442,11 +53259,6 @@ public final class MRC {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyRequest_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrRequest_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -53614,143 +53426,141 @@ public final class MRC {
       "rite_response\030\002 \002(\0132 .xtreemfs.pbrpc.OSD" +
       "WriteResponse\022\022\n\nclose_file\030\003 \001(\010\0227\n\013coo" +
       "rdinates\030\004 \001(\0132\".xtreemfs.pbrpc.VivaldiC" +
-      "oordinates\"S\n)xtreemfs_set_replica_updat" +
-      "e_policyRequest\022\017\n\007file_id\030\001 \002(\t\022\025\n\rupda" +
-      "te_policy\030\002 \002(\t\"G\n*xtreemfs_set_replica_" +
-      "update_policyResponse\022\031\n\021old_update_poli" +
-      "cy\030\001 \002(\t\"E\n#xtreemfs_set_read_only_xattr" +
-      "Request\022\017\n\007file_id\030\001 \002(\t\022\r\n\005value\030\002 \002(\010\"",
-      "7\n$xtreemfs_set_read_only_xattrResponse\022" +
-      "\017\n\007was_set\030\001 \002(\010\"7\n$xtreemfs_get_file_cr" +
-      "edentialsRequest\022\017\n\007file_id\030\001 \002(\t\"{\n\035xtr" +
-      "eemfs_reselect_osdsRequest\022\014\n\004path\030\001 \002(\t" +
-      "\022\023\n\013volume_name\030\002 \002(\t\0227\n\013coordinates\030\003 \001" +
-      "(\0132\".xtreemfs.pbrpc.VivaldiCoordinates\"S" +
-      "\n\036xtreemfs_reselect_osdsResponse\022\017\n\007file" +
-      "_id\030\001 \002(\t\022 \n\030expected_xlocset_version\030\002 " +
-      "\002(\005*\242\001\n\010Setattrs\022\020\n\014SETATTR_MODE\020\001\022\017\n\013SE" +
-      "TATTR_UID\020\002\022\017\n\013SETATTR_GID\020\004\022\020\n\014SETATTR_",
-      "SIZE\020\010\022\021\n\rSETATTR_ATIME\020\020\022\021\n\rSETATTR_MTI" +
-      "ME\020 \022\021\n\rSETATTR_CTIME\020@\022\027\n\022SETATTR_ATTRI" +
-      "BUTES\020\200\001*>\n\013XATTR_FLAGS\022\026\n\022XATTR_FLAGS_C" +
-      "REATE\020\001\022\027\n\023XATTR_FLAGS_REPLACE\020\002*j\n\014ACCE" +
-      "SS_FLAGS\022\025\n\021ACCESS_FLAGS_F_OK\020\000\022\025\n\021ACCES" +
-      "S_FLAGS_X_OK\020\001\022\025\n\021ACCESS_FLAGS_W_OK\020\002\022\025\n" +
-      "\021ACCESS_FLAGS_R_OK\020\0042\223#\n\nMRCService\022S\n\010f" +
-      "setattr\022\037.xtreemfs.pbrpc.fsetattrRequest" +
-      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\002\000\000\000" +
-      "\022@\n\tftruncate\022\024.xtreemfs.pbrpc.XCap\032\024.xt",
-      "reemfs.pbrpc.XCap\"\007\215\265\030\003\000\000\000\022S\n\007getattr\022\036." +
-      "xtreemfs.pbrpc.getattrRequest\032\037.xtreemfs" +
-      ".pbrpc.getattrResponse\"\007\215\265\030\004\000\000\000\022V\n\010getxa" +
-      "ttr\022\037.xtreemfs.pbrpc.getxattrRequest\032 .x" +
-      "treemfs.pbrpc.getxattrResponse\"\007\215\265\030\005\000\000\000\022" +
-      "O\n\004link\022\033.xtreemfs.pbrpc.linkRequest\032!.x" +
-      "treemfs.pbrpc.timestampResponse\"\007\215\265\030\006\000\000\000" +
-      "\022Y\n\tlistxattr\022 .xtreemfs.pbrpc.listxattr" +
-      "Request\032!.xtreemfs.pbrpc.listxattrRespon" +
-      "se\"\007\215\265\030\007\000\000\000\022Q\n\005mkdir\022\034.xtreemfs.pbrpc.mk",
-      "dirRequest\032!.xtreemfs.pbrpc.timestampRes" +
-      "ponse\"\007\215\265\030\010\000\000\000\022J\n\004open\022\033.xtreemfs.pbrpc." +
-      "openRequest\032\034.xtreemfs.pbrpc.openRespons" +
-      "e\"\007\215\265\030\t\000\000\000\022T\n\007readdir\022\036.xtreemfs.pbrpc.r" +
-      "eaddirRequest\032 .xtreemfs.pbrpc.Directory" +
-      "Entries\"\007\215\265\030\n\000\000\000\022V\n\010readlink\022\037.xtreemfs." +
-      "pbrpc.readlinkRequest\032 .xtreemfs.pbrpc.r" +
-      "eadlinkResponse\"\007\215\265\030\013\000\000\000\022]\n\013removexattr\022" +
-      "\".xtreemfs.pbrpc.removexattrRequest\032!.xt" +
-      "reemfs.pbrpc.timestampResponse\"\007\215\265\030\014\000\000\000\022",
-      "P\n\006rename\022\035.xtreemfs.pbrpc.renameRequest" +
-      "\032\036.xtreemfs.pbrpc.renameResponse\"\007\215\265\030\r\000\000" +
-      "\000\022Q\n\005rmdir\022\034.xtreemfs.pbrpc.rmdirRequest" +
-      "\032!.xtreemfs.pbrpc.timestampResponse\"\007\215\265\030" +
-      "\016\000\000\000\022U\n\007setattr\022\036.xtreemfs.pbrpc.setattr" +
-      "Request\032!.xtreemfs.pbrpc.timestampRespon" +
-      "se\"\007\215\265\030\017\000\000\000\022W\n\010setxattr\022\037.xtreemfs.pbrpc" +
-      ".setxattrRequest\032!.xtreemfs.pbrpc.timest" +
-      "ampResponse\"\007\215\265\030\020\000\000\000\022K\n\007statvfs\022\036.xtreem" +
-      "fs.pbrpc.statvfsRequest\032\027.xtreemfs.pbrpc",
-      ".StatVFS\"\007\215\265\030\021\000\000\000\022U\n\007symlink\022\036.xtreemfs." +
-      "pbrpc.symlinkRequest\032!.xtreemfs.pbrpc.ti" +
-      "mestampResponse\"\007\215\265\030\022\000\000\000\022P\n\006unlink\022\035.xtr" +
-      "eemfs.pbrpc.unlinkRequest\032\036.xtreemfs.pbr" +
-      "pc.unlinkResponse\"\007\215\265\030\023\000\000\000\022O\n\006access\022\035.x" +
-      "treemfs.pbrpc.accessRequest\032\035.xtreemfs.p" +
-      "brpc.emptyResponse\"\007\215\265\030\024\000\000\000\022[\n\023xtreemfs_" +
-      "checkpoint\022\034.xtreemfs.pbrpc.emptyRequest" +
-      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\036\000\000\000" +
-      "\022\214\001\n\032xtreemfs_check_file_exists\0221.xtreem",
-      "fs.pbrpc.xtreemfs_check_file_existsReque" +
-      "st\0322.xtreemfs.pbrpc.xtreemfs_check_file_" +
-      "existsResponse\"\007\215\265\030\037\000\000\000\022q\n\027xtreemfs_clea" +
-      "r_vouchers\022..xtreemfs.pbrpc.xtreemfs_cle" +
-      "ar_vouchersRequest\032\035.xtreemfs.pbrpc.empt" +
-      "yResponse\"\007\215\265\0304\000\000\000\022w\n\026xtreemfs_dump_data" +
-      "base\0225.xtreemfs.pbrpc.xtreemfs_dump_rest" +
-      "ore_databaseRequest\032\035.xtreemfs.pbrpc.emp" +
-      "tyResponse\"\007\215\265\030 \000\000\000\022\214\001\n\032xtreemfs_get_sui" +
-      "table_osds\0221.xtreemfs.pbrpc.xtreemfs_get",
-      "_suitable_osdsRequest\0322.xtreemfs.pbrpc.x" +
-      "treemfs_get_suitable_osdsResponse\"\007\215\265\030!\000" +
-      "\000\000\022`\n\027xtreemfs_internal_debug\022\035.xtreemfs" +
-      ".pbrpc.stringMessage\032\035.xtreemfs.pbrpc.st" +
-      "ringMessage\"\007\215\265\030\"\000\000\000\022n\n\020xtreemfs_listdir" +
-      "\022\'.xtreemfs.pbrpc.xtreemfs_listdirReques" +
-      "t\032(.xtreemfs.pbrpc.xtreemfs_listdirRespo" +
-      "nse\"\007\215\265\030#\000\000\000\022P\n\016xtreemfs_lsvol\022\034.xtreemf" +
-      "s.pbrpc.emptyRequest\032\027.xtreemfs.pbrpc.Vo" +
-      "lumes\"\007\215\265\030$\000\000\000\022P\n\016xtreemfs_mkvol\022\026.xtree",
-      "mfs.pbrpc.Volume\032\035.xtreemfs.pbrpc.emptyR" +
-      "esponse\"\007\215\265\030/\000\000\000\022P\n\031xtreemfs_renew_capab" +
-      "ility\022\024.xtreemfs.pbrpc.XCap\032\024.xtreemfs.p" +
-      "brpc.XCap\"\007\215\265\030%\000\000\000\022x\n%xtreemfs_renew_cap" +
-      "ability_and_voucher\0220.xtreemfs.pbrpc.xtr" +
-      "eemfs_renew_capabilityRequest\032\024.xtreemfs" +
-      ".pbrpc.XCap\"\007\215\265\0305\000\000\000\022f\n\036xtreemfs_replica" +
-      "tion_to_master\022\034.xtreemfs.pbrpc.emptyReq" +
-      "uest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030" +
-      "&\000\000\000\022z\n\024xtreemfs_replica_add\022+.xtreemfs.",
-      "pbrpc.xtreemfs_replica_addRequest\032,.xtre" +
-      "emfs.pbrpc.xtreemfs_replica_addResponse\"" +
-      "\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_replica_list\022,.xtre" +
-      "emfs.pbrpc.xtreemfs_replica_listRequest\032" +
-      "\030.xtreemfs.pbrpc.Replicas\"\007\215\265\030(\000\000\000\022\203\001\n\027x" +
-      "treemfs_replica_remove\022..xtreemfs.pbrpc." +
-      "xtreemfs_replica_removeRequest\032/.xtreemf" +
-      "s.pbrpc.xtreemfs_replica_removeResponse\"" +
-      "\007\215\265\030)\000\000\000\022z\n\031xtreemfs_restore_database\0225." +
-      "xtreemfs.pbrpc.xtreemfs_dump_restore_dat",
-      "abaseRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
-      "nse\"\007\215\265\030*\000\000\000\022m\n\025xtreemfs_restore_file\022,." +
-      "xtreemfs.pbrpc.xtreemfs_restore_fileRequ" +
-      "est\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030+" +
-      "\000\000\000\022_\n\016xtreemfs_rmvol\022%.xtreemfs.pbrpc.x" +
-      "treemfs_rmvolRequest\032\035.xtreemfs.pbrpc.em" +
-      "ptyResponse\"\007\215\265\030,\000\000\000\022Y\n\021xtreemfs_shutdow" +
-      "n\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreem" +
-      "fs.pbrpc.emptyResponse\"\007\215\265\030-\000\000\000\022y\n\031xtree" +
-      "mfs_update_file_size\0220.xtreemfs.pbrpc.xt",
-      "reemfs_update_file_sizeRequest\032!.xtreemf" +
-      "s.pbrpc.timestampResponse\"\007\215\265\030.\000\000\000\022\244\001\n\"x" +
-      "treemfs_set_replica_update_policy\0229.xtre" +
-      "emfs.pbrpc.xtreemfs_set_replica_update_p" +
-      "olicyRequest\032:.xtreemfs.pbrpc.xtreemfs_s" +
-      "et_replica_update_policyResponse\"\007\215\265\0300\000\000" +
-      "\000\022\222\001\n\034xtreemfs_set_read_only_xattr\0223.xtr" +
-      "eemfs.pbrpc.xtreemfs_set_read_only_xattr" +
-      "Request\0324.xtreemfs.pbrpc.xtreemfs_set_re" +
-      "ad_only_xattrResponse\"\007\215\265\0301\000\000\000\022\177\n\035xtreem",
-      "fs_get_file_credentials\0224.xtreemfs.pbrpc" +
-      ".xtreemfs_get_file_credentialsRequest\032\037." +
-      "xtreemfs.pbrpc.FileCredentials\"\007\215\265\0302\000\000\000\022" +
-      "e\n\024xtreemfs_get_xlocset\022+.xtreemfs.pbrpc" +
-      ".xtreemfs_get_xlocsetRequest\032\027.xtreemfs." +
-      "pbrpc.XLocSet\"\007\215\265\0303\000\000\000\022\200\001\n\026xtreemfs_rese" +
-      "lect_osds\022-.xtreemfs.pbrpc.xtreemfs_rese" +
-      "lect_osdsRequest\032..xtreemfs.pbrpc.xtreem" +
-      "fs_reselect_osdsResponse\"\007\215\265\0306\000\000\000\032\007\225\265\030!N" +
-      "\000\000B(\n&org.xtreemfs.pbrpc.generatedinterf",
-      "aces"
+      "oordinates\"v\n)xtreemfs_set_replica_updat" +
+      "e_policyRequest\022\017\n\007file_id\030\001 \001(\t\022\014\n\004path" +
+      "\030\002 \001(\t\022\023\n\013volume_name\030\003 \001(\t\022\025\n\rupdate_po" +
+      "licy\030\004 \002(\t\"E\n#xtreemfs_set_read_only_xat" +
+      "trRequest\022\017\n\007file_id\030\001 \002(\t\022\r\n\005value\030\002 \002(" +
+      "\010\"7\n$xtreemfs_set_read_only_xattrRespons",
+      "e\022\017\n\007was_set\030\001 \002(\010\"7\n$xtreemfs_get_file_" +
+      "credentialsRequest\022\017\n\007file_id\030\001 \002(\t\"{\n\035x" +
+      "treemfs_reselect_osdsRequest\022\014\n\004path\030\001 \002" +
+      "(\t\022\023\n\013volume_name\030\002 \002(\t\0227\n\013coordinates\030\003" +
+      " \001(\0132\".xtreemfs.pbrpc.VivaldiCoordinates" +
+      "\"S\n\036xtreemfs_reselect_osdsResponse\022\017\n\007fi" +
+      "le_id\030\001 \002(\t\022 \n\030expected_xlocset_version\030" +
+      "\002 \002(\005*\242\001\n\010Setattrs\022\020\n\014SETATTR_MODE\020\001\022\017\n\013" +
+      "SETATTR_UID\020\002\022\017\n\013SETATTR_GID\020\004\022\020\n\014SETATT" +
+      "R_SIZE\020\010\022\021\n\rSETATTR_ATIME\020\020\022\021\n\rSETATTR_M",
+      "TIME\020 \022\021\n\rSETATTR_CTIME\020@\022\027\n\022SETATTR_ATT" +
+      "RIBUTES\020\200\001*>\n\013XATTR_FLAGS\022\026\n\022XATTR_FLAGS" +
+      "_CREATE\020\001\022\027\n\023XATTR_FLAGS_REPLACE\020\002*j\n\014AC" +
+      "CESS_FLAGS\022\025\n\021ACCESS_FLAGS_F_OK\020\000\022\025\n\021ACC" +
+      "ESS_FLAGS_X_OK\020\001\022\025\n\021ACCESS_FLAGS_W_OK\020\002\022" +
+      "\025\n\021ACCESS_FLAGS_R_OK\020\0042\366\"\n\nMRCService\022S\n" +
+      "\010fsetattr\022\037.xtreemfs.pbrpc.fsetattrReque" +
+      "st\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\002\000" +
+      "\000\000\022@\n\tftruncate\022\024.xtreemfs.pbrpc.XCap\032\024." +
+      "xtreemfs.pbrpc.XCap\"\007\215\265\030\003\000\000\000\022S\n\007getattr\022",
+      "\036.xtreemfs.pbrpc.getattrRequest\032\037.xtreem" +
+      "fs.pbrpc.getattrResponse\"\007\215\265\030\004\000\000\000\022V\n\010get" +
+      "xattr\022\037.xtreemfs.pbrpc.getxattrRequest\032 " +
+      ".xtreemfs.pbrpc.getxattrResponse\"\007\215\265\030\005\000\000" +
+      "\000\022O\n\004link\022\033.xtreemfs.pbrpc.linkRequest\032!" +
+      ".xtreemfs.pbrpc.timestampResponse\"\007\215\265\030\006\000" +
+      "\000\000\022Y\n\tlistxattr\022 .xtreemfs.pbrpc.listxat" +
+      "trRequest\032!.xtreemfs.pbrpc.listxattrResp" +
+      "onse\"\007\215\265\030\007\000\000\000\022Q\n\005mkdir\022\034.xtreemfs.pbrpc." +
+      "mkdirRequest\032!.xtreemfs.pbrpc.timestampR",
+      "esponse\"\007\215\265\030\010\000\000\000\022J\n\004open\022\033.xtreemfs.pbrp" +
+      "c.openRequest\032\034.xtreemfs.pbrpc.openRespo" +
+      "nse\"\007\215\265\030\t\000\000\000\022T\n\007readdir\022\036.xtreemfs.pbrpc" +
+      ".readdirRequest\032 .xtreemfs.pbrpc.Directo" +
+      "ryEntries\"\007\215\265\030\n\000\000\000\022V\n\010readlink\022\037.xtreemf" +
+      "s.pbrpc.readlinkRequest\032 .xtreemfs.pbrpc" +
+      ".readlinkResponse\"\007\215\265\030\013\000\000\000\022]\n\013removexatt" +
+      "r\022\".xtreemfs.pbrpc.removexattrRequest\032!." +
+      "xtreemfs.pbrpc.timestampResponse\"\007\215\265\030\014\000\000" +
+      "\000\022P\n\006rename\022\035.xtreemfs.pbrpc.renameReque",
+      "st\032\036.xtreemfs.pbrpc.renameResponse\"\007\215\265\030\r" +
+      "\000\000\000\022Q\n\005rmdir\022\034.xtreemfs.pbrpc.rmdirReque" +
+      "st\032!.xtreemfs.pbrpc.timestampResponse\"\007\215" +
+      "\265\030\016\000\000\000\022U\n\007setattr\022\036.xtreemfs.pbrpc.setat" +
+      "trRequest\032!.xtreemfs.pbrpc.timestampResp" +
+      "onse\"\007\215\265\030\017\000\000\000\022W\n\010setxattr\022\037.xtreemfs.pbr" +
+      "pc.setxattrRequest\032!.xtreemfs.pbrpc.time" +
+      "stampResponse\"\007\215\265\030\020\000\000\000\022K\n\007statvfs\022\036.xtre" +
+      "emfs.pbrpc.statvfsRequest\032\027.xtreemfs.pbr" +
+      "pc.StatVFS\"\007\215\265\030\021\000\000\000\022U\n\007symlink\022\036.xtreemf",
+      "s.pbrpc.symlinkRequest\032!.xtreemfs.pbrpc." +
+      "timestampResponse\"\007\215\265\030\022\000\000\000\022P\n\006unlink\022\035.x" +
+      "treemfs.pbrpc.unlinkRequest\032\036.xtreemfs.p" +
+      "brpc.unlinkResponse\"\007\215\265\030\023\000\000\000\022O\n\006access\022\035" +
+      ".xtreemfs.pbrpc.accessRequest\032\035.xtreemfs" +
+      ".pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022[\n\023xtreemf" +
+      "s_checkpoint\022\034.xtreemfs.pbrpc.emptyReque" +
+      "st\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\036\000" +
+      "\000\000\022\214\001\n\032xtreemfs_check_file_exists\0221.xtre" +
+      "emfs.pbrpc.xtreemfs_check_file_existsReq",
+      "uest\0322.xtreemfs.pbrpc.xtreemfs_check_fil" +
+      "e_existsResponse\"\007\215\265\030\037\000\000\000\022q\n\027xtreemfs_cl" +
+      "ear_vouchers\022..xtreemfs.pbrpc.xtreemfs_c" +
+      "lear_vouchersRequest\032\035.xtreemfs.pbrpc.em" +
+      "ptyResponse\"\007\215\265\0304\000\000\000\022w\n\026xtreemfs_dump_da" +
+      "tabase\0225.xtreemfs.pbrpc.xtreemfs_dump_re" +
+      "store_databaseRequest\032\035.xtreemfs.pbrpc.e" +
+      "mptyResponse\"\007\215\265\030 \000\000\000\022\214\001\n\032xtreemfs_get_s" +
+      "uitable_osds\0221.xtreemfs.pbrpc.xtreemfs_g" +
+      "et_suitable_osdsRequest\0322.xtreemfs.pbrpc",
+      ".xtreemfs_get_suitable_osdsResponse\"\007\215\265\030" +
+      "!\000\000\000\022`\n\027xtreemfs_internal_debug\022\035.xtreem" +
+      "fs.pbrpc.stringMessage\032\035.xtreemfs.pbrpc." +
+      "stringMessage\"\007\215\265\030\"\000\000\000\022n\n\020xtreemfs_listd" +
+      "ir\022\'.xtreemfs.pbrpc.xtreemfs_listdirRequ" +
+      "est\032(.xtreemfs.pbrpc.xtreemfs_listdirRes" +
+      "ponse\"\007\215\265\030#\000\000\000\022P\n\016xtreemfs_lsvol\022\034.xtree" +
+      "mfs.pbrpc.emptyRequest\032\027.xtreemfs.pbrpc." +
+      "Volumes\"\007\215\265\030$\000\000\000\022P\n\016xtreemfs_mkvol\022\026.xtr" +
+      "eemfs.pbrpc.Volume\032\035.xtreemfs.pbrpc.empt",
+      "yResponse\"\007\215\265\030/\000\000\000\022P\n\031xtreemfs_renew_cap" +
+      "ability\022\024.xtreemfs.pbrpc.XCap\032\024.xtreemfs" +
+      ".pbrpc.XCap\"\007\215\265\030%\000\000\000\022x\n%xtreemfs_renew_c" +
+      "apability_and_voucher\0220.xtreemfs.pbrpc.x" +
+      "treemfs_renew_capabilityRequest\032\024.xtreem" +
+      "fs.pbrpc.XCap\"\007\215\265\0305\000\000\000\022f\n\036xtreemfs_repli" +
+      "cation_to_master\022\034.xtreemfs.pbrpc.emptyR" +
+      "equest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215" +
+      "\265\030&\000\000\000\022z\n\024xtreemfs_replica_add\022+.xtreemf" +
+      "s.pbrpc.xtreemfs_replica_addRequest\032,.xt",
+      "reemfs.pbrpc.xtreemfs_replica_addRespons" +
+      "e\"\007\215\265\030\'\000\000\000\022h\n\025xtreemfs_replica_list\022,.xt" +
+      "reemfs.pbrpc.xtreemfs_replica_listReques" +
+      "t\032\030.xtreemfs.pbrpc.Replicas\"\007\215\265\030(\000\000\000\022\203\001\n" +
+      "\027xtreemfs_replica_remove\022..xtreemfs.pbrp" +
+      "c.xtreemfs_replica_removeRequest\032/.xtree" +
+      "mfs.pbrpc.xtreemfs_replica_removeRespons" +
+      "e\"\007\215\265\030)\000\000\000\022z\n\031xtreemfs_restore_database\022" +
+      "5.xtreemfs.pbrpc.xtreemfs_dump_restore_d" +
+      "atabaseRequest\032\035.xtreemfs.pbrpc.emptyRes",
+      "ponse\"\007\215\265\030*\000\000\000\022m\n\025xtreemfs_restore_file\022" +
+      ",.xtreemfs.pbrpc.xtreemfs_restore_fileRe" +
+      "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265" +
+      "\030+\000\000\000\022_\n\016xtreemfs_rmvol\022%.xtreemfs.pbrpc" +
+      ".xtreemfs_rmvolRequest\032\035.xtreemfs.pbrpc." +
+      "emptyResponse\"\007\215\265\030,\000\000\000\022Y\n\021xtreemfs_shutd" +
+      "own\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtre" +
+      "emfs.pbrpc.emptyResponse\"\007\215\265\030-\000\000\000\022y\n\031xtr" +
+      "eemfs_update_file_size\0220.xtreemfs.pbrpc." +
+      "xtreemfs_update_file_sizeRequest\032!.xtree",
+      "mfs.pbrpc.timestampResponse\"\007\215\265\030.\000\000\000\022\207\001\n" +
+      "\"xtreemfs_set_replica_update_policy\0229.xt" +
+      "reemfs.pbrpc.xtreemfs_set_replica_update" +
+      "_policyRequest\032\035.xtreemfs.pbrpc.emptyRes" +
+      "ponse\"\007\215\265\0300\000\000\000\022\222\001\n\034xtreemfs_set_read_onl" +
+      "y_xattr\0223.xtreemfs.pbrpc.xtreemfs_set_re" +
+      "ad_only_xattrRequest\0324.xtreemfs.pbrpc.xt" +
+      "reemfs_set_read_only_xattrResponse\"\007\215\265\0301" +
+      "\000\000\000\022\177\n\035xtreemfs_get_file_credentials\0224.x" +
+      "treemfs.pbrpc.xtreemfs_get_file_credenti",
+      "alsRequest\032\037.xtreemfs.pbrpc.FileCredenti" +
+      "als\"\007\215\265\0302\000\000\000\022e\n\024xtreemfs_get_xlocset\022+.x" +
+      "treemfs.pbrpc.xtreemfs_get_xlocsetReques" +
+      "t\032\027.xtreemfs.pbrpc.XLocSet\"\007\215\265\0303\000\000\000\022\200\001\n\026" +
+      "xtreemfs_reselect_osds\022-.xtreemfs.pbrpc." +
+      "xtreemfs_reselect_osdsRequest\032..xtreemfs" +
+      ".pbrpc.xtreemfs_reselect_osdsResponse\"\007\215" +
+      "\265\0306\000\000\000\032\007\225\265\030!N\000\000B(\n&org.xtreemfs.pbrpc.ge" +
+      "neratedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -54074,39 +53884,33 @@ public final class MRC {
           internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyRequest_descriptor,
-              new java.lang.String[] { "FileId", "UpdatePolicy", });
-          internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor =
-            getDescriptor().getMessageTypes().get(53);
-          internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_xtreemfs_pbrpc_xtreemfs_set_replica_update_policyResponse_descriptor,
-              new java.lang.String[] { "OldUpdatePolicy", });
+              new java.lang.String[] { "FileId", "Path", "VolumeName", "UpdatePolicy", });
           internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrRequest_descriptor =
-            getDescriptor().getMessageTypes().get(54);
+            getDescriptor().getMessageTypes().get(53);
           internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrRequest_descriptor,
               new java.lang.String[] { "FileId", "Value", });
           internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrResponse_descriptor =
-            getDescriptor().getMessageTypes().get(55);
+            getDescriptor().getMessageTypes().get(54);
           internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_set_read_only_xattrResponse_descriptor,
               new java.lang.String[] { "WasSet", });
           internal_static_xtreemfs_pbrpc_xtreemfs_get_file_credentialsRequest_descriptor =
-            getDescriptor().getMessageTypes().get(56);
+            getDescriptor().getMessageTypes().get(55);
           internal_static_xtreemfs_pbrpc_xtreemfs_get_file_credentialsRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_get_file_credentialsRequest_descriptor,
               new java.lang.String[] { "FileId", });
           internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsRequest_descriptor =
-            getDescriptor().getMessageTypes().get(57);
+            getDescriptor().getMessageTypes().get(56);
           internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsRequest_descriptor,
               new java.lang.String[] { "Path", "VolumeName", "Coordinates", });
           internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsResponse_descriptor =
-            getDescriptor().getMessageTypes().get(58);
+            getDescriptor().getMessageTypes().get(57);
           internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_reselect_osdsResponse_descriptor,

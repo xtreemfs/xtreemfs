@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 14:27:50 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -145,7 +145,7 @@ public class MRCServiceConstants {
            case 44: return null;
            case 45: return null;
            case 46: return MRC.timestampResponse.getDefaultInstance();
-           case 48: return MRC.xtreemfs_set_replica_update_policyResponse.getDefaultInstance();
+           case 48: return null;
            case 49: return MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance();
            case 50: return GlobalTypes.FileCredentials.getDefaultInstance();
            case 51: return GlobalTypes.XLocSet.getDefaultInstance();
