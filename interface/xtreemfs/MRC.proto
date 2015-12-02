@@ -629,18 +629,6 @@ message xtreemfs_set_replica_update_policyRequest {
   required string update_policy = 4;
 }
 
-// sets the read-only flag of a file by ID
-message xtreemfs_set_read_only_xattrRequest {
-  // the file ID
-  required string file_id = 1;
-  // the read-only flag to set
-  required bool value = 2;
-}
-
-message xtreemfs_set_read_only_xattrResponse {
-  required bool was_set = 1;
-}
-
 message xtreemfs_get_file_credentialsRequest {
   required string file_id = 1;
 }
@@ -868,11 +856,6 @@ service MRCService {
   // sets the replica update policy on a file identified by a file ID (privileged users only!)
   rpc xtreemfs_set_replica_update_policy(xtreemfs_set_replica_update_policyRequest) returns(emptyResponse) {
     option(proc_id)=48;
-  };
-
-  // sets the read-only attribute on a file identified by a file ID (privileged users only!)
-  rpc xtreemfs_set_read_only_xattr(xtreemfs_set_read_only_xattrRequest) returns(xtreemfs_set_read_only_xattrResponse) {
-    option(proc_id)=49;
   };
 
   // returns a set of file credentials (capability + XLocList) for a file identified by a file ID (privileged users only!)

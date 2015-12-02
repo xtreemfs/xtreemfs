@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Dec 02 14:27:50 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 17:29:30 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -48,7 +48,6 @@ public class MRCServiceConstants {
     public static final int PROC_ID_XTREEMFS_SHUTDOWN = 45;
     public static final int PROC_ID_XTREEMFS_UPDATE_FILE_SIZE = 46;
     public static final int PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY = 48;
-    public static final int PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR = 49;
     public static final int PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS = 50;
     public static final int PROC_ID_XTREEMFS_GET_XLOCSET = 51;
     public static final int PROC_ID_XTREEMFS_RESELECT_OSDS = 54;
@@ -95,7 +94,6 @@ public class MRCServiceConstants {
            case 45: return null;
            case 46: return MRC.xtreemfs_update_file_sizeRequest.getDefaultInstance();
            case 48: return MRC.xtreemfs_set_replica_update_policyRequest.getDefaultInstance();
-           case 49: return MRC.xtreemfs_set_read_only_xattrRequest.getDefaultInstance();
            case 50: return MRC.xtreemfs_get_file_credentialsRequest.getDefaultInstance();
            case 51: return MRC.xtreemfs_get_xlocsetRequest.getDefaultInstance();
            case 54: return MRC.xtreemfs_reselect_osdsRequest.getDefaultInstance();
@@ -146,7 +144,6 @@ public class MRCServiceConstants {
            case 45: return null;
            case 46: return MRC.timestampResponse.getDefaultInstance();
            case 48: return null;
-           case 49: return MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance();
            case 50: return GlobalTypes.FileCredentials.getDefaultInstance();
            case 51: return GlobalTypes.XLocSet.getDefaultInstance();
            case 54: return MRC.xtreemfs_reselect_osdsResponse.getDefaultInstance();

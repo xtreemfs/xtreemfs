@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Dec 02 14:27:50 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 17:29:30 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -542,19 +542,6 @@ public class MRCServiceClient {
     public RPCResponse xtreemfs_set_replica_update_policy(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, String path, String volume_name, String update_policy) throws IOException {
          final MRC.xtreemfs_set_replica_update_policyRequest msg = MRC.xtreemfs_set_replica_update_policyRequest.newBuilder().setFileId(file_id).setPath(path).setVolumeName(volume_name).setUpdatePolicy(update_policy).build();
          return xtreemfs_set_replica_update_policy(server, authHeader, userCreds,msg);
-    }
-
-    public RPCResponse<MRC.xtreemfs_set_read_only_xattrResponse> xtreemfs_set_read_only_xattr(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_set_read_only_xattrRequest input) throws IOException {
-         if (server == null) server = defaultServer;
-         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<MRC.xtreemfs_set_read_only_xattrResponse> response = new RPCResponse<MRC.xtreemfs_set_read_only_xattrResponse>(MRC.xtreemfs_set_read_only_xattrResponse.getDefaultInstance());
-         client.sendRequest(server, authHeader, userCreds, 20001, 49, input, null, response, false);
-         return response;
-    }
-
-    public RPCResponse<MRC.xtreemfs_set_read_only_xattrResponse> xtreemfs_set_read_only_xattr(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, String file_id, boolean value) throws IOException {
-         final MRC.xtreemfs_set_read_only_xattrRequest msg = MRC.xtreemfs_set_read_only_xattrRequest.newBuilder().setFileId(file_id).setValue(value).build();
-         return xtreemfs_set_read_only_xattr(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse<GlobalTypes.FileCredentials> xtreemfs_get_file_credentials(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, MRC.xtreemfs_get_file_credentialsRequest input) throws IOException {
