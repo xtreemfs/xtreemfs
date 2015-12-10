@@ -502,6 +502,7 @@ void FileHandleImplementation::Truncate(
   xcap_manager_.GetOldExpireTimes().push_back(xcap.expire_time_ms());
   xcap_manager_.releaseOldExpireTimesMutex();
 
+  // set new xcap
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
@@ -1162,7 +1163,7 @@ uint64_t XCapManager::GetFileId() {
   return ExtractFileIdFromXCap(xcap_);
 }
 
-std::list< ::google::protobuf::uint64> XCapManager::GetOldExpireTimes() {
+std::list< ::google::protobuf::uint64>& XCapManager::GetOldExpireTimes() {
   return old_expire_times_;
 }
 
@@ -1455,8 +1456,11 @@ void VoucherManager::finalizeVoucher(
     xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest) {
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << "Sending finalizeVouchersRequest to "
-                                      << osdCount << " OSD(s)." << endl;
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Sending finalizeVouchersRequest to " << osdCount
+        << " OSD(s) containing "
+        << finalizeVouchersRequest->expire_time_ms_size() << " + 1 XCap(s)"
+        << endl;
   }
 
   const XLocSet& xlocs = finalizeVouchersRequest->file_credentials().xlocs();
