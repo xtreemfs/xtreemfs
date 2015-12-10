@@ -496,6 +496,12 @@ void FileHandleImplementation::Truncate(
 
   xtreemfs::pbrpc::XCap* updated_xcap = static_cast<xtreemfs::pbrpc::XCap*>(
       response->response());
+
+  // save old expire time regarding space usage statistics of the quota implementation
+  xcap_manager_.acquireOldExpireTimesMutex();
+  xcap_manager_.GetOldExpireTimes().push_back(xcap.expire_time_ms());
+  xcap_manager_.releaseOldExpireTimesMutex();
+
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
