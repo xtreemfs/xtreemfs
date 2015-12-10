@@ -1202,8 +1202,9 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options,
 
     xcap_renewal_pending_ = true;
 
-    boost::mutex::scoped_lock old_expire_times_lock(old_expire_times_mutex_);
+    acquireOldExpireTimesMutex();
     old_expire_times_.push_back(xcap_.expire_time_ms());
+    releaseOldExpireTimesMutex();
   }
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1355,7 +1356,9 @@ void VoucherManager::finalizeAndClear(){
             << endl;
       }
 
+      xcap_manager_->acquireOldExpireTimesMutex();
       xcap_manager_->GetOldExpireTimes().clear();
+      xcap_manager_->releaseOldExpireTimesMutex();
 
       return;
     }
