@@ -306,20 +306,24 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 continue;
             }
 
+            // Remove an object from the queue and process it
             if (!file.getObjectsToFetch().isEmpty()) {
                 ObjectVersionMapping o = file.getObjectsToFetch().remove(0);
                 file.incrementNumObjectsPending();
                 numObjsInFlight++;
                 fetchObject(file, o);
-            } else {
-                // reset complete!
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) RESET complete for file %s", localID, file.getFileId());
-                doResetComplete(file);
             }
 
+            // If there are still missing objects, return the file to the reset queue
             if (!file.getObjectsToFetch().isEmpty()) {
                 filesInReset.add(file);
+            }
+
+            // If every missing object is fetches and no object is pending processing, the reset is complete
+            if (file.getObjectsToFetch().isEmpty() && file.getNumObjectsPending() == 0) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) RESET complete for file %s",
+                        localID, file.getFileId());
+                doResetComplete(file);
             }
         }
     }
