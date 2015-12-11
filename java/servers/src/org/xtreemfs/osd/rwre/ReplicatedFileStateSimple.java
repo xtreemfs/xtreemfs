@@ -7,7 +7,7 @@
 package org.xtreemfs.osd.rwre;
 
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.osd.RedundantFileState;
+import org.xtreemfs.osd.RedundantFileState.LocalState;
 import org.xtreemfs.osd.rwre.RWReplicationStage.GetReplicatedFileStateCallback;
 
 /** This class is used to get an immutable and simple ReplicatedFileState that can be returned to callers. */
@@ -60,7 +60,7 @@ public class ReplicatedFileStateSimple {
         return null;
     }
 
-    public RedundantFileState.LocalState getState() {
+    public LocalState getState() {
         return state.getState();
     }
 

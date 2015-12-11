@@ -7,6 +7,10 @@
  */
 package org.xtreemfs.osd;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -19,10 +23,6 @@ import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author Jan Fajerski
@@ -52,14 +52,13 @@ public abstract class RedundantFileState {
     private XLocations                  loc;
     private boolean                     localIsPrimary;
     private long                        masterEpoch;
-    private int                         numObjectsPending;
     private List<StageRequest>          pendingRequests;
     private ReplicaUpdatePolicy         policy;
     private boolean                     primaryReset;
     private LocalState                  state;
 
     public RedundantFileState(String fileId, XLocations locations, ServiceUUID localUUID, OSDServiceClient client) {
-        this.pendingRequests = new LinkedList();
+        this.pendingRequests = new LinkedList<StageRequest>();
         this.state = LocalState.INITIALIZING;
         this.invalidated = false;
         this.cellOpen = false;
@@ -72,7 +71,7 @@ public abstract class RedundantFileState {
         this.invalidatedReset = false;
         this.loc = locations;
 
-        List<ServiceUUID> remoteOSDs = new ArrayList(locations.getNumReplicas() - 1);
+        List<ServiceUUID> remoteOSDs = new ArrayList<ServiceUUID>(locations.getNumReplicas() - 1);
         for (Replica r : locations.getReplicas()) {
             final ServiceUUID headOSD = r.getHeadOsd();
             if (headOSD.equals(localUUID))
@@ -262,20 +261,6 @@ public abstract class RedundantFileState {
     public void setCredentials(FileCredentials credentials) {
         this.credentials = credentials;
     }
-
-    /**
-     * @return the numObjectsPending
-     */
-    public int getNumObjectsPending() {
-        return numObjectsPending;
-    }
-
-    public void incrementNumObjectsPending() {
-        ++numObjectsPending;
-    }
-    public void decrementNumObjectsPending() {
-       --numObjectsPending;
-     }
 
     /**
      * @return the primaryReset

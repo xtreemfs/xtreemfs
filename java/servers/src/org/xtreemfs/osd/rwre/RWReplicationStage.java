@@ -9,7 +9,6 @@
 package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -36,7 +35,13 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.*;
+import org.xtreemfs.osd.FailableFileOperationCallback;
+import org.xtreemfs.osd.FileOperationCallback;
+import org.xtreemfs.osd.InternalObjectData;
+import org.xtreemfs.osd.OSDRequest;
+import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.RedundancyStage;
+import org.xtreemfs.osd.RedundantFileState;
 import org.xtreemfs.osd.stages.PreprocStage.InvalidateXLocSetCallback;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
@@ -57,8 +62,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ReplicaStatus;
  */
 public class RWReplicationStage extends RedundancyStage implements FleaseMessageSenderInterface {
 
-
-
     private final HashMap<String, ReplicatedFileState>  files;
     private int                                         numObjsInFlight;
     private final Queue<ReplicatedFileState>            filesInReset;
@@ -71,7 +74,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         this.master = master;
         files = new HashMap<String, ReplicatedFileState>();
         numObjsInFlight = 0;
-        filesInReset = new LinkedList();
+        filesInReset = new LinkedList<ReplicatedFileState>();
 
     }
 
@@ -135,7 +138,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
     private void executeSetAuthState(final ReplicaStatus localState, final AuthoritativeReplicaState authState,
             ReplicatedFileState state, final String fileId) {
         // Create a list of missing objects.
-        Map<Long, Long> objectsToBeDeleted = new HashMap();
+        Map<Long, Long> objectsToBeDeleted = new HashMap<Long, Long>();
         for (ObjectVersion localObject : localState.getObjectVersionsList()) {
             // Never delete any object which is newer than auth state!
             if (localObject.getObjectVersion() <= authState.getMaxObjVersion()) {
@@ -149,7 +152,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 objectsToBeDeleted.remove(authObject.getObjectNumber());
             }
         }
-        Map<Long, ObjectVersionMapping> missingObjects = new HashMap();
+        Map<Long, ObjectVersionMapping> missingObjects = new HashMap<Long, ObjectVersionMapping>();
         for (ObjectVersionMapping authObject : authState.getObjectVersionsList()) {
             missingObjects.put(authObject.getObjectNumber(), authObject);
         }
@@ -165,7 +168,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                         "(R:%s) replica RESET required updates for: %s", localID, state.getFileId());
             }
-            state.setObjectsToFetch(new LinkedList(missingObjects.values()));
+            state.setObjectsToFetch(new LinkedList<ObjectVersionMapping>(missingObjects.values()));
             filesInReset.add(state);
             // Start by deleting the old objects.
             master.getStorageStage().deleteObjects(fileId, state.getStripingPolicy(), authState.getTruncateEpoch(),
@@ -653,10 +656,10 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
     private void processGetStatus(StageRequest method) {
         final StatusCallback callback = (StatusCallback) method.getCallback();
         try {
-            Map<String, Map<String, String>> status = new HashMap();
+            Map<String, Map<String, String>> status = new HashMap<String, Map<String, String>>();
 
             for (String fileId : this.files.keySet()) {
-                Map<String, String> fStatus = new HashMap();
+                Map<String, String> fStatus = new HashMap<String, String>();
                 final ReplicatedFileState fState = files.get(fileId);
                 final ASCIIString cellId = fState.getPolicy().getCellId();
                 fStatus.put("policy", fState.getPolicy().getClass().getSimpleName());
@@ -703,6 +706,7 @@ public class RWReplicationStage extends RedundancyStage implements FleaseMessage
         enqueueOperation(STAGEOP_INVALIDATEVIEW, new Object[] { fileId, fileCreds, xLoc }, null, callback);
     }
 
+    // TODO (jdillmann): Should be moved to RedundancyStage (after refactoring)
     private void processInvalidateReplica(StageRequest method) {
         final Object[] args = method.getArgs();
         final String fileId = (String) args[0];
