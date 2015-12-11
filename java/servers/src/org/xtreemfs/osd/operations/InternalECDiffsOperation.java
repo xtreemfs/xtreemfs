@@ -66,7 +66,7 @@ public class InternalECDiffsOperation extends OSDOperation{
 
                     @Override
                     public void redirect(String redirectTo) {
-
+                        throw new UnsupportedOperationException("Redirect not implemented yet");
                     }
 
                     @Override
@@ -87,7 +87,7 @@ public class InternalECDiffsOperation extends OSDOperation{
 
                     @Override
                     public void redirect(String redirectTo) {
-
+                        throw new UnsupportedOperationException("Redirect not implemented yet");
                     }
 
                     @Override
