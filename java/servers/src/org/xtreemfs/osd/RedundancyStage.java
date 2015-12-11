@@ -86,6 +86,8 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
     public static final int STAGEOP_INVALIDATED_RESET         = 23;
     public static final int STAGEOP_GET_REPLICATED_FILE_STATE = 24;
 
+    public static final int STAGEOP_EC_DIFF                   = 25;
+
     protected final Map<ASCIIString, String>    cellToFileId;
     protected final RPCNIOSocketClient          client;
     protected final AtomicInteger               externalRequestsInQueue;

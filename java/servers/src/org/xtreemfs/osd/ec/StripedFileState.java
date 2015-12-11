@@ -19,6 +19,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Jan Fajerski
@@ -28,11 +30,12 @@ import java.io.IOException;
 public class StripedFileState extends RedundantFileState {
 
 
-    IntervalVersionTree versions;
+    Map<Long, Integer> versions;
 
     public StripedFileState(String fileId, XLocations locations, ServiceUUID localUUID,
                                OSDServiceClient client) throws IOException {
         super(fileId, locations, localUUID, client);
 
+        versions = new HashMap<>();
     }
 }

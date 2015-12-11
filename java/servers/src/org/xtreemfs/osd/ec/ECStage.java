@@ -154,6 +154,17 @@ public class ECStage extends RedundancyStage implements FleaseMessageSenderInter
         }
     }
 
+    public void addDiff(final long objectNumber, final int offset, final long newVersion,
+                        OSDRequest rq, FileOperationCallback callback) {
+        this.enqueueOperation(STAGEOP_EC_DIFF, new Object[] {objectNumber, offset, newVersion}, rq, null, callback);
+    }
+
+    private void processAddDiff(StageRequest method) {
+        // get state, store diff in state and send ack
+
+        ((FileOperationCallback) method.getCallback()).success(0);
+    }
+
     protected RedundantFileState getState(String fileId) {
         return files.get(fileId);
     }

@@ -49,7 +49,7 @@ public final class InternalRWRUpdateOperation extends OSDOperation {
         final xtreemfs_rwr_updateRequest args = (xtreemfs_rwr_updateRequest)rq.getRequestArgs();
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"RWR update for file %s-%d",args.getFileId(),args.getObjectNumber());
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "RWR update for file %s-%d", args.getFileId(), args.getObjectNumber());
         }
 
        prepareLocalWrite(rq, args);

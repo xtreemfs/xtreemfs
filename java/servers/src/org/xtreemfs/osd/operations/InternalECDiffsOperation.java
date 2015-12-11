@@ -11,10 +11,14 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.FileOperationCallback;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.RedundancyStage;
+import org.xtreemfs.osd.ec.ECStage;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_diffs;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
@@ -38,8 +42,59 @@ public class InternalECDiffsOperation extends OSDOperation{
     }
 
     @Override
-    public void startRequest(OSDRequest rq) {
+    public void startRequest(final OSDRequest rq) {
+        final xtreemfs_ec_diffs args = (xtreemfs_ec_diffs) rq.getRequestArgs();
 
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.ec, this,
+            "received diff update for file %s to object %s version",
+            args.getFileId(), args.getObjectNumber(), args.getObjectVersion());
+        }
+
+        // is this necessary here? diff distribution should work regardless of leases
+        prepareRequest(rq, args);
+    }
+
+    void prepareRequest(final OSDRequest rq, final xtreemfs_ec_diffs args) {
+        master.getECStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(),
+                args.getObjectNumber(), args.getObjectVersion(), ECStage.Operation.WRITE, rq,
+                new FileOperationCallback() {
+                    @Override
+                    public void success(long newObjectVersion) {
+                        executeRequest(rq, args);
+                    }
+
+                    @Override
+                    public void redirect(String redirectTo) {
+
+                    }
+
+                    @Override
+                    public void failed(RPC.RPCHeader.ErrorResponse er) {
+                        rq.sendError(er);
+                    }
+                });
+
+    }
+
+    void executeRequest(final OSDRequest rq, final xtreemfs_ec_diffs args) {
+        master.getECStage().addDiff(args.getObjectNumber(), args.getOffset(), args.getObjectVersion(), rq,
+                new FileOperationCallback() {
+                    @Override
+                    public void success(long newObjectVersion) {
+                        rq.sendSuccess(null, null);
+                    }
+
+                    @Override
+                    public void redirect(String redirectTo) {
+
+                    }
+
+                    @Override
+                    public void failed(RPC.RPCHeader.ErrorResponse er) {
+                        rq.sendError(er);
+                    }
+                });
     }
 
     @Override
