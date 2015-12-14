@@ -7,6 +7,14 @@
  */
 package org.xtreemfs.osd;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
@@ -14,7 +22,12 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.flease.*;
+import org.xtreemfs.foundation.flease.Flease;
+import org.xtreemfs.foundation.flease.FleaseConfig;
+import org.xtreemfs.foundation.flease.FleaseMessageSenderInterface;
+import org.xtreemfs.foundation.flease.FleaseStage;
+import org.xtreemfs.foundation.flease.FleaseStatusListener;
+import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.flease.proposer.FleaseListener;
@@ -25,10 +38,11 @@ import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.RedundantFileState.LocalState;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.rwre.RedirectToMasterException;
@@ -36,19 +50,10 @@ import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy;
 import org.xtreemfs.osd.rwre.RetryException;
 import org.xtreemfs.osd.stages.FleaseMasterEpochStage;
 import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.RedundantFileState.LocalState;
-import org.xtreemfs.pbrpc.generatedinterfaces.*;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * @author Jan Fajerski
@@ -450,6 +455,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
                 // Ignore any leaseStateChange if the replica is invalidated
                 if (state.isInvalidated()) {
+                    doInvalidated(state);
                     return;
                 }
 
@@ -521,6 +527,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         try {
             final String fileId = (String) method.getArgs()[0];
             final Long maxObjVersion = (Long) method.getArgs()[1];
+            final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this, "(R:%s) max obj avail for file: "
@@ -535,7 +542,11 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
             if (state.getState() == RedundantFileState.LocalState.INITIALIZING) {
                 state.getPolicy().setLocalObjectVersion(maxObjVersion);
-                doOpen(state);
+                if (state.isInvalidated()) {
+                    doInvalidated(state);
+                } else {
+                    doOpen(state);
+                }
             } else {
                 Logging.logMessage(Logging.LEVEL_ERROR, logCategory, this,
                         "LocalState is %s instead of INITIALIZING, maxObjectVersion=%d", state.getState().name(),
@@ -588,7 +599,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 
     protected void doOpen(final RedundantFileState file) {
         assert (!file.isInvalidated());
-
         file.setState(LocalState.OPEN);
 
         if (file.hasPendingRequests()) {
@@ -621,11 +631,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
         assert (!file.isInvalidated());
         assert (!file.isLocalIsPrimary());
 
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    LocalState.BACKUP);
-        }
         file.setPrimaryReset(false);
         file.setState(LocalState.BACKUP);
         while (file.hasPendingRequests()) {
@@ -649,11 +654,7 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
                         file.getFileId());
             return;
         }
-        if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
-                    "(R:%s) replica state changed for %s from %s to %s", localID, file.getFileId(), file.getState(),
-                    LocalState.RESET);
-        }
+
         file.setState(LocalState.RESET);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, logCategory, this,
@@ -673,20 +674,6 @@ public abstract class RedundancyStage extends Stage implements FleaseMessageSend
 	} else {
 	    doOpen(file);
 	}
-    }
-
-
-    public String getPrimary(final String fileId) {
-        String primary = null;
-
-        final RedundantFileState fState = getState(fileId);
-
-        if ((fState != null) && (fState.getLease() != null) && (!fState.getLease().isEmptyLease())) {
-            if (fState.getLease().isValid()) {
-                primary = "" + fState.getLease().getLeaseHolder();
-            }
-        }
-        return primary;
     }
 
     @Override
