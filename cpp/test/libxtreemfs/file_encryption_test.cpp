@@ -1229,6 +1229,11 @@ TEST_F(EncryptionTest, objectVersion_04) {
 
   EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
 
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0, 4);
+  });
+  EXPECT_EQ(0, x);
+
   file_handle->Write("00", 2, 0);
   ASSERT_NO_THROW({
     file_handle->Read(buffer, 10, 0);
