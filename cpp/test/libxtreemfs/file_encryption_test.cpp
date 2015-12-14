@@ -1297,7 +1297,7 @@ void ct_worker(FileHandle* file, char id,
   }
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite_01) {
+TEST_F(EncryptionTest, ConcurrentWrite_01_serialize) {
   options_.encryption_cw = "serialize";
 
   file->Close();
@@ -1317,7 +1317,30 @@ TEST_F(EncryptionTest, ConcurrentWrite_01) {
   th4.join();
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite_02) {
+TEST_F(EncryptionTest, ConcurrentWrite_01_serialize_async) {
+  options_.encryption_cw = "serialize";
+  options_.enable_async_writes = true;
+
+  file->Close();
+  file = volume_->OpenFile(
+      user_credentials_,
+      "/test_file",
+      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
+
+  boost::thread th1(cw_worker, file, '1');
+  boost::thread th2(cw_worker, file, '2');
+  boost::thread th3(cw_worker, file, '3');
+  boost::thread th4(ct_worker, file, '4', user_credentials_);
+
+  th1.join();
+  th2.join();
+  th3.join();
+  th4.join();
+
+  file->Flush();
+}
+
+TEST_F(EncryptionTest, ConcurrentWrite_01_locks) {
   options_.encryption_cw = "locks";
 
   file->Close();
@@ -1337,7 +1360,7 @@ TEST_F(EncryptionTest, ConcurrentWrite_02) {
   th4.join();
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite_03) {
+TEST_F(EncryptionTest, ConcurrentWrite_01_partialCow) {
   options_.encryption_cw = "partial-cow";
 
   file->Close();
@@ -1381,7 +1404,7 @@ void cw_04_write_3(FileHandle* file, char id) {
 //  std::cout << "id: " << id << "end" << std::endl;
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite_04) {
+TEST_F(EncryptionTest, ConcurrentWrite_01_partialCow_02) {
   options_.encryption_cw = "partial-cow";
 
   file->Close();
@@ -1404,29 +1427,6 @@ TEST_F(EncryptionTest, ConcurrentWrite_04) {
   th1.join();
   th2.join();
   th3.join();
-}
-
-TEST_F(EncryptionTest, ConcurrentWrite_05) {
-  options_.encryption_cw = "serialize";
-  options_.enable_async_writes = true;
-
-  file->Close();
-  file = volume_->OpenFile(
-      user_credentials_,
-      "/test_file",
-      static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_RDWR));
-
-  boost::thread th1(cw_worker, file, '1');
-  boost::thread th2(cw_worker, file, '2');
-  boost::thread th3(cw_worker, file, '3');
-  boost::thread th4(ct_worker, file, '4', user_credentials_);
-
-  th1.join();
-  th2.join();
-  th3.join();
-  th4.join();
-
-  file->Flush();
 }
 
 TEST_F(EncryptionTest, chmod_01) {
