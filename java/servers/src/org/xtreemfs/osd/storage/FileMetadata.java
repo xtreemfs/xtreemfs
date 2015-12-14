@@ -116,8 +116,7 @@ public class FileMetadata {
     public void updateObjectVersion(long objId, long newVersion) {
         
         latestObjVersions.put(objId, newVersion);
-        
-        if (largestObjVersions != latestObjVersions && newVersion != 0)
+        if (newVersion != 0 && newVersion > getLargestObjectVersion(objId))
             largestObjVersions.put(objId, newVersion);
         
     }

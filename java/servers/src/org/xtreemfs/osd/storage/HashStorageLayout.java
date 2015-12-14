@@ -870,7 +870,7 @@ public class HashStorageLayout extends StorageLayout {
             // if no multi-version support is enabled, the file version consists
             // of the set of objects with the latest version numbers
             else {
-                info.initLatestObjectVersions(largestObjVersions);
+                info.initLatestObjectVersions(new HashMap<Long, Long>(largestObjVersions));
                 info.initLargestObjectVersions(largestObjVersions);
             }
 
