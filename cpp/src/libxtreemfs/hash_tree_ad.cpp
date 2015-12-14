@@ -35,6 +35,11 @@
  * ============================
  * file version (as uint64_t big-endian) [8 bytes] |
  *   file size (as uint64_t big-endian) [8 bytes] | hash | signature
+ *
+ * Data layout of other nodes:
+ * ============================
+ * leaf version (as uint64_t big-endian) [8 bytes] |
+ *   additional data of leaf | hash
  */
 
 #include "libxtreemfs/hash_tree_ad.h"
@@ -416,7 +421,8 @@ void HashTreeAD::StartWrite(int start_leaf, bool complete_start_leaf,
  */
 void HashTreeAD::FinishWrite(int start_leaf, int end_leaf,
                              bool complete_max_leaf) {
-  if (concurrent_write_ == "locks" || concurrent_write_ == "partial-cow") {
+  if (concurrent_write_ == "locks" || concurrent_write_ == "partial-cow"
+      || concurrent_write_ == "cow") {
     std::vector<unsigned char> root_hash(root_hash_);
     // store variables that are changed by Init() and we need to restore the
     // current state
@@ -514,6 +520,7 @@ void HashTreeAD::FinishTruncate(
       // The minimum of the max node is smaller then the current one.
       // We need to truncate the meta file to ensure all nodes between them and
       // which are not overwritten will be set to zero.
+      // TODO(plieser): object version for truncate
       meta_file_->Truncate(
           user_credentials,
           GetNodeStartInBytes(
@@ -537,19 +544,10 @@ void HashTreeAD::FinishTruncate(
  */
 std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
                                                boost::asio::const_buffer data) {
-  assert(leaf <= new_max_leaf_);
-
   std::vector<unsigned char> hash_value = hasher_.digest(data);
-  std::vector<unsigned char> leaf_value;
-  if (boost::icl::contains(changed_leafs_numbers_, leaf)) {
-    leaf_value = changed_leafs_.at(Node(0, leaf));
-  } else if (leaf > min_max_leaf_) {
-    leaf_value = std::vector<unsigned char>(NodeSize(0));
-  } else {
-    leaf_value = nodes_.at(Node(0, leaf));
-  }
-  if (!std::equal(leaf_value.begin() + leaf_adata_size_, leaf_value.end(),
-                  hash_value.begin())) {
+  std::vector<unsigned char> leaf_value = GetLeafRAW(leaf);
+  if (!std::equal(leaf_value.begin() + sizeof(uint64_t) + leaf_adata_size_,
+                  leaf_value.end(), hash_value.begin())) {
     // hash 0 indicates special case in which all data under node is 0
     if (all_zero(leaf_value) && all_zero(data)) {
       return std::vector<unsigned char>();
@@ -557,8 +555,9 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
       LogAndThrowXtreemFSException("Hash mismatch in leaf of hash tree");
     }
   }
-  return std::vector<unsigned char>(leaf_value.begin(),
-                                    leaf_value.begin() + leaf_adata_size_);
+  return std::vector<unsigned char>(
+      leaf_value.begin() + sizeof(uint64_t),
+      leaf_value.begin() + sizeof(uint64_t) + leaf_adata_size_);
 }
 
 /**
@@ -569,23 +568,35 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf,
  * @param leaf    Leaf number.
  */
 std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf) {
-  assert(leaf <= new_max_leaf_);
-
-  std::vector<unsigned char> leaf_value;
-  if (boost::icl::contains(changed_leafs_numbers_, leaf)) {
-    leaf_value = changed_leafs_.at(Node(0, leaf));
-  } else if (leaf > min_max_leaf_) {
-    return std::vector<unsigned char>();
-  } else {
-    leaf_value = nodes_.at(Node(0, leaf));
-  }
-
+  std::vector<unsigned char> leaf_value = GetLeafRAW(leaf);
   // hash 0 indicates special case in which all data under node is 0
   if (all_zero(leaf_value)) {
     return std::vector<unsigned char>();
   } else {
-    return std::vector<unsigned char>(leaf_value.begin(),
-                                      leaf_value.begin() + leaf_adata_size_);
+    return std::vector<unsigned char>(
+        leaf_value.begin() + sizeof(uint64_t),
+        leaf_value.begin() + sizeof(uint64_t) + leaf_adata_size_);
+  }
+}
+
+int HashTreeAD::GetLeafVersion(int leaf) {
+  if (leaf > old_max_leaf_) {
+    return 0;
+  }
+  std::vector<unsigned char> leaf_value = GetLeafRAW(leaf);
+  // get file version
+  uint64_t leaf_version = *reinterpret_cast<uint64_t*>(leaf_value.data());
+  return be64toh(leaf_version);
+}
+
+std::vector<unsigned char> HashTreeAD::GetLeafRAW(int leaf) {
+  assert(leaf <= new_max_leaf_);
+  if (boost::icl::contains(changed_leafs_numbers_, leaf)) {
+    return changed_leafs_.at(Node(0, leaf));
+  } else if (leaf > min_max_leaf_) {
+    return std::vector<unsigned char>();
+  } else {
+    return nodes_.at(Node(0, leaf));
   }
 }
 
@@ -611,7 +622,14 @@ void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
   assert(leaf <= new_max_leaf_);
   assert(adata.size() == leaf_adata_size_);
 
-  std::vector<unsigned char> leaf_value = adata;
+  uint64_t leaf_version = htobe64((concurrent_write_ == "cow") ?
+      file_version_ + 1 : file_version_);
+  std::vector<unsigned char> leaf_value = std::vector<unsigned char>(
+      reinterpret_cast<unsigned char*>(&leaf_version),
+      reinterpret_cast<unsigned char*>(&leaf_version) + sizeof(uint64_t));
+
+  leaf_value.insert(leaf_value.end(), adata.begin(), adata.end());
+
   std::vector<unsigned char> hash_value = hasher_.digest(data);
   leaf_value.insert(leaf_value.end(), hash_value.begin(), hash_value.end());
 
@@ -628,7 +646,7 @@ void HashTreeAD::SetLeafAdata(int leaf, std::vector<unsigned char> adata) {
     changed_leafs_numbers_ += leaf;
   }
   std::copy(adata.begin(), adata.end(),
-            changed_leafs_.at(Node(0, leaf)).begin());
+            changed_leafs_.at(Node(0, leaf)).begin() + sizeof(uint64_t));
 }
 
 void HashTreeAD::Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials,
@@ -646,6 +664,7 @@ void HashTreeAD::Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials,
     // The minimum of the max node is smaller then the current one.
     // We need to truncate the meta file to ensure all nodes between them and
     // which are not overwritten will be set to zero.
+    // TODO(plieser): object version for truncate
     meta_file_->Truncate(
         user_credentials,
         GetNodeStartInBytes(
@@ -1157,7 +1176,7 @@ void HashTreeAD::UpdateTree() {
     }
   }
 
-  if (concurrent_write_ == "partial-cow") {
+  if (concurrent_write_ == "partial-cow" || concurrent_write_ == "cow") {
     file_version_++;
   }
 
@@ -1289,7 +1308,7 @@ int HashTreeAD::NodeSize(int level) {
     return sizeof(uint64_t) + sizeof(uint64_t) + hasher_.digest_size()
         + sign_algo_->get_signature_size();
   } else if (level == 0) {
-    return hasher_.digest_size() + leaf_adata_size_;
+    return sizeof(uint64_t) + hasher_.digest_size() + leaf_adata_size_;
   } else {
     return hasher_.digest_size();
   }

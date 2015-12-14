@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "libxtreemfs/xtreemfs_exception.h"
+#include "libxtreemfs/helper.h"
 #include "util/crypto/asym_key.h"
 #include "util/crypto/base64.h"
 #include "util/error_log.h"
@@ -72,6 +73,11 @@ ObjectEncryptor::ObjectEncryptor(
   assert(meta_file && volume && file_info);
   assert(object_size_ >= enc_block_size_);
   assert(object_size_ % enc_block_size_ == 0);
+  if (concurrent_write_ == "cow" && object_size_ != enc_block_size_) {
+    LogAndThrowXtreemFSException(
+        "For selected currency control the encryption block size must be equal"
+        " to the object size.");
+  }
   if (concurrent_write_ == "client") {
     file_lock_.reset(new FileLock(this, 0, 0, true));
     hash_tree_.reset(
@@ -164,7 +170,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
   old_last_enc_block_complete_ = false;
 
   if (obj_enc->concurrent_write_ == "locks"
-      || obj_enc_->concurrent_write_ == "partial-cow") {
+      || obj_enc_->concurrent_write_ == "partial-cow"
+      || obj_enc_->concurrent_write_ == "cow") {
     // lock file
     file_lock_.reset(
         new FileLock(obj_enc_, start_block_ + 1, end_block_ - start_block_ + 1,
@@ -188,7 +195,8 @@ ObjectEncryptor::WriteOperation::WriteOperation(
 
     old_last_incomplete_enc_block = old_file_size_ / enc_block_size_;
     if ((obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "partial-cow")
+        || obj_enc_->concurrent_write_ == "partial-cow"
+        || obj_enc_->concurrent_write_ == "cow")
         && old_last_incomplete_enc_block < start_block_) {
       // The write is changing the file size but has not yet locked the old last
       // incomplete enc block.
@@ -234,7 +242,8 @@ ObjectEncryptor::WriteOperation::~WriteOperation() {
   try {
     boost::scoped_ptr<FileLock> meta_file_lock;
     if (obj_enc_->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "partial-cow") {
+        || obj_enc_->concurrent_write_ == "partial-cow"
+        || obj_enc_->concurrent_write_ == "cow") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -265,7 +274,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
   while (true) {
     boost::scoped_ptr<FileLock> meta_file_lock;
     if (obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "partial-cow") {
+        || obj_enc_->concurrent_write_ == "partial-cow"
+        || obj_enc_->concurrent_write_ == "cow") {
       // lock meta file
       meta_file_lock.reset(new FileLock(obj_enc_, 0, 1, true));
     }
@@ -277,7 +287,8 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
     int min_file_size = std::min(hash_tree_->file_size(), new_file_size);
 
     if (obj_enc->concurrent_write_ == "locks"
-        || obj_enc_->concurrent_write_ == "partial-cow") {
+        || obj_enc_->concurrent_write_ == "partial-cow"
+        || obj_enc_->concurrent_write_ == "cow") {
       // To prevent concurrent change of file size
       // lock the file from min_file_size to end.
       try {
@@ -323,7 +334,8 @@ ObjectEncryptor::ReencryptOperation::ReencryptOperation(
     : Operation(obj_enc, true) {
 
   if (obj_enc_->concurrent_write_ == "locks"
-      || obj_enc_->concurrent_write_ == "partial-cow") {
+      || obj_enc_->concurrent_write_ == "partial-cow"
+      || obj_enc_->concurrent_write_ == "cow") {
     // lock complete file +  meta file
     file_lock_.reset(new FileLock(obj_enc_, 0, 0, true));
   }
@@ -463,9 +475,16 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
   // ciphertext bytes to read without regards to the file size
   int ct_bytes_to_read = RoundUp((offset_in_object + bytes_to_read),
                                  enc_block_size_) - ct_offset_in_object;
+  int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
+  int buffer_offset = 0;
+  int ciphertext_offset = 0;
+  int object_version = 0;
+  if (obj_enc_->concurrent_write_ == "cow") {
+    object_version = hash_tree_->GetLeafVersion(start_enc_block);
+  }
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
-  int bytes_read = reader(object_no, 0,
+  int bytes_read = reader(object_no, object_version,
                           reinterpret_cast<char*>(ciphertext.data()),
                           ct_offset_in_object, ct_bytes_to_read);
   ciphertext.resize(bytes_read);
@@ -476,14 +495,11 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
   int end_offset_in_object = std::min(ct_end_offset_in_object,
                                       offset_in_object + bytes_to_read);
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
-  int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
   int end_enc_block = std::max(
       start_enc_block,
       (object_offset + ct_end_offset_in_object - 1) / enc_block_size_);
   int offset_end_enc_block = (end_enc_block - start_enc_block)
       * enc_block_size_;
-  int buffer_offset = 0;
-  int ciphertext_offset = 0;
 
   if (ct_offset_in_object != offset_in_object) {
     // first enc block is only partly read, handle it differently
@@ -604,7 +620,8 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
     if (old_file_size_ > object_offset + ct_offset_in_object) {
       // 1. read the old enc block if it is not behind old file size
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(object_no, 0,
+      int bytes_read = reader(object_no,
+                              hash_tree_->GetLeafVersion(start_enc_block),
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_offset_in_object, enc_block_size_);
       old_ct_block.resize(bytes_read);
@@ -644,7 +661,8 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
       // 1. read the old enc block if it is not behind old file size or
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
-      int bytes_read = reader(object_no, 0,
+      int bytes_read = reader(object_no,
+                              hash_tree_->GetLeafVersion(start_enc_block),
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_end_offset_in_object - new_pt_block_len,
                               enc_block_size_);
@@ -688,8 +706,9 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
   }
   assert(buffer_offset <= bytes_to_write);
 
-  writer(object_no, 0, reinterpret_cast<char*>(ciphertext.data()),
-         ct_offset_in_object, ct_bytes_to_write);
+  writer(object_no, hash_tree_->GetLeafVersion(start_enc_block),
+         reinterpret_cast<char*>(ciphertext.data()), ct_offset_in_object,
+         ct_bytes_to_write);
 }
 
 /**

@@ -50,6 +50,10 @@ class HashTreeAD {
 
   std::vector<unsigned char> GetLeaf(int leaf);
 
+  int GetLeafVersion(int leaf);
+
+  std::vector<unsigned char> GetLeafRAW(int leaf);
+
   void SetLeaf(int leaf, std::vector<unsigned char> adata,
                boost::asio::const_buffer data);
 
