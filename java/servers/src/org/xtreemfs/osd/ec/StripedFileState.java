@@ -36,6 +36,6 @@ public class StripedFileState extends RedundantFileState {
                                OSDServiceClient client) throws IOException {
         super(fileId, locations, localUUID, client);
 
-        versions = new HashMap<>();
+        versions = new HashMap<Long, Integer>();
     }
 }

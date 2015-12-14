@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2009-2011, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+// Copyright (c) 2009-2015, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
 //
 // All rights reserved.
 //
@@ -27,7 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB)
+// AUTHORS: Bjoern Kolbeck (ZIB), Jan Stender (ZIB), Jan Fajerski (ZIB)
 //
 
 option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
@@ -563,6 +563,7 @@ service OSDService {
     option(proc_id)=23;
     option(data_in)=true;
   };
+
   // Returns the local file size information on an OSD.
   // Used to determine the real file size of a striped file.
   rpc xtreemfs_internal_get_gmax(xtreemfs_internal_get_gmaxRequest) returns(InternalGmax) {

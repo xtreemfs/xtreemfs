@@ -20,7 +20,7 @@ import java.util.LinkedList;
 public class IntervalVersionTreeTest {
     @Test
     public final void testBasicNonOverlappingIntervals() {
-        LinkedList<Interval> expected = new LinkedList<>();
+        LinkedList<Interval> expected = new LinkedList<Interval>();
         LinkedList<Interval> versions;
 
         IntervalVersionTree tree = new IntervalVersionTree(0, 1023);
@@ -46,7 +46,7 @@ public class IntervalVersionTreeTest {
 
     @Test
     public final void testInsertOfOverlappingIntervals() {
-        LinkedList<Interval> expected = new LinkedList<>();
+        LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionTree tree = new IntervalVersionTree(0, 2047);
         LinkedList<Interval> versions;
 
@@ -65,7 +65,7 @@ public class IntervalVersionTreeTest {
 
     @Test
     public final void testInsertOfIntervalInsideOfExisting() {
-        LinkedList<Interval> expected = new LinkedList<>();
+        LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionTree tree = new IntervalVersionTree(0, 2047);
         LinkedList<Interval> versions;
 
@@ -79,7 +79,7 @@ public class IntervalVersionTreeTest {
 
     @Test
     public final void testInsertOfSurroundingInterval() {
-        LinkedList<Interval> expected = new LinkedList<>();
+        LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionTree tree = new IntervalVersionTree(0, 2047);
         LinkedList<Interval> versions;
 
@@ -91,7 +91,7 @@ public class IntervalVersionTreeTest {
         versions = tree.getVersions(0, 2047);
         assertTrue(expected.containsAll(versions));
 
-        expected = new LinkedList<>();
+        expected = new LinkedList<Interval>();
         tree = new IntervalVersionTree(0, 2047);
         tree.insert(512, 1535, 1);
         tree.insert(0, 5, 1);
@@ -105,7 +105,7 @@ public class IntervalVersionTreeTest {
         assertTrue(expected.containsAll(versions));
 
         tree = new IntervalVersionTree(0, 1023);
-        expected = new LinkedList<>();
+        expected = new LinkedList<Interval>();
         expected.add(new Interval(0, 2047, 1));
         tree.insert(0, 2047, 1);
         versions = tree.getVersions(0, 2047);
@@ -114,7 +114,7 @@ public class IntervalVersionTreeTest {
 
     @Test
     public final void testPartialRetrieve() {
-        LinkedList<Interval> expected = new LinkedList<>();
+        LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionTree tree = new IntervalVersionTree(0, 2047);
         LinkedList<Interval> versions;
 
