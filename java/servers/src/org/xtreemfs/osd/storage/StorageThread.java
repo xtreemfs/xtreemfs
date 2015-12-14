@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
@@ -382,6 +383,9 @@ public class StorageThread extends Stage {
                     && ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion() > 0) {
                 // new version passed via arg always prevails
                 objVer = ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion();
+                // version to read is largest existing version equal or smaller than the requested
+                SortedSet<Long> versions = fi.getExistingObjectVersions(objNo).headSet(objVer + 1);
+                objVer = (versions.isEmpty()) ? 0 : versions.last();
             }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getting objVer %d", objVer);
@@ -713,6 +717,7 @@ public class StorageThread extends Stage {
                     layout.deleteFile(fileId, false);
                 
                 fi.clearLatestObjectVersions();
+                fi.clearExistingObjectVersions();
                 
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file

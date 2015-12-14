@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.Stack;
+import java.util.TreeSet;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LRUCache;
@@ -783,6 +785,7 @@ public class HashStorageLayout extends StorageLayout {
         if (fileDir.exists()) {
 
             Map<Long, Long> largestObjVersions = new HashMap<Long, Long>();
+            Map<Long, SortedSet<Long>> existingObjVersions = new HashMap<Long, SortedSet<Long>>();
             Map<Long, Map<Long, Long>> objChecksums = new HashMap<Long, Map<Long, Long>>();
             Map<Long, Long> latestObjVersions = null;
 
@@ -824,6 +827,13 @@ public class HashStorageLayout extends StorageLayout {
                 }
 
                 ObjFileData ofd = parseFileName(obj);
+
+                SortedSet<Long> versions = existingObjVersions.get(ofd.objNo);
+                if (versions == null) {
+                    versions = new TreeSet<Long>();
+                    existingObjVersions.put(ofd.objNo, versions);
+                }
+                versions.add(ofd.objVersion);
 
                 // determine the checksum
                 if (ofd.checksum != 0) {
@@ -874,6 +884,7 @@ public class HashStorageLayout extends StorageLayout {
                 info.initLargestObjectVersions(largestObjVersions);
             }
 
+            info.initExistingObjectVersions(existingObjVersions);
             info.initObjectChecksums(objChecksums);
 
             // determine filesize from lastObjectNumber
@@ -927,6 +938,7 @@ public class HashStorageLayout extends StorageLayout {
             info.setLastObjectNumber(-1);
             info.initLatestObjectVersions(new HashMap<Long, Long>());
             info.initLargestObjectVersions(new HashMap<Long, Long>());
+            info.initExistingObjectVersions(new HashMap<Long, SortedSet<Long>>());
             info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
             info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
         }

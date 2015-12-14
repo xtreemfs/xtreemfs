@@ -1244,7 +1244,7 @@ TEST_F(EncryptionTest, objectVersion_04) {
   ASSERT_NO_THROW({
     x = file_handle->Read(buffer, 10, 0, 4);
   });
-  EXPECT_EQ(0, x);
+  EXPECT_EQ(2, x);
   EXPECT_STREQ("00", buffer);
   ASSERT_NO_THROW({
     x = file_handle->Read(buffer, 10, 0, 6);

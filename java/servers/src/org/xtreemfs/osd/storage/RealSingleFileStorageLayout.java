@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.SortedSet;
 import java.util.Stack;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -99,6 +100,7 @@ public class RealSingleFileStorageLayout extends StorageLayout {
         Map<Long,Long> tmp = new HashMap();
         fi.initLatestObjectVersions(tmp);
         fi.initLargestObjectVersions(tmp);
+        fi.initExistingObjectVersions(new HashMap<Long, SortedSet<Long>>());
         if (checksumsEnabled)
             fi.initObjectChecksums(new HashMap());
 

@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 
@@ -26,6 +28,8 @@ public class FileMetadata {
     
     private Map<Long, Long>            largestObjVersions;
     
+    private Map<Long, SortedSet<Long>> existingObjVersions;
+
     private Map<Long, Map<Long, Long>> objChecksums;
     
     private long                       filesize;
@@ -89,8 +93,17 @@ public class FileMetadata {
         return latestObjVersions.entrySet();
     }
     
+    public SortedSet<Long> getExistingObjectVersions(long objId) {
+        SortedSet<Long> v = existingObjVersions.get(objId);
+        return (v == null) ? new TreeSet<Long>() : v;
+    }
+
     public void clearLatestObjectVersions() {
         latestObjVersions.clear();
+    }
+
+    public void clearExistingObjectVersions() {
+        existingObjVersions.clear();
     }
     
     public void initLargestObjectVersions(Map<Long, Long> largestObjVersions) {
@@ -103,6 +116,11 @@ public class FileMetadata {
         this.latestObjVersions = latestObjVersions;
     }
     
+    public void initExistingObjectVersions(Map<Long, SortedSet<Long>> existingObjVersions) {
+        assert (this.existingObjVersions == null);
+        this.existingObjVersions = existingObjVersions;
+    }
+
     public void initObjectChecksums(Map<Long, Map<Long, Long>> objChecksums) {
         assert (this.objChecksums == null);
         this.objChecksums = objChecksums;
@@ -118,6 +136,12 @@ public class FileMetadata {
         latestObjVersions.put(objId, newVersion);
         if (newVersion != 0 && newVersion > getLargestObjectVersion(objId))
             largestObjVersions.put(objId, newVersion);
+        SortedSet<Long> versions = existingObjVersions.get(objId);
+        if (versions == null) {
+            versions = new TreeSet<Long>();
+            existingObjVersions.put(objId, versions);
+        }
+        versions.add(newVersion);
         
     }
     
@@ -135,6 +159,8 @@ public class FileMetadata {
     public void discardObject(long objId, long objVer) {
         latestObjVersions.remove(objId);
         objChecksums.remove(objId + "." + objVer);
+        if (existingObjVersions.containsKey(objId))
+            existingObjVersions.get(objId).remove(objVer);
     }
     
     public String toString() {
