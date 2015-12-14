@@ -697,7 +697,7 @@ public class StorageThread extends Stage {
                     // only delete those objects that make up the latest
                     // version of the file and are not part of former file
                     // versions
-                    
+                    // TODO(plieser): extend object deletion for encryption
                     for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
                         
                         long objNo = entry.getKey();
@@ -890,6 +890,7 @@ public class StorageThread extends Stage {
                     // currently examined object is larger than new last object
                     // and not contained in any previous version of the file:
                     // delete it
+                    // TODO(plieser): extend object deletion for encryption
                     final long v = fi.getLatestObjectVersion(rowObj);
                     if (!fi.getVersionTable().isContained(rowObj, v))
                         layout.deleteObject(fileId, fi, rowObj, v);

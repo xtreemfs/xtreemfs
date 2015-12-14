@@ -183,7 +183,7 @@ public class DeletionStage extends Stage {
                             // objects that make up the latest version of the
                             // file and are not part of former file versions
                             else {
-                                
+                                // TODO(plieser): extend object deletion for encryption
                                 for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
                                     long objNo = entry.getKey();
                                     long objVer = entry.getValue();
