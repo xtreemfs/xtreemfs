@@ -498,25 +498,23 @@ TEST_F(HashTreeADTest_Offline, RequiredNodesForWrite) {
   nodeNumbers.add(9);
   EXPECT_TRUE(nodeNumbers == x);
 
-  x = tree->RequiredNodesForWrite(5, true, 5, true);
-  nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
-  EXPECT_TRUE(nodeNumbers == x);
-
-  x = tree->RequiredNodesForWrite(5, true, 5, true);
-  nodeNumbers.clear();
-  nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
-//  EXPECT_EQ(nodeNumbers, x);
-  EXPECT_TRUE(nodeNumbers == x);
-  std::cout << "x: " << x << std::endl;
-
-  x = tree->RequiredNodesForWrite(5, true, 5, true, true);
+  x = tree->RequiredNodesForWrite(4, true, 5, true);
   nodeNumbers.clear();
   nodeNumbers.add(boost::icl::interval<int>::closed(6, 7));
   nodeNumbers.add(boost::icl::interval<int>::closed(9, 9));
+  EXPECT_TRUE(nodeNumbers == x);
+
+  x = tree->RequiredNodesForWrite(5, true, 5, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
 //  EXPECT_EQ(nodeNumbers, x);
   EXPECT_TRUE(nodeNumbers == x);
-  std::cout << "x: " << x << std::endl;
+
+  x = tree->RequiredNodesForWrite(5, true, 5, true, true);
+  nodeNumbers.clear();
+  nodeNumbers.add(boost::icl::interval<int>::closed(6, 9));
+//  EXPECT_EQ(nodeNumbers, x);
+  EXPECT_TRUE(nodeNumbers == x);
 
   tree->SetSize(5);
   EXPECT_EQ(10, tree->max_node_number_);
