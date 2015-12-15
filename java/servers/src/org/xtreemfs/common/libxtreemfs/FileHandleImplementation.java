@@ -8,6 +8,7 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -105,6 +106,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * Capabilitiy for the file, used to authorize against services.
      */
+    // JCIP @GuardedBy("this")
     private XCap                                    xcap;
 
     /**
@@ -141,7 +143,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     /**
      * Set to true if async writes (max requests > 0, no O_SYNC) are enabled.
      */
-    private boolean                                 asyncWritesEnabled;
+    private final boolean                                 asyncWritesEnabled;
 
     /**
      * Set to true if an async write of this file_handle failed. If true, this file_handle is broken and no further
@@ -541,6 +543,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         truncate(userCredentials, newFileSize, false);
     }
 
+    @Override
     public void truncate(UserCredentials userCredentials, long newFileSize, boolean updateOnlyMRC) throws IOException,
             PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.waitForPendingAsyncWrites();
@@ -565,7 +568,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                     }
                 });
         // set new XCap received from MRC. Necessary to invoke truncate at OSD.
-        synchronized (xcap) {
+        synchronized (this) {
             xcap = truncateXCap;
         }
         truncatePhaseTwoAndThree(userCredentials, newFileSize, updateOnlyMRC);
@@ -863,7 +866,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             AddressToUUIDNotFoundException {
         readRequest.Builder readRequestBuilder = readRequest.newBuilder();
         FileCredentials.Builder fileCredentialsBuilder = FileCredentials.newBuilder();
-        synchronized (xcap) {
+        synchronized (this) {
             fileCredentialsBuilder.setXcap(xcap.toBuilder());
         }
         XLocSet xlocs = fileInfo.getXLocSet();
@@ -1005,6 +1008,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
         String address = uuidResolver.uuidToAddress(mrcUuidIterator.getUUID());
         InetSocketAddress server = RPCCaller.getInetSocketAddressFromAddress(address, SERVICES.MRC);
+
         RPCResponse<XCap> r = mrcServiceClient.xtreemfs_renew_capability(server, authBogus, userCredentialsBogus,
                 xcapCopy);
 
@@ -1031,7 +1035,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
     }
 
     private void setRenewedXcap(XCap newXCap) {
-        synchronized (xcap) {
+        synchronized (this) {
             // Overwrite current XCap only by a newer one (i.e. later expire time)
             if (newXCap.getExpireTimeS() > xcap.getExpireTimeS()) {
                 xcap = newXCap;
@@ -1092,6 +1096,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 });
     }
 
+    @Override
     public String getGlobalFileId() {
         return getXcap().getFileId();
     }
@@ -1126,32 +1131,39 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         return fileInfo.getXLocSet();
     }
 
+    @Override
     public List<Replica> getReplicasList() {
         return getXlocSet().getReplicasList();
     }
 
+    @Override
     public Replica getReplica(int replicaIndex) {
         return getReplicasList().get(replicaIndex);
     }
 
+    @Override
     public StripingPolicy getStripingPolicy() {
         return getStripingPolicy(0);
     }
 
+    @Override
     public StripingPolicy getStripingPolicy(int replicaIndex) {
         return getReplica(replicaIndex).getStripingPolicy();
     }
 
+    @Override
     public String getReplicaUpdatePolicy() {
         return getXlocSet().getReplicaUpdatePolicy();
     }
 
+    @Override
     public long getNumObjects(UserCredentials userCredentials) throws IOException, AddressToUUIDNotFoundException,
             PosixErrorException {
 
         return Helper.getNumObjects(userCredentials, getAttr(userCredentials), getStripingPolicy());
     }
 
+    @Override
     public boolean checkAndMarkIfReadOnlyReplicaComplete(int replicaIndex, UserCredentials userCredentials)
             throws IOException, AddressToUUIDNotFoundException {
 
@@ -1196,7 +1208,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             ObjectSet oset = null;
 
             try {
-                oset = new ObjectSet(replica.getStripingPolicy().getWidth(), osdRelPos, serializedBitSet);
+                oset = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
             } catch (Exception e) {
                 throw new IOException("cannot deserialize object set: " + e, e);
             }
@@ -1222,6 +1234,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
     }
 
+    @Override
     public int checkObjectAndGetSize(int replicaIndex, long objectNo) throws IOException, InvalidChecksumException {
         ObjectData od = null;
         RPCResponse<ObjectData> osdRsp = null;

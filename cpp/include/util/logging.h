@@ -41,6 +41,9 @@ class Logging {
 
   bool loggingActive(LogLevel level);
 
+  void register_init();
+  bool register_shutdown();
+
  private:
   /** Log stream. */
   std::ostream& log_stream_;
@@ -51,10 +54,14 @@ class Logging {
 
   LogLevel level_;
 
+  /** Contains the number of possible instances, by counting inits and shutdowns. */
+  int init_count_;
+
   char levelToChar(LogLevel level);
 };
 
 LogLevel stringToLevel(std::string stringLevel, LogLevel defaultLevel);
+
 void initialize_logger(LogLevel level);
 void initialize_logger(LogLevel level, std::string logfilePath);
 void initialize_logger(std::string stringLevel,

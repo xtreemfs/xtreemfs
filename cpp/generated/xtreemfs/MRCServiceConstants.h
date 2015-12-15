@@ -1,5 +1,5 @@
-//automatically generated from MRC.proto at Thu Dec 11 16:09:40 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECONSTANTS_H_
 #define MRCSERVICECONSTANTS_H_
@@ -30,6 +30,7 @@ const uint32_t PROC_ID_UNLINK = 19;
 const uint32_t PROC_ID_ACCESS = 20;
 const uint32_t PROC_ID_XTREEMFS_CHECKPOINT = 30;
 const uint32_t PROC_ID_XTREEMFS_CHECK_FILE_EXISTS = 31;
+const uint32_t PROC_ID_XTREEMFS_CLEAR_VOUCHERS = 52;
 const uint32_t PROC_ID_XTREEMFS_DUMP_DATABASE = 32;
 const uint32_t PROC_ID_XTREEMFS_GET_SUITABLE_OSDS = 33;
 const uint32_t PROC_ID_XTREEMFS_INTERNAL_DEBUG = 34;
@@ -37,6 +38,7 @@ const uint32_t PROC_ID_XTREEMFS_LISTDIR = 35;
 const uint32_t PROC_ID_XTREEMFS_LSVOL = 36;
 const uint32_t PROC_ID_XTREEMFS_MKVOL = 47;
 const uint32_t PROC_ID_XTREEMFS_RENEW_CAPABILITY = 37;
+const uint32_t PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER = 53;
 const uint32_t PROC_ID_XTREEMFS_REPLICATION_TO_MASTER = 38;
 const uint32_t PROC_ID_XTREEMFS_REPLICA_ADD = 39;
 const uint32_t PROC_ID_XTREEMFS_REPLICA_LIST = 40;
@@ -50,6 +52,7 @@ const uint32_t PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY = 48;
 const uint32_t PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR = 49;
 const uint32_t PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS = 50;
 const uint32_t PROC_ID_XTREEMFS_GET_XLOCSET = 51;
+const uint32_t PROC_ID_XTREEMFS_RESELECT_OSDS = 54;
 
 }  // namespace pbrpc
 }  // namespace xtreemfs

@@ -109,6 +109,11 @@ for VERSION in $HADOOP_VERSIONS; do
     <value>passphrase</value>
    </property>
 
+   <property>
+     <name>xtreemfs.hadoop.version</name>
+     <value>$VERSION</value>
+   </property>
+
    </configuration>"
 
    echo $CORE_SITE > $HADOOP_PREFIX/conf/core-site.xml

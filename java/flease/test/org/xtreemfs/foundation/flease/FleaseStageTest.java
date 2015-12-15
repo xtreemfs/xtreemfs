@@ -39,7 +39,7 @@ public class FleaseStageTest {
     private static File         testDir;
 
     @BeforeClass
-    public static void setUpClass() {
+    public static void setUpClass() throws Exception {
         Logging.start(Logging.LEVEL_WARN, Category.all);
         TimeSync.initializeLocal(50);
 
@@ -75,7 +75,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -149,7 +149,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 
@@ -201,7 +201,7 @@ public class FleaseStageTest {
         }, true, new FleaseViewChangeListenerInterface() {
 
             @Override
-            public void viewIdChangeEvent(ASCIIString cellId, int viewId) {
+            public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
             }
         },new FleaseStatusListener() {
 

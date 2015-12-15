@@ -8,7 +8,6 @@
 
 package org.xtreemfs.mrc;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -67,6 +66,8 @@ import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBVolumeManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
+import org.xtreemfs.mrc.quota.QuotaManager;
+import org.xtreemfs.mrc.quota.VoucherManager;
 import org.xtreemfs.mrc.stages.OnCloseReplicationThread;
 import org.xtreemfs.mrc.stages.ProcessingStage;
 import org.xtreemfs.mrc.stages.XLocSetCoordinator;
@@ -130,6 +131,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final XLocSetCoordinator       xLocSetCoordinator;
 
+    private final QuotaManager          mrcQuotaManager;
+
+    private final VoucherManager        mrcVoucherManager;
+
     private final long                     initTimeMS;
 
     public MRCRequestDispatcher(final MRCConfig config, final BabuDBConfig dbConfig) throws Exception {
@@ -175,12 +180,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using custom trust manager '%s'",
                     policyContainer.getTrustManager().getClass().getName());
 
-        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config.getServiceCredsFile()),
-                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
-                        config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(),
-                config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(), config.getSSLProtocolString(),
-                policyContainer.getTrustManager())
-                : null;
+        SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config.getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode(),
+                config.getSSLProtocolString(), policyContainer.getTrustManager()) : null;
 
         InetSocketAddress bindPoint = config.getAddress() != null ? new InetSocketAddress(config.getAddress(), 0)
                 : null;
@@ -214,6 +217,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         xLocSetCoordinator.setLifeCycleListener(this);
 
         procStage = new ProcessingStage(this);
+
+        mrcQuotaManager = new QuotaManager();
+        mrcVoucherManager = new VoucherManager(mrcQuotaManager);
 
         volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
@@ -389,6 +395,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
             volumeManager.init();
             volumeManager.addVolumeChangeListener(osdMonitor);
+
+            mrcQuotaManager.initializeVolumeQuotaManager(volumeManager);
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -935,6 +943,20 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public ProcessingStage getProcStage() {
         return procStage;
+    }
+
+    /**
+     * @return the mrcQuotaManager
+     */
+    public QuotaManager getMrcQuotaManager() {
+        return mrcQuotaManager;
+    }
+
+    /**
+     * @return the mrcVoucherManager
+     */
+    public VoucherManager getMrcVoucherManager() {
+        return mrcVoucherManager;
     }
 
     /**

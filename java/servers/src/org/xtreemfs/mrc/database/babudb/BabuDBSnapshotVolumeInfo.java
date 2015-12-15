@@ -34,7 +34,7 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     
     private short   acPolicy;
 
-    private long creationTimestamp;
+    private final long creationTimestamp;
     
     private BabuDBSnapshotStorageManager sMan;
     
@@ -87,6 +87,21 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
 
     @Override
+    public long getVoucherSize() throws DatabaseException {
+        return sMan.getVoucherSize();
+    }
+
+    @Override
+    public long getDefaultGroupQuota() throws DatabaseException {
+        return sMan.getDefaultGroupQuota();
+    }
+
+    @Override
+    public long getDefaultUserQuota() throws DatabaseException {
+        return sMan.getDefaultUserQuota();
+    }
+
+    @Override
     public short getAcPolicyId() {
         return acPolicy;
     }
@@ -107,10 +122,40 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
 
     @Override
+    public void setVoucherSize(long voucherSize, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setDefaultGroupQuota(long defaultGroupQuota, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setDefaultUserQuota(long defaultUserQuota, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
     public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
     }
-    
+
+    @Override
+    public void setTracing(boolean enableTracing, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setTracingPolicyConfig(String traceTarget, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
+    @Override
+    public void setTracingPolicy(String tracingPolicy, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+
     @Override
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
@@ -140,7 +185,22 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public boolean isSnapshotsEnabled() throws DatabaseException {
         return true;
     }
-    
+
+    @Override
+    public boolean isTracingEnabled() throws DatabaseException {
+        return false;
+    }
+
+    @Override
+    public String getTraceTarget() throws DatabaseException {
+        return "";
+    }
+
+    @Override
+    public String getTracingPolicy() throws DatabaseException {
+        return "";
+    }
+
     @Override
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;

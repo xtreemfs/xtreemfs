@@ -142,7 +142,8 @@ public class ServiceConfig extends Config {
         NO_CLEANUP("no_cleanup", false, Boolean.class, false),
         NO_CLEANUP_VOLUMES("no_cleanup_volumes", false, Boolean.class, false),
         NO_CLEANUP_BASEFILE("no_cleanup_basefile", false, Boolean.class, false),
-        OSD_CLEANUP("osd_cleanup", false, Boolean.class, false);
+        OSD_CLEANUP("osd_cleanup", false, Boolean.class, false),
+        USE_JNI("use_jni", false, Boolean.class, false);
 
 
         Parameter(String propString, Object defaultValue, Class propClass, Boolean req) {

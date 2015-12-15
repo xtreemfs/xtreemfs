@@ -8,7 +8,6 @@
 
 package org.xtreemfs.utils;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,9 +59,8 @@ public class DefaultDirConfig extends Config {
      */
     public SSLOptions getSSLOptions() throws FileNotFoundException, IOException {
         if (sslEnabled) {
-            return new SSLOptions(new FileInputStream(serviceCredsFile), serviceCredsPassphrase,
-                    serviceCredsContainer, new FileInputStream(trustedCertsFile), trustedCertsPassphrase,
-                    trustedCertsContainer, false, false, sslProtocolString, null);
+            return new SSLOptions(serviceCredsFile, serviceCredsPassphrase, serviceCredsContainer, trustedCertsFile,
+                    trustedCertsPassphrase, trustedCertsContainer, false, false, sslProtocolString, null);
         } else {
             return null;
         }

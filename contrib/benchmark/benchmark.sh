@@ -47,6 +47,9 @@ REQUEST_SIZE=$STRIPE_SIZE
 REPLICATION_POLICY=""
 REPLICATION_FACTOR=1
 
+# general parameters passed to xtfs_benchmark (e.g. --use-jni)
+XTFS_BENCH_PARAMS=""
+
 check_env(){
   # check XTREEMFS
   if [ -z "$XTREEMFS" ]; then
@@ -193,7 +196,7 @@ prepare_seq_read(){
   echo -e "\nPreparing sequential read benchmarks\n"  >&2
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
-    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -sw -ssize $1 --no-cleanup --user $USER \
+    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark $XTFS_BENCH_PARAMS -sw -ssize $1 --no-cleanup --user $USER \
       ${VOLUMES[$index]} --stripe-size $STRIPE_SIZE --chunk-size $REQUEST_SIZE
   done
 }
@@ -212,7 +215,7 @@ prepare_random(){
   echo -e "\nPreparing random benchmark: Creating a basefiles\n"  >&2
   for i in $(seq 1 $threads); do
     local index=$(echo "$i-1"|bc)
-    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -rr -rsize $REQUEST_SIZE --no-cleanup-basefile --no-cleanup-volumes --user $USER \
+    timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark $XTFS_BENCH_PARAMS -rr -rsize $REQUEST_SIZE --no-cleanup-basefile --no-cleanup-volumes --user $USER \
       --basefile-size $basefile_size ${VOLUMES[$index]} --stripe-size $STRIPE_SIZE --chunk-size $REQUEST_SIZE
   done
 }
@@ -228,15 +231,15 @@ run_benchmark(){
   fi
 
   if [ $benchType = "sr" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER \
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark $XTFS_BENCH_PARAMS -$benchType -ssize $size -n $threads --no-cleanup-volumes --user $USER \
      $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
   elif [ $benchType = "sw" ] || [ $benchType = "usw" ]; then
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -ssize $size -n $threads --user $USER \
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark $XTFS_BENCH_PARAMS -$benchType -ssize $size -n $threads --user $USER \
      $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
   elif [ $benchType = "rw" ] || [ $benchType = "rr" ]; then
     # calc basefile size and round to a number divideable through REQUEST_SIZE
     local basefile_size=$(echo "(($BASEFILE_SIZE/$threads)/$REQUEST_SIZE)*$REQUEST_SIZE" | bc)
-    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark -$benchType -rsize $size --basefile-size $basefile_size -n $threads \
+    XTREEMFS=$XTREEMFS timeout --foreground $TIMEOUT $XTREEMFS/bin/xtfs_benchmark $XTFS_BENCH_PARAMS -$benchType -rsize $size --basefile-size $basefile_size -n $threads \
       --no-cleanup-basefile --no-cleanup-volumes --user $USER \
       $replicationOpt --replication-factor $REPLICATION_FACTOR --chunk-size $REQUEST_SIZE --stripe-size $STRIPE_SIZE
   fi
@@ -251,7 +254,7 @@ run_benchmark(){
   fi
 
   # cleanup after *every* benchmark only for seq write benchmark
-  if [ $benchType = "sr" ]; then
+  if [ $benchType = "sw" ] || [ $benchType = "usw" ]; then
     cleanup_osd
   fi
 }

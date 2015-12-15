@@ -148,6 +148,7 @@ public class TortureLocalFS {
                 }
             }
         }
+        raf.close();
         
         File f = new File(path);
         f.delete();
@@ -212,6 +213,8 @@ public class TortureLocalFS {
                 }
             }
         }
+        raf.close();
+
         File f = new File(path);
         f.delete();
         final long tDelete = System.currentTimeMillis();

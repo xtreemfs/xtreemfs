@@ -2558,6 +2558,87 @@ $> xtfs_cleanup -dir localhost:32638 -v \
 
 \textbf{Note:} A snapshot only captures a file in its current state if it is \emph{closed}. Files that are \emph{open} when taking a snapshot are captured in the last state in which they were before they were opened. Since files are implicitly closed on an OSD through a timeout rather than an explicit \texttt{close} call, it may happen that files are not included in a snapshot despite having been closed at application level before the snapshot was taken. To make sure a change to a specific file is included in a subsequent snapshot, it is necessary to wait for the close timeout on the OSD before taking the snapshot, which by default is set to 60 seconds.
 
+\subsection{Quotas}
+
+XtreemFS supports qble-traci  nguotas on volume, user or group base. All set quotas on a
+volume can be shown by executing:
+
+\begin{verbatim}
+$> xtfsutil --get-quotas /path/to/mounted/volume
+\end{verbatim}
+
+The output can be limited to a specific user witht he \emph{-u} option or a
+group using \emph{-g}.
+
+Quotas can be set by executing \emph{xtfsutil} with the \emph{--set-quota}
+option, which has to be combined with \emph{-v} to set the volume quota,
+\emph{-u} to set a user quota or \emph{-g} to set a group quota. Run for
+instance
+
+\begin{verbatim}
+$> xtfsutil --set-quota 1G -u user1 /path/to/mounted/volume
+\end{verbatim}
+
+to set a quota of 1 GB for the user \emph{user1}.
+
+Volumes can have a default group or volume quota which is applied to all groups
+or users that do not have an individual quota. A default user quota can for
+instance set to 5 GB as follows:
+
+\begin{verbatim}
+$> xtfsutil --set-default-user-quota 5G /path/to/mounted/volume
+\end{verbatim}
+
+Usable space is issued to a client while creating a file handle in the form of a
+voucher. After the granted capacity on a file is used, a file handle has to be
+renewed. This is done automatically by the XtreemFS client, but generates
+additional overhead. The voucher size for a volume can be set as follows:
+
+\begin{verbatim}
+$> xtfsutil --set-voucher-size 100M /path/to/mounted/volume
+\end{verbatim}
+
+Using a small voucher size generates larger overhead while using large vouchers
+may cause files running out of capacity, even before a quota is used up.
+
+\subsection{Access Tracing}
+
+The XtreemFS OSD can trace read and write requests to debugging or application
+profiling purposes. XtreemFS contains example policies to write an access trace to a
+file or a network socket.
+
+File-based tracing can be activated on volume level as follows:
+
+\begin{verbatim}
+$> xtfsutil --enable-tracing /path/to/mounted/volume
+$> xtfsutil --tracing-policy=6001 /path/to/mounted/volume
+$> xtfsutil --enable-tracing-config=/tmp/file_access.log /path/to/mounted/volume
+\end{verbatim}
+
+\begin{itemize}
+  \item \textbf{File-based tracing (policy ID 6001)} Writes access trace to a
+    file that is stored locally on the OSD hosts. The output file can be set by
+    the \emph{--trace-policy-config} option.
+  \item \textbf{Socket-based tracing (policy ID 6002)} Writes access trace to a
+    server socket, that is listening on each OSD. The listening port ist 9999.
+\end{itemize}
+
+User defined tracing policies can be added by implementing the following Java
+interface:
+
+\begin{verbatim}
+package org.xtreemfs.osd.tracing;
+
+import org.xtreemfs.osd.OSDRequest;
+
+public interface TracingPolicy {
+  void traceRequest(OSDRequest req, TraceInfo traceInfo);
+}
+\end{verbatim}
+
+Similar to MRC policies, OSD tracing policies have to be placed in the policy
+container directory of the OSD.
+
 \section{Test Tools}
 XtreemFS provides two tools to simplify testing. \texttt{xstartserv} can be used to start and stop XtreemFS servers manually. \texttt{xtestenv} automatically sets-up an entire test environment with servers and mounted clients. In addition, \texttt{xtestenv} can be used to execute the automatic integration tests.
 
@@ -3046,7 +3127,7 @@ For Hadoop you have so set the following environment variable:
       \end{verbatim}
    \end{itemize}
 
-\item Configure Hadoop to use XtreemFS instead of HDFS:
+\item Configure Hadoop to understand XtreemFS file URIs (\texttt{xtreemfs://...}) in addition to HDFS file URIs (\texttt{hdfs://...}):
 	\begin{enumerate}
 	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package.
 	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 2.x, or to symlink it there.
@@ -3077,14 +3158,12 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <description>
         The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
     </description>
-</property>
-
+  </property>
+  
   <property>
-    <name>fs.default.name</name>
-    <value>xtreemfs://localhost:32638/defaultVolumeName</value>
-    <description>
-        Address for the DIR with the default volume name to use.
-    </description>
+    <name>xtreemfs.defaultVolumeName</name>
+    <value>volumeName</value>
+    <description>Name of the default volume to use within XtreemFS.</description>
   </property>
 
   <property>
@@ -3092,20 +3171,36 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <value>131072</value>
     <description>Default buffer size when accessing files.</description>
   </property>
+  
+  <property>
+    <name>xtreemfs.rename.overwrite</name>
+    <value>false</value>
+    <description>
+      Overwrite existing files on rename.
+    </description>
+  </property>
+  
+  <property>
+    <name>xtreemfs.hadoop.version</name>
+    <value>2.2.0</value>
+    <description>
+      Hadoop version to be compatible with.
+    </description>
+  </property>
 
 </configuration>
 	\end{verbatim}
 	\begin{enumerate}
-	\item The first property is required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access
+	\item The first two properties are required to register the XtreemFSHadoopClient at Hadoop. Now you are able to access
 	XtreemFS by the Hadoop binary using the \textit{fs} argument.
-	\item The next property makes Hadoop use the DIR instead of a
-	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at
-	\textit{localhost:32638}.
-	It also specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here    	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS.
-	\item The last property tells Hadoop the buffer size that will be used when reading/writing files.
+	\item The next property specifies the name of the default volume to use within XtreemFS. Make sure, that the volume (here named \mbox{\textit{volumeName}}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS. You can also specify the default volume as part of the \texttt{fs.defaultFS} configuration parameter, or always use fully qualified file URIs (see below).
+	\item The fourth property tells Hadoop the buffer size that will be used when reading/writing files.
 	This size should be exactly the default stripesize of your volume. Note that this value is measured in bytes while the
 	stripe size of your volume usually is measured in kilo bytes.
+	\item Set the fifth property to true if an existing file should be overwritten when another file is renamed to the existing file's path. Defaults to false for Hadoop FileSystem Contract conformance; for POSIX conformance, set this to true.
+	\item The sixth property specifies the Hadoop version to be compatible with. There are subtle differences in how Hadoop 0.x, 1.x and 2.x expect third-party file systems to behave, most notably on how rigorous operations on non-existing files should be treated. This property defaults to the executing Hadoop distribution's version string (version strings with patterns 'x', 'x.y' and 'x.y.z' are accepted, with or without suffixes appended with '-', e.g. '2.7.2-SNAPSHOT'). If your Hadoop version string does not match these patterns, or you wish to experiment with different compatibility modes using the same Hadoop distribution, be sure to set this property to the appropriate version you are using, otherwise Hadoop might fail to properly start up.
 	\end{enumerate}
+
   Hint: By default Hadoop uses the current user as user ID and \textit{users} as group ID for accessing XtreemFS. To change the used user ID and group ID, you have to set the following additional properties:
 	\begin{verbatim}
   <property>
@@ -3221,6 +3316,46 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     </description>
   </property>
 	\end{verbatim}
+
+
+	Hint: The XtreemFSHadoopClient can use the native C++ Library via JNI (Java Native Interface). See section \ref{sec:libjnixtreemfs_for_java} for more information.
+	The JNI library allows to use features only implemented in C++, such as asynchronous writes:
+	\begin{verbatim}
+  <property>
+    <name>xtreemfs.jni.enabled</name>
+    <value>true</value>
+    <description>
+      Enable/Disable the JNI library for the XtreemFSHadoopClient
+      (disabled by default).
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.jni.libraryPath</name>
+    <value>/xtreemfs/cpp/build/</value>
+    <description>
+      Optional. Set a path where the native XtreemFS libraries
+      are searched for.
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.asyncWrites.enabled</name>
+    <value>true</value>
+    <description>
+      Enable/Disable asynchronous writes (disabled by default).
+    </description>
+  </property>
+
+  <property>
+    <name>xtreemfs.asyncWrites.maxRequests</name>
+    <value>10</value>
+    <description>
+      Optional. Maximum number of pending write requests per file.
+      Asynchronous writes will block if this limit is reached first.
+    </description>
+  </property>
+	\end{verbatim}
 	\end{enumerate}
 
 \item To provide the minimum JobTracker configuration for Hadoop 1.x you also have to add the following property to the
@@ -3258,6 +3393,18 @@ For Hadoop 2.x you have to add the following property to the \textit{etc/hadoop/
   </property>
    \end{verbatim}
 \item Finally you are now able to start the JobTracker and the TaskTracker by running '\textit{bin/start-mapred.sh}' (Hadoop 1.x) or the ResourceManager and Nodemanager by running '\textit{sbin/start-yarn.sh} (Hadoop 2.x) from within the Hadoop root-directory.
+
+\item Be sure to use fully qualified file URIs in your programs, i.e.\\\texttt{xtreemfs://<dir-host>:<dir-port>/<volume>/path/to/file}. Alternatively, specify:
+
+  \begin{verbatim}
+  <property>
+    <name>fs.defaultFS</name>
+    <value>xtreemfs://<dir-address>:<dir-port>/<volume></value>
+    <description>Address for the DIR.</description>
+  </property>
+  \end{verbatim}
+
+  in your \textit{core-site.xml} to define XtreemFS as the default file system and the volume to use when no scheme is given in the file URI.
 
 \end{enumerate}
 Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
@@ -3345,12 +3492,23 @@ Now modify \texttt{cpp/src/example\_libxtreemfs/example\_libxtreemfs.cpp} to sui
 \label{sec:libxtreemfs_for_java}
 
 The libxtreemfs for Java can be found in the XtreemFS sources in the directory
-\texttt{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
+\path{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
 sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
 
-Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \texttt{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
 
 The libxtreemfs for Java is currently not separated from the remaining server Java code. Consequently, you'll find the available functionality as part of the XtreemFS.jar which is generated by ``make server''.
+
+
+\section{Using the C++ libxtreemfs with Java Native Interfaces}
+\label{sec:libjnixtreemfs_for_java}
+The native libxtreemfs for Java is implementing the same interface as the pure Java libxtreemfs but is using Java Native Interfaces (JNI) to make calls to the C++ libxtreemfs. The Java implementation can be found in the XtreemFS sources in the directory \path{java/servers/src/org/xtreemfs/common/libxtreemfs/jni/}. You can retrieve the
+sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
+
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library.
+
+To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. To install it from source either call ``\texttt{make client-jni}'' or set the environment variable \texttt{BUILD\_JNI=true} and call ``\texttt{make client}''. The library will then be found in  \path{cpp/build}.
+
 
 \chapter{Command Line Utilities}
 \label{sec:cli_utils}

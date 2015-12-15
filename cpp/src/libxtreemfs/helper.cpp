@@ -78,14 +78,18 @@ int CompareOSDWriteResponses(
   }
 }
 
-/** The XCap contains the Volume UUID and File ID concatenated by a ":". */
-uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap) {
-  string string = xcap.file_id();
-
-  int start = string.find(":") + 1;
-  int length = string.length() - start;
+/** The global file id  contains the Volume UUID and File ID concatenated by a ":". */
+uint64_t ExtractFileIdFromGlobalFileId(std::string global_file_id) {
+  int start = global_file_id.find(":") + 1;
+  int length = global_file_id.length() - start;
   return boost::lexical_cast<uint64_t>(
-      string.substr(start, length));
+      global_file_id.substr(start, length));
+}
+
+/** The XCap contains the global file id. */
+uint64_t ExtractFileIdFromXCap(const xtreemfs::pbrpc::XCap& xcap) {
+  string global_file_id = xcap.file_id();
+  return ExtractFileIdFromGlobalFileId(global_file_id);
 }
 
 std::string ResolveParentDirectory(const std::string& path) {

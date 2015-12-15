@@ -6,6 +6,8 @@
  */
 package org.xtreemfs.common.libxtreemfs;
 
+import java.util.List;
+
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 
@@ -45,4 +47,17 @@ public interface UUIDResolver {
      */
     public void volumeNameToMRCUUID(String volumeName, UUIDIterator uuidIterator)
             throws VolumeNotFoundException, AddressToUUIDNotFoundException;
+
+    /**
+     * Resolves the list of UUIDs of the MRC replicas.
+     * 
+     * @param volumeName
+     *            Name of the volume.
+     * @return List of the UUIDs of the MRC replicas.
+     * 
+     * @throws VolumeNotFoundException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public List<String> volumeNameToMRCUUIDs(String volumeName) throws VolumeNotFoundException,
+            AddressToUUIDNotFoundException;
 }

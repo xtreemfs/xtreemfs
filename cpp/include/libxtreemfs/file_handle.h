@@ -94,7 +94,7 @@ class FileHandle {
   /** Retrieve the attributes of this file and writes the result in "stat".
    *
    * @param user_credentials    Name and Groups of the user.
-   * @param stat                Pointer to Stat which will be overwritten.
+   * @param stat[out]           Pointer to Stat which will be overwritten.
    *
    * @throws AddressToUUIDNotFoundException
    * @throws IOException

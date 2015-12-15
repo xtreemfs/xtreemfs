@@ -249,6 +249,8 @@ class Options {
   int periodic_xcap_renewal_interval_s;
   /** Skewness of the Zipf distribution used for vivaldi OSD selection */
   double vivaldi_zipf_generator_skew;
+  /** Interval between requests while waiting for the installation of a new xLocSet.*/
+  int xLoc_install_poll_interval_s;
 
   /** May contain all previous options in key=value pair lists. */
   std::vector<std::string> alternative_options_list;

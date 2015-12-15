@@ -1,5 +1,5 @@
-//automatically generated at Thu Dec 11 16:09:40 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated at Wed Oct 28 15:06:28 CET 2015
+//(c) 2015. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
 
@@ -175,6 +175,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
           return new xtreemfs::pbrpc::xtreemfs_check_file_existsRequest();
           break;
         }
+        case 52: {
+          return new xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest();
+          break;
+        }
         case 32: {
           return new xtreemfs::pbrpc::xtreemfs_dump_restore_databaseRequest();
           break;
@@ -201,6 +205,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 37: {
           return new xtreemfs::pbrpc::XCap();
+          break;
+        }
+        case 53: {
+          return new xtreemfs::pbrpc::xtreemfs_renew_capabilityRequest();
           break;
         }
         case 38: {
@@ -253,6 +261,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 51: {
           return new xtreemfs::pbrpc::xtreemfs_get_xlocsetRequest();
+          break;
+        }
+        case 54: {
+          return new xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest();
           break;
         }
         default: {
@@ -310,6 +322,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 35: {
           return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 22: {
+          return new xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest();
           break;
         }
         case 36: {
@@ -402,6 +418,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 82: {
           return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
+          break;
+        }
+        case 83: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest();
           break;
         }
         default: {

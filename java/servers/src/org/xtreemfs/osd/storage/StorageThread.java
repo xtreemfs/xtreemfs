@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008-2011 by Bjoern Kolbeck, Christian Lorenz,
- *                            Jan Stender,
+ * Copyright (c) 2008-2015 by Bjoern Kolbeck, Christian Lorenz,
+ *                            Jan Stender, Robert Bärhold,
  *                            Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
 
+import org.xtreemfs.common.quota.FinalizeVoucherResponseHelper;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -34,11 +35,14 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.quota.OSDVoucherManager;
+import org.xtreemfs.osd.quota.VoucherErrorException;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
 import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
 import org.xtreemfs.osd.stages.StorageStage.DeleteObjectsCallback;
+import org.xtreemfs.osd.stages.StorageStage.FinalizeVoucherCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetFileIDListCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
@@ -49,6 +53,7 @@ import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.VersionTable.Version;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersion;
@@ -88,12 +93,14 @@ public class StorageThread extends Stage {
     public static final int      STAGEOP_GET_FILEID_LIST       = 13;
     
     public static final int      STAGEOP_DELETE_OBJECTS        = 14;
+
+    public static final int            STAGEOP_FINALIZE_VOUCHERS     = 15;
+
+    private final MetadataCache        cache;
+
+    private final StorageLayout        layout;
     
-    private MetadataCache        cache;
-    
-    private StorageLayout        layout;
-    
-    private OSDRequestDispatcher master;
+    private final OSDRequestDispatcher master;
     
     private final boolean        checksumsEnabled;
     
@@ -156,6 +163,9 @@ public class StorageThread extends Stage {
             case STAGEOP_DELETE_OBJECTS:
                 processDeleteObjects(method);
                 break;
+            case STAGEOP_FINALIZE_VOUCHERS:
+                processFinalizeVouchers(method);
+                break;
             }
             
         } catch (Exception ex) {
@@ -163,7 +173,7 @@ public class StorageThread extends Stage {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
-    
+
     private void processGetMaxObjNo(StageRequest rq) {
         final InternalGetMaxObjectNoCallback cback = (InternalGetMaxObjectNoCallback) rq.getCallback();
         try {
@@ -504,6 +514,19 @@ public class StorageThread extends Stage {
                 return;
             }
             
+            // check quota
+            if (rq.getRequest() != null
+                    && !master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
+                    rq.getRequest().getCapability().getClientIdentity(), rq.getRequest().getCapability().getExpireMs(),
+                    sp.getObjectStartOffset(objNo) + offset + dataCapacity)) {
+                BufferPool.free(data);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "Stop WRITE due to an insufficient voucher!", fileId, objNo, fi.getLastObjectNumber(),
+                        dataLength, offset);
+                cback.writeComplete(null, master.getOsdVoucherManager().getInsufficientVoucherErrorResponse());
+                return;
+            }
+
             // assign the number of objects to the COW policy if necessary (this
             // is e.g. needed for the COW_ONCE policy)
             cow.initCowFlagsIfRequired(fi.getLastObjectNumber() + 1);
@@ -541,7 +564,7 @@ public class StorageThread extends Stage {
             // if the write refers to the last known object or to an object
             // beyond, i.e. the file size and globalMax are potentially
             // affected:
-            if (objNo >= fi.getLastObjectNumber() && !gMaxOff) {
+            if (objNo >= fi.getLastObjectNumber()) {
                 
                 long newObjSize = dataLength + offset;
                 
@@ -580,7 +603,7 @@ public class StorageThread extends Stage {
                 // if the written object has a larger ID than the largest
                 // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
-                if (objNo > fi.getLastObjectNumber()) {
+                if (objNo > fi.getLastObjectNumber() && !gMaxOff) {
                     if (objNo > fi.getGlobalLastObjectNumber()) {
                         // send UDP packets...
                         final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
@@ -618,6 +641,15 @@ public class StorageThread extends Stage {
             
             cback.writeComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+        } catch (VoucherErrorException ex) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                        "Failed to process write() request due to the following VoucherErrorException:");
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+            }
+
+            cback.writeComplete(null,
+                    ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
         }
     }
 
@@ -725,6 +757,20 @@ public class StorageThread extends Stage {
                     cow, newObjVer);
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() < newFileSize) {
+                // check quota
+                if (rq.getRequest() != null
+                        && !master.getOsdVoucherManager().checkMaxVoucherSize(fileId,
+                        rq.getRequest().getCapability().getClientIdentity(),
+                        rq.getRequest().getCapability().getExpireMs(), newFileSize)) {
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                                "Insufficient voucher for an extending truncate");
+                    }
+
+                    cback.truncateComplete(null, master.getOsdVoucherManager().getInsufficientVoucherErrorResponse());
+                    return;
+                }
+
                 // extend file
                 newLastObject = truncateExtend(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber,
                     cow, newObjVer);
@@ -766,11 +812,56 @@ public class StorageThread extends Stage {
                     .setTruncateEpoch((int) epochNumber).build();
             cback.truncateComplete(response, null);
             
+        } catch (VoucherErrorException ex) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                        "Failed to process write() request due to the following VoucherErrorException:");
+                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
+            }
+
+            cback.truncateComplete(null,
+                    ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EACCES, ex.toString(), ex));
         } catch (Exception ex) {
             cback.truncateComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
         }
         
+    }
+
+    /**
+     * @param method
+     */
+    private void processFinalizeVouchers(StageRequest rq) {
+
+        final FinalizeVoucherCallback cback = (FinalizeVoucherCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        final String clientId = (String) rq.getArgs()[1];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
+        @SuppressWarnings("unchecked")
+        final Set<Long> expireTimeSet = (Set<Long>) rq.getArgs()[3];
+
+        OSDVoucherManager osdVoucherManager = master.getOsdVoucherManager();
+        try {
+            osdVoucherManager.invalidateFileVouchers(fileId, clientId, expireTimeSet);
+
+            FileMetadata fileMetadata = layout.getFileMetadata(sp, fileId);
+            String uuid = master.getConfig().getUUID().toString();
+
+            FinalizeVoucherResponseHelper helper = new FinalizeVoucherResponseHelper(master.getConfig()
+                    .getCapabilitySecret());
+            String signature = helper.createSignature(uuid, fileMetadata.getFilesize(),
+                    fileMetadata.getTruncateEpoch(), expireTimeSet);
+
+            OSDFinalizeVouchersResponse response = OSDFinalizeVouchersResponse.newBuilder().setOsdUuid(uuid)
+                    .setServerSignature(signature).setSizeInBytes(fileMetadata.getFilesize())
+                    .setTruncateEpoch(fileMetadata.getTruncateEpoch()).build();
+
+            cback.finalizeVoucherComplete(response, null);
+        } catch (Exception ex) {
+            cback.finalizeVoucherComplete(null,
+                    ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
+        }
+
     }
 
     private void processGetObjectSet(StageRequest rq) {

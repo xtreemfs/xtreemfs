@@ -465,6 +465,18 @@ message xtreemfs_check_file_existsResponse {
   repeated FILE_STATE file_states = 2 [packed=true]; 
 }
 
+// requests are clear voucher on the listed expire times
+// with the proper finalize responses from the OSDs
+message xtreemfs_clear_vouchersRequest {
+  // latest xcap containing file id and client id
+  required FileCredentials creds = 1;
+  // list of respones from finalize voucher requests
+  // from the differend OSDs
+  repeated OSDFinalizeVouchersResponse osd_finalize_vouchers_response = 2;
+  // list of expire times, which has been finalized
+  repeated fixed64 expire_time_ms = 3;
+}
+
 // dumps or restores the MRC database
 message xtreemfs_dump_restore_databaseRequest {
   // the path to the dump file on the MRC host
@@ -504,7 +516,7 @@ message xtreemfs_listdirResponse {
   repeated string names = 1;
 }
 
-// adds a replica to a file
+// request the addition of a replica to a file
 message xtreemfs_replica_addRequest {
   // the file ID
   optional string file_id = 1;
@@ -513,6 +525,13 @@ message xtreemfs_replica_addRequest {
   optional string volume_name = 4;
   // the replica to add
   required Replica new_replica = 2;
+}
+
+// response to a replica_add request, containing the xLocSet version that is
+// expected to be installed on successful replica removal.
+message xtreemfs_replica_addResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
 }
 
 // requests a list of all replicas of a file (deprecated)
@@ -533,9 +552,12 @@ message xtreemfs_get_xlocsetRequest {
   optional string volume_name = 3;
   // or a valid XCap.
   optional XCap xcap = 4;
+  // optional set of Vivaldi cooridnates of the client, which can be
+  // used to order the list of replicas
+  optional VivaldiCoordinates coordinates = 5;
 }
 
-// removes a replica from a file
+// requests the removal of a replica from a file
 message xtreemfs_replica_removeRequest {
   // the file ID
   optional string file_id = 1;
@@ -544,6 +566,23 @@ message xtreemfs_replica_removeRequest {
   optional string volume_name = 4;
   // the UUID of the head OSD of the replica to remove
   required string osd_uuid = 2;
+}
+
+// response to a replica_remova request, containing the xLocSet version that is
+// expected to be installed on successful replica removal and a xLocSet and a
+// xCap which can be used to unlink the data objects from the removed replica.
+message xtreemfs_replica_removeResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
+  required XLocSet unlink_xloc = 3;
+  required XCap unlink_xcap = 4;
+}
+
+message xtreemfs_renew_capabilityRequest {
+  // the XCap
+  required XCap xcap = 1;
+  // hint, whether to increase voucher or not
+  optional bool increaseVoucher = 2 [default = false];
 }
 
 // restores a file w/ orphaned file content by creating a new metadata object
@@ -605,8 +644,26 @@ message xtreemfs_set_read_only_xattrResponse {
   required bool was_set = 1;
 }
 
-message xtreemfs_get_file_credentialsRequest{
+message xtreemfs_get_file_credentialsRequest {
   required string file_id = 1;
+}
+
+// requests to reapply the volumes current OSD selection policy to a file
+message xtreemfs_reselect_osdsRequest {
+  // path and volume_name to file.
+  required string path = 1;
+  required string volume_name = 2;
+
+  // optional set of Vivaldi cooridnates of the client, which can be
+  // used to order the list of replicas
+  optional VivaldiCoordinates coordinates = 3;
+}
+
+// response to a reselect_osds request, containing the xLocSet version that is
+// expected to be installed on successful replica removal.
+message xtreemfs_reselect_osdsResponse {
+  required string file_id = 1;
+  required int32 expected_xlocset_version = 2;
 }
 
 service MRCService {
@@ -721,6 +778,10 @@ service MRCService {
   rpc xtreemfs_check_file_exists(xtreemfs_check_file_existsRequest) returns(xtreemfs_check_file_existsResponse) {
     option(proc_id)=31;
   };
+  
+  rpc xtreemfs_clear_vouchers(xtreemfs_clear_vouchersRequest) returns(emptyResponse) {
+    option(proc_id)=52;
+  };
 
   // dumps the MRC database to a dump file on the MRC host
   rpc xtreemfs_dump_database(xtreemfs_dump_restore_databaseRequest) returns(emptyResponse) {
@@ -756,13 +817,19 @@ service MRCService {
   rpc xtreemfs_renew_capability(XCap) returns(XCap) {
     option(proc_id)=37;
   };
+  
+  // renew an existing capability to extend the validity period and
+  // if the flag is active, increase the voucher size
+  rpc xtreemfs_renew_capability_and_voucher(xtreemfs_renew_capabilityRequest) returns(XCap){
+    option(proc_id)=53;
+  };
 
   rpc xtreemfs_replication_to_master(emptyRequest) returns(emptyResponse) {
     option(proc_id)=38;
   };
  
-  // adds a replica to a file
-  rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(emptyResponse) {
+  // requests the addition of a replica to a file
+  rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(xtreemfs_replica_addResponse) {
     option(proc_id)=39;
   };
 
@@ -771,8 +838,8 @@ service MRCService {
     option(proc_id)=40;
   };
 
-  // removes a replica from a file
-  rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(FileCredentials) {
+  // requests to remove a replica from a file
+  rpc xtreemfs_replica_remove(xtreemfs_replica_removeRequest) returns(xtreemfs_replica_removeResponse) {
     option(proc_id)=41;
   };
 
@@ -819,5 +886,10 @@ service MRCService {
   // Returns the current xLocSet for the specified file.
   rpc xtreemfs_get_xlocset(xtreemfs_get_xlocsetRequest) returns(XLocSet) {
     option(proc_id)=51;
+  };
+
+  // requests to reapply the volumes current OSD selection policy to a file
+  rpc xtreemfs_reselect_osds(xtreemfs_reselect_osdsRequest) returns(xtreemfs_reselect_osdsResponse) {
+    option(proc_id)=54;
   };
 }

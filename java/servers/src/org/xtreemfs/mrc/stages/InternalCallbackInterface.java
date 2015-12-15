@@ -15,5 +15,5 @@ import org.xtreemfs.mrc.MRCRequest;
  * @see ProcessingStage#enqueueInternalCallbackOperation(MRCRequest, InternalCallbackInterface)
  */
 public interface InternalCallbackInterface {
-    public void execute(MRCRequest rq) throws Throwable;
+    public void execute() throws Throwable;
 }

@@ -10,7 +10,6 @@ package org.xtreemfs.osd;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
@@ -75,6 +74,7 @@ import org.xtreemfs.osd.operations.EventCreateFileVersion;
 import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.EventRWRStatus;
 import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.FinalizeVouchersOperation;
 import org.xtreemfs.osd.operations.FleaseMessageOperation;
 import org.xtreemfs.osd.operations.GetFileIDListOperation;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
@@ -83,6 +83,7 @@ import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateInvalidatedOperation;
 import org.xtreemfs.osd.operations.InternalRWRAuthStateOperation;
 import org.xtreemfs.osd.operations.InternalRWRFetchOperation;
+import org.xtreemfs.osd.operations.InternalRWRResetStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRStatusOperation;
 import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
 import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
@@ -100,11 +101,15 @@ import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
+import org.xtreemfs.osd.quota.OSDVoucherManager;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple;
+import org.xtreemfs.osd.rwre.ReplicatedFileStateSimple.ReplicatedFileStateSimpleFuture;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage;
+import org.xtreemfs.osd.stages.TracingStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.CleanupVersionsThread;
@@ -167,6 +172,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     protected final ReplicationStage                    replStage;
 
+    protected final TracingStage                        tracingStage;
+
     protected final RPCUDPSocketServer                  udpCom;
 
     protected final StatusServer                        statusServer;
@@ -186,12 +193,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     protected final RWReplicationStage                  rwrStage;
 
+    private final OSDVoucherManager                     osdVoucherManager;
+
     private List<OSDStatusListener>                     statusListener;
+
+    private OSDPolicyContainer                          policyContainer;
 
     /**
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
+
 
     public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
@@ -252,6 +264,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             if (!objDir.mkdirs())
                 throw new IOException("unable to create object directory: " + objDir.getAbsolutePath());
         }
+
+        policyContainer = new OSDPolicyContainer(config);
         
         // -------------------------------
         // initialize communication stages
@@ -274,9 +288,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                     "using custom trust manager '%s'", tm1.getClass().getName());
         }
         
-        SSLOptions serverSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
+        SSLOptions serverSSLopts = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), config.getSSLProtocolString(), tm1) : null;
         
@@ -284,9 +298,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 config.getSocketReceiveBufferSize(), config.getMaxClientQ());
         rpcServer.setLifeCycleListener(this);
         
-        final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
-                .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
-                .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
+        final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
+                config.getServiceCredsPassphrase(), config.getServiceCredsContainer(), config.getTrustedCertsFile(),
+                config
                 .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config
                 .isGRIDSSLmode(), config.getSSLProtocolString(), tm2) : null;
         
@@ -342,6 +356,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
         rwrStage.setLifeCycleListener(this);
+
+        tracingStage = new TracingStage(this, config.getMaxRequestsQueueLength());
+        tracingStage.setLifeCycleListener(this);
+
         
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
@@ -517,6 +535,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             notifyConfigurationChange();
         }
         
+        osdVoucherManager = new OSDVoucherManager(storageLayout);
         
         
         if (Logging.isDebug())
@@ -552,6 +571,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.start();
             cvThread.start();
             rwrStage.start();
+            tracingStage.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -561,6 +581,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.waitForStartup();
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
+            tracingStage.waitForStartup();
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -606,6 +627,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.shutdown();
             rwrStage.shutdown();
             vStage.shutdown();
+            tracingStage.shutdown();
             cThread.cleanupStop();
             cThread.shutdown();
             cvThread.cleanupStop();
@@ -619,6 +641,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.waitForShutdown();
             rwrStage.waitForShutdown();
             vStage.waitForShutdown();
+            tracingStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
 
@@ -655,6 +678,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.shutdown();
             rwrStage.shutdown();
             vStage.shutdown();
+            tracingStage.shutdown();
             cThread.cleanupStop();
             cThread.shutdown();
             cvThread.cleanupStop();
@@ -775,6 +799,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
                 @Override
                 public void parseComplete(OSDRequest result, ErrorResponse error) {
+                    if(result.getCapability() != null && result.getCapability().getTraceConfig() != null &&
+                       result.getCapability().getTraceConfig().getTraceRequests()) {
+                        tracingStage.traceRequest(result);
+                    }
+
                     if (error == null) {
                         result.getOperation().startRequest(result);
                     } else {
@@ -808,6 +837,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
 
         op = new TruncateOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new FinalizeVouchersOperation(this);
         operations.put(op.getProcedureId(), op);
 
         /*
@@ -898,6 +930,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         op = new InternalRWRAuthStateInvalidatedOperation(this);
         operations.put(op.getProcedureId(), op);
 
+        op = new InternalRWRResetStatusOperation(this);
+        operations.put(op.getProcedureId(), op);
+
         // --internal events here--
 
         op = new EventCloseFile(this);
@@ -975,6 +1010,17 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     public ServiceAvailability getServiceAvailability() {
         return serviceAvailability;
+    }
+
+    public OSDPolicyContainer getPolicyContainer() {
+        return policyContainer;
+    }
+
+    /**
+     * @return the osdVoucherManager
+     */
+    public OSDVoucherManager getOsdVoucherManager() {
+        return osdVoucherManager;
     }
 
     public void objectReceived() {
@@ -1084,7 +1130,13 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      * @param fileId
      */
     public String getPrimary(String fileId) {
-        return rwrStage.getPrimary(fileId);
+        try {
+            ReplicatedFileStateSimpleFuture future = new ReplicatedFileStateSimpleFuture(rwrStage, fileId);
+            ReplicatedFileStateSimple state = future.get();
+            return state != null ? state.getPrimary() : null;
+        } catch (InterruptedException ex) {
+            return null;
+        }
     }
 
 }

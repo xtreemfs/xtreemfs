@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Thu Dec 11 16:09:37 CET 2014
-//(c) 2014. See LICENSE file for details.
+//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
+//(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -20,6 +20,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_CLEANUP_STATUS = 33;
     public static final int PROC_ID_XTREEMFS_CLEANUP_STOP = 34;
     public static final int PROC_ID_XTREEMFS_CLEANUP_VERSIONS_START = 35;
+    public static final int PROC_ID_XTREEMFS_FINALIZE_VOUCHERS = 22;
     public static final int PROC_ID_XTREEMFS_REPAIR_OBJECT = 36;
     public static final int PROC_ID_XTREEMFS_RWR_FETCH = 73;
     public static final int PROC_ID_XTREEMFS_RWR_FLEASE_MSG = 71;
@@ -43,6 +44,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_SHUTDOWN = 70;
     public static final int PROC_ID_XTREEMFS_XLOC_SET_INVALIDATE = 81;
     public static final int PROC_ID_XTREEMFS_RWR_AUTH_STATE_INVALIDATED = 82;
+    public static final int PROC_ID_XTREEMFS_RWR_RESET_STATUS = 83;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -58,6 +60,7 @@ public class OSDServiceConstants {
            case 33: return null;
            case 34: return null;
            case 35: return null;
+           case 22: return OSD.xtreemfs_finalize_vouchersRequest.getDefaultInstance();
            case 36: return OSD.xtreemfs_repair_objectRequest.getDefaultInstance();
            case 73: return OSD.xtreemfs_rwr_fetchRequest.getDefaultInstance();
            case 71: return OSD.xtreemfs_rwr_flease_msgRequest.getDefaultInstance();
@@ -81,6 +84,7 @@ public class OSDServiceConstants {
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateRequest.getDefaultInstance();
            case 82: return OSD.xtreemfs_rwr_auth_stateRequest.getDefaultInstance();
+           case 83: return OSD.xtreemfs_rwr_reset_statusRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -100,6 +104,7 @@ public class OSDServiceConstants {
            case 33: return OSD.xtreemfs_cleanup_statusResponse.getDefaultInstance();
            case 34: return null;
            case 35: return null;
+           case 22: return GlobalTypes.OSDFinalizeVouchersResponse.getDefaultInstance();
            case 36: return null;
            case 73: return OSD.ObjectData.getDefaultInstance();
            case 71: return null;
@@ -122,7 +127,8 @@ public class OSDServiceConstants {
            case 60: return OSD.xtreemfs_pingMesssage.getDefaultInstance();
            case 70: return null;
            case 81: return OSD.xtreemfs_xloc_set_invalidateResponse.getDefaultInstance();
-           case 82: return null;
+           case 82: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
+           case 83: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }

@@ -102,7 +102,7 @@ then
 fi
 
 # Cleanup test directory if disk is full
-min_free_space_mb=10000 # Remove all tests until enough space is available
+min_free_space_mb=30000 # Remove all tests until enough space is available
 min_free_inodes=2000000
 while true
 do
@@ -114,12 +114,17 @@ do
     break
   fi
 
+  echo -n "Not enough free space/inodes:"
+  echo -n "requiring at least ${min_free_space_mb}M of free space (got ${free_space_mb}M)"
+  echo    " and at least ${min_free_inodes} free inodes (got ${free_inodes})."
+
   # Any dirs left to delete?
   for dir in "$DIR_PREFIX/checkouts/" "$DIR_PREFIX/tests/"
   do
     oldest_dir=$(ls -1At "$dir" | tail -n1)
     if [ -n "$oldest_dir" ]
     then
+      echo "Deleting ${dir}${oldest_dir} ..."
       rm -rf "$dir""$oldest_dir" || break
     fi
   done
@@ -138,6 +143,7 @@ git clone git@github.com:xtreemfs/xtreemfs.git . &> $TEST_LOG
 # 2012-11-02(mberlin): Try to disable optimizations in client compilation.
 # Build client unit tests.
 export BUILD_CLIENT_TESTS=true
+export BUILD_JNI=true
 export CPPFLAGS=-O0
 make client_debug server hadoop-client &>$TEST_LOG
 if [ $? -ne 0 ]; then

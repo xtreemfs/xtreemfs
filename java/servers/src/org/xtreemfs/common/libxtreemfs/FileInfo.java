@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
+import org.xtreemfs.common.libxtreemfs.exceptions.InternalServerErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -151,7 +152,7 @@ public class FileInfo {
 
     /**
      * Proceeds async writes, handles the callbacks and provides a waitForPendingWrites() method for barrier
-     * operations like read.
+     * operations like read. Can be null if the Volume has been initialized with async writes disabled.
      */
     AsyncWriteHandler                                       asyncWriteHandler;
 
@@ -184,10 +185,12 @@ public class FileInfo {
         osdUuidIterator = new UUIDIterator();
         osdUuidIterator.addUUIDs(Helper.getOSDUUIDsFromXlocSet(xlocset));
 
-        asyncWriteHandler = new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
-                volume.getOsdServiceClient(), volume.getAuthBogus(), volume.getUserCredentialsBogus(), volume
-                        .getOptions().getMaxWriteahead(), volume.getOptions().getMaxWriteaheadRequests(),
-                volume.getOptions().getMaxWriteTries());
+        if (volume.getOptions().isEnableAsyncWrites()) {
+            asyncWriteHandler = new AsyncWriteHandler(this, osdUuidIterator, volume.getUUIDResolver(),
+                    volume.getOsdServiceClient(), volume.getAuthBogus(), volume.getUserCredentialsBogus(), volume
+                            .getOptions().getMaxWriteahead(), volume.getOptions().getMaxWriteaheadRequests(), volume
+                            .getOptions().getMaxWriteTries());
+        }
 
         pendingFilesizeUpdates = new ArrayList<FileHandle>(volume.getOptions().getMaxWriteahead());
     }
@@ -269,7 +272,11 @@ public class FileInfo {
         // by fileHandle.
 
         // remove file handle.
-        openFileHandles.remove(fileHandle);
+        boolean removed = openFileHandles.remove(fileHandle);
+        if (!removed) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "FileHandle for fileId %s has been closed multiple times.",
+                    fileId);
+        }
 
         // Decreasing reference count is handle by Volume.closeFile().
         volume.closeFile(fileId, this, fileHandle);
@@ -595,6 +602,11 @@ public class FileInfo {
      * Calls asyncWriteHandler.write().
      */
     void asyncWrite(AsyncWriteBuffer writeBuffer) throws XtreemFSException {
+        if (asyncWriteHandler == null) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "Async writes are disabled for this volume.");
+            throw new InternalServerErrorException("Async writes are disabled for this volume.");
+        }
+
         asyncWriteHandler.write(writeBuffer);
     }
 
@@ -603,7 +615,9 @@ public class FileInfo {
      * are finished).
      */
     protected void waitForPendingAsyncWrites() {
-        asyncWriteHandler.waitForPendingWrites();
+        if (asyncWriteHandler != null) {
+            asyncWriteHandler.waitForPendingWrites();
+        }
     }
 
     /**
@@ -634,7 +648,9 @@ public class FileInfo {
         try {
             fileHandle.writeBackFileSize(responseCopy, closeFile);
         } catch (IOException e) {
-            osdWriteResponseStatus = FilesizeUpdateStatus.kDirty;
+            synchronized (osdWriteResponseLock) {
+                osdWriteResponseStatus = FilesizeUpdateStatus.kDirty;
+            }
             throw e;
         }
 

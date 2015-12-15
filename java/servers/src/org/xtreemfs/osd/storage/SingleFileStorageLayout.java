@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.Stack;
 
@@ -526,6 +527,16 @@ public class SingleFileStorageLayout extends StorageLayout {
 
     @Override
     public void setXLocSetVersionState(String fileId, XLocSetVersionState versionState) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public Set<String> getInvalidClientExpireTimeSet(String fileId) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

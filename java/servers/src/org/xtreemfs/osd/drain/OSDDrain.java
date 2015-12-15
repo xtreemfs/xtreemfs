@@ -51,7 +51,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsRequ
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_xlocsetRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
@@ -95,6 +97,9 @@ public class OSDDrain {
         
         // Flag to determine if consistency is preserved by the MRC on adding/removing replicas.
         public boolean           isReplicaChangeCoordinated = false;
+
+        // Since adding and removing replicas is async, it has to be waited for the xlocset installation.
+        public int               expectedXLocSetVersion     = 0;
     }
 
     private DIRClient             dirClient;
@@ -114,6 +119,10 @@ public class OSDDrain {
     private Auth                  password;
 
     private UUIDResolver          resolver;
+
+    private final int             WAIT_FOR_REPLICA_COMPLETE_DELAY_S      = 5;
+
+    private final int             WAIT_FOR_XLOC_SET_INSTALLATION_DELAY_S = 5;
 
     public OSDDrain(DIRClient dirClient, OSDServiceClient osdClient, MRCServiceClient mrcClient,
             ServiceUUID osdUUID, Auth password, UserCredentials usercreds, UUIDResolver resolver)
@@ -605,7 +614,7 @@ public class OSDDrain {
     }
 
     private void addReplicaToFile(FileInformation fileInfo, Replica replica) throws OSDDrainException {
-        RPCResponse<?> response = null;
+        RPCResponse<xtreemfs_replica_addResponse> response = null;
         try {
             xtreemfs_replica_addRequest replica_addRequest = xtreemfs_replica_addRequest.newBuilder()
                                                                                         .setFileId(fileInfo.fileID)
@@ -613,17 +622,63 @@ public class OSDDrain {
                                                                                         .build();
             response = mrcClient.xtreemfs_replica_add(fileInfo.mrcAddress, password, userCreds,
                                                       replica_addRequest);
-            response.get();
+            xtreemfs_replica_addResponse response2 = response.get();
+            fileInfo.expectedXLocSetVersion = response2.getExpectedXlocsetVersion();
+            waitForXLocSetInstallation(fileInfo);
         } catch (Exception e) {
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_WARN, this, e);
             }
-            throw new OSDDrainException("Could not add replica to file with id" + fileInfo.fileID,
-                                        ErrorState.CREATE_REPLICAS);
+            throw new OSDDrainException(
+                    "Could not add replica to file with id: " + fileInfo.fileID + "\n" 
+                    + "Original error was:\n" + e.getMessage(),
+                    ErrorState.CREATE_REPLICAS);
         } finally {
             if (response != null) {
                 response.freeBuffers();
             }
+        }
+    }
+
+    void waitForXLocSetInstallation(FileInformation fileInfo) throws OSDDrainException {
+        if (fileInfo.expectedXLocSetVersion == 0) {
+            return;
+        }
+
+
+        xtreemfs_get_xlocsetRequest.Builder reqBuilder = xtreemfs_get_xlocsetRequest.newBuilder();
+        reqBuilder.setFileId(fileInfo.fileID);
+
+        try {
+            boolean finished = false;
+            while (!finished) {
+                RPCResponse<XLocSet> response = null;
+                XLocSet xLocSet;
+                try {
+                    response = mrcClient.xtreemfs_get_xlocset(fileInfo.mrcAddress, password, userCreds,
+                            reqBuilder.build());
+                    xLocSet = response.get();
+                } finally {
+                    response.freeBuffers();
+                }
+
+                if (xLocSet.getVersion() == fileInfo.expectedXLocSetVersion) {
+                    fileInfo.expectedXLocSetVersion = 0;
+                    finished = true;
+                } else if (xLocSet.getVersion() > fileInfo.expectedXLocSetVersion) {
+                    throw new OSDDrainException("Could not install the new xLocSet for file " + fileInfo.fileID,
+                            ErrorState.WAIT_FOR_XLOCSET_INSTALLATION);
+                }
+
+                if (!finished) {
+                    Thread.sleep(WAIT_FOR_XLOC_SET_INSTALLATION_DELAY_S * 1000);
+                }
+            }
+        } catch (OSDDrainException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new OSDDrainException("Error while waiting for the xLocSet installation for file " + fileInfo.fileID,
+                    ErrorState.WAIT_FOR_XLOCSET_INSTALLATION);
         }
     }
 
@@ -862,7 +917,7 @@ public class OSDDrain {
     }
 
     /**
-     * Polls MRC regularly to discover if replication is complete. Blocks until this event happens.
+     * Polls OSDs regularly to discover if replication is complete. Blocks until this event happens.
      *
      * @param fileIDList
      * @throws Exception
@@ -897,7 +952,7 @@ public class OSDDrain {
                         ObjectList ol = r.get();
 
                         byte[] serializedBitSet = ol.getSet().toByteArray();
-                        oSet = new ObjectSet(sp.getWidth(), osdRelPos, serializedBitSet);
+                        oSet = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
                     } catch (Exception e) {
                         if (Logging.isDebug()) {
                             Logging.logError(Logging.LEVEL_WARN, this, e);
@@ -933,10 +988,10 @@ public class OSDDrain {
                 return finishedFileInfos;
 
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                               "waiting 10secs for replication to be finished");
+                               "waiting %d secs for replication to be finished", WAIT_FOR_REPLICA_COMPLETE_DELAY_S);
             try {
-                // wait 10sec until next poll
-                Thread.sleep(5000);
+                // wait until next poll
+                Thread.sleep(WAIT_FOR_REPLICA_COMPLETE_DELAY_S * 1000);
             } catch (Exception e) {
                 // ignore
             }
@@ -976,7 +1031,7 @@ public class OSDDrain {
     }
 
     private void removeReplica(FileInformation fileInfo, Replica replica) throws OSDDrainException {
-        RPCResponse<?> response = null;
+        RPCResponse<xtreemfs_replica_removeResponse> response = null;
 
         String headOSD = replica.getOsdUuids(0);
         xtreemfs_replica_removeRequest replica_removeRequest;
@@ -987,17 +1042,22 @@ public class OSDDrain {
         try {
             response = mrcClient
                     .xtreemfs_replica_remove(fileInfo.mrcAddress, password, userCreds, replica_removeRequest);
-            response.get();
+            xtreemfs_replica_removeResponse response2 = response.get();
+            fileInfo.expectedXLocSetVersion = response2.getExpectedXlocsetVersion();
+            waitForXLocSetInstallation(fileInfo);
         } catch (Exception e) {
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_WARN, this, e);
             }
-            throw new OSDDrainException(e.getMessage(), ErrorState.REMOVE_REPLICAS);
+            throw new OSDDrainException("Could not remove replica from file with id" + fileInfo.fileID + "\n"
+                    + "Original error was:\n" + e.getMessage(), ErrorState.REMOVE_REPLICAS);
         } finally {
             if (response != null)
                 response.freeBuffers();
         }
+        
     }
+
 
     /**
      * Shuts down the OSD which should be removed.
@@ -1376,7 +1436,7 @@ public class OSDDrain {
     }
 
     private void printError() {
-        System.err.println("ERROR: An error accured during the OSD drain process. See logging output"
+        System.err.println("ERROR: An error occured during the OSD drain process. See logging output"
                 + "for details. It is NOT save to shutdown the OSD.");
     }
 }

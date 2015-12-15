@@ -177,6 +177,7 @@ Options::Options()
   periodic_file_size_updates_interval_s = 60;  // Default: 1 Minute.
   periodic_xcap_renewal_interval_s = 60;  // Default: 1 Minute.
   vivaldi_zipf_generator_skew = 0.5;
+  xLoc_install_poll_interval_s = 5; // Default: 5 Seconds.
 
   // Internal options, not available from the command line interface.
   was_interrupted_function = NULL;

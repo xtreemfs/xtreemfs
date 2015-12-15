@@ -76,19 +76,62 @@
     The following target was added manually to build a jar which contains the 
     XtreemFS Hadoop client and all its dependencies.
     -->
-	<target name="-post-jar">
-	<echo level="info">Creating a single jar file containing all dependencies.</echo>
-		<!-- Rename the XtreemFSHadoopClient JAR. -->
-		<move file="dist/XtreemFSHadoopClient.jar" tofile="dist/XtreemFSHadoopClient_no_deps.jar"/> 
-		<!-- Create a new JAR. -->
-		<jar destfile="dist/XtreemFSHadoopClient.jar">
-			<zipfileset src="dist/XtreemFSHadoopClient_no_deps.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/foundation/dist/Foundation.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/servers/dist/XtreemFS.jar" includes="**/*.java **/*.class"/>
-			<zipfileset src="../../java/lib/protobuf-java-2.5.0.jar" includes="**/*.java **/*.class"/>
-		</jar>
-		<!-- Delete the original XtreemFSHadoopClient JAR. -->
-		<delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>
-	</target>
-    
+    <target name="-post-jar">
+        <echo level="info">Creating a single jar file containing all dependencies.</echo>
+        <!-- Rename the XtreemFSHadoopClient JAR. -->
+        <move file="dist/XtreemFSHadoopClient.jar" tofile="dist/XtreemFSHadoopClient_no_deps.jar"/> 
+        <!-- Create a new JAR. -->
+        <jar destfile="dist/XtreemFSHadoopClient.jar">
+	    <zipfileset src="dist/XtreemFSHadoopClient_no_deps.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/foundation/dist/Foundation.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/servers/dist/XtreemFS.jar" includes="**/*.java **/*.class"/>
+	    <zipfileset src="../../java/lib/protobuf-java-2.5.0.jar" includes="**/*.java **/*.class"/>
+        </jar>
+        <!-- Delete the original XtreemFSHadoopClient JAR. -->
+        <delete file="dist/XtreemFSHadoopClient_no_deps.jar"/>
+    </target>
+
+    <!-- Sets JUnit Classpath for Test Compilation if not in NetBeans -->
+    <target name="-set-junit-classpath" unless="netbeans.home">
+        <property name="libs.junit_4.classpath" value="../../java/lib/test/junit-4.11.jar"/>
+    </target>
+
+    <!-- Sets Hadoop Classpaths for Test Compilation if not in NetBeans -->
+    <target name="-set-hadoop-compile-classpaths" depends="-check-environment" if="hadoop.external">
+        <property environment="env"/>
+
+        <path id="hadoop_common_jars">
+            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common" includes="hadoop-common-*.jar"/>
+        </path>
+        <property name="libs.hadoop_common_tests.classpath" refid="hadoop_common_jars"/>
+    </target>
+
+    <!-- Sets Hadoop Classpaths for Test Execution if not in NetBeans -->
+    <target name="-set-hadoop-run-classpaths" depends="-check-environment" if="hadoop.external">
+        <property environment="env"/>
+
+        <path id="hadoop_common_dependency_jars">
+            <fileset dir="${env.HADOOP_PREFIX}/share/hadoop/common/lib" includes="*.jar"/>
+        </path>
+        <property name="libs.hadoop_common_dependencies.classpath" refid="hadoop_common_dependency_jars"/>
+    </target>
+
+    <!-- Sets project property 'hadoop.external' to true if not executed within NetBeans -->
+    <!-- and the environment variable 'HADOOP_PREFIX' is set -->
+    <target name="-check-environment">
+        <property environment="env"/>
+        <condition property="hadoop.external">
+            <and>
+                <isset property="env.HADOOP_PREFIX"/>
+                <not>
+                    <isset property="netbeans.home"/>
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <target name="-pre-init" depends="-set-junit-classpath,-set-hadoop-compile-classpaths,-set-hadoop-run-classpaths">
+        <!-- Empty target -->
+        <!-- Simply triggers invocation of the depending targets -->
+    </target>
 </project>

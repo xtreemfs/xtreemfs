@@ -20,6 +20,7 @@ import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.quota.QuotaFileInformation;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
@@ -122,7 +123,14 @@ public class SetattrOperation extends MRCOperation {
                 } else if (!rq.getDetails().superUser)
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                         "changing owners is restricted to superusers");
-                
+
+                // transfer file space information from old owner to new owner
+                if (!file.isDirectory() && file.getXLocList() != null) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
+                            file);
+                    master.getMrcVoucherManager().transferOwnerSpace(quotaFileInformation,
+                            rqArgs.getStbuf().getUserId(), update);
+                }
             }
             
             if (setGID) {
@@ -136,6 +144,14 @@ public class SetattrOperation extends MRCOperation {
                     throw new UserException(
                         POSIXErrno.POSIX_ERROR_EPERM,
                         "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
+
+                // transfer file space information from old owner group to new owner group
+                if (!file.isDirectory() && file.getXLocList() != null) {
+                    QuotaFileInformation quotaFileInformation = new QuotaFileInformation(sMan.getVolumeInfo().getId(),
+                            file);
+                    master.getMrcVoucherManager().transferOwnerGroupSpace(quotaFileInformation,
+                            rqArgs.getStbuf().getGroupId(), update);
+                }
             }
             
             // change owner and owning group

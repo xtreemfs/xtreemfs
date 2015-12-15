@@ -1,30 +1,46 @@
 language: java
 
-jdk: openjdk6
+jdk: openjdk7
 
 env:
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit
-    - TEST_SUITE=travis-cpp
-    - TEST_SUITE=travis-valgrind
+    - TEST_SUITE=travis-junit     BUILD_JNI=true
+    - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true
+    - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true
+    - TEST_SUITE=travis-contrib   BUILD_JNI=true
 
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libboost-all-dev libfuse-dev fuse libssl-dev libattr1-dev make cmake automake python valgrind
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - libboost-all-dev
+      - libfuse-dev 
+      - fuse 
+      - libssl-dev
+      - libattr1-dev
+      - make
+      - cmake
+      - automake 
+      - python
+      - valgrind
+      - net-tools
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
   - XTREEMFS_DIR=`pwd`
 
 script:
-  - BUILD_CLIENT_TESTS=true make -j2
+  - make client server hadoop-client -j2
   - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
   - CPP_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'C++ Unit Tests'`
   - VALGRIND_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'Valgrind memory-leak check for C++ Unit Tests'`
+  - CONTRIB_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'hadoop adapter junit tests'`
   - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
   - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
   - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
+  - if [[ $CONTRIB_RESULT = "false" ]]; then cat $TEST_DIR_/log/hadoop-*-junit.log; fi
