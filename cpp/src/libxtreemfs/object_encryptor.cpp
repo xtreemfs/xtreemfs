@@ -604,6 +604,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
   int end_offset_in_object = offset_in_object + bytes_to_write;  // ???
   int ct_end_offset_diff = ct_end_offset_in_object - end_offset_in_object;
   int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
+  int start_enc_block_2 = start_enc_block;
   int end_enc_block = (object_offset + ct_end_offset_in_object - 1)
       / enc_block_size_;
   int offset_end_enc_block = (end_enc_block - start_enc_block)
@@ -645,11 +646,11 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
                     boost::asio::buffer(ciphertext));
 
     // set start enc block for the rest
-    start_enc_block++;
+    start_enc_block_2++;
     ciphertext_offset += new_pt_block.size();
   }
 
-  if (end_enc_block >= start_enc_block
+  if (end_enc_block >= start_enc_block_2
       && (ct_end_offset_diff != 0 || ct_bytes_to_write_ != ct_bytes_to_write)) {
     // last enc block is either not the same as the first or was not yet handled
     // and is only partly written
@@ -662,7 +663,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
       int bytes_read = reader(object_no,
-                              hash_tree_->GetLeafVersion(start_enc_block),
+                              hash_tree_->GetLeafVersion(start_enc_block_2),
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_end_offset_in_object - new_pt_block_len,
                               enc_block_size_);
@@ -676,7 +677,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
     // 3. get plaintext for new enc block by overwriting part of the old
     // plaintext
     int buffer_offset_end_enc_block = buffer_offset
-        + (end_enc_block - start_enc_block) * enc_block_size_;
+        + (end_enc_block - start_enc_block_2) * enc_block_size_;
     std::copy(buffer + buffer_offset_end_enc_block, buffer + bytes_to_write,
               new_pt_block.begin());
 
@@ -693,7 +694,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
     end_enc_block--;
   }
 
-  for (int i = start_enc_block; i <= end_enc_block; i++) {
+  for (int i = start_enc_block_2; i <= end_enc_block; i++) {
     boost::asio::const_buffer pt_block = boost::asio::buffer(
         buffer + buffer_offset, enc_block_size_);
     EncryptEncBlock(
