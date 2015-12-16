@@ -351,4 +351,11 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     public long getCreationTime() throws DatabaseException {
         return 0;
     }
+
+    @Override
+    public void reload() throws DatabaseException {
+        this.init(sMan);
+
+        sMan.notifyVolumeChange(this);
+    }
 }

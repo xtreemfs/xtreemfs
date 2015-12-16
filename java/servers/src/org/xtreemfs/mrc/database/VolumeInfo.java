@@ -243,4 +243,8 @@ public interface VolumeInfo {
      */
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException;
 
+    /**
+     * Reload attributes from source.
+     */
+    public void reload() throws DatabaseException;
 }
