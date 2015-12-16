@@ -45,6 +45,8 @@ import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
+import com.google.protobuf.UninitializedMessageException;
+
 /**
  * 
  * @author clorenz
@@ -1381,28 +1383,31 @@ public class HashStorageLayout extends StorageLayout {
         XLocSetVersionState state = xLocSetVSCache.get(fileId);
 
         if (state == null) {
-            XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
-    
             File fileDir = new File(generateAbsoluteFilePath(fileId));
             File vsFile = new File(fileDir, XLOC_VERSION_STATE_FILENAME);
     
             FileInputStream input = null;
             try {
                 input = new FileInputStream(vsFile);
+
+                XLocSetVersionState.Builder vsbuilder = XLocSetVersionState.newBuilder();
                 vsbuilder.mergeDelimitedFrom(input);
-    
+                state = vsbuilder.build();
             } catch (FileNotFoundException e) {
-                // If the file does not exist yet, set the initial state
-                vsbuilder.setInvalidated(true).setVersion(-1);
-    
+                // If the file does not exist yet, set the initial state.
+                state = XLocSetVersionState.newBuilder().setInvalidated(true).setVersion(-1).build();
+            } catch (UninitializedMessageException e) {
+                // If the parsed message did miss some required fields, set the initial state and log the error.
+                Logging.logMessage(Logging.LEVEL_WARN, this,
+                        "Version state file is corrupt. Using default values. FileId: %s", fileId);
+                state = XLocSetVersionState.newBuilder().setInvalidated(true).setVersion(-1).build();
             } finally {
                 if (input != null) {
                     input.close();
                 }
             }
 
-            // Build the state and store it to the cache.
-            state = vsbuilder.build();
+            // Cache the version state.
             xLocSetVSCache.put(fileId, state);
         }
 

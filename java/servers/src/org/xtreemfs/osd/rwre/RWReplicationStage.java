@@ -351,6 +351,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 // Ignore any leaseStateChange if the replica is invalidated.
                 if (state.isInvalidated()) {
                     doInvalidated(state);
+                    return;
                 }
 
                 boolean leaseOk = false;
@@ -520,20 +521,24 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 continue;
             }
 
+            // Remove an object from the queue and process it
             if (!file.getObjectsToFetch().isEmpty()) {
                 ObjectVersionMapping o = file.getObjectsToFetch().remove(0);
                 file.incrementNumObjectsPending();
                 numObjsInFlight++;
                 fetchObject(file, o);
-            } else {
-                // reset complete!
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "(R:%s) RESET complete for file %s", localID, file.getFileId());
-                doResetComplete(file);
             }
 
+            // If there are still missing objects, return the file to the reset queue
             if (!file.getObjectsToFetch().isEmpty()) {
                 filesInReset.add(file);
+            }
+                
+            // If every missing object is fetches and no object is pending processing, the reset is complete
+            if (file.getObjectsToFetch().isEmpty() && file.getNumObjectsPending() == 0) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "(R:%s) RESET complete for file %s",
+                        localID, file.getFileId());
+                doResetComplete(file);
             }
         }
     }
@@ -1196,26 +1201,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                 switch (state.getState()) {
                 case WAITING_FOR_LEASE:
                 case INITIALIZING:
-                case RESET: {
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "enqeue update for %s (state is %s)", fileId, state.getState());
-                    }
-                    if (state.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
-                        if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,
-                                    "rejecting request: too many requests (is: %d, max %d) in queue for file %s",
-                                    state.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
-                        }
-                        callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                                POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
-                        return;
-                    } else {
-                        state.addPendingRequest(method);
-                    }
-                    return;
-                }
-
+                case RESET:
                 case OPEN: {
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -1234,9 +1220,10 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                         state.addPendingRequest(method);
                     }
 
-                    // immediately change to backup mode...no need to check the lease
-                    doWaitingForLease(state);
-
+                    if (state.getState() == ReplicaState.OPEN) {
+                        // immediately change to backup mode...no need to check the lease
+                        doWaitingForLease(state);
+                    }
                     return;
                 }
                 }
