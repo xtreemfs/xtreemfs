@@ -1596,6 +1596,13 @@ class truncateRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 new_file_size() const;
   inline void set_new_file_size(::google::protobuf::uint64 value);
 
+  // optional fixed64 object_version = 4;
+  inline bool has_object_version() const;
+  inline void clear_object_version();
+  static const int kObjectVersionFieldNumber = 4;
+  inline ::google::protobuf::uint64 object_version() const;
+  inline void set_object_version(::google::protobuf::uint64 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.truncateRequest)
  private:
   inline void set_has_file_credentials();
@@ -1604,15 +1611,18 @@ class truncateRequest : public ::google::protobuf::Message {
   inline void clear_has_file_id();
   inline void set_has_new_file_size();
   inline void clear_has_new_file_size();
+  inline void set_has_object_version();
+  inline void clear_has_object_version();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
   ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
   ::std::string* file_id_;
   ::google::protobuf::uint64 new_file_size_;
+  ::google::protobuf::uint64 object_version_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -6218,6 +6228,28 @@ inline ::google::protobuf::uint64 truncateRequest::new_file_size() const {
 inline void truncateRequest::set_new_file_size(::google::protobuf::uint64 value) {
   set_has_new_file_size();
   new_file_size_ = value;
+}
+
+// optional fixed64 object_version = 4;
+inline bool truncateRequest::has_object_version() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void truncateRequest::set_has_object_version() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void truncateRequest::clear_has_object_version() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void truncateRequest::clear_object_version() {
+  object_version_ = GOOGLE_ULONGLONG(0);
+  clear_has_object_version();
+}
+inline ::google::protobuf::uint64 truncateRequest::object_version() const {
+  return object_version_;
+}
+inline void truncateRequest::set_object_version(::google::protobuf::uint64 value) {
+  set_has_object_version();
+  object_version_ = value;
 }
 
 // -------------------------------------------------------------------

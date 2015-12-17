@@ -78,7 +78,7 @@ public final class TruncateOperation extends OSDOperation {
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
                 rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-                null, false, rq,
+                    args.getObjectVersion() == 0 ? null : args.getObjectVersion(), false, rq,
                 new TruncateCallback() {
 
                     @Override
@@ -182,7 +182,8 @@ public final class TruncateOperation extends OSDOperation {
                 if (!osd.equals(localUUID)) {
                     gmaxRPCs[cnt++] = master.getOSDClient().xtreemfs_internal_truncate(osd.getAddress(),
                             RPCAuthentication.authNone,RPCAuthentication.userService,
-                            args.getFileCredentials(), args.getFileId(), args.getNewFileSize());
+ args.getFileCredentials(),
+                            args.getFileId(), args.getNewFileSize(), args.getObjectVersion());
                 }
 
             }

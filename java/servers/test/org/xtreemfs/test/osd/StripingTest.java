@@ -368,7 +368,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone,
-                RPCAuthentication.userService, fcred, FILE_ID, SIZE);
+                RPCAuthentication.userService, fcred, FILE_ID, SIZE, 0);
         OSDWriteResponse resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -400,7 +400,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE * 8);
+                fcred, FILE_ID, SIZE * 8, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -439,7 +439,7 @@ public class StripingTest {
 
         final long size3p5 = (long) (SIZE * 3.5f);
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, size3p5);
+                fcred, FILE_ID, size3p5, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -481,7 +481,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, size3p5);
+                fcred, FILE_ID, size3p5, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -523,7 +523,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, 0);
+                fcred, FILE_ID, 0, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -565,7 +565,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE);
+                fcred, FILE_ID, SIZE, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -591,7 +591,7 @@ public class StripingTest {
         fcred = fcred.toBuilder().setXcap(newCap).build();
 
         rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                fcred, FILE_ID, SIZE / 2);
+                fcred, FILE_ID, SIZE / 2, 0);
         resp = rt.get();
         rt.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -661,7 +661,7 @@ public class StripingTest {
             // truncate the file
             long newSize = (long) (Math.random() * maxSize);
             RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone,
-                    RPCAuthentication.userService, fcred, FILE_ID, newSize);
+                    RPCAuthentication.userService, fcred, FILE_ID, newSize, 0);
             rt.registerListener(mrcDummy);
             rt.waitForResult();
             rt.freeBuffers();

@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from OSD.proto at Wed Dec 16 18:15:23 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -45,8 +45,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size) throws IOException {
-         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size, long object_version) throws IOException {
+         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).setObjectVersion(object_version).build();
          return truncate(server, authHeader, userCreds,msg);
     }
 
@@ -344,8 +344,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.OSDWriteResponse> xtreemfs_internal_truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size) throws IOException {
-         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).build();
+    public RPCResponse<GlobalTypes.OSDWriteResponse> xtreemfs_internal_truncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long new_file_size, long object_version) throws IOException {
+         final OSD.truncateRequest msg = OSD.truncateRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setNewFileSize(new_file_size).setObjectVersion(object_version).build();
          return xtreemfs_internal_truncate(server, authHeader, userCreds,msg);
     }
 

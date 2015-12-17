@@ -51,7 +51,7 @@ public final class InternalTruncateOperation extends OSDOperation {
         master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
             rq.getLocationList().getLocalReplica().getStripingPolicy(),
             rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
-            null, false, rq,
+                args.getObjectVersion() == 0 ? null : args.getObjectVersion(), false, rq,
             new TruncateCallback() {
 
             @Override

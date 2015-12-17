@@ -164,7 +164,7 @@ public class OSDTruncateTest {
 
         // truncate shrink to 3 object, 3rd object half
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 2048 * 2 + 1024);
+                fileId, 2048 * 2 + 1024, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -211,7 +211,7 @@ public class OSDTruncateTest {
 
         // truncate shrink to 3 object, 3rd object half
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 2048 * 2 + 1024);
+                fileId, 2048 * 2 + 1024, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -248,7 +248,7 @@ public class OSDTruncateTest {
 
         // truncate shrink to 512
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 512);
+                fileId, 512, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -305,7 +305,7 @@ public class OSDTruncateTest {
 
         // truncate shrink to 512
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 512);
+                fileId, 512, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -347,7 +347,7 @@ public class OSDTruncateTest {
 
         // truncate extend to 2047
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 2047);
+                fileId, 2047, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());
@@ -392,7 +392,7 @@ public class OSDTruncateTest {
         // truncate extend to 4 objects
 
         r = osdClient.truncate(serverID.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                fileId, 2048 * 4);
+                fileId, 2048 * 4, 0);
         resp = r.get();
         r.freeBuffers();
         assertTrue(resp.hasSizeInBytes());

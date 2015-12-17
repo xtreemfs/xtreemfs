@@ -245,7 +245,7 @@ public class StripingTestCOW {
                 // truncate the file
                 long newSize = (long) (Math.random() * maxSize);
                 RPCResponse<OSDWriteResponse> rt = client.truncate(osdIDs.get(0).getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                        fcred, FILE_ID, newSize);
+ fcred, FILE_ID, newSize, 0);
                 rt.registerListener(mrcDummy);
                 rt.waitForResult();
                 rt.freeBuffers();

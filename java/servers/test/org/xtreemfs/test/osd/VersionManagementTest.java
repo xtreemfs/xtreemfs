@@ -137,7 +137,7 @@ public class VersionManagementTest {
 
         // truncate-extend the file and read it
         RPCResponse<OSDWriteResponse> r1 = client.truncate(osdId.getAddress(), RPCAuthentication.authNone,
-                RPCAuthentication.userService, fcred, FILE_ID, OBJ_SIZE * 8);
+                RPCAuthentication.userService, fcred, FILE_ID, OBJ_SIZE * 8, 0);
         r1.get();
         r1.freeBuffers();
 
@@ -163,7 +163,7 @@ public class VersionManagementTest {
         fcred = getFileCredentials(2, true);
 
         r1 = client.truncate(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, fcred,
-                FILE_ID, OBJ_SIZE * 1);
+                FILE_ID, OBJ_SIZE * 1, 0);
         r1.get();
         r1.freeBuffers();
 
@@ -265,7 +265,7 @@ public class VersionManagementTest {
         // created and append another object
         FileCredentials tCred = getFileCredentials(1, true);
         r = client.truncate(osdId.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService, tCred,
-                FILE_ID, 0);
+                FILE_ID, 0, 0);
         r.get();
         r.freeBuffers();
 

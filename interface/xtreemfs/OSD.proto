@@ -175,6 +175,7 @@ message truncateRequest {
   required string file_id = 2;
   // New file size in bytes.
   required fixed64 new_file_size = 3;
+  optional fixed64 object_version = 4;
 }
 
 message unlink_osd_Request {
