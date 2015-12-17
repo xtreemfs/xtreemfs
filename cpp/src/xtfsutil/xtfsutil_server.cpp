@@ -840,13 +840,15 @@ void XtfsUtilServer::OpGetQuota(
 
   Json::Value result(Json::objectValue);
   if (performVolume) {
-    string quota, usedSpace;
+    string quota, usedSpace, blockedSpace;
     volume_->GetXAttr(uc, path, "xtreemfs.quota", &quota);
     volume_->GetXAttr(uc, path, "xtreemfs.usedspace", &usedSpace);
+    volume_->GetXAttr(uc, path, "xtreemfs.blockedspace", &blockedSpace);
 
     Json::Value volume(Json::objectValue);
     volume["quota"] = Json::Value(quota);
     volume["used"] = Json::Value(usedSpace);
+    volume["blocked"] = Json::Value(blockedSpace);
     result["volume"] = volume;
   }
 
