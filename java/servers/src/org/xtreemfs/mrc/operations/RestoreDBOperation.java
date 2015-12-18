@@ -16,6 +16,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -77,6 +78,7 @@ public class RestoreDBOperation extends MRCOperation {
                 
                 private int            dbVersion = 1;
                 
+                @Override
                 public void startElement(String uri, String localName, String qName, Attributes attributes)
                     throws SAXException {
                     
@@ -89,8 +91,12 @@ public class RestoreDBOperation extends MRCOperation {
                             state.currentVolumeName = attributes.getValue(attributes.getIndex("name"));
                             state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes
                                     .getIndex("acPolicy")));
-                            state.currentVolumeQuota = Long.valueOf(attributes.getValue(attributes.getIndex("quota")));
-                            
+                            if (attributes.getIndex("quota") == -1) { // fallback for old xtreemfs versions
+                                state.currentVolumeQuota = QuotaConstants.UNLIMITED_QUOTA;
+                            } else {
+                                state.currentVolumeQuota = Long.valueOf(attributes.getValue(attributes
+                                        .getIndex("quota")));
+                            }
                         }
 
                         else if (qName.equals("filesystem"))
@@ -113,6 +119,7 @@ public class RestoreDBOperation extends MRCOperation {
                     }
                 }
                 
+                @Override
                 public void endElement(String uri, String localName, String qName) throws SAXException {
                     
                     try {
@@ -139,6 +146,10 @@ public class RestoreDBOperation extends MRCOperation {
                         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
                         sMan.setLastFileId(state.largestFileId, update);
                         update.execute();
+
+                        // reload values from db
+                        sMan.getVolumeInfo().reload();
+
                         state.largestFileId = 0;
                         
                     } else if (qName.equalsIgnoreCase("dir"))
@@ -164,6 +175,9 @@ public class RestoreDBOperation extends MRCOperation {
                             dbVersion, openTag);
                     else if (qName.equalsIgnoreCase("attr"))
                         DBAdminHelper.restoreAttr(vMan, master.getFileAccessManager(), attributes, state,
+                            dbVersion, openTag);
+                    else if (qName.equalsIgnoreCase("quota"))
+                        DBAdminHelper.restoreQuota(vMan, master.getFileAccessManager(), attributes, state, 
                             dbVersion, openTag);
                 }
                 

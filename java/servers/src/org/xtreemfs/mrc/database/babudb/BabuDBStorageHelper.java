@@ -283,6 +283,35 @@ public class BabuDBStorageHelper {
 
     }
     
+    public enum QuotaType {
+
+        VOLUME("volume"), USER("user"), GROUP("group");
+
+        private final String key;
+
+        private QuotaType(String key) {
+            this.key = key;
+        }
+
+        public static QuotaType getByKey(String key) {
+            for (QuotaType quotaType : QuotaType.values()) {
+                if (quotaType.getKey().equals(key)) {
+                    return quotaType;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * @return the key
+         */
+        public String getKey() {
+            return key;
+        }
+
+    }
+
     public enum OwnerType {
 
         USER("u"), GROUP("g");

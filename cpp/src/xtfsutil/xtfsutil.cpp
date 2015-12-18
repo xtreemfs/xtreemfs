@@ -137,6 +137,17 @@ string parseUnlimitedQuota(uint64_t quota){
     }
 }
 
+// checks wehter the quota is unlimited and no space is blocked and
+// returns a dash as indicator, that there can not be blocked space
+// otherwise it returns a formatted string
+string parseBlockedSpace(uint64_t quota, uint64_t blockedSpace) {
+  if (quota == 0 && blockedSpace == 0) {
+    return "-";
+  } else {
+    return formatBytes(blockedSpace);
+  }
+}
+
 void OutputACLs(Json::Value* stat) {
   if ((*stat).isMember("acl")) {
     if ((*stat)["acl"].isObject() && !(*stat)["acl"].empty()) {
@@ -589,7 +600,8 @@ bool GetQuota(const string& xctl_file,
     // Output
     cout << setw(setwValue1st) << ""
          << setw(setwValue) << "Quota"
-         << setw(setwValue) << "Used Space" << endl;
+         << setw(setwValue) << "Used Space"
+         << setw(setwValue) << "Blocked Space"<< endl;
 
     if(showVolume){
       const string name = "Volume";
@@ -598,7 +610,15 @@ bool GetQuota(const string& xctl_file,
           << setw(setwValue)
           << parseUnlimitedQuota(
               boost::lexical_cast<uint64_t>(stat["volume"]["quota"].asString()))
-           << setw(setwValue) << stat["volume"]["used"].asString() << endl;
+          << setw(setwValue)
+          << formatBytes(
+              boost::lexical_cast<uint64_t>(stat["volume"]["used"].asString()))
+          << setw(setwValue)
+          << parseBlockedSpace(
+              boost::lexical_cast<uint64_t>(stat["volume"]["quota"].asString()),
+              boost::lexical_cast<uint64_t>(
+                  stat["volume"]["blocked"].asString()))
+          << endl;
     }
 
     if (showUser) {
@@ -625,7 +645,10 @@ bool GetQuota(const string& xctl_file,
             cout << setw(setwValue1st) << it.key().asString() << setw(setwValue)
                  << parseUnlimitedQuota((*it)["quota"].asUInt64())
                  << setw(setwValue) << formatBytes((*it)["used"].asUInt64())
-                 << endl;
+                << setw(setwValue)
+                << parseBlockedSpace((*it)["quota"].asUInt64(),
+                                     (*it)["blocked"].asUInt64())
+                << endl;
           }  // for
         }
       }
@@ -655,6 +678,9 @@ bool GetQuota(const string& xctl_file,
             cout << setw(setwValue1st) << it.key().asString() << setw(setwValue)
                  << parseUnlimitedQuota((*it)["quota"].asUInt64())
                  << setw(setwValue) << formatBytes((*it)["used"].asUInt64())
+                 << setw(setwValue)
+                 << parseBlockedSpace((*it)["quota"].asUInt64(),
+                                      (*it)["blocked"].asUInt64())
                  << endl;
           }  // for
         }
