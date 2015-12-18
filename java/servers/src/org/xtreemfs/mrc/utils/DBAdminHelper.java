@@ -356,19 +356,23 @@ public class DBAdminHelper {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
 
             QuotaType quotaType = QuotaType.getByKey(type);
-            switch (quotaType) {
-            case USER:
-                sMan.setUserQuota(name, quota, update);
-                sMan.setUserUsedSpace(name, usedSpace, update);
-                sMan.setUserBlockedSpace(name, blockedSpace, update);
-                break;
-            case GROUP:
-                sMan.setGroupQuota(name, quota, update);
-                sMan.setGroupUsedSpace(name, usedSpace, update);
-                sMan.setGroupBlockedSpace(name, blockedSpace, update);
-                break;
-            default:
+            if (quotaType == null) {
                 throw new IllegalArgumentException("Unsupported quota type!");
+            } else {
+                switch (quotaType) {
+                case USER:
+                    sMan.setUserQuota(name, quota, update);
+                    sMan.setUserUsedSpace(name, usedSpace, update);
+                    sMan.setUserBlockedSpace(name, blockedSpace, update);
+                    break;
+                case GROUP:
+                    sMan.setGroupQuota(name, quota, update);
+                    sMan.setGroupUsedSpace(name, usedSpace, update);
+                    sMan.setGroupBlockedSpace(name, blockedSpace, update);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unsupported quota type!");
+                }
             }
 
             update.execute();
