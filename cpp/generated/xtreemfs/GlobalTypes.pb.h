@@ -178,6 +178,26 @@ inline bool LeaseState_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<LeaseState>(
     LeaseState_descriptor(), name, value);
 }
+enum FileType {
+  DEFAULT = 0,
+  ENCRYPTED = 1,
+  ENCRYPTED_META = 2
+};
+bool FileType_IsValid(int value);
+const FileType FileType_MIN = DEFAULT;
+const FileType FileType_MAX = ENCRYPTED_META;
+const int FileType_ARRAYSIZE = FileType_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* FileType_descriptor();
+inline const ::std::string& FileType_Name(FileType value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    FileType_descriptor(), value);
+}
+inline bool FileType_Parse(
+    const ::std::string& name, FileType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<FileType>(
+    FileType_descriptor(), name, value);
+}
 enum PORTS {
   DIR_HTTP_PORT_DEFAULT = 30638,
   DIR_PBRPC_PORT_DEFAULT = 32638,
@@ -967,6 +987,25 @@ class XCap : public ::google::protobuf::Message {
   inline ::xtreemfs::pbrpc::TraceConfig* release_trace_config();
   inline void set_allocated_trace_config(::xtreemfs::pbrpc::TraceConfig* trace_config);
 
+  // optional .xtreemfs.pbrpc.FileType file_type = 14;
+  inline bool has_file_type() const;
+  inline void clear_file_type();
+  static const int kFileTypeFieldNumber = 14;
+  inline ::xtreemfs::pbrpc::FileType file_type() const;
+  inline void set_file_type(::xtreemfs::pbrpc::FileType value);
+
+  // optional string related_file_id = 15;
+  inline bool has_related_file_id() const;
+  inline void clear_related_file_id();
+  static const int kRelatedFileIdFieldNumber = 15;
+  inline const ::std::string& related_file_id() const;
+  inline void set_related_file_id(const ::std::string& value);
+  inline void set_related_file_id(const char* value);
+  inline void set_related_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_related_file_id();
+  inline ::std::string* release_related_file_id();
+  inline void set_allocated_related_file_id(::std::string* related_file_id);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.XCap)
  private:
   inline void set_has_access_mode();
@@ -995,6 +1034,10 @@ class XCap : public ::google::protobuf::Message {
   inline void clear_has_expire_time_ms();
   inline void set_has_trace_config();
   inline void clear_has_trace_config();
+  inline void set_has_file_type();
+  inline void clear_has_file_type();
+  inline void set_has_related_file_id();
+  inline void clear_has_related_file_id();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -1008,12 +1051,14 @@ class XCap : public ::google::protobuf::Message {
   ::google::protobuf::uint32 truncate_epoch_;
   ::google::protobuf::uint64 snap_timestamp_;
   ::google::protobuf::uint64 voucher_size_;
+  int snap_config_;
+  int file_type_;
   ::google::protobuf::uint64 expire_time_ms_;
   ::xtreemfs::pbrpc::TraceConfig* trace_config_;
-  int snap_config_;
+  ::std::string* related_file_id_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(13 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(15 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
@@ -2638,6 +2683,99 @@ inline void XCap::set_allocated_trace_config(::xtreemfs::pbrpc::TraceConfig* tra
   }
 }
 
+// optional .xtreemfs.pbrpc.FileType file_type = 14;
+inline bool XCap::has_file_type() const {
+  return (_has_bits_[0] & 0x00002000u) != 0;
+}
+inline void XCap::set_has_file_type() {
+  _has_bits_[0] |= 0x00002000u;
+}
+inline void XCap::clear_has_file_type() {
+  _has_bits_[0] &= ~0x00002000u;
+}
+inline void XCap::clear_file_type() {
+  file_type_ = 0;
+  clear_has_file_type();
+}
+inline ::xtreemfs::pbrpc::FileType XCap::file_type() const {
+  return static_cast< ::xtreemfs::pbrpc::FileType >(file_type_);
+}
+inline void XCap::set_file_type(::xtreemfs::pbrpc::FileType value) {
+  assert(::xtreemfs::pbrpc::FileType_IsValid(value));
+  set_has_file_type();
+  file_type_ = value;
+}
+
+// optional string related_file_id = 15;
+inline bool XCap::has_related_file_id() const {
+  return (_has_bits_[0] & 0x00004000u) != 0;
+}
+inline void XCap::set_has_related_file_id() {
+  _has_bits_[0] |= 0x00004000u;
+}
+inline void XCap::clear_has_related_file_id() {
+  _has_bits_[0] &= ~0x00004000u;
+}
+inline void XCap::clear_related_file_id() {
+  if (related_file_id_ != &::google::protobuf::internal::kEmptyString) {
+    related_file_id_->clear();
+  }
+  clear_has_related_file_id();
+}
+inline const ::std::string& XCap::related_file_id() const {
+  return *related_file_id_;
+}
+inline void XCap::set_related_file_id(const ::std::string& value) {
+  set_has_related_file_id();
+  if (related_file_id_ == &::google::protobuf::internal::kEmptyString) {
+    related_file_id_ = new ::std::string;
+  }
+  related_file_id_->assign(value);
+}
+inline void XCap::set_related_file_id(const char* value) {
+  set_has_related_file_id();
+  if (related_file_id_ == &::google::protobuf::internal::kEmptyString) {
+    related_file_id_ = new ::std::string;
+  }
+  related_file_id_->assign(value);
+}
+inline void XCap::set_related_file_id(const char* value, size_t size) {
+  set_has_related_file_id();
+  if (related_file_id_ == &::google::protobuf::internal::kEmptyString) {
+    related_file_id_ = new ::std::string;
+  }
+  related_file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* XCap::mutable_related_file_id() {
+  set_has_related_file_id();
+  if (related_file_id_ == &::google::protobuf::internal::kEmptyString) {
+    related_file_id_ = new ::std::string;
+  }
+  return related_file_id_;
+}
+inline ::std::string* XCap::release_related_file_id() {
+  clear_has_related_file_id();
+  if (related_file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = related_file_id_;
+    related_file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void XCap::set_allocated_related_file_id(::std::string* related_file_id) {
+  if (related_file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete related_file_id_;
+  }
+  if (related_file_id) {
+    set_has_related_file_id();
+    related_file_id_ = related_file_id;
+  } else {
+    clear_has_related_file_id();
+    related_file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
 // -------------------------------------------------------------------
 
 // XLocSet
@@ -3386,6 +3524,10 @@ inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::StripingPolic
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::LeaseState>() {
   return ::xtreemfs::pbrpc::LeaseState_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::FileType>() {
+  return ::xtreemfs::pbrpc::FileType_descriptor();
 }
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::xtreemfs::pbrpc::PORTS>() {

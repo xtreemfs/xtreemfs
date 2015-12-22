@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from MRC.proto at Thu Dec 17 18:01:13 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -45,8 +45,8 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.XCap> ftruncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp, long voucher_size, long expire_time_ms, GlobalTypes.TraceConfig trace_config) throws IOException {
-         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).setVoucherSize(voucher_size).setExpireTimeMs(expire_time_ms).setTraceConfig(trace_config).build();
+    public RPCResponse<GlobalTypes.XCap> ftruncate(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp, long voucher_size, long expire_time_ms, GlobalTypes.TraceConfig trace_config, GlobalTypes.FileType file_type, String related_file_id) throws IOException {
+         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).setVoucherSize(voucher_size).setExpireTimeMs(expire_time_ms).setTraceConfig(trace_config).setFileType(file_type).setRelatedFileId(related_file_id).build();
          return ftruncate(server, authHeader, userCreds,msg);
     }
 
@@ -396,8 +396,8 @@ public class MRCServiceClient {
          return response;
     }
 
-    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp, long voucher_size, long expire_time_ms, GlobalTypes.TraceConfig trace_config) throws IOException {
-         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).setVoucherSize(voucher_size).setExpireTimeMs(expire_time_ms).setTraceConfig(trace_config).build();
+    public RPCResponse<GlobalTypes.XCap> xtreemfs_renew_capability(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, GlobalTypes.SnapConfig snap_config, long snap_timestamp, long voucher_size, long expire_time_ms, GlobalTypes.TraceConfig trace_config, GlobalTypes.FileType file_type, String related_file_id) throws IOException {
+         final GlobalTypes.XCap msg = GlobalTypes.XCap.newBuilder().setAccessMode(access_mode).setClientIdentity(client_identity).setExpireTimeS(expire_time_s).setExpireTimeoutS(expire_timeout_s).setFileId(file_id).setReplicateOnClose(replicate_on_close).setServerSignature(server_signature).setTruncateEpoch(truncate_epoch).setSnapConfig(snap_config).setSnapTimestamp(snap_timestamp).setVoucherSize(voucher_size).setExpireTimeMs(expire_time_ms).setTraceConfig(trace_config).setFileType(file_type).setRelatedFileId(related_file_id).build();
          return xtreemfs_renew_capability(server, authHeader, userCreds,msg);
     }
 

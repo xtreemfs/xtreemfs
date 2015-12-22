@@ -838,6 +838,125 @@ public final class GlobalTypes {
   }
 
   /**
+   * Protobuf enum {@code xtreemfs.pbrpc.FileType}
+   *
+   * <pre>
+   * The type of a file.
+   * </pre>
+   */
+  public enum FileType
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>DEFAULT = 0;</code>
+     *
+     * <pre>
+     * A normal file.
+     * </pre>
+     */
+    DEFAULT(0, 0),
+    /**
+     * <code>ENCRYPTED = 1;</code>
+     *
+     * <pre>
+     * An encrypted file.
+     * </pre>
+     */
+    ENCRYPTED(1, 1),
+    /**
+     * <code>ENCRYPTED_META = 2;</code>
+     *
+     * <pre>
+     * The meta-data file for an encrypted file.
+     * </pre>
+     */
+    ENCRYPTED_META(2, 2),
+    ;
+
+    /**
+     * <code>DEFAULT = 0;</code>
+     *
+     * <pre>
+     * A normal file.
+     * </pre>
+     */
+    public static final int DEFAULT_VALUE = 0;
+    /**
+     * <code>ENCRYPTED = 1;</code>
+     *
+     * <pre>
+     * An encrypted file.
+     * </pre>
+     */
+    public static final int ENCRYPTED_VALUE = 1;
+    /**
+     * <code>ENCRYPTED_META = 2;</code>
+     *
+     * <pre>
+     * The meta-data file for an encrypted file.
+     * </pre>
+     */
+    public static final int ENCRYPTED_META_VALUE = 2;
+
+
+    public final int getNumber() { return value; }
+
+    public static FileType valueOf(int value) {
+      switch (value) {
+        case 0: return DEFAULT;
+        case 1: return ENCRYPTED;
+        case 2: return ENCRYPTED_META;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<FileType>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static com.google.protobuf.Internal.EnumLiteMap<FileType>
+        internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<FileType>() {
+            public FileType findValueByNumber(int number) {
+              return FileType.valueOf(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(index);
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(6);
+    }
+
+    private static final FileType[] VALUES = values();
+
+    public static FileType valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int index;
+    private final int value;
+
+    private FileType(int index, int value) {
+      this.index = index;
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:xtreemfs.pbrpc.FileType)
+  }
+
+  /**
    * Protobuf enum {@code xtreemfs.pbrpc.PORTS}
    *
    * <pre>
@@ -935,7 +1054,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(6);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(7);
     }
 
     private static final PORTS[] VALUES = values();
@@ -1012,7 +1131,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(7);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(8);
     }
 
     private static final CONSTANTS[] VALUES = values();
@@ -1189,7 +1308,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(8);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(9);
     }
 
     private static final SYSTEM_V_FCNTL[] VALUES = values();
@@ -1312,7 +1431,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(9);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(10);
     }
 
     private static final REPL_FLAG[] VALUES = values();
@@ -1403,7 +1522,7 @@ public final class GlobalTypes {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(10);
+      return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.getDescriptor().getEnumTypes().get(11);
     }
 
     private static final SERVICES[] VALUES = values();
@@ -5635,6 +5754,51 @@ public final class GlobalTypes {
      * </pre>
      */
     org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfigOrBuilder getTraceConfigOrBuilder();
+
+    // optional .xtreemfs.pbrpc.FileType file_type = 14;
+    /**
+     * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+     *
+     * <pre>
+     * File type.
+     * </pre>
+     */
+    boolean hasFileType();
+    /**
+     * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+     *
+     * <pre>
+     * File type.
+     * </pre>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType getFileType();
+
+    // optional string related_file_id = 15;
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    boolean hasRelatedFileId();
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    java.lang.String getRelatedFileId();
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getRelatedFileIdBytes();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.XCap}
@@ -5772,6 +5936,22 @@ public final class GlobalTypes {
                 traceConfig_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00001000;
+              break;
+            }
+            case 112: {
+              int rawValue = input.readEnum();
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType value = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(14, rawValue);
+              } else {
+                bitField0_ |= 0x00002000;
+                fileType_ = value;
+              }
+              break;
+            }
+            case 122: {
+              bitField0_ |= 0x00004000;
+              relatedFileId_ = input.readBytes();
               break;
             }
           }
@@ -6239,6 +6419,85 @@ public final class GlobalTypes {
       return traceConfig_;
     }
 
+    // optional .xtreemfs.pbrpc.FileType file_type = 14;
+    public static final int FILE_TYPE_FIELD_NUMBER = 14;
+    private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType fileType_;
+    /**
+     * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+     *
+     * <pre>
+     * File type.
+     * </pre>
+     */
+    public boolean hasFileType() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+     *
+     * <pre>
+     * File type.
+     * </pre>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType getFileType() {
+      return fileType_;
+    }
+
+    // optional string related_file_id = 15;
+    public static final int RELATED_FILE_ID_FIELD_NUMBER = 15;
+    private java.lang.Object relatedFileId_;
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    public boolean hasRelatedFileId() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    public java.lang.String getRelatedFileId() {
+      java.lang.Object ref = relatedFileId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          relatedFileId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string related_file_id = 15;</code>
+     *
+     * <pre>
+     * FileID of a related File.
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getRelatedFileIdBytes() {
+      java.lang.Object ref = relatedFileId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        relatedFileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private void initFields() {
       accessMode_ = 0;
       clientIdentity_ = "";
@@ -6253,6 +6512,8 @@ public final class GlobalTypes {
       voucherSize_ = 0L;
       expireTimeMs_ = 0L;
       traceConfig_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig.getDefaultInstance();
+      fileType_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType.DEFAULT;
+      relatedFileId_ = "";
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -6351,6 +6612,12 @@ public final class GlobalTypes {
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         output.writeMessage(13, traceConfig_);
       }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeEnum(14, fileType_.getNumber());
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeBytes(15, getRelatedFileIdBytes());
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -6411,6 +6678,14 @@ public final class GlobalTypes {
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(13, traceConfig_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(14, fileType_.getNumber());
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(15, getRelatedFileIdBytes());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -6567,6 +6842,10 @@ public final class GlobalTypes {
           traceConfigBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00001000);
+        fileType_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType.DEFAULT;
+        bitField0_ = (bitField0_ & ~0x00002000);
+        relatedFileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -6651,6 +6930,14 @@ public final class GlobalTypes {
         } else {
           result.traceConfig_ = traceConfigBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.fileType_ = fileType_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.relatedFileId_ = relatedFileId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -6711,6 +6998,14 @@ public final class GlobalTypes {
         }
         if (other.hasTraceConfig()) {
           mergeTraceConfig(other.getTraceConfig());
+        }
+        if (other.hasFileType()) {
+          setFileType(other.getFileType());
+        }
+        if (other.hasRelatedFileId()) {
+          bitField0_ |= 0x00004000;
+          relatedFileId_ = other.relatedFileId_;
+          onChanged();
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -7694,6 +7989,156 @@ public final class GlobalTypes {
           traceConfig_ = null;
         }
         return traceConfigBuilder_;
+      }
+
+      // optional .xtreemfs.pbrpc.FileType file_type = 14;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType fileType_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType.DEFAULT;
+      /**
+       * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+       *
+       * <pre>
+       * File type.
+       * </pre>
+       */
+      public boolean hasFileType() {
+        return ((bitField0_ & 0x00002000) == 0x00002000);
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+       *
+       * <pre>
+       * File type.
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType getFileType() {
+        return fileType_;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+       *
+       * <pre>
+       * File type.
+       * </pre>
+       */
+      public Builder setFileType(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x00002000;
+        fileType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional .xtreemfs.pbrpc.FileType file_type = 14;</code>
+       *
+       * <pre>
+       * File type.
+       * </pre>
+       */
+      public Builder clearFileType() {
+        bitField0_ = (bitField0_ & ~0x00002000);
+        fileType_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType.DEFAULT;
+        onChanged();
+        return this;
+      }
+
+      // optional string related_file_id = 15;
+      private java.lang.Object relatedFileId_ = "";
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public boolean hasRelatedFileId() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public java.lang.String getRelatedFileId() {
+        java.lang.Object ref = relatedFileId_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          relatedFileId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getRelatedFileIdBytes() {
+        java.lang.Object ref = relatedFileId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          relatedFileId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public Builder setRelatedFileId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00004000;
+        relatedFileId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public Builder clearRelatedFileId() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        relatedFileId_ = getDefaultInstance().getRelatedFileId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string related_file_id = 15;</code>
+       *
+       * <pre>
+       * FileID of a related File.
+       * </pre>
+       */
+      public Builder setRelatedFileIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00004000;
+        relatedFileId_ = value;
+        onChanged();
+        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.XCap)
@@ -13094,7 +13539,7 @@ public final class GlobalTypes {
       "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p" +
       "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol" +
       "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre" +
-      "emfs.pbrpc.Replica\"\364\002\n\004XCap\022\023\n\013access_mo" +
+      "emfs.pbrpc.Replica\"\272\003\n\004XCap\022\023\n\013access_mo" +
       "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp" +
       "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002" +
       "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos" +
@@ -13103,70 +13548,73 @@ public final class GlobalTypes {
       ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times",
       "tamp\030\n \002(\006\022\027\n\014voucher_size\030\013 \001(\006:\0010\022\031\n\016e" +
       "xpire_time_ms\030\014 \001(\006:\0010\0221\n\014trace_config\030\r" +
-      " \001(\0132\033.xtreemfs.pbrpc.TraceConfig\"\201\001\n\007XL" +
-      "ocSet\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n\010re" +
-      "plicas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica\022\035\n" +
-      "\025replica_update_policy\030\003 \002(\t\022\017\n\007version\030" +
-      "\004 \002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002(\0132\024" +
-      ".xtreemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xt" +
-      "reemfs.pbrpc.XLocSet\"O\n\022FileCredentialsS" +
-      "et\0229\n\020file_credentials\030\001 \001(\0132\037.xtreemfs.",
-      "pbrpc.FileCredentials\"U\n\022VivaldiCoordina" +
-      "tes\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordinat" +
-      "e\030\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"x\n\033OSDFinal" +
-      "izeVouchersResponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n" +
-      "\020server_signature\030\002 \002(\t\022\025\n\rsize_in_bytes" +
-      "\030\003 \002(\006\022\026\n\016truncate_epoch\030\004 \002(\006\"A\n\020OSDWri" +
-      "teResponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016tru" +
-      "ncate_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key" +
-      "\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlPo" +
-      "licyType\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020\001",
-      "\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034ACC" +
-      "ESS_CONTROL_POLICY_VOLUME\020\003*\365\003\n\026OSDSelec" +
-      "tionPolicyType\022(\n#OSD_SELECTION_POLICY_F" +
-      "ILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLICY" +
-      "_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY_" +
-      "FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_G" +
-      "ROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_GR" +
-      "OUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SORT" +
-      "_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_F" +
-      "QDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT_RAND",
-      "OM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVAL" +
-      "DI\020\273\027\022/\n*OSD_SELECTION_POLICY_SORT_HOST_" +
-      "ROUND_ROBIN\020\274\027\022#\n\036OSD_SELECTION_POLICY_S" +
-      "ORT_UUID\020\236\037\022&\n!OSD_SELECTION_POLICY_SORT" +
-      "_REVERSE\020\237\037*A\n\032ReplicaSelectionPolicyTyp" +
-      "e\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*i" +
-      "\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISABL" +
-      "ED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027" +
-      "SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPol" +
-      "icyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033ST",
-      "RIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseStat" +
-      "e\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004" +
-      "IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAUL" +
-      "T\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025M" +
-      "RC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PO" +
-      "RT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020" +
-      "\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCON" +
-      "STANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202" +
-      "\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_" +
-      "RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022",
-      "\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V" +
-      "_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_" +
-      "O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200" +
-      "\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTE" +
-      "M_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H" +
-      "_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR" +
-      "\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030" +
-      "SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLA" +
-      "G\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FL" +
-      "AG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_R",
-      "ANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIR" +
-      "ST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022" +
-      "-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETC" +
-      "HING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003" +
-      "OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedint" +
-      "erfaces"
+      " \001(\0132\033.xtreemfs.pbrpc.TraceConfig\022+\n\tfil" +
+      "e_type\030\016 \001(\0162\030.xtreemfs.pbrpc.FileType\022\027" +
+      "\n\017related_file_id\030\017 \001(\t\"\201\001\n\007XLocSet\022\033\n\023r" +
+      "ead_only_file_size\030\001 \002(\006\022)\n\010replicas\030\002 \003" +
+      "(\0132\027.xtreemfs.pbrpc.Replica\022\035\n\025replica_u" +
+      "pdate_policy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017F" +
+      "ileCredentials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs." +
+      "pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbr",
+      "pc.XLocSet\"O\n\022FileCredentialsSet\0229\n\020file" +
+      "_credentials\030\001 \001(\0132\037.xtreemfs.pbrpc.File" +
+      "Credentials\"U\n\022VivaldiCoordinates\022\024\n\014x_c" +
+      "oordinate\030\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n" +
+      "\013local_error\030\003 \002(\001\"x\n\033OSDFinalizeVoucher" +
+      "sResponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n\020server_si" +
+      "gnature\030\002 \002(\t\022\025\n\rsize_in_bytes\030\003 \002(\006\022\026\n\016" +
+      "truncate_epoch\030\004 \002(\006\"A\n\020OSDWriteResponse" +
+      "\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016truncate_epoc" +
+      "h\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005",
+      "value\030\002 \002(\t*|\n\027AccessControlPolicyType\022\036" +
+      "\n\032ACCESS_CONTROL_POLICY_NULL\020\001\022\037\n\033ACCESS" +
+      "_CONTROL_POLICY_POSIX\020\002\022 \n\034ACCESS_CONTRO" +
+      "L_POLICY_VOLUME\020\003*\365\003\n\026OSDSelectionPolicy" +
+      "Type\022(\n#OSD_SELECTION_POLICY_FILTER_DEFA" +
+      "ULT\020\350\007\022%\n OSD_SELECTION_POLICY_FILTER_FQ" +
+      "DN\020\351\007\022%\n OSD_SELECTION_POLICY_FILTER_UUI" +
+      "D\020\352\007\022%\n OSD_SELECTION_POLICY_GROUP_DCMAP" +
+      "\020\320\017\022$\n\037OSD_SELECTION_POLICY_GROUP_FQDN\020\321" +
+      "\017\022$\n\037OSD_SELECTION_POLICY_SORT_DCMAP\020\270\027\022",
+      "#\n\036OSD_SELECTION_POLICY_SORT_FQDN\020\271\027\022%\n " +
+      "OSD_SELECTION_POLICY_SORT_RANDOM\020\272\027\022&\n!O" +
+      "SD_SELECTION_POLICY_SORT_VIVALDI\020\273\027\022/\n*O" +
+      "SD_SELECTION_POLICY_SORT_HOST_ROUND_ROBI" +
+      "N\020\274\027\022#\n\036OSD_SELECTION_POLICY_SORT_UUID\020\236" +
+      "\037\022&\n!OSD_SELECTION_POLICY_SORT_REVERSE\020\237" +
+      "\037*A\n\032ReplicaSelectionPolicyType\022#\n\037REPLI" +
+      "CA_SELECTION_POLICY_SIMPLE\020\001*i\n\nSnapConf" +
+      "ig\022\036\n\032SNAP_CONFIG_SNAPS_DISABLED\020\000\022\036\n\032SN" +
+      "AP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027SNAP_CONFI",
+      "G_ACCESS_SNAP\020\002*P\n\022StripingPolicyType\022\031\n" +
+      "\025STRIPING_POLICY_RAID0\020\000\022\037\n\033STRIPING_POL" +
+      "ICY_ERASURECODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020" +
+      "\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*:\n\010" +
+      "FileType\022\013\n\007DEFAULT\020\000\022\r\n\tENCRYPTED\020\001\022\022\n\016" +
+      "ENCRYPTED_META\020\002*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_P" +
+      "ORT_DEFAULT\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAUL" +
+      "T\020\376\376\001\022\033\n\025MRC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MR" +
+      "C_PBRPC_PORT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_POR" +
+      "T_DEFAULT\020\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020",
+      "\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP_RENEW_INTERVAL_" +
+      "IN_MIN\020\001*\202\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_" +
+      "FCNTL_H_O_RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O" +
+      "_WRONLY\020\001\022\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035" +
+      "\n\031SYSTEM_V_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_" +
+      "V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H" +
+      "_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200" +
+      "\010\022\033\n\027SYSTEM_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM" +
+      "_V_FCNTL_H_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL" +
+      "_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFL",
+      "NK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001" +
+      "\n\tREPL_FLAG\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022" +
+      "\031\n\025REPL_FLAG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_" +
+      "STRATEGY_RANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_" +
+      "RAREST_FIRST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQ" +
+      "UENTIAL\020\020\022-\n)REPL_FLAG_STRATEGY_SEQUENTI" +
+      "AL_PREFETCHING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n" +
+      "\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.xtreemfs.pbrpc.ge" +
+      "neratedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -13208,7 +13656,7 @@ public final class GlobalTypes {
           internal_static_xtreemfs_pbrpc_XCap_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_XCap_descriptor,
-              new java.lang.String[] { "AccessMode", "ClientIdentity", "ExpireTimeS", "ExpireTimeoutS", "FileId", "ReplicateOnClose", "ServerSignature", "TruncateEpoch", "SnapConfig", "SnapTimestamp", "VoucherSize", "ExpireTimeMs", "TraceConfig", });
+              new java.lang.String[] { "AccessMode", "ClientIdentity", "ExpireTimeS", "ExpireTimeoutS", "FileId", "ReplicateOnClose", "ServerSignature", "TruncateEpoch", "SnapConfig", "SnapTimestamp", "VoucherSize", "ExpireTimeMs", "TraceConfig", "FileType", "RelatedFileId", });
           internal_static_xtreemfs_pbrpc_XLocSet_descriptor =
             getDescriptor().getMessageTypes().get(6);
           internal_static_xtreemfs_pbrpc_XLocSet_fieldAccessorTable = new

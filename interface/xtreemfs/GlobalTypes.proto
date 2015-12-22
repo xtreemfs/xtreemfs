@@ -160,6 +160,16 @@ enum LeaseState {
   IDLE = 3;
 }
 
+// The type of a file.
+enum FileType {
+  // A normal file.
+  DEFAULT = 0;
+  // An encrypted file.
+  ENCRYPTED = 1;
+  // The meta-data file for an encrypted file.
+  ENCRYPTED_META = 2;
+}
+
 // The XCap is the authorization token that allows a
 // client to execute operations on an OSD. It is created
 // by the MRC on open and must be renewed by the client
@@ -197,6 +207,10 @@ message XCap {
   optional fixed64 expire_time_ms = 12 [default = 0];
   // Tracing configuration for the file
   optional TraceConfig trace_config = 13;
+  // File type.
+  optional FileType file_type = 14;
+  // FileID of a related File.
+  optional string related_file_id = 15;
 }
 
 // Locations of a file, i.e. the list of replicas including the OSDs that hold
