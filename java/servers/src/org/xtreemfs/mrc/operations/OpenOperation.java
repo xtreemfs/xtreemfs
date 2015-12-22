@@ -167,6 +167,18 @@ public class OpenOperation extends MRCOperation {
                         rq.getDetails().userId, groupId, rqArgs.getMode(), rqArgs.getAttributes(), 0, false, 0, 0,
                         update);
                 
+                if (MRCHelper.isEncFile(sMan, file.getId(), res.toString())) {
+                    // create the directory for the encMetaFiles if it not already exists
+                    PathResolver encMetaFiles = new PathResolver(sMan, new Path(rqArgs.getVolumeName(),
+                            "/.xtreemfs_enc_meta_files"));
+                    if (encMetaFiles.getFile() == null) {
+                        fileId = sMan.getNextFileId();
+                        sMan.createDir(fileId, encMetaFiles.getParentDirId(), encMetaFiles.getFileName(), time, time,
+                                time, encMetaFiles.getParentDir().getOwnerId(), encMetaFiles.getParentDir()
+                                        .getOwningGroupId(), 00777, 0, update);
+                    }
+                }
+
                 // set the file ID as the last one
                 sMan.setLastFileId(fileId, update);
                 

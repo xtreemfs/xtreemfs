@@ -1158,4 +1158,12 @@ public class MRCHelper {
         sMan.setXAttr(fileId, StorageManager.SYSTEM_UID, "xtreemfs." + keyString,
                 value == null || value.length == 0 ? null : value, update);
     }
+
+    public static boolean isEncFile(StorageManager sMan, long fileId, String path) throws DatabaseException {
+        if (!getVolAttrValue(sMan, "volattr.encryption").equals("true"))
+            return false;
+        if (path.startsWith("/.xtreemfs_enc_meta_files/"))
+            return false;
+        return true;
+    }
 }
