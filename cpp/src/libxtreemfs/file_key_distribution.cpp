@@ -52,24 +52,12 @@ FileHandle* FileKeyDistribution::OpenMetaFile(
                                   pbrpc::SYSTEM_V_FCNTL_H_O_RDWR, 0777);
   } catch (const PosixErrorException& e) {  // NOLINT
     // file didn't exist yet
-    try {
-      meta_file = volume_->OpenFile(
-          user_credentials,
-          meta_file_name,
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-          0777);
-    } catch (const PosixErrorException& e) {  // NOLINT
-      // "/.xtreemfs_enc_meta_files" directory does not exist yet
-      volume_->MakeDirectory(user_credentials, "/.xtreemfs_enc_meta_files",
-                             0777);
-      meta_file = volume_->OpenFile(
-          user_credentials,
-          meta_file_name,
-          static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
-              | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
-          0777);
-    }
+    meta_file = volume_->OpenFile(
+        user_credentials,
+        meta_file_name,
+        static_cast<pbrpc::SYSTEM_V_FCNTL>(pbrpc::SYSTEM_V_FCNTL_H_O_CREAT
+            | pbrpc::SYSTEM_V_FCNTL_H_O_RDWR),
+        0777);
     created_meta_file = true;
   }
 
