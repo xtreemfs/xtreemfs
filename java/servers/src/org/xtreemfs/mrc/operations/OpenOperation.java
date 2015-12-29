@@ -172,7 +172,7 @@ public class OpenOperation extends MRCOperation {
                     PathResolver encMetaFiles = new PathResolver(sMan, new Path(rqArgs.getVolumeName(),
                             "/.xtreemfs_enc_meta_files"));
                     if (encMetaFiles.getFile() == null) {
-                        fileId = sMan.getNextFileId();
+                        fileId++;
                         sMan.createDir(fileId, encMetaFiles.getParentDirId(), encMetaFiles.getFileName(), time, time,
                                 time, encMetaFiles.getParentDir().getOwnerId(), encMetaFiles.getParentDir()
                                         .getOwningGroupId(), 00777, 0, update);
