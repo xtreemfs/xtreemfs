@@ -15,6 +15,7 @@ import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.TraceConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
@@ -70,13 +71,12 @@ public class Capability {
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
                       int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
         this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
-                snapTimestamp, false, "", "", QuotaConstants.UNLIMITED_VOUCHER, 0L, sharedSecret);
+                snapTimestamp, false, "", "", QuotaConstants.UNLIMITED_VOUCHER, 0L, FileType.DEFAULT, "", sharedSecret);
     }
 
     /**
-     * Creates a capability from a given set of data. A signature will be added
-     * automatically. This constructor is meant to initially create a capability
-     * at the MRC.
+     * Creates a capability from a given set of data. A signature will be added automatically. This constructor is meant
+     * to initially create a capability at the MRC.
      * 
      * @param fileId
      *            the file ID
@@ -88,8 +88,8 @@ public class Capability {
      *            the absolute expiration time stamp (seconds since 1970)
      * @param clientIdentity
      * @param epochNo
-     *            the epoch number associated with the capability; epoch numbers
-     *            are incremented each time the file is truncated or deleted
+     *            the epoch number associated with the capability; epoch numbers are incremented each time the file is
+     *            truncated or deleted
      * @param replicateOnClose
      * @param snapConfig
      * @param snapTimestamp
@@ -99,19 +99,25 @@ public class Capability {
      *            tracing policy config
      * @param tracingPolicy
      *            tracing policy
+     * @param fileType
+     *            File type
+     * @param relatedFileId
+     *            FileID of a related File
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
         int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, boolean traceRequests,
-        String tracingPolicy, String tracingPolicyConfig, long voucherSize, long expireMS, String sharedSecret) {
+            String tracingPolicy, String tracingPolicyConfig, long voucherSize, long expireMS, FileType fileType,
+            String relatedFileId, String sharedSecret) {
 
         this.sharedSecret = sharedSecret;
 
         XCap.Builder builder = XCap.newBuilder().setAccessMode(accessMode).setClientIdentity(clientIdentity).
                 setExpireTimeS(expires).setExpireTimeoutS(validity).setFileId(fileId).
                 setReplicateOnClose(replicateOnClose).setTruncateEpoch(epochNo).setSnapConfig(snapConfig).
-                setSnapTimestamp(snapTimestamp).setVoucherSize(voucherSize).setExpireTimeMs(expireMS);
+                setSnapTimestamp(snapTimestamp).setVoucherSize(voucherSize).setExpireTimeMs(expireMS).
+                setFileType(fileType).setRelatedFileId(relatedFileId);
 
         if(traceRequests && !tracingPolicy.equals("")) {
             TraceConfig.Builder traceConfigBuilder = TraceConfig.newBuilder();
@@ -130,7 +136,7 @@ public class Capability {
             boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, long voucherSize, long expireMS,
             String sharedSecret) {
         this(fileId, accessMode, validity, expires, clientIdentity, epochNo, replicateOnClose, snapConfig,
-                snapTimestamp, false, "", "", voucherSize, expireMS, sharedSecret);
+                snapTimestamp, false, "", "", voucherSize, expireMS, FileType.DEFAULT, "", sharedSecret);
     }
     
     /**
@@ -253,7 +259,8 @@ public class Capability {
         String plainText = builder.getFileId() + Integer.toString(builder.getAccessMode())
             + Long.toString(builder.getExpireTimeS()) + Long.toString(builder.getTruncateEpoch())
             + Long.toString(builder.getSnapConfig().getNumber()) + Long.toString(builder.getSnapTimestamp())
-            + Long.toString(builder.getVoucherSize()) + Long.toString(builder.getExpireTimeMs()) + sharedSecret;
+                + Long.toString(builder.getVoucherSize()) + Long.toString(builder.getExpireTimeMs())
+                + Long.toString(builder.getFileType().getNumber()) + builder.getRelatedFileId() + sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");

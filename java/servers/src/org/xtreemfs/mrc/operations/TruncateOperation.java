@@ -92,6 +92,7 @@ public class TruncateOperation extends MRCOperation {
                         writeCap.getTraceConfig().getTraceRequests(), writeCap.getTraceConfig().getTracingPolicyConfig(),
                         writeCap.getTraceConfig().getTracingPolicy(), writeCap.getVoucherSize(),
                         TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000,
+                        writeCap.getXCap().getFileType(), writeCap.getXCap().getRelatedFileId(),
                         master.getConfig().getCapabilitySecret());
 
         // set the response

@@ -9,7 +9,6 @@
 package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.common.Capability;
-import org.xtreemfs.common.quota.QuotaConstants;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
@@ -58,7 +57,7 @@ public class RenewOperation extends MRCOperation {
                 cap.getClientIdentity(), cap.getEpochNo(), cap.isReplicateOnClose(), cap.getSnapConfig(),
                 cap.getSnapTimestamp(), cap.getTraceConfig().getTraceRequests(), cap.getTraceConfig().getTracingPolicy(),
                 cap.getTraceConfig().getTracingPolicyConfig(), cap.getVoucherSize(), 0L,
-                master.getConfig().getCapabilitySecret());
+                cap.getXCap().getFileType(), cap.getXCap().getRelatedFileId(), master.getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(newCap.getXCap());

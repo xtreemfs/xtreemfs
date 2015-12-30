@@ -1159,10 +1159,24 @@ public class MRCHelper {
                 value == null || value.length == 0 ? null : value, update);
     }
 
+    public static boolean isEncEnabled(StorageManager sMan) throws DatabaseException {
+        if (getVolAttrValue(sMan, "volattr.encryption").equals("true"))
+            return true;
+        return false;
+    }
+
     public static boolean isEncFile(StorageManager sMan, long fileId, String path) throws DatabaseException {
         if (!getVolAttrValue(sMan, "volattr.encryption").equals("true"))
             return false;
         if (path.startsWith("/.xtreemfs_enc_meta_files/"))
+            return false;
+        return true;
+    }
+
+    public static boolean isEncMetaFile(StorageManager sMan, long fileId, String path) throws DatabaseException {
+        if (!getVolAttrValue(sMan, "volattr.encryption").equals("true"))
+            return false;
+        if (!path.startsWith("/.xtreemfs_enc_meta_files/"))
             return false;
         return true;
     }

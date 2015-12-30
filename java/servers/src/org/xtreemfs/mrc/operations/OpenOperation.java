@@ -42,6 +42,7 @@ import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
@@ -167,7 +168,7 @@ public class OpenOperation extends MRCOperation {
                         rq.getDetails().userId, groupId, rqArgs.getMode(), rqArgs.getAttributes(), 0, false, 0, 0,
                         update);
                 
-                if (MRCHelper.isEncFile(sMan, file.getId(), res.toString())) {
+                if (MRCHelper.isEncEnabled(sMan)) {
                     // create the directory for the encMetaFiles if it not already exists
                     PathResolver encMetaFiles = new PathResolver(sMan, new Path(rqArgs.getVolumeName(),
                             "/.xtreemfs_enc_meta_files"));
@@ -341,12 +342,26 @@ public class OpenOperation extends MRCOperation {
             voucherSize = master.getMrcVoucherManager().getVoucher(quotaFileInformation, clientID, expireMs, update);
         }
 
+        // get file type and related file
+        FileType file_type = FileType.DEFAULT;
+        String related_file = "";
+        if (MRCHelper.isEncFile(sMan, file.getId(), res.toString())) {
+            file_type = FileType.ENCRYPTED;
+            // TODO(plieser): add related file
+            // Path path_meta_file = new Path(rqArgs.getVolumeName(), "/.xtreemfs_enc_meta_files/" + file.getId());
+            // related_file = MRCHelper.createGlobalFileId(volume, new PathResolver(sMan, path_meta_file).getFile());
+        } else if (MRCHelper.isEncMetaFile(sMan, file.getId(), res.toString())) {
+            file_type = FileType.ENCRYPTED_META;
+            related_file = volume.getId() + ":" + file.getFileName();
+        }
+
         Capability cap = new Capability(globalFileId, rqArgs.getFlags(), master.getConfig().getCapabilityTimeout(),
                 TimeSync.getGlobalTime() / 1000 + master.getConfig().getCapabilityTimeout(), clientID, trEpoch,
                 replicateOnClose, !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
                         : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                                 : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), enableTracing,
-                tracingPolicy, traceTarget, voucherSize, expireMs, master.getConfig().getCapabilitySecret());
+                tracingPolicy, traceTarget, voucherSize, expireMs, file_type, related_file,
+                master.getConfig().getCapabilitySecret());
 
         if (Logging.isDebug())
             Logging

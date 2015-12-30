@@ -97,7 +97,7 @@ public class RenewCapabilityAndVoucherOperation extends MRCOperation {
                 cap.getClientIdentity(), cap.getEpochNo(), cap.isReplicateOnClose(), cap.getSnapConfig(),
                 cap.getSnapTimestamp(), cap.getTraceConfig().getTraceRequests(), cap.getTraceConfig().getTracingPolicy(),
                 cap.getTraceConfig().getTracingPolicyConfig(), voucherSize, newExpireMs,
-                master.getConfig().getCapabilitySecret());
+                cap.getXCap().getFileType(), cap.getXCap().getRelatedFileId(), master.getConfig().getCapabilitySecret());
 
         // set the response
         rq.setResponse(newCap.getXCap());
