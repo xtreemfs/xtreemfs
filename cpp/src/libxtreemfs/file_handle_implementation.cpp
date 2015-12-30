@@ -595,6 +595,12 @@ void FileHandleImplementation::DoFlush(bool close_file) {
 void FileHandleImplementation::Truncate(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
     int64_t new_file_size) {
+  Truncate(user_credentials, new_file_size, 0);
+}
+
+void FileHandleImplementation::Truncate(
+    const xtreemfs::pbrpc::UserCredentials& user_credentials,
+    int64_t new_file_size, int object_version) {
   file_info_->WaitForPendingAsyncWrites();
   ThrowIfAsyncWritesFailed();
 
@@ -623,21 +629,21 @@ void FileHandleImplementation::Truncate(
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
-  TruncatePhaseTwoAndThree(user_credentials, new_file_size);
+  TruncatePhaseTwoAndThree(user_credentials, new_file_size, object_version);
 }
 
 void FileHandleImplementation::TruncatePhaseTwoAndThree(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    int64_t new_file_size) {
+    int64_t new_file_size, int object_version) {
   boost::function<void()> operation(
       boost::bind(&FileHandleImplementation::DoTruncatePhaseTwoAndThree, this,
-                  user_credentials, new_file_size));
+                  user_credentials, new_file_size, object_version));
   ExecuteViewCheckedOperation(operation);
 }
 
 void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
-    int64_t new_file_size) {
+    int64_t new_file_size, int object_version) {
   boost::scoped_ptr<ObjectEncryptor::TruncateOperation> enc_truncate_op;
   if (object_encryptor_.get() != NULL) {
     // encryption is enabled

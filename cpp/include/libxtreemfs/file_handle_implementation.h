@@ -265,6 +265,10 @@ class FileHandleImplementation
       const pbrpc::UserCredentials& user_credentials,
       int64_t new_file_size);
 
+  virtual void Truncate(
+      const pbrpc::UserCredentials& user_credentials,
+      int64_t new_file_size, int object_version);
+
   /** Used by Truncate() and Volume->OpenFile() to truncate the file to
    *  "new_file_size" on the OSD and update the file size at the MRC.
    *
@@ -275,7 +279,7 @@ class FileHandleImplementation
    **/
   void TruncatePhaseTwoAndThree(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      int64_t new_file_size);
+      int64_t new_file_size, int object_version);
 
   virtual void GetAttr(
       const pbrpc::UserCredentials& user_credentials,
@@ -421,7 +425,7 @@ class FileHandleImplementation
   /** Acutal implementation of TruncatePhaseTwoAndThree(). */
   void DoTruncatePhaseTwoAndThree(
       const xtreemfs::pbrpc::UserCredentials& user_credentials,
-      int64_t new_file_size);
+      int64_t new_file_size, int object_version);
 
   /** Actual implementation of AcquireLock(). */
   xtreemfs::pbrpc::Lock* DoAcquireLock(

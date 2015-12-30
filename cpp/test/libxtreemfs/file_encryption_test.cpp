@@ -1260,6 +1260,118 @@ TEST_F(EncryptionTest, objectVersion_04) {
   file_handle->Close();
 }
 
+TEST_F(EncryptionTest, objectVersion_05) {
+  // Test truncate a specific version.
+  char buffer[50];
+  buffer[2] = 0;
+  int x;
+
+  FileHandleImplementation* file_handle =
+      static_cast<FileHandleImplementation*>(volume_->OpenFile(
+          user_credentials_,
+          "/.xtreemfs_enc_meta_files/test",
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR),
+          511));
+
+  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+
+  file_handle->Write("11", 2, 0);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("11", buffer);
+
+  file_handle->Write("22", 2, 0, 2);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+
+  file_handle->Truncate(user_credentials_, 1, 2);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+
+
+  file_handle->Close();
+}
+
+TEST_F(EncryptionTest, objectVersion_06) {
+  // Test creating a specific version by truncating.
+  char buffer[50];
+  buffer[2] = 0;
+  int x;
+
+  FileHandleImplementation* file_handle =
+      static_cast<FileHandleImplementation*>(volume_->OpenFile(
+          user_credentials_,
+          "/.xtreemfs_enc_meta_files/test",
+          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+              | SYSTEM_V_FCNTL_H_O_RDWR),
+          511));
+
+  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+
+  file_handle->Write("11", 2, 0);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("11", buffer);
+
+  file_handle->Write("22", 2, 0, 2);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+
+  file_handle->Truncate(user_credentials_, 1, 3);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  ASSERT_NO_THROW({
+    x = file_handle->Read(buffer, 10, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+
+
+  file_handle->Close();
+}
+
 void cw_worker(FileHandle* file, char id) {
   boost::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
