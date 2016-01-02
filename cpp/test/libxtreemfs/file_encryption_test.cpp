@@ -180,6 +180,31 @@ class EncryptionTest : public OnlineTest {
   FileHandle* file;
 };
 
+class EncryptionTestCOW : public OnlineTest {
+ protected:
+  virtual void SetUp() {
+    OnlineTest::SetOptions();
+    options_.encryption_block_size = 128 * 1024;
+    options_.encryption_cw = "cow";
+    OnlineTest::SetUp();
+
+    file = static_cast<FileHandleImplementation*>(volume_->OpenFile(
+        user_credentials_,
+        "/test_file",
+        static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+            | SYSTEM_V_FCNTL_H_O_RDWR),
+        0700));
+  }
+
+  virtual void TearDown() {
+    file->Close();
+
+    OnlineTest::TearDown();
+  }
+
+  FileHandleImplementation* file;
+};
+
 class ObjectVersionTest : public OnlineTest {
  protected:
   virtual void SetUp() {
@@ -1689,6 +1714,60 @@ TEST_F(EncryptionTest, chown_01) {
   EXPECT_EQ(4, x);
   buffer[x] = 0;
   EXPECT_STREQ("ABCD", buffer);
+}
+
+TEST_F(EncryptionTestCOW, Write_01) {
+  char buffer[50];
+  int x;
+
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 4, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+
+  ASSERT_NO_THROW({
+    file->Write("abcd", 4, 0);
+  });
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 4, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("abcd", buffer);
+}
+
+TEST_F(EncryptionTestCOW, Truncate_02) {
+  char buffer[50];
+  int x;
+
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, 0);
+  });
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 4, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABCD", buffer);
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 2);
+  });
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 4, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("AB", buffer);
 }
 
 }  // namespace xtreemfs
