@@ -47,6 +47,7 @@ import org.xtreemfs.osd.storage.CowPolicy.cowMode;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.LeaseState;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -230,7 +231,11 @@ public class PreprocStage extends Stage {
             } else {
 
                 // find out which COW mode to use, depending on the capability
-                if (request.getCapability() == null
+                if (request.getCapability() != null
+                        && (request.getCapability().getXCap().getFileType() == FileType.ENCRYPTED ||
+                            request.getCapability().getXCap().getFileType() == FileType.ENCRYPTED_META))
+                    cowPolicy = new CowPolicy(cowMode.ALWAYS_COW);
+                else if (request.getCapability() == null
                         || request.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_SNAPS_DISABLED)
                     cowPolicy = CowPolicy.PolicyNoCow;
                 else

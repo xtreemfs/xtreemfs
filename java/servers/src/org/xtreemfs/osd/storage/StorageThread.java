@@ -541,7 +541,6 @@ public class StorageThread extends Stage {
             if (newVersionArg != null) {
                 // new version passed via arg always prevails
                 newVersion = newVersionArg;
-                isCow = true;
             }
             assert (data != null);
             
