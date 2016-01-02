@@ -647,6 +647,7 @@ void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
   boost::scoped_ptr<ObjectEncryptor::TruncateOperation> enc_truncate_op;
   if (object_encryptor_.get() != NULL) {
     // encryption is enabled
+    assert(object_version == 0);
     FileCredentials file_credentials;
     xcap_manager_.GetXCap(file_credentials.mutable_xcap());
     file_info_->GetXLocSet(file_credentials.mutable_xlocs());
@@ -671,6 +672,7 @@ void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
   xcap_manager_.GetXCap(truncate_rq.mutable_file_credentials()->mutable_xcap());
   truncate_rq.set_file_id(truncate_rq.file_credentials().xcap().file_id());
   truncate_rq.set_new_file_size(new_file_size);
+  truncate_rq.set_object_version(object_version);
 
   boost::scoped_ptr<rpc::SyncCallbackBase> response(
       ExecuteSyncRequest(

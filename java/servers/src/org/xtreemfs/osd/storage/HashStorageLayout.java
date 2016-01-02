@@ -604,7 +604,7 @@ public class HashStorageLayout extends StorageLayout {
             return;
         }
 
-        if (cow || checksumsEnabled) {
+        if ((cow && newVersion != oldVersion) || checksumsEnabled) {
             ReusableBuffer oldData = unwrapObjectData(fileId, md, objNo, oldVersion);
 
             if (newLength < oldData.capacity()) {
@@ -639,6 +639,7 @@ public class HashStorageLayout extends StorageLayout {
             RandomAccessFile raf = null;
             try {
                 raf = new RandomAccessFile(newFilename, mode);
+                raf.setLength(0);
                 raf.getChannel().write(oldData.getBuffer());
             } finally {
                 if (raf != null) {
