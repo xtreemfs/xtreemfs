@@ -58,7 +58,7 @@ std::string RandomVolumeName(const int length) {
 
 class OnlineTest : public ::testing::Test {
  protected:
-  virtual void SetUp() {
+  virtual void SetOptions() {
 #ifdef __linux__
     const char* dir_url_env = getenv("XTREEMFS_DIR_URL");
     if (dir_url_env) {
@@ -93,11 +93,11 @@ class OnlineTest : public ::testing::Test {
     options_.encryption_cipher = "aes-256-ctr";
     options_.encryption_hash = "sha256";
     options_.encryption_cw = "none";
-//    options_.encryption_cw = "client";
     options_.encryption_pub_keys_path = "../../tests/certs/user/";
     options_.encryption_priv_keys_path = "../../tests/certs/user/";
-//    options_.object_cache_size = 2;
+  }
 
+  virtual void SetUp() {
     // Create a new instance of a client using the DIR service at 'localhost'
     // at port 32638 using the default implementation.
     options_.log_level_string = "WARN";
@@ -143,6 +143,7 @@ class OnlineTest : public ::testing::Test {
 class EncryptionTest : public OnlineTest {
  protected:
   virtual void SetUp() {
+    OnlineTest::SetOptions();
     OnlineTest::SetUp();
 
     // Open a file.
@@ -177,6 +178,41 @@ class EncryptionTest : public OnlineTest {
   }
 
   FileHandle* file;
+};
+
+class ObjectVersionTest : public OnlineTest {
+ protected:
+  virtual void SetUp() {
+    OnlineTest::SetOptions();
+    options_.encryption_block_size = 128 * 1024;
+    options_.encryption_cw = "cow";
+    OnlineTest::SetUp();
+
+    FileHandle* file_tmp = volume_->OpenFile(
+        user_credentials_,
+        "/test_file",
+        static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+            | SYSTEM_V_FCNTL_H_O_RDWR),
+        0700);
+    file_tmp->Close();
+
+    file = static_cast<FileHandleImplementation*>(volume_->OpenFile(
+        user_credentials_,
+        "/.xtreemfs_enc_meta_files/test",
+        static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
+            | SYSTEM_V_FCNTL_H_O_RDWR),
+        511));
+
+    EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
+  }
+
+  virtual void TearDown() {
+    file->Close();
+
+    OnlineTest::TearDown();
+  }
+
+  FileHandleImplementation* file;
 };
 
 TEST_F(EncryptionTest, Read_01) {
@@ -1071,90 +1107,68 @@ TEST_F(EncryptionTest, Open_03) {
   }
 }
 
-TEST_F(EncryptionTest, objectVersion_01) {
+TEST_F(ObjectVersionTest, objectVersion_01) {
   char buffer[50];
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
-  file_handle->Write("write00", 7, 0);
+  file->Write("write00", 7, 0);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("write00", buffer);
 
-  file_handle->Write("write01", 7, 0, 1);
+  file->Write("write01", 7, 0, 1);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("write01", buffer);
 
-  file_handle->Write("write02", 7, 0, 2);
+  file->Write("write02", 7, 0, 2);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("write02", buffer);
 
-  file_handle->Write("write04", 7, 0, 4);
+  file->Write("write04", 7, 0, 4);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("write04", buffer);
 
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 2);
+    file->Read(buffer, 10, 0, 2);
   });
   EXPECT_STREQ("write02", buffer);
 
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 3);
+    file->Read(buffer, 10, 0, 3);
   });
   EXPECT_STREQ("write02", buffer);
 
-  file_handle->Write("WRITE04", 7, 0, 4);
+  file->Write("WRITE04", 7, 0, 4);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 4);
+    file->Read(buffer, 10, 0, 4);
   });
   EXPECT_STREQ("WRITE04", buffer);
 
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 0);
+    file->Read(buffer, 10, 0, 0);
   });
   EXPECT_STREQ("WRITE04", buffer);
-
-  file_handle->Close();
 }
 
-TEST_F(EncryptionTest, objectVersion_02) {
+TEST_F(ObjectVersionTest, objectVersion_02) {
   char buffer[50];
   int x;
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
-  file_handle->Write("write00", 7, 0);
+  file->Write("write00", 7, 0);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("write00", buffer);
 
-  file_handle->Write("write01", 7, 40, 1);
+  file->Write("write01", 7, 40, 1);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 50, 0);
+    x = file->Read(buffer, 50, 0);
   });
   EXPECT_EQ(47, x);
   buffer[x] = 0;
@@ -1164,212 +1178,160 @@ TEST_F(EncryptionTest, objectVersion_02) {
     EXPECT_EQ(*(buffer + i), 0);
   }
   EXPECT_STREQ("write01", buffer + 40);
-
-  file_handle->Close();
 }
 
-TEST_F(EncryptionTest, objectVersion_03) {
+TEST_F(ObjectVersionTest, objectVersion_03) {
   char buffer[50];
   buffer[2] = 0;
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
-  file_handle->Write("00", 2, 0);
+  file->Write("00", 2, 0);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("00", buffer);
 
-  file_handle->Write("2", 1, 1, 2);
+  file->Write("2", 1, 1, 2);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("02", buffer);
 
-  file_handle->Write("1", 1, 0, 1);
+  file->Write("1", 1, 0, 1);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 1);
+    file->Read(buffer, 10, 0, 1);
   });
   EXPECT_STREQ("12", buffer);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0, 2);
+    file->Read(buffer, 10, 0, 2);
   });
   EXPECT_STREQ("02", buffer);
   // the default obj version is not the highest but the last written
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("12", buffer);
-
-  file_handle->Close();
 }
 
-TEST_F(EncryptionTest, objectVersion_04) {
+TEST_F(ObjectVersionTest, objectVersion_04) {
   // Test that the read version is the largest existing version equal or smaller
   // than the requested version.
   char buffer[50];
   buffer[2] = 0;
   int x;
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 4);
+    x = file->Read(buffer, 10, 0, 4);
   });
   EXPECT_EQ(0, x);
 
-  file_handle->Write("00", 2, 0);
+  file->Write("00", 2, 0);
   ASSERT_NO_THROW({
-    file_handle->Read(buffer, 10, 0);
+    file->Read(buffer, 10, 0);
   });
   EXPECT_STREQ("00", buffer);
 
-  file_handle->Write("2", 1, 1, 5);
+  file->Write("2", 1, 1, 5);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   EXPECT_STREQ("02", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 4);
+    x = file->Read(buffer, 10, 0, 4);
   });
   EXPECT_EQ(2, x);
   EXPECT_STREQ("00", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 6);
+    x = file->Read(buffer, 10, 0, 6);
   });
   EXPECT_EQ(2, x);
   EXPECT_STREQ("02", buffer);
-
-  file_handle->Close();
 }
 
-TEST_F(EncryptionTest, objectVersion_05) {
+TEST_F(ObjectVersionTest, objectVersion_05) {
   // Test truncate a specific version.
   char buffer[50];
   buffer[2] = 0;
   int x;
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
-  file_handle->Write("11", 2, 0);
+  file->Write("11", 2, 0);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("11", buffer);
 
-  file_handle->Write("22", 2, 0, 2);
+  file->Write("22", 2, 0, 2);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("22", buffer);
 
-  file_handle->Truncate(user_credentials_, 1, 2);
+  file->Truncate(user_credentials_, 1, 2);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 2);
+    x = file->Read(buffer, 10, 0, 2);
   });
   EXPECT_EQ(1, x);
   buffer[x] = 0;
   EXPECT_STREQ("2", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 3);
+    x = file->Read(buffer, 10, 0, 3);
   });
   EXPECT_EQ(1, x);
   buffer[x] = 0;
   EXPECT_STREQ("2", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(1, x);
   buffer[x] = 0;
   EXPECT_STREQ("2", buffer);
-
-
-  file_handle->Close();
 }
 
-TEST_F(EncryptionTest, objectVersion_06) {
+TEST_F(ObjectVersionTest, objectVersion_06) {
   // Test creating a specific version by truncating.
   char buffer[50];
   buffer[2] = 0;
   int x;
 
-  FileHandleImplementation* file_handle =
-      static_cast<FileHandleImplementation*>(volume_->OpenFile(
-          user_credentials_,
-          "/.xtreemfs_enc_meta_files/test",
-          static_cast<SYSTEM_V_FCNTL>(SYSTEM_V_FCNTL_H_O_CREAT
-              | SYSTEM_V_FCNTL_H_O_RDWR),
-          511));
-
-  EXPECT_TRUE(ObjectEncryptor::IsEncMetaFile("/.xtreemfs_enc_meta_files/test"));
-
-  file_handle->Write("11", 2, 0);
+  file->Write("11", 2, 0);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("11", buffer);
 
-  file_handle->Write("22", 2, 0, 2);
+  file->Write("22", 2, 0, 2);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("22", buffer);
 
-  file_handle->Truncate(user_credentials_, 1, 3);
+  file->Truncate(user_credentials_, 1, 3);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 2);
+    x = file->Read(buffer, 10, 0, 2);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("22", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0, 3);
+    x = file->Read(buffer, 10, 0, 3);
   });
   EXPECT_EQ(1, x);
   buffer[x] = 0;
   EXPECT_STREQ("2", buffer);
   ASSERT_NO_THROW({
-    x = file_handle->Read(buffer, 10, 0);
+    x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(1, x);
   buffer[x] = 0;
   EXPECT_STREQ("2", buffer);
-
-
-  file_handle->Close();
 }
 
 void cw_worker(FileHandle* file, char id) {
@@ -1472,7 +1434,7 @@ TEST_F(EncryptionTest, ConcurrentWrite_01_locks) {
   th4.join();
 }
 
-TEST_F(EncryptionTest, ConcurrentWrite_01_partialCow) {
+TEST_F(EncryptionTest, DISABLED_ConcurrentWrite_01_partialCow) {
   options_.encryption_cw = "partial-cow";
 
   file->Close();

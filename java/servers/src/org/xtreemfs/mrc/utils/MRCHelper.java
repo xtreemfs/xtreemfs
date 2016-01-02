@@ -1170,6 +1170,8 @@ public class MRCHelper {
             return false;
         if (path.startsWith("/.xtreemfs_enc_meta_files/"))
             return false;
+        if (!getVolAttrValue(sMan, "volattr.encryption_cw").equals("cow"))
+            return false;
         return true;
     }
 
@@ -1177,6 +1179,8 @@ public class MRCHelper {
         if (!getVolAttrValue(sMan, "volattr.encryption").equals("true"))
             return false;
         if (!path.startsWith("/.xtreemfs_enc_meta_files/"))
+            return false;
+        if (!getVolAttrValue(sMan, "volattr.encryption_cw").equals("cow"))
             return false;
         return true;
     }
