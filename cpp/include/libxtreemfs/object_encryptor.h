@@ -112,6 +112,8 @@ class ObjectEncryptor : private boost::noncopyable {
                       const xtreemfs::pbrpc::UserCredentials& user_credentials,
                       int64_t new_file_size, PartialObjectReaderFunction reader,
                       PartialObjectWriterFunction writer);
+
+    int64_t truncateObjectVersion();
   };
 
   class ReencryptOperation : public Operation {

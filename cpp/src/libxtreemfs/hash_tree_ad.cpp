@@ -520,12 +520,12 @@ void HashTreeAD::FinishTruncate(
       // The minimum of the max node is smaller then the current one.
       // We need to truncate the meta file to ensure all nodes between them and
       // which are not overwritten will be set to zero.
-      // TODO(plieser): object version for truncate
       meta_file_->Truncate(
           user_credentials,
           GetNodeStartInBytes(
               min_max_leaf_ >= 0 ?
-                  Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0));
+                  Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0),
+          GetWriteVersion());
     }
     UpdateTree();
     WriteNodesToFile();
@@ -579,14 +579,36 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf) {
   }
 }
 
-int HashTreeAD::GetLeafVersion(int leaf) {
-  if (leaf > old_max_leaf_) {
+int HashTreeAD::GetLeafReadVersion(int leaf) {
+  if (leaf > old_max_leaf_ || concurrent_write_ != "cow") {
     return 0;
   }
   std::vector<unsigned char> leaf_value = GetLeafRAW(leaf);
   // get file version
   uint64_t leaf_version = *reinterpret_cast<uint64_t*>(leaf_value.data());
   return be64toh(leaf_version);
+}
+
+/**
+ * Returns the version the leaf will be written in.
+ */
+int HashTreeAD::GetLeafWriteVersion(int leaf) {
+  if (concurrent_write_ == "cow") {
+    return file_version_ + 1;
+  } else {
+    return file_version_;
+  }
+}
+
+/**
+ * Returns the version the meta file will be written in.
+ */
+int HashTreeAD::GetWriteVersion() {
+  if (concurrent_write_ == "cow" || concurrent_write_ == "partial-cow") {
+    return file_version_ + 1;
+  } else {
+    return file_version_;
+  }
 }
 
 std::vector<unsigned char> HashTreeAD::GetLeafRAW(int leaf) {
@@ -598,6 +620,10 @@ std::vector<unsigned char> HashTreeAD::GetLeafRAW(int leaf) {
   } else {
     return nodes_.at(Node(0, leaf));
   }
+}
+
+int64_t HashTreeAD::file_version() {
+  return file_version_;
 }
 
 int64_t HashTreeAD::file_size() {
@@ -622,8 +648,7 @@ void HashTreeAD::SetLeaf(int leaf, std::vector<unsigned char> adata,
   assert(leaf <= new_max_leaf_);
   assert(adata.size() == leaf_adata_size_);
 
-  uint64_t leaf_version = htobe64((concurrent_write_ == "cow") ?
-      file_version_ + 1 : file_version_);
+  uint64_t leaf_version = htobe64(GetLeafWriteVersion(leaf));
   std::vector<unsigned char> leaf_value = std::vector<unsigned char>(
       reinterpret_cast<unsigned char*>(&leaf_version),
       reinterpret_cast<unsigned char*>(&leaf_version) + sizeof(uint64_t));
@@ -664,12 +689,12 @@ void HashTreeAD::Flush(const xtreemfs::pbrpc::UserCredentials& user_credentials,
     // The minimum of the max node is smaller then the current one.
     // We need to truncate the meta file to ensure all nodes between them and
     // which are not overwritten will be set to zero.
-    // TODO(plieser): object version for truncate
     meta_file_->Truncate(
         user_credentials,
         GetNodeStartInBytes(
             min_max_leaf_ >= 0 ?
-                Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0));
+                Node(0, min_max_leaf_).NodeNumber(this) + 1 : 0),
+        GetWriteVersion());
   }
   UpdateTree();
   WriteNodesToFile();
@@ -1176,9 +1201,7 @@ void HashTreeAD::UpdateTree() {
     }
   }
 
-  if (concurrent_write_ == "partial-cow" || concurrent_write_ == "cow") {
-    file_version_++;
-  }
+  file_version_ = GetWriteVersion();
 
   // store file version in root node
   uint64_t file_version = htobe64(file_version_);

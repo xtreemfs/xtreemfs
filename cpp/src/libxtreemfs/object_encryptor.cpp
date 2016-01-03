@@ -326,6 +326,10 @@ ObjectEncryptor::TruncateOperation::TruncateOperation(
   }
 }
 
+int64_t ObjectEncryptor::TruncateOperation::truncateObjectVersion() {
+  return hash_tree_->file_version();
+}
+
 ObjectEncryptor::ReencryptOperation::ReencryptOperation(
     ObjectEncryptor* obj_enc,
     const xtreemfs::pbrpc::UserCredentials& user_credentials,
@@ -478,10 +482,7 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
   int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
   int buffer_offset = 0;
   int ciphertext_offset = 0;
-  int object_version = 0;
-  if (obj_enc_->concurrent_write_ == "cow") {
-    object_version = hash_tree_->GetLeafVersion(start_enc_block);
-  }
+  int object_version = hash_tree_->GetLeafReadVersion(start_enc_block);
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
   int bytes_read = reader(object_no, object_version,
@@ -622,7 +623,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
       // 1. read the old enc block if it is not behind old file size
       std::vector<unsigned char> old_ct_block(enc_block_size_);
       int bytes_read = reader(object_no,
-                              hash_tree_->GetLeafVersion(start_enc_block),
+                              hash_tree_->GetLeafReadVersion(start_enc_block),
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_offset_in_object, enc_block_size_);
       old_ct_block.resize(bytes_read);
@@ -663,7 +664,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
       // is not getting completely overwritten
       std::vector<unsigned char> old_ct_block(enc_block_size_);
       int bytes_read = reader(object_no,
-                              hash_tree_->GetLeafVersion(start_enc_block_2),
+                              hash_tree_->GetLeafReadVersion(start_enc_block_2),
                               reinterpret_cast<char*>(old_ct_block.data()),
                               ct_end_offset_in_object - new_pt_block_len,
                               enc_block_size_);
@@ -707,7 +708,7 @@ void ObjectEncryptor::Operation::Write(int object_no, const char* buffer,
   }
   assert(buffer_offset <= bytes_to_write);
 
-  writer(object_no, hash_tree_->GetLeafVersion(start_enc_block),
+  writer(object_no, hash_tree_->GetLeafWriteVersion(start_enc_block),
          reinterpret_cast<char*>(ciphertext.data()), ct_offset_in_object,
          ct_bytes_to_write);
 }

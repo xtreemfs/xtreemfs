@@ -663,6 +663,7 @@ void FileHandleImplementation::DoTruncatePhaseTwoAndThree(
         new ObjectEncryptor::TruncateOperation(object_encryptor_.get(),
                                                user_credentials, new_file_size,
                                                reader, writer));
+    object_version = enc_truncate_op->truncateObjectVersion();
   }
 
   // 2. Call truncate at the head OSD.
