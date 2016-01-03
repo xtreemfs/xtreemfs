@@ -205,4 +205,9 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     public long getCreationTime() throws DatabaseException {
         return creationTimestamp;
     }
+
+    @Override
+    public void reload() throws DatabaseException {
+        this.init(sMan);
+    }
 }

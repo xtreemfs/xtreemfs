@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.xml.sax.Attributes;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
@@ -27,6 +28,9 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.OwnerType;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.QuotaInfo;
+import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.QuotaType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
@@ -272,7 +276,7 @@ public class DBAdminHelper {
 
         if (openTag) {
 
-            String entityId = attrs.getValue(attrs.getIndex("entity"));
+            String entityId = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("entity")));
             if (dbVersion < 3 && entityId.contains("::"))
                 entityId = entityId.replace("::", ":");
 
@@ -331,6 +335,46 @@ public class DBAdminHelper {
         }
     }
 
+    public static void restoreQuota(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
+            DBRestoreState state, int dbVersion, boolean openTag) throws UserException, DatabaseException {
+
+        if (openTag) {
+
+            String type = attrs.getValue(attrs.getIndex("type"));
+            String name = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("name")));
+            Long quota = Long.valueOf(attrs.getValue(attrs.getIndex("quota")));
+            Long usedSpace = Long.valueOf(attrs.getValue(attrs.getIndex("used")));
+            Long blockedSpace = Long.valueOf(attrs.getValue(attrs.getIndex("blocked")));
+
+            if (type == null) {
+                throw new IllegalArgumentException("Missing quota type!");
+            } else if (type.equals(QuotaType.VOLUME.getKey()) && name.isEmpty()) {
+                throw new IllegalArgumentException("Name is not specified although required!");
+            }
+
+            StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
+
+            QuotaType quotaType = QuotaType.getByKey(type);
+            switch (quotaType) {
+            case USER:
+                sMan.setUserQuota(name, quota, update);
+                sMan.setUserUsedSpace(name, usedSpace, update);
+                sMan.setUserBlockedSpace(name, blockedSpace, update);
+                break;
+            case GROUP:
+                sMan.setGroupQuota(name, quota, update);
+                sMan.setGroupUsedSpace(name, usedSpace, update);
+                sMan.setGroupBlockedSpace(name, blockedSpace, update);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported quota type!");
+            }
+
+            update.execute();
+        }
+    }
+
     /**
      * Creates an XML dump from a volume. The dump contains all files and directories of the volume, including
      * their attributes and ACLs.
@@ -347,9 +391,44 @@ public class DBAdminHelper {
     public static void dumpVolume(BufferedWriter xmlWriter, StorageManager sMan) throws IOException, DatabaseException {
         try {
             dumpDir(xmlWriter, sMan, 1);
+
+            dumpQuotas(xmlWriter, sMan);
         } catch (JSONException exc) {
             throw new DatabaseException(exc);
         }
+    }
+
+    private static void dumpQuotas(BufferedWriter xmlWriter, StorageManager sMan) throws IOException, DatabaseException {
+
+        xmlWriter.write("<quotas>\n");
+
+        // volume quota not necessary, because it will be dumped as an extended attribute
+
+        // user quotas
+        Map<String, Map<String, Long>> allOwnerQuotaInfo = sMan.getAllOwnerQuotaInfo(OwnerType.USER, "");
+
+        for (Entry<String, Map<String, Long>> userQuotaEntry : allOwnerQuotaInfo.entrySet()) {
+            Map<String, Long> userValues = userQuotaEntry.getValue();
+            xmlWriter.write("<quota type=\"" + QuotaType.USER.getKey() + "\" name=\""
+                    + OutputUtils.escapeToXML(userQuotaEntry.getKey()) + "\" quota=\""
+                    + userValues.get(QuotaInfo.QUOTA.getValueAsString()) + "\" used=\""
+                    + userValues.get(QuotaInfo.USED.getValueAsString()) + "\" blocked=\""
+                    + userValues.get(QuotaInfo.BLOCKED.getValueAsString()) + "\" />\n");
+        }
+
+        // group quotas
+        Map<String, Map<String, Long>> allOwnerGroupQuotaInfo = sMan.getAllOwnerQuotaInfo(OwnerType.GROUP, "");
+
+        for (Entry<String, Map<String, Long>> userQuotaEntry : allOwnerGroupQuotaInfo.entrySet()) {
+            Map<String, Long> userValues = userQuotaEntry.getValue();
+            xmlWriter.write("<quota type=\"" + QuotaType.GROUP.getKey() + "\" name=\""
+                    + OutputUtils.escapeToXML(userQuotaEntry.getKey()) + "\" quota=\""
+                    + userValues.get(QuotaInfo.QUOTA.getValueAsString()) + "\" used=\""
+                    + userValues.get(QuotaInfo.USED.getValueAsString()) + "\" blocked=\""
+                    + userValues.get(QuotaInfo.BLOCKED.getValueAsString()) + "\" />\n");
+        }
+
+        xmlWriter.write("</quotas>\n");
     }
 
     private static void dumpDir(BufferedWriter xmlWriter, StorageManager sMan, long parentId) throws DatabaseException,
@@ -448,12 +527,12 @@ public class DBAdminHelper {
             xmlWriter.write("<acl>\n");
             while (acl.hasNext()) {
                 ACLEntry entry = acl.next();
-                xmlWriter.write("<entry entity=\"" + entry.getEntity() + "\" rights=\"" + entry.getRights() + "\"/>\n");
+                xmlWriter.write("<entry entity=\"" + OutputUtils.escapeToXML(entry.getEntity()) + "\" rights=\""
+                        + entry.getRights() + "\"/>\n");
             }
             xmlWriter.write("</acl>\n");
         }
 
         acl.destroy();
     }
-
 }

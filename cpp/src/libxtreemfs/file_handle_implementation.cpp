@@ -626,6 +626,13 @@ void FileHandleImplementation::Truncate(
 
   xtreemfs::pbrpc::XCap* updated_xcap = static_cast<xtreemfs::pbrpc::XCap*>(
       response->response());
+
+  // save old expire time regarding space usage statistics of the quota implementation
+  xcap_manager_.acquireOldExpireTimesMutex();
+  xcap_manager_.GetOldExpireTimes().push_back(xcap.expire_time_ms());
+  xcap_manager_.releaseOldExpireTimesMutex();
+
+  // set new xcap
   xcap_manager_.SetXCap(*updated_xcap);
   response->DeleteBuffers();
 
@@ -1332,7 +1339,7 @@ uint64_t XCapManager::GetFileId() {
   return ExtractFileIdFromXCap(xcap_);
 }
 
-std::list< ::google::protobuf::uint64> XCapManager::GetOldExpireTimes() {
+std::list< ::google::protobuf::uint64>& XCapManager::GetOldExpireTimes() {
   return old_expire_times_;
 }
 
@@ -1378,8 +1385,9 @@ void XCapManager::RenewXCapAsync(const RPCOptions& options,
 
     xcap_renewal_pending_ = true;
 
-    boost::mutex::scoped_lock old_expire_times_lock(old_expire_times_mutex_);
+    acquireOldExpireTimesMutex();
     old_expire_times_.push_back(xcap_.expire_time_ms());
+    releaseOldExpireTimesMutex();
   }
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1531,7 +1539,9 @@ void VoucherManager::finalizeAndClear(){
             << endl;
       }
 
+      xcap_manager_->acquireOldExpireTimesMutex();
       xcap_manager_->GetOldExpireTimes().clear();
+      xcap_manager_->releaseOldExpireTimesMutex();
 
       return;
     }
@@ -1622,8 +1632,11 @@ void VoucherManager::finalizeVoucher(
     xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest) {
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
-    Logging::log->getLog(LEVEL_DEBUG) << "Sending finalizeVouchersRequest to "
-                                      << osdCount << " OSD(s)." << endl;
+    Logging::log->getLog(LEVEL_DEBUG)
+        << "Sending finalizeVouchersRequest to " << osdCount
+        << " OSD(s) containing "
+        << finalizeVouchersRequest->expire_time_ms_size() << " + 1 XCap(s)"
+        << endl;
   }
 
   const XLocSet& xlocs = finalizeVouchersRequest->file_credentials().xlocs();

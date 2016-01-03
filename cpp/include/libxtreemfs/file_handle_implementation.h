@@ -173,7 +173,7 @@ class XCapManager :
   uint64_t GetFileId();
 
   /** Returns the list of old expire times. */
-  std::list< ::google::protobuf::uint64> GetOldExpireTimes();
+  std::list< ::google::protobuf::uint64>& GetOldExpireTimes();
 
   /** Acquires the mutex related to list of old expire times. */
   void acquireOldExpireTimesMutex();
