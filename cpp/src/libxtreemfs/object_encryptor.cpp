@@ -482,7 +482,7 @@ int ObjectEncryptor::Operation::Read(int object_no, char* buffer,
   int start_enc_block = (object_offset + ct_offset_in_object) / enc_block_size_;
   int buffer_offset = 0;
   int ciphertext_offset = 0;
-  int object_version = hash_tree_->GetLeafReadVersion(start_enc_block);
+  int64_t object_version = hash_tree_->GetLeafReadVersion(start_enc_block);
 
   std::vector<unsigned char> ciphertext(ct_bytes_to_read);
   int bytes_read = reader(object_no, object_version,

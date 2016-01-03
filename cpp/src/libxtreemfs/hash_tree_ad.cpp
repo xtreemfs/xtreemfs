@@ -579,7 +579,7 @@ std::vector<unsigned char> HashTreeAD::GetLeaf(int leaf) {
   }
 }
 
-int HashTreeAD::GetLeafReadVersion(int leaf) {
+int64_t HashTreeAD::GetLeafReadVersion(int leaf) {
   if (leaf > old_max_leaf_ || concurrent_write_ != "cow") {
     return 0;
   }
@@ -592,7 +592,7 @@ int HashTreeAD::GetLeafReadVersion(int leaf) {
 /**
  * Returns the version the leaf will be written in.
  */
-int HashTreeAD::GetLeafWriteVersion(int leaf) {
+int64_t HashTreeAD::GetLeafWriteVersion(int leaf) {
   if (concurrent_write_ == "cow") {
     return file_version_ + 1;
   } else {
@@ -603,7 +603,7 @@ int HashTreeAD::GetLeafWriteVersion(int leaf) {
 /**
  * Returns the version the meta file will be written in.
  */
-int HashTreeAD::GetWriteVersion() {
+int64_t HashTreeAD::GetWriteVersion() {
   if (concurrent_write_ == "cow" || concurrent_write_ == "partial-cow") {
     return file_version_ + 1;
   } else {

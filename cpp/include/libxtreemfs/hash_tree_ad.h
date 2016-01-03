@@ -50,11 +50,11 @@ class HashTreeAD {
 
   std::vector<unsigned char> GetLeaf(int leaf);
 
-  int GetLeafReadVersion(int leaf);
+  int64_t GetLeafReadVersion(int leaf);
 
-  int GetLeafWriteVersion(int leaf);
+  int64_t GetLeafWriteVersion(int leaf);
 
-  int GetWriteVersion();
+  int64_t GetWriteVersion();
 
   std::vector<unsigned char> GetLeafRAW(int leaf);
 

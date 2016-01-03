@@ -30,10 +30,10 @@ namespace xtreemfs {
  * functionality for objects.
  */
 typedef boost::function<
-    int(int object_no, int object_version, char* buffer, int offset_in_object,
+    int(int object_no, int64_t object_version, char* buffer, int offset_in_object,
         int bytes_to_read)> PartialObjectReaderFunction;
 typedef boost::function<
-    void(int object_no, int object_version, const char* buffer,
+    void(int object_no, int64_t object_version, const char* buffer,
          int offset_in_object, int bytes_to_write)> PartialObjectWriterFunction;
 
 /**
