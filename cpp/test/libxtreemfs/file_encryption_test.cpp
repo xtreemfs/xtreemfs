@@ -1725,7 +1725,7 @@ TEST_F(EncryptionTestCOW, Write_01) {
   });
   // full read
   ASSERT_NO_THROW({
-     x = file->Read(buffer, 4, 0);
+     x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(4, x);
   buffer[x] = 0;
@@ -1736,14 +1736,15 @@ TEST_F(EncryptionTestCOW, Write_01) {
   });
   // full read
   ASSERT_NO_THROW({
-     x = file->Read(buffer, 4, 0);
+     x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(4, x);
   buffer[x] = 0;
   EXPECT_STREQ("abcd", buffer);
 }
 
-TEST_F(EncryptionTestCOW, Truncate_02) {
+TEST_F(EncryptionTestCOW, Truncate_01) {
+  // test truncating in the middle of a block
   char buffer[50];
   int x;
 
@@ -1752,7 +1753,7 @@ TEST_F(EncryptionTestCOW, Truncate_02) {
   });
   // full read
   ASSERT_NO_THROW({
-     x = file->Read(buffer, 4, 0);
+     x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(4, x);
   buffer[x] = 0;
@@ -1763,11 +1764,41 @@ TEST_F(EncryptionTestCOW, Truncate_02) {
   });
   // full read
   ASSERT_NO_THROW({
-     x = file->Read(buffer, 4, 0);
+     x = file->Read(buffer, 10, 0);
   });
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("AB", buffer);
+}
+
+TEST_F(EncryptionTestCOW, Truncate_02) {
+  // test truncating to the end of a block
+  char buffer[50];
+  int x;
+
+  ASSERT_NO_THROW({
+    file->Write("ABCD", 4, options_.encryption_block_size - 2);
+  });
+  // full read
+  ASSERT_NO_THROW({
+     x = file->Read(buffer, 10, options_.encryption_block_size - 3);
+  });
+  EXPECT_EQ(5, x);
+  buffer[x] = 0;
+  EXPECT_EQ(buffer[0], 0);
+  EXPECT_STREQ("ABCD", buffer + 1);
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, options_.encryption_block_size);
+  });
+  // full read
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 3);
+  });
+  EXPECT_EQ(3, x);
+  buffer[x] = 0;
+  EXPECT_EQ(buffer[0], 0);
+  EXPECT_STREQ("AB", buffer + 1);
 }
 
 }  // namespace xtreemfs
