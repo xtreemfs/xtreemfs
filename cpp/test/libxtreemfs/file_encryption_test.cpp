@@ -1359,6 +1359,55 @@ TEST_F(ObjectVersionTest, objectVersion_06) {
   EXPECT_STREQ("2", buffer);
 }
 
+TEST_F(ObjectVersionTest, objectVersion_07) {
+  // Test automatic deletion of old versions.
+  char buffer[50];
+  buffer[2] = 0;
+  int x;
+
+  file->Write("11", 2, 0, 1);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("11", buffer);
+
+  file->Write("22", 2, 0, 2);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+
+  file->Write("33", 2, 0, 3);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("33", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("33", buffer);
+}
+
 void cw_worker(FileHandle* file, char id) {
   boost::mt19937 rng(static_cast<int>(id));
   boost::uniform_int<> uni_dist_offset(0, 20);
