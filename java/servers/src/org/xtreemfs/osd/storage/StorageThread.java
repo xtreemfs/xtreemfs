@@ -632,6 +632,7 @@ public class StorageThread extends Stage {
 
             FileType fileType = rq.getRequest().getCapability().getXCap().getFileType();
             if (fileType == FileType.ENCRYPTED || fileType == FileType.ENCRYPTED_META) {
+                // if the file is encrypted and versioned:
                 // besides the objects in file versions, only keep the two newest
                 SortedSet<Long> exObj = fi.getExistingObjectVersions(objNo);
                 if (exObj.size() >= 3) {
@@ -741,27 +742,34 @@ public class StorageThread extends Stage {
                 // if copy-on-write is enabled ...
                 if (cow.cowEnabled()) {
                     
-                    // only delete those objects that make up the latest
-                    // version of the file and are not part of former file
-                    // versions
-                    // TODO(plieser): extend object deletion for encryption
-                    for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
-                        
-                        long objNo = entry.getKey();
-                        long objVer = entry.getValue();
-                        
-                        if (!fi.getVersionTable().isContained(objNo, objVer))
-                            layout.deleteObject(fileId, fi, objNo, objVer);
+                    FileType fileType = rq.getRequest().getCapability().getXCap().getFileType();
+                    if (fileType == FileType.ENCRYPTED || fileType == FileType.ENCRYPTED_META) {
+                        // if the file is encrypted and versioned:
+                        // do not delete any objects
+                    } else {
+                        // only delete those objects that make up the latest
+                        // version of the file and are not part of former file
+                        // versions
+                        for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
+
+                            long objNo = entry.getKey();
+                            long objVer = entry.getValue();
+
+                            if (!fi.getVersionTable().isContained(objNo, objVer))
+                                layout.deleteObject(fileId, fi, objNo, objVer);
+                        }
+                        fi.clearExistingObjectVersions();
                     }
                 }
 
                 // otherwise ...
-                else
+                else {
                     // delete all objects of the file (but not the metadata)
                     layout.deleteFile(fileId, false);
+                    fi.clearExistingObjectVersions();
+                }
                 
                 fi.clearLatestObjectVersions();
-                fi.clearExistingObjectVersions();
                 
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file
