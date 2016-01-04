@@ -1360,7 +1360,7 @@ TEST_F(ObjectVersionTest, objectVersion_06) {
 }
 
 TEST_F(ObjectVersionTest, objectVersion_07) {
-  // Test automatic deletion of old versions.
+  // Test automatic deletion of old versions on write.
   char buffer[50];
   buffer[2] = 0;
   int x;
@@ -1406,6 +1406,74 @@ TEST_F(ObjectVersionTest, objectVersion_07) {
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("33", buffer);
+}
+
+TEST_F(ObjectVersionTest, objectVersion_08) {
+  // Test automatic deletion of old versions with truncate to 0.
+  char buffer[50];
+  buffer[2] = 0;
+  int x;
+
+  // write, then truncate to 0.
+  ASSERT_NO_THROW({
+    file->Write("11", 2, 0, 1);
+  });
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 0);
+  });
+
+  // old object should still exist
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("11", buffer);
+  // but reading newest should return file size 0
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 0);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+
+  // writing two times should remove 1. version
+  ASSERT_NO_THROW({
+    file->Write("33", 2, 0, 3);
+  });
+  ASSERT_NO_THROW({
+    file->Write("44", 2, 0, 4);
+  });
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 0);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("44", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("33", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 4);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("44", buffer);
 }
 
 void cw_worker(FileHandle* file, char id) {
