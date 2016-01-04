@@ -53,6 +53,7 @@ import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
 import org.xtreemfs.osd.storage.VersionTable.Version;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDFinalizeVouchersResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalGmax;
@@ -628,6 +629,18 @@ public class StorageThread extends Stage {
                     }
                 }
             }
+
+            FileType fileType = rq.getRequest().getCapability().getXCap().getFileType();
+            if (fileType == FileType.ENCRYPTED || fileType == FileType.ENCRYPTED_META) {
+                // besides the objects in file versions, only keep the two newest
+                SortedSet<Long> exObj = fi.getExistingObjectVersions(objNo);
+                if (exObj.size() >= 3) {
+                    long objVer = (long) exObj.toArray()[exObj.size() - 3];
+                    if (!fi.getVersionTable().isContained(objNo, objVer))
+                        layout.deleteObject(fileId, fi, objNo, objVer);
+                }
+            }
+
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d", fi
                         .getLastObjectNumber(), fi.getGlobalLastObjectNumber());
