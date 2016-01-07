@@ -35,6 +35,14 @@ using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_RDWR;
 using xtreemfs::pbrpc::SYSTEM_V_FCNTL_H_O_WRONLY;
 using xtreemfs::pbrpc::UserCredentials;
 
+namespace {
+void resetBuffer(char* buffer, int l, char x = 0) {
+  for (int i = 0; i < l; i++) {
+    buffer[i] = x;
+  }
+}
+}
+
 namespace xtreemfs {
 
 std::string RandomVolumeName(const int length) {
@@ -1132,7 +1140,7 @@ TEST_F(EncryptionTest, Open_03) {
   }
 }
 
-TEST_F(ObjectVersionTest, objectVersion_01) {
+TEST_F(ObjectVersionTest, Write_01) {
   char buffer[50];
 
   file->Write("write00", 7, 0);
@@ -1181,7 +1189,7 @@ TEST_F(ObjectVersionTest, objectVersion_01) {
   EXPECT_STREQ("WRITE04", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_02) {
+TEST_F(ObjectVersionTest, Write_02) {
   char buffer[50];
   int x;
 
@@ -1205,9 +1213,8 @@ TEST_F(ObjectVersionTest, objectVersion_02) {
   EXPECT_STREQ("write01", buffer + 40);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_03) {
-  char buffer[50];
-  buffer[2] = 0;
+TEST_F(ObjectVersionTest, Write_03) {
+  char buffer[50] = {0};
 
   file->Write("00", 2, 0);
   ASSERT_NO_THROW({
@@ -1237,11 +1244,39 @@ TEST_F(ObjectVersionTest, objectVersion_03) {
   EXPECT_STREQ("12", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_04) {
+TEST_F(ObjectVersionTest, DISABLED_Write_04) {
+  // A write behind file size in a new version should preserve the last object
+  // number for the old version.
+  // Not needed for current implementation of encryption.
+  char buffer[50] = {0};
+  int x;
+
+  ASSERT_NO_THROW({
+    file->Write("ab", 2, options_.encryption_block_size - 2, 1);
+  });
+  ASSERT_NO_THROW({
+    file->Write("cd", 2, options_.encryption_block_size * 2, 2);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 1);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ab", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(10, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ab", buffer);
+}
+
+TEST_F(ObjectVersionTest, Read_01) {
   // Test that the read version is the largest existing version equal or smaller
   // than the requested version.
-  char buffer[50];
-  buffer[2] = 0;
+  char buffer[50] = {0};
   int x;
 
   ASSERT_NO_THROW({
@@ -1273,10 +1308,9 @@ TEST_F(ObjectVersionTest, objectVersion_04) {
   EXPECT_STREQ("02", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_05) {
+TEST_F(ObjectVersionTest, Truncate_01) {
   // Test truncate a specific version.
-  char buffer[50];
-  buffer[2] = 0;
+  char buffer[50] = {0};
   int x;
 
   file->Write("11", 2, 0);
@@ -1316,10 +1350,9 @@ TEST_F(ObjectVersionTest, objectVersion_05) {
   EXPECT_STREQ("2", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_06) {
+TEST_F(ObjectVersionTest, Truncate_02) {
   // Test creating a specific version by truncating.
-  char buffer[50];
-  buffer[2] = 0;
+  char buffer[50] = {0};
   int x;
 
   file->Write("11", 2, 0);
@@ -1359,10 +1392,69 @@ TEST_F(ObjectVersionTest, objectVersion_06) {
   EXPECT_STREQ("2", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_07) {
+TEST_F(ObjectVersionTest, Truncate_03) {
+  // Test truncating and then writing after file size.
+  char buffer[50] = {0};
+  int x;
+
+  ASSERT_NO_THROW({
+    file->Write("abcd", 4, options_.encryption_block_size - 2, 1);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 1);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("abcd", buffer);
+
+  ASSERT_NO_THROW({
+    file->Write("AB", 2, options_.encryption_block_size - 2, 2);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABcd", buffer);
+
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, options_.encryption_block_size - 1, 3);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("ABcd", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 3);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("A", buffer);
+
+  ASSERT_NO_THROW({
+    file->Write("ef", 2, options_.encryption_block_size + 2, 4);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 4);
+  });
+  EXPECT_EQ(6, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("A", buffer);
+  for (int i = 1; i < 4; i++) {
+    EXPECT_EQ(*(buffer + i), 0);
+  }
+  EXPECT_STREQ("ef", buffer + 4);
+}
+
+TEST_F(ObjectVersionTest, AutoClean_Write_01) {
   // Test automatic deletion of old versions on write.
-  char buffer[50];
-  buffer[2] = 0;
+  char buffer[50] = {};
   int x;
 
   file->Write("11", 2, 0, 1);
@@ -1406,12 +1498,37 @@ TEST_F(ObjectVersionTest, objectVersion_07) {
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("33", buffer);
+
+  file->Write("99", 2, 0, 9);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("33", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 4);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("33", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 9);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("99", buffer);
 }
 
-TEST_F(ObjectVersionTest, objectVersion_08) {
+TEST_F(ObjectVersionTest, AutoClean_Truncate_01) {
   // Test automatic deletion of old versions with truncate to 0.
-  char buffer[50];
-  buffer[2] = 0;
+  char buffer[50] = {0};
   int x;
 
   // write, then truncate to 0.
@@ -1474,6 +1591,248 @@ TEST_F(ObjectVersionTest, objectVersion_08) {
   EXPECT_EQ(2, x);
   buffer[x] = 0;
   EXPECT_STREQ("44", buffer);
+}
+
+TEST_F(ObjectVersionTest, AutoClean_Truncate_02) {
+  // Test automatic deletion of old versions with truncate inside a block
+  // (with new version).
+  char buffer[50] = {0};
+  int x;
+
+  // write two times, then truncate.
+  ASSERT_NO_THROW({
+    file->Write("11", 2, 0, 1);
+  });
+  ASSERT_NO_THROW({
+    file->Write("22", 2, 0, 2);
+  });
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 1, 3);
+  });
+
+  // first version should no longer exist
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("22", buffer);
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+
+  // writing one time should remove 2. version,
+  // two times should remove 3. version
+  ASSERT_NO_THROW({
+    file->Write("44", 2, 0, 4);
+  });
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    file->Write("55", 2, 0, 5);
+  });
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 3);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+}
+
+TEST_F(ObjectVersionTest, AutoClean_Truncate_03) {
+  // Test automatic deletion of old versions with truncate inside a block
+  // (with existing version).
+  char buffer[50] = {0};
+  int x;
+
+  // write two times, then truncate.
+  ASSERT_NO_THROW({
+    file->Write("11", 2, 0, 1);
+  });
+  ASSERT_NO_THROW({
+    file->Write("22", 2, 0, 2);
+  });
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, 1, 2);
+  });
+
+  // first version should still exist
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("11", buffer);
+
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+
+  // writing one time should remove 1. version,
+  // two times should remove 2. version
+  ASSERT_NO_THROW({
+    file->Write("44", 2, 0, 4);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  ASSERT_NO_THROW({
+    file->Write("55", 2, 0, 5);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, 0, 2);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+}
+
+TEST_F(ObjectVersionTest, AutoClean_Truncate_04) {
+  // Test automatic deletion of old versions with truncate before a block
+  char buffer[50] = {'x'};
+  int x;
+
+  // write two times, then truncate.
+  ASSERT_NO_THROW({
+    file->Write("1abc", 4, options_.encryption_block_size - 2, 1);
+  });
+  ASSERT_NO_THROW({
+    file->Write("2def", 4, options_.encryption_block_size - 2, 2);
+  });
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2def", buffer);
+  ASSERT_NO_THROW({
+    file->Truncate(user_credentials_, options_.encryption_block_size - 1, 3);
+  });
+
+  // first version should no longer exist
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size, 1);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 0);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2def", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 3);
+  });
+  EXPECT_EQ(1, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("2", buffer);
+
+  // writing to block 1 should remove its 2. version
+  // (2. version of block 2 still exists)
+  ASSERT_NO_THROW({
+    file->Write("4g", 2, options_.encryption_block_size - 2, 4);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 2, options_.encryption_block_size - 2, 2);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+
+  // writing to block 1&2 should remove the 1. blocks 3. version
+  ASSERT_NO_THROW({
+    file->Write("5jkl", 4, options_.encryption_block_size - 2, 5);
+  });
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 2, options_.encryption_block_size - 2, 3);
+  });
+  // although the 3. version no longer exist, because the 3. version of the
+  // 2. block still exists, it will still return '00'
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_EQ(0, buffer[0]);
+  EXPECT_EQ(0, buffer[1]);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size, 3);
+  });
+  EXPECT_EQ(0, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("", buffer);
+
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 0);
+  });
+  EXPECT_EQ(4, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("5jkl", buffer);
+  resetBuffer(buffer, 50, 'x');
+  ASSERT_NO_THROW({
+    x = file->Read(buffer, 10, options_.encryption_block_size - 2, 4);
+  });
+  EXPECT_EQ(2, x);
+  buffer[x] = 0;
+  EXPECT_STREQ("4g", buffer);
 }
 
 void cw_worker(FileHandle* file, char id) {
