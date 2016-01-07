@@ -30,6 +30,10 @@ public class FileMetadata {
     
     private Map<Long, SortedSet<Long>> existingObjVersions;
 
+    private long                       lastTruncateVersion;
+
+    private long                       lastTruncateObjNo;
+
     private Map<Long, Map<Long, Long>> objChecksums;
     
     private long                       filesize;
@@ -159,6 +163,9 @@ public class FileMetadata {
     public void discardObject(long objId, long objVer) {
         latestObjVersions.remove(objId);
         objChecksums.remove(objId + "." + objVer);
+    }
+
+    public void removeObjectVersion(long objId, long objVer) {
         if (existingObjVersions.containsKey(objId))
             existingObjVersions.get(objId).remove(objVer);
     }
@@ -229,4 +236,16 @@ public class FileMetadata {
         this.mdFileLength = mdFileLength;
     }
     
+    public long getLastTruncateVersion() {
+        return this.lastTruncateVersion;
+    }
+
+    public long getLastTruncateObjNo() {
+        return this.lastTruncateObjNo;
+    }
+
+    public void setLastTruncate(Long version, long objNo) {
+        this.lastTruncateVersion = version == null ? 0 : version;
+        this.lastTruncateObjNo = objNo;
+    }
 }

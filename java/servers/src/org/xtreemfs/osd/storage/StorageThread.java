@@ -393,10 +393,15 @@ public class StorageThread extends Stage {
             if (rq.getRequest().getRequestArgs() instanceof readRequest
                     && ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion() > 0) {
                 // new version passed via arg always prevails
-                objVer = ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion();
+                long reqObjVer = ((readRequest) rq.getRequest().getRequestArgs()).getObjectVersion();
                 // version to read is largest existing version equal or smaller than the requested
-                SortedSet<Long> versions = fi.getExistingObjectVersions(objNo).headSet(objVer + 1);
+                SortedSet<Long> versions = fi.getExistingObjectVersions(objNo).headSet(reqObjVer + 1);
                 objVer = (versions.isEmpty()) ? 0 : versions.last();
+                // if version is behind last truncate object, and the requested version is greater or equal than
+                // the last truncate version, the version to read must be greater than the last truncate version
+                if (objNo > fi.getLastTruncateObjNo() && reqObjVer >= fi.getLastTruncateVersion()
+                        && objVer < fi.getLastTruncateVersion())
+                    objVer = 0;
             }
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getting objVer %d", objVer);
@@ -636,9 +641,11 @@ public class StorageThread extends Stage {
                 // besides the objects in file versions, only keep the two newest
                 SortedSet<Long> exObj = fi.getExistingObjectVersions(objNo);
                 if (exObj.size() >= 3) {
-                    long objVer = (long) exObj.toArray()[exObj.size() - 3];
-                    if (!fi.getVersionTable().isContained(objNo, objVer))
+                    Long objVer = (Long) exObj.toArray()[exObj.size() - 3];
+                    if (!fi.getVersionTable().isContained(objNo, objVer)) {
                         layout.deleteObject(fileId, fi, objNo, objVer);
+                        fi.removeObjectVersion(objNo, objVer);
+                    }
                 }
             }
 
@@ -774,7 +781,7 @@ public class StorageThread extends Stage {
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file
                 newLastObject = truncateShrink(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber,
-                    cow, newObjVer);
+                    cow, newObjVer, rq.getRequest().getCapability().getXCap().getFileType());
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() < newFileSize) {
                 // check quota
@@ -812,6 +819,7 @@ public class StorageThread extends Stage {
             fi.setTruncateEpoch(epochNumber);
             
             fi.setGlobalLastObjectNumber(newGlobalLastObject);
+            fi.setLastTruncate(newObjVer, newGlobalLastObject);
             
             // store the truncate epoch persistently
             layout.setTruncateEpoch(fileId, epochNumber);
@@ -971,7 +979,7 @@ public class StorageThread extends Stage {
     }
     
     private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
-        FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+        FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer, FileType fileType) throws IOException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -1000,16 +1008,41 @@ public class StorageThread extends Stage {
                     final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
                     truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
                     
+                    if (fileType == FileType.ENCRYPTED || fileType == FileType.ENCRYPTED_META) {
+                        // if the file is encrypted and versioned:
+                        // besides the objects in file versions, only keep the two newest
+                        SortedSet<Long> exObj = fi.getExistingObjectVersions(rowObj);
+                        if (exObj.size() >= 3) {
+                            Long objVer = (Long) exObj.toArray()[exObj.size() - 3];
+                            if (!fi.getVersionTable().isContained(rowObj, objVer)) {
+                                layout.deleteObject(fileId, fi, rowObj, objVer);
+                                fi.removeObjectVersion(rowObj, objVer);
+                            }
+                        }
+                    }
                 } else if (rowObj > newLastObject) {
                     
-                    // currently examined object is larger than new last object
-                    // and not contained in any previous version of the file:
-                    // delete it
-                    // TODO(plieser): extend object deletion for encryption
                     final long v = fi.getLatestObjectVersion(rowObj);
-                    if (!fi.getVersionTable().isContained(rowObj, v))
-                        layout.deleteObject(fileId, fi, rowObj, v);
-                    
+                    if (fileType == FileType.ENCRYPTED || fileType == FileType.ENCRYPTED_META) {
+                        // if the file is encrypted and versioned:
+                        // besides the objects in file versions, only keep the newest
+                        SortedSet<Long> exObj = fi.getExistingObjectVersions(rowObj);
+                        if (exObj.size() >= 2) {
+                            Long objVer = (Long) exObj.toArray()[exObj.size() - 2];
+                            if (!fi.getVersionTable().isContained(rowObj, objVer)) {
+                                layout.deleteObject(fileId, fi, rowObj, objVer);
+                                fi.removeObjectVersion(rowObj, objVer);
+                            }
+                        }
+                    } else {
+                        // currently examined object is larger than new last object
+                        // and not contained in any previous version of the file:
+                        // delete it
+                        if (!fi.getVersionTable().isContained(rowObj, v)) {
+                            layout.deleteObject(fileId, fi, rowObj, v);
+                            fi.removeObjectVersion(rowObj, v);
+                        }
+                    }
                     fi.discardObject(rowObj, v);
                 }
             }
@@ -1040,6 +1073,7 @@ public class StorageThread extends Stage {
                     layout.deleteObject(fileId, fi, rowObj, v);
                     
                     fi.discardObject(rowObj, v);
+                    fi.removeObjectVersion(rowObj, v);
                 }
             }
             
