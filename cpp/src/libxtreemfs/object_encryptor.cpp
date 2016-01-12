@@ -75,8 +75,9 @@ ObjectEncryptor::ObjectEncryptor(
   assert(object_size_ % enc_block_size_ == 0);
   if (concurrent_write_ == "cow" && object_size_ != enc_block_size_) {
     LogAndThrowXtreemFSException(
-        "For selected currency control the encryption block size must be equal"
-        " to the object size.");
+        "For selected currency control the encryption block size ("
+            + enc_block_size_ + ") must be equal to the object size ("
+            + object_size_ + ").");
   }
   if (concurrent_write_ == "client") {
     file_lock_.reset(new FileLock(this, 0, 0, true));
