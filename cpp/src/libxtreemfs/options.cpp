@@ -341,7 +341,7 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("encryption-cw",
         po::value(&encryption_cw)->default_value(encryption_cw),
         "The method to use to ensure consistency for concurrent write"
-        " (none/serialize/locks/partial-cow/client)")
+        " (none/serialize/locks/partial-cow/cow/client)")
     ("encryption-pub-keys-path",
         po::value(&encryption_pub_keys_path)
           ->default_value(encryption_pub_keys_path),

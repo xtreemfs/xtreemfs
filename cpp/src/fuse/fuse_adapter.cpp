@@ -235,19 +235,19 @@ void FuseAdapter::Start(std::list<char*>* required_fuse_options) {
       options_->encryption = true;
     }
     if (xattr.name() == "xtreemfs.volattr.encryption_block_size"
-        && options_->encryption_block_size == 0) {
+        && !options_->encryption_block_size_was_passed) {
       options_->encryption_block_size = boost::lexical_cast<int>(xattr.value());
     }
     if (xattr.name() == "xtreemfs.volattr.encryption_cipher"
-        && options_->encryption_cipher == "") {
+        && !options_->encryption_cipher_was_passed) {
       options_->encryption_cipher = xattr.value();
     }
     if (xattr.name() == "xtreemfs.volattr.encryption_hash"
-        && options_->encryption_hash == "") {
+        && !options_->encryption_hash_was_passed) {
       options_->encryption_hash = xattr.value();
     }
     if (xattr.name() == "xtreemfs.volattr.encryption_cw") {
-      if (options_->encryption_cw == "") {
+      if (!options_->encryption_cw_was_passed) {
         options_->encryption_cw = xattr.value();
       } else if (options_->encryption_cw != xattr.value()) {
         if (Logging::log->loggingActive(LEVEL_WARN)) {
