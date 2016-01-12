@@ -50,7 +50,8 @@ AsymKey AsymKeyStorage::GetPubKey(const std::string& key_id) {
   FILE * fp;
   if (!(fp = fopen((path_pub_keys_ + key_id + ".pub.pem").c_str(), "r"))) {
     LogAndThrowXtreemFSException(
-        "Failed to open public key file " + key_id + ".pub.pem");
+        "Failed to open public key file " + key_id + ".pub.pem in "
+            + path_pub_keys_);
   }
 
   BOOST_SCOPE_EXIT((&fp)) {
@@ -61,7 +62,8 @@ AsymKey AsymKeyStorage::GetPubKey(const std::string& key_id) {
   EVP_PKEY * evp_key = PEM_read_PUBKEY(fp, NULL, NULL, NULL);
   if (evp_key == NULL) {
     LogAndThrowOpenSSLError(
-        "Failed to read public key file " + key_id + ".pub.pem");
+        "Failed to read public key file " + key_id + ".pub.pem in "
+            + path_pub_keys_);
   }
   AsymKey key(evp_key);
 
@@ -98,7 +100,8 @@ AsymKey AsymKeyStorage::GetPrivKey(const std::string& key_id) {
   FILE * fp;
   if (!(fp = fopen((path_priv_keys_ + key_id + ".priv.pem").c_str(), "r"))) {
     LogAndThrowXtreemFSException(
-        "Failed to open private key file " + key_id + ".priv.pem");
+        "Failed to open private key file " + key_id + ".priv.pem in "
+            + path_priv_keys_);
   }
 
   BOOST_SCOPE_EXIT((&fp)) {
@@ -110,7 +113,8 @@ AsymKey AsymKeyStorage::GetPrivKey(const std::string& key_id) {
       fp, NULL, NULL, const_cast<char*>(pem_key_pass_.c_str()));
   if (evp_key == NULL) {
     LogAndThrowOpenSSLError(
-        "Failed to read private key file " + key_id + ".priv.pem");
+        "Failed to read private key file " + key_id + ".priv.pem in "
+            + path_priv_keys_);
   }
   AsymKey key(evp_key);
 
