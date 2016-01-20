@@ -33,6 +33,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -48,6 +49,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.operations.SetReplicaUpdatePolicyOperation;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
@@ -614,9 +616,12 @@ public class MRCHelper {
         return "";
     }
 
-    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, FileAccessManager faMan, long parentId,
-            FileMetadata file, String keyString, String value, AtomicDBUpdate update) throws UserException,
-            DatabaseException {
+    public static void setSysAttrValue(MRCRequestDispatcher master, StorageManager sMan, long parentId,
+            FileMetadata file, String keyString, String value, AtomicDBUpdate update)
+                    throws UserException, DatabaseException {
+
+        final VolumeManager vMan = master.getVolumeManager();
+        final FileAccessManager faMan = master.getFileAccessManager();
 
         // handle policy-specific values
         if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + ".")) {
@@ -714,10 +719,18 @@ public class MRCHelper {
 
             break;
 
+        // Kept for backwards compatibility with xtfsutil.
         case read_only:
+            boolean readOnly = Boolean.valueOf(value);
+            String newReplicaUpdatePolicy = readOnly ? ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY
+                    : ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE;
+            SetReplicaUpdatePolicyOperation.setReplicaUpdatePolicy(master, sMan, update, file, newReplicaUpdatePolicy);
+            break;
+
+        // Kept for backwards compatibility with xtfsutil.
         case set_repl_update_policy:
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                    "Setting the replication policy via XAttributes is deprecated. Please use the SetReplicaUpdatePolicyOperation.");
+            SetReplicaUpdatePolicyOperation.setReplicaUpdatePolicy(master, sMan, update, file, value);
+            break;
 
         case snapshots:
 

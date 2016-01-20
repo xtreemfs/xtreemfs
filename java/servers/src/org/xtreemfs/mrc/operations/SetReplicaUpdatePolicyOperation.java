@@ -16,6 +16,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -102,6 +103,32 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser || privileged,
                 rq.getDetails().groupIds);
 
+        // Set the new replicaUpdatePolicy
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        setReplicaUpdatePolicy(master, sMan, update, file, newReplUpdatePolicy);
+
+        // Set the response.
+        rq.setResponse(emptyResponse.getDefaultInstance());
+
+        update.execute();
+
+        // TODO (jdillmann): Make async like AddReplica etc?
+    }
+
+    /**
+     * This method has been separated to allow backwards compatibility with previous versions of the xtfsutil which is
+     * was using xattribs to set the replica update policy via {@link MRCHelper#setSysAttrValue}.
+     * 
+     * @param master
+     * @param sMan
+     * @param update
+     * @param file
+     * @param newReplUpdatePolicy
+     * @throws UserException
+     * @throws DatabaseException
+     */
+    public static void setReplicaUpdatePolicy(MRCRequestDispatcher master, StorageManager sMan, AtomicDBUpdate update,
+            FileMetadata file, String newReplUpdatePolicy) throws UserException, DatabaseException {
         // Check if a xLocSetChange is already in progress.
         XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
         if (lock.isLocked()) {
@@ -113,8 +140,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
         // WaRa was renamed to WaR1.
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplUpdatePolicy)) {
-            throw new UserException(
-                    POSIXErrno.POSIX_ERROR_EINVAL,
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                     "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
                             + newReplUpdatePolicy);
         }
@@ -124,8 +150,8 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)
                 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplUpdatePolicy))
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "invalid replica update policy: "
-                    + newReplUpdatePolicy);
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "invalid replica update policy: " + newReplUpdatePolicy);
 
         // Removing a replicated policy is only allowed if just 1 replica exists.
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)) {
@@ -151,10 +177,10 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
         // check if striping + rw replication would be set
         StripingPolicy stripingPolicy = file.getXLocList().getReplica(0).getStripingPolicy();
-        if (stripingPolicy.getWidth() > 1
-                && (newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || newReplUpdatePolicy
-                        .equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "RW-replication of striped files is not supported yet.");
+        if (stripingPolicy.getWidth() > 1 && (newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                || newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "RW-replication of striped files is not supported yet.");
         }
 
         // Create a new XLoc.
@@ -187,15 +213,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             file.setReadOnly(false);
         }
 
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-
-        // Set the response.
-        rq.setResponse(emptyResponse.getDefaultInstance());
-
-        update.execute();
-
-        // TODO (jdillmann): Make async like AddReplica etc?
     }
 
 }
