@@ -53,10 +53,6 @@ public class ChannelIO {
             channel.close();
     }
 
-    public boolean isBlocking() {
-            return channel.isBlocking();
-    }
-
     public boolean isOpen() {
             return channel.isOpen();
     }
@@ -82,10 +78,6 @@ public class ChannelIO {
             return channel.toString();
     }
 
-    public int validOps() {
-            return channel.validOps();
-    }
-
     public int write(ByteBuffer src) throws IOException, NotYetConnectedException {
             return channel.write(src);
     }
@@ -104,7 +96,6 @@ public class ChannelIO {
 
     /**
      * does the handshake if needed
-     * @param key
      * @return true, if handshake is completed
      * @throws IOException
      */
@@ -115,7 +106,6 @@ public class ChannelIO {
     /**
      * prepares the channel for closing
      * this can take more than 1 call
-     * @param key
      * @return true, if channel is ready for closing
      * @throws IOException
      */
@@ -125,18 +115,9 @@ public class ChannelIO {
 
     /**
      * is channel in closing-procedure?
-     * @return
      */
     public boolean isShutdownInProgress() {
         return false;
-    }
-
-    /**
-     * is there remaining data in channel-buffers, which must be flushed?
-     * @return
-     */
-    public boolean isFlushed() {
-        return true;
     }
 
     public Certificate[] getCerts() {
