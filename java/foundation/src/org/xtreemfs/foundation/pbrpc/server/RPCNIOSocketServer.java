@@ -66,7 +66,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
     private final Selector                 selector;
     
     /**
-     * If set to true thei main loop will exit upon next invocation
+     * If set to true the main loop will exit upon next invocation
      */
     private volatile boolean               quit;
     
@@ -275,7 +275,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                         try {
 
                             if (key.isAcceptable()) {
-                                acceptConnection(key);
+                                acceptConnection();
                             }
                             if (key.isReadable()) {
                                 readConnection(key);
@@ -458,7 +458,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                                 "request received");
                         pendingRequests++;
-                        if (!receiveRequest(key, rq, con)) {
+                        if (!receiveRequest(rq, con)) {
                             closeConnection(key);
                             return;
                         }
@@ -497,8 +497,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
     /**
      * write data to a writeable connection
      * 
-     * @param key
-     *            the writable key
+     * @param key the writable key
      */
     private void writeConnection(SelectionKey key) {
         
@@ -583,8 +582,6 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                                             .getRemoteSocketAddress().toString(), numRq);
                             }
                         }
-
-                        continue;
                     }
                 }
             }
@@ -676,12 +673,10 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
     }
     
     /**
-     * accept a new incomming connection
-     * 
-     * @param key
-     *            the acceptable key
+     * accept a new incoming connection
+     *
      */
-    private void acceptConnection(SelectionKey key) {
+    private void acceptConnection() throws IOException {
         SocketChannel client = null;
         RPCNIOSocketServerConnection con = null;
         ChannelIO channelIO = null;
@@ -727,32 +722,25 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                     "cannot establish connection: %s", ex.toString());
             if (channelIO != null) {
-                try {
-                    channelIO.close();
-                } catch (IOException ex2) {
-                }
+                channelIO.close();
             }
         } catch (IOException ex) {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
                     "cannot establish connection: %s", ex.toString());
             if (channelIO != null) {
-                try {
-                    channelIO.close();
-                } catch (IOException ex2) {
-                }
+                channelIO.close();
             }
         }
     }
-    
+
     /**
      *
-     * @param key
      * @param request
      * @param con
      * @return true on success, false on error
      */
-    private boolean receiveRequest(SelectionKey key, RPCServerRequest request, RPCNIOSocketServerConnection con) {
+    private boolean receiveRequest(RPCServerRequest request, RPCNIOSocketServerConnection con) {
         try {
             request.getHeader();
             
@@ -764,24 +752,14 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 Logging.logError(Logging.LEVEL_DEBUG, this,ex);
             }
             return false;
-            //closeConnection(key);
         }
     }
-    
+
     public int getNumConnections() {
         return this.numConnections.get();
     }
-    
+
     public long getPendingRequests() {
         return this.pendingRequests;
-    }
-    
-    /**
-     * Updates the listener. Handle with care.
-     * 
-     * @param rl
-     */
-    public void updateRequestDispatcher(RPCServerRequestListener rl) {
-        this.receiver = rl;
     }
 }
