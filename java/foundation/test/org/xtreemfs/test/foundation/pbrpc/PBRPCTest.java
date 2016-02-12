@@ -9,27 +9,26 @@
 
 package org.xtreemfs.test.foundation.pbrpc;
 
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.TimeSync;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
+import org.xtreemfs.foundation.util.OutputUtils;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
+import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
+import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xtreemfs.foundation.TimeSync;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping.PingResponse;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PingServiceClient;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
-import org.xtreemfs.foundation.pbrpc.server.RPCNIOSocketServer;
-import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
-import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
-import org.xtreemfs.foundation.util.OutputUtils;
-
-import java.net.InetSocketAddress;
-
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.Ping;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PingServiceClient;
 import static org.junit.Assert.*;
 
 /**

@@ -568,6 +568,14 @@ public class SSLChannelIO extends ChannelIO {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isFlushed() {
+        return bufferRemaining(outNetBuffer) == 0;
+    }
+
+    /**
      * finishing operations for handshake
      */
     private void handshakeFinished(SelectionKey key) throws CancelledKeyException {
