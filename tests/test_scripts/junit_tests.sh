@@ -108,7 +108,7 @@ while read LINE; do
     i=`expr $i + 1`
   
     if [ "$RESULT" -ne "0" ]; then
-      echo -n "FAILURE, waiting for ports to become free before retrying ... "
+        echo -n "FAILURE (code $RESULT), waiting for ports to become free before retrying ... "
 
       # Log netstat output to debug "address already in use" problems.
       temp_file="$(mktemp netstat.XXXXXX)"
