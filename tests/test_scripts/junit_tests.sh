@@ -96,7 +96,7 @@ while read LINE; do
   TEST=${TEST//\//\.}
 
   # run each JUnit test separately in its own JVM
-  JAVA_CALL="$JAVA_HOME/bin/java -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
+  JAVA_CALL="$JAVA_HOME/bin/java -Xmx1000m -ea -cp $CLASSPATH org.junit.runner.JUnitCore $TEST"
 
   RESULT=1
   i=0
