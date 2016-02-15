@@ -6981,6 +6981,98 @@ SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtree
 }
 
 
+SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_VolumeProxy_1setReplicaUpdatePolicy(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jstring jarg3, jstring jarg4) {
+  xtreemfs::Volume *arg1 = (xtreemfs::Volume *) 0 ;
+  xtreemfs::pbrpc::UserCredentials *arg2 = 0 ;
+  std::string *arg3 = 0 ;
+  std::string *arg4 = 0 ;
+  xtreemfs::pbrpc::UserCredentials temp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(xtreemfs::Volume **)&jarg1; 
+  {
+    int proto_size = 0;
+    boost::scoped_ptr<char> proto_buffer(
+      JNIUtil::MakeCharArray(jenv, jarg2, &proto_size));
+    
+    bool parsed_ok = temp2.ParseFromArray(proto_buffer.get(), proto_size);
+    if (!parsed_ok) {
+      SWIG_JavaThrowException(jenv,
+        SWIG_JavaRuntimeException,
+        "Unable to parse xtreemfs::pbrpc::UserCredentials protocol message.");
+    }
+    arg2 = &temp2;
+  }
+  if(!jarg3) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return ;
+  }
+  const char *arg3_pstr = (const char *)jenv->GetStringUTFChars(jarg3, 0); 
+  if (!arg3_pstr) return ;
+  std::string arg3_str(arg3_pstr);
+  arg3 = &arg3_str;
+  jenv->ReleaseStringUTFChars(jarg3, arg3_pstr); 
+  if(!jarg4) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null string");
+    return ;
+  }
+  const char *arg4_pstr = (const char *)jenv->GetStringUTFChars(jarg4, 0); 
+  if (!arg4_pstr) return ;
+  std::string arg4_str(arg4_pstr);
+  arg4 = &arg4_str;
+  jenv->ReleaseStringUTFChars(jarg4, arg4_pstr); 
+  try {
+    (arg1)->SetReplicaUpdatePolicy((xtreemfs::pbrpc::UserCredentials const &)*arg2,(std::string const &)*arg3,(std::string const &)*arg4);
+  }
+  catch(xtreemfs::AddressToUUIDNotFoundException const &_e) {
+    {
+      jclass clazz =  jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/AddressToUUIDNotFoundException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::IOException const &_e) {
+    {
+      SWIG_JavaThrowException(jenv, SWIG_JavaIOException, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::PosixErrorException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/PosixErrorException");
+      jmethodID mid = jenv->GetMethodID(clazz, "<init>", "(Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;Ljava/lang/String;)V");
+      
+      jclass clazz2 = jenv->FindClass("org/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno");
+      jmethodID mid2 = jenv->GetStaticMethodID(clazz2, "valueOf", "(I)Lorg/xtreemfs/foundation/pbrpc/generatedinterfaces/RPC$POSIXErrno;");
+      
+      jobject posix_errno = jenv->CallStaticObjectMethod(clazz2, mid2, (&_e)->posix_errno());
+      jstring what = jenv->NewStringUTF((&_e)->what());
+      jthrowable o = static_cast<jthrowable>(jenv->NewObject(clazz, mid, posix_errno, what));
+      jenv->Throw(o);
+      
+      return ;
+    }
+  }
+  catch(xtreemfs::UnknownAddressSchemeException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  catch(xtreemfs::XtreemFSException const &_e) {
+    {
+      jclass clazz = jenv->FindClass("org/xtreemfs/common/libxtreemfs/exceptions/XtreemFSException");
+      jenv->ThrowNew(clazz, (&_e)->what());
+      return ;
+    }
+  }
+  
+}
+
+
 SWIGEXPORT void JNICALL Java_org_xtreemfs_common_libxtreemfs_jni_generated_xtreemfs_1jniJNI_delete_1FileHandleProxy(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   xtreemfs::FileHandle *arg1 = (xtreemfs::FileHandle *) 0 ;
   

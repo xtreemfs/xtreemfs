@@ -8,7 +8,6 @@
 package org.xtreemfs.test.osd;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -276,12 +275,6 @@ public class OSDDrainTest {
                 assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, file.getReplicaUpdatePolicy());
             }
 
-            // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
-            for (File file : files) {
-                assertTrue(file.isReadOnly());
-            }
-
             // start second OSD
             osdServer.add(new OSD(osdConfig2));
 
@@ -307,12 +300,6 @@ public class OSDDrainTest {
             osdDrain.removeOriginalFromReplica(fileInfos);
             for (File file : files) {
                 assertEquals(1, file.getNumReplicas());
-            }
-
-            // set every file to read/write again which wasn't set to read-only before
-            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
-            for (File file : files) {
-                assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value
@@ -540,9 +527,6 @@ public class OSDDrainTest {
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = osdDrain.setReplicationUpdatePolicyRonly(fileInfos);
 
-            // set Files read-only
-            fileInfos = osdDrain.setFilesReadOnlyAttribute(fileInfos);
-
             // create replications
             fileInfos = osdDrain.createReplicasForFiles(fileInfos);
 
@@ -556,12 +540,6 @@ public class OSDDrainTest {
             osdDrain.removeOriginalFromReplica(fileInfos);
             for (File file : files) {
                 assertEquals(1, file.getNumReplicas());
-            }
-
-            // set every file to read/write again which wasn't set to read-only before
-            osdDrain.resetFilesReadOnlyAttribute(fileInfos);
-            for (File file : files) {
-                assertFalse(file.isReadOnly());
             }
 
             // set ReplicationUpdatePolicy to original value

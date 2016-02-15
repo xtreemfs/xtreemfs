@@ -54,8 +54,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_read_only_xattrResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
@@ -90,8 +89,6 @@ public class OSDDrain {
         // origReplica is necessary to restore the replicas if there is an error
         // while removing the original replica
         public Replica           oldReplica;
-
-        public Boolean           wasAlreadyReadOnly;
 
         public String            oldReplicationPolicy;
         
@@ -170,9 +167,6 @@ public class OSDDrain {
             // set ReplicationUpdatePolicy to RONLY
             fileInfos = this.setReplicationUpdatePolicyRonly(fileInfos);
 
-            // set Files read-only
-            fileInfos = this.setFilesReadOnlyAttribute(fileInfos);
-
             // create replications
             fileInfos = this.createReplicasForFiles(fileInfos);
 
@@ -184,9 +178,6 @@ public class OSDDrain {
 
             // remove replicas
             this.removeOriginalFromReplica(fileInfos);
-
-            // set every file to read/write again which wasn't set to read-only before
-            this.resetFilesReadOnlyAttribute(fileInfos);
 
             // set ReplicationUpdatePolicy to original value
             this.resetReplicationUpdatePolicy(fileInfos);
@@ -459,6 +450,8 @@ public class OSDDrain {
             fileInfo.isReplicaChangeCoordinated = (xlocset.getReplicasCount() > 1 
                     && ReplicaUpdatePolicies.isRwReplicated(xlocset.getReplicaUpdatePolicy()));
 
+            fileInfo.oldReplicationPolicy = xlocset.getReplicaUpdatePolicy();
+
             // find the replica for the given UUID
             for (Replica replica : xlocset.getReplicasList()) {
                 if (replica.getOsdUuidsList().contains(osdUUID.toString())) {
@@ -696,9 +689,7 @@ public class OSDDrain {
 
         for (FileInformation fileInfo : fileInfos) {
             try {
-                fileInfo.oldReplicationPolicy = changeReplicationUpdatePolicy(fileInfo,
-                                                                              ReplicaUpdatePolicies
-                                                                                      .REPL_UPDATE_PC_RONLY);
+                changeReplicationUpdatePolicy(fileInfo, ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
                 throw new OSDDrainException(e.getMessage(), ErrorState.SET_UPDATE_POLICY, fileInfos,
@@ -725,8 +716,7 @@ public class OSDDrain {
 
         for (FileInformation fileInfo : fileInfos) {
             try {
-                fileInfo.oldReplicationPolicy = this.changeReplicationUpdatePolicy(fileInfo,
-                                                                                   fileInfo.oldReplicationPolicy);
+                this.changeReplicationUpdatePolicy(fileInfo, fileInfo.oldReplicationPolicy);
                 finishedFileInfos.add(fileInfo);
             } catch (Exception e) {
                 erroneousFiles.add(fileInfo);
@@ -741,14 +731,13 @@ public class OSDDrain {
         return finishedFileInfos;
     }
 
-    private String changeReplicationUpdatePolicy(FileInformation fileInfo, String policy) throws Exception {
-
-        RPCResponse<xtreemfs_set_replica_update_policyResponse> respRepl = null;
-        xtreemfs_set_replica_update_policyResponse replSetResponse = null;
+    private void changeReplicationUpdatePolicy(FileInformation fileInfo, String policy) throws Exception {
+        RPCResponse<?> respRepl = null;
         try {
-            respRepl = mrcClient.xtreemfs_set_replica_update_policy(fileInfo.mrcAddress, password, userCreds,
-                                                                    fileInfo.fileID, policy);
-            replSetResponse = respRepl.get();
+            final xtreemfs_set_replica_update_policyRequest msg = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                    .setFileId(fileInfo.fileID).setUpdatePolicy(policy).build();
+            respRepl = mrcClient.xtreemfs_set_replica_update_policy(fileInfo.mrcAddress, password, userCreds, msg);
+            respRepl.get();
         } catch (Exception ioe) {
             if (Logging.isDebug()) {
                 Logging.logError(Logging.LEVEL_WARN, this, ioe);
@@ -758,98 +747,6 @@ public class OSDDrain {
             if (respRepl != null)
                 respRepl.freeBuffers();
         }
-
-        return replSetResponse.getOldUpdatePolicy();
-    }
-
-    /**
-     * Set all files in fileIDList to read-only to be able to RO-replicate them. <br>
-     *
-     * @param fileIDList
-     * @param mode
-     *            true if you want to set the files to read-only mode, false otherwise
-     * @throws Exception
-     *
-     * @return {@link LinkedList} with all fileIDs which already were set to the desired mode
-     */
-    public List<FileInformation> setFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
-
-        // List of files which where set to read-only successfully
-        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
-
-        for (FileInformation fileInfo : fileInfos) {
-            try {
-                fileInfo.wasAlreadyReadOnly = setFileReadOnlyAttribute(fileInfo, true);
-            } catch (OSDDrainException e) {
-                throw new OSDDrainException(e.getMessage(), ErrorState.SET_RONLY, fileInfos, finishedFileInfos);
-            }
-            finishedFileInfos.add(fileInfo);
-        }
-
-        return finishedFileInfos;
-    }
-
-    /**
-     * Reset the files read only attributes to the original value
-     * @param fileInfos
-     * @return
-     * @throws OSDDrainException
-     */
-    public List<FileInformation> resetFilesReadOnlyAttribute(List<FileInformation> fileInfos) throws OSDDrainException {
-        // List of files which where reset successfully.
-        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
-        // List of files which could not be reset.
-        List<FileInformation> erroneousFiles = new LinkedList<FileInformation>();
-
-        for (FileInformation fileInfo : fileInfos) {
-            // Skip files that have been read only before draining.
-            if (fileInfo.wasAlreadyReadOnly) {
-                finishedFileInfos.add(fileInfo);
-                continue;
-            }
-
-            try {
-                setFileReadOnlyAttribute(fileInfo, false);
-                finishedFileInfos.add(fileInfo);
-            } catch (OSDDrainException e) {
-                erroneousFiles.add(fileInfo);
-            }
-        }
-
-        if (!erroneousFiles.isEmpty()) {
-            throw new OSDDrainException("Failed to reset read only attribute for some files.", ErrorState.UNSET_RONLY,
-                                        fileInfos, finishedFileInfos);
-        }
-
-        return finishedFileInfos;
-    }
-
-    /**
-     * Set the read-only attribute for a single file.
-     *
-     * @param fileInfo
-     * @param mode
-     * @return true if the read-only attribute had been already set to the requested mode.
-     * @throws OSDDrainException
-     */
-    boolean setFileReadOnlyAttribute(FileInformation fileInfo, boolean mode) throws OSDDrainException {
-        RPCResponse<xtreemfs_set_read_only_xattrResponse> response = null;
-        xtreemfs_set_read_only_xattrResponse setResponse = null;
-        try {
-            response = mrcClient
-                    .xtreemfs_set_read_only_xattr(fileInfo.mrcAddress, password, userCreds, fileInfo.fileID, mode);
-            setResponse = response.get();
-        } catch (Exception e) {
-            if (Logging.isDebug()) {
-                Logging.logError(Logging.LEVEL_WARN, this, e);
-            }
-            throw new OSDDrainException(e.getMessage(), ErrorState.SET_RONLY);
-        } finally {
-            if (response != null)
-                response.freeBuffers();
-        }
-
-        return (!setResponse.getWasSet());
     }
 
     /**
@@ -1251,35 +1148,6 @@ public class OSDDrain {
             }
             break;
 
-        case SET_RONLY:
-            if (printError) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, "Failed to set files read-only");
-                printError();
-            }
-            if (Logging.isDebug())
-                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-
-            Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                    "Trying to revert read-only mode changes...");
-            try {
-                resetFilesReadOnlyAttribute(ex.getFileInfosCurrent());
-                Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                        "DONE reverting read-only mode changes");
-            } catch (OSDDrainException ode) {
-                List<FileInformation> failedFileInfos = ode.getFileInfosAll();
-                failedFileInfos.removeAll(ode.getFileInfosCurrent());
-                String error = "Following files couldn't set back its originial read-only mode:";
-                for (FileInformation fileInfo : failedFileInfos) {
-                    error = error + "\n " + fileInfo.fileID;
-                }
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
-            }
-
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.SET_UPDATE_POLICY,
-                            ex.getFileInfosAll(), ex.getFileInfosAll()), false);
-            break;
-
         case CREATE_REPLICAS:
             if (printError) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, "Failed to create new replicas");
@@ -1302,10 +1170,6 @@ public class OSDDrain {
                 }
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
-
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.SET_RONLY, ex.getFileInfosAll(), ex
-                            .getFileInfosAll()), false);
             break;
 
         case WAIT_FOR_REPLICATION:
@@ -1331,10 +1195,8 @@ public class OSDDrain {
                 }
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.SET_RONLY, ex.getFileInfosAll(), ex
-                            .getFileInfosAll()), false);
-
+            this.handleException(new OSDDrainException(ex.getMessage(), ErrorState.CREATE_REPLICAS,
+                    ex.getFileInfosAll(), ex.getFileInfosAll()), false);
             break;
 
         case REMOVE_REPLICAS:
@@ -1362,33 +1224,9 @@ public class OSDDrain {
                 }
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
             }
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.CREATE_REPLICAS, ex.getFileInfosAll(),
-                            ex.getFileInfosAll()), false);
+            this.handleException(new OSDDrainException(ex.getMessage(), ErrorState.CREATE_REPLICAS,
+                    ex.getFileInfosAll(), ex.getFileInfosAll()), false);
             break;
-
-        case UNSET_RONLY: {
-            if (printError) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this,
-                                   "Failed to set files back from read-only mode");
-                printError();
-            }
-            if (Logging.isDebug())
-                Logging.logError(Logging.LEVEL_DEBUG, this, ex);
-
-            List<FileInformation> failedFileInfos = ex.getFileInfosAll();
-            failedFileInfos.removeAll(ex.getFileInfosCurrent());
-            String error = "Following files couldn't set back to read-only mode:";
-            for (FileInformation fileInfo : failedFileInfos) {
-                error = error + "\n " + fileInfo.fileID;
-            }
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.tool, this, error);
-
-            this.handleException(
-                    new OSDDrainException(ex.getMessage(), ErrorState.REMOVE_REPLICAS, ex.getFileInfosAll(),
-                                          ex.getFileInfosAll()), false);
-            break;
-        }
 
         case UNSET_UPDATE_POLICY: {
             if (printError) {

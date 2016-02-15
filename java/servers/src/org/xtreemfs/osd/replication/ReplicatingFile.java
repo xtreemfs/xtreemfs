@@ -331,6 +331,9 @@ class ReplicatingFile {
      */
     private boolean                          cancelled;
     
+    /** If a VIEW_ERROR was encountered during replication. */
+    private boolean                          viewOutdated;
+
     /**
      * marks THIS replica as to be a full replica (enables background
      * replication)
@@ -365,6 +368,7 @@ class ReplicatingFile {
         this.cap = cap;
         this.cow = cow;
         this.cancelled = false;
+        this.viewOutdated = false;
         this.objectsInProgress = new HashMap<Long, ReplicatingObject>();
         this.waitingRequests = new HashMap<Long, ReplicatingObject>();
         
@@ -426,6 +430,7 @@ class ReplicatingFile {
         if (hasXLocChanged(xLoc)) {
             this.xLoc = xLoc;
             this.strategy.updateXLoc(xLoc);
+            this.viewOutdated = false;
             changed = true;
         }
         return changed;
@@ -505,6 +510,10 @@ class ReplicatingFile {
         return cancelled;
     }
     
+    public boolean isViewOutdated() {
+        return viewOutdated;
+    }
+
     /**
      * @see java.util.HashMap#size()
      */
@@ -602,8 +611,7 @@ class ReplicatingFile {
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
                 
-                if (!strategy.isObjectListEmpty()) { // there are still objects
-                    // to fetch
+                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                             "background replication: replicate next object for file %s", fileID);
@@ -652,6 +660,23 @@ class ReplicatingFile {
         }
     }
     
+    public void objectNotFetchedBecauseViewError(long objectNo, final ServiceUUID usedOSD, final ErrorResponse error) {
+        ReplicatingObject object = objectsInProgress.get(objectNo);
+        assert (object != null);
+
+        // Remember the view error (used to deny future requests until a new view/xlocset is provided)
+        viewOutdated = true;
+
+        // Send an error to every pending request.
+        reportError(error);
+
+        // Stop this objects replication.
+        objectReplicationCompleted(objectNo);
+
+        // Remove waiting elements from the queue.
+        waitingRequests.clear();
+    }
+
     /**
      * cleans up maps, lists, ...
      * 
@@ -718,7 +743,9 @@ class ReplicatingFile {
                     master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data,
                         objectList, null);
                 } catch (PBRPCException e) {
-                    osdAvailability.setServiceWasNotAvailable(osd);
+                    if (e.getErrorType() != ErrorType.INVALID_VIEW) {
+                        osdAvailability.setServiceWasNotAvailable(osd);
+                    }
                     master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
                             e.getErrorResponse());
                 } catch (IOException e) {

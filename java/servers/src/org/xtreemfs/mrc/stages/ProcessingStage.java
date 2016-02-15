@@ -63,7 +63,6 @@ import org.xtreemfs.mrc.operations.RenewOperation;
 import org.xtreemfs.mrc.operations.ReselectOSDsOperation;
 import org.xtreemfs.mrc.operations.RestoreDBOperation;
 import org.xtreemfs.mrc.operations.RestoreFileOperation;
-import org.xtreemfs.mrc.operations.SetReadOnlyXattrOperation;
 import org.xtreemfs.mrc.operations.SetReplicaUpdatePolicyOperation;
 import org.xtreemfs.mrc.operations.SetXAttrOperation;
 import org.xtreemfs.mrc.operations.SetattrOperation;
@@ -155,7 +154,6 @@ public class ProcessingStage extends MRCStage {
         // ReplicationToMasterOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY, 
                 new SetReplicaUpdatePolicyOperation(master));
-        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR, new SetReadOnlyXattrOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS, new GetFileCredentialsOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_GET_XLOCSET, new GetXLocSetOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RESELECT_OSDS, new ReselectOSDsOperation(master));

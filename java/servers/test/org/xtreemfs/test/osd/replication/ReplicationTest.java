@@ -8,11 +8,9 @@
 
 package org.xtreemfs.test.osd.replication;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -33,8 +31,10 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -590,5 +590,57 @@ public class ReplicationTest {
         list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirst(), objectList.getSet().toByteArray());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
+    }
+
+    @Test
+    public void testOutdatedView() throws Exception {
+        xLoc = createLocations(2, 1);
+
+        // Write with view version 2
+        XLocSet xLocSet = xLoc.getXLocSet().toBuilder().setVersion(2).build();
+        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
+
+        // write data
+        ObjectData objdata = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        RPCResponse<OSDWriteResponse> r = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, 0, objdata,
+                this.data.createViewBuffer());
+        OSDWriteResponse resp = r.get();
+        r.freeBuffers();
+
+        // change XLoc to replicated and set the view to the outdated version 1
+        setReplicated(this.data.limit(), 0);
+        xLocSet = xLoc.getXLocSet().toBuilder().setVersion(1).build();
+        fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
+
+        // read data from first replica -> would have to replicate but will fail due to the VIEW error
+        RPCResponse<ObjectData> r2 = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(),
+                RPCAuthentication.authNone, RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
+        try {
+            ObjectData resp2 = r2.get();
+            fail();
+        } catch (PBRPCException e) {
+            assertEquals(ErrorType.INVALID_VIEW, e.getErrorType());
+        } catch (IOException e) {
+            fail();
+        } finally {
+            r2.freeBuffers();
+        }
+
+        // update to the view version 2
+        xLocSet = xLoc.getXLocSet().toBuilder().setVersion(2).build();
+        fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xLocSet).build();
+
+        // read data from first replica -> has to replicate
+        r2 = client.read(xLoc.getOSDsForObject(objectNo).get(1).getAddress(), RPCAuthentication.authNone,
+                RPCAuthentication.userService, fc, fileID, objectNo, 0, 0, stripeSize);
+        ObjectData resp2 = r2.get();
+        if (data.capacity() > 0) {
+            assertNotNull(r2.getData());
+            assertTrue(Arrays.equals(data.array(), r2.getData().array()));
+        } else
+            assertNull(r2.getData());
+        r2.freeBuffers();
     }
 }

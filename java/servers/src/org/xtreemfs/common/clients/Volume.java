@@ -53,6 +53,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -933,6 +934,23 @@ public class Volume {
 
         assert (xloc != null);
         return xloc;
+    }
+
+    void setReplicaUpdatePolicy(String path, String policy, UserCredentials userCreds) throws IOException {
+        RPCResponse response = null;
+        try {
+            xtreemfs_set_replica_update_policyRequest msg = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                    .setVolumeName(fixPath(volumeName)).setPath(fixPath(path)).setUpdatePolicy(policy).build();
+            response = mrcClient.xtreemfs_set_replica_update_policy(null, RPCAuthentication.authNone, userCreds, msg);
+            response.get();
+        } catch (PBRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
     }
 
     void shutdown() {
