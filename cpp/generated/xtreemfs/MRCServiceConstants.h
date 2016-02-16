@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 17:29:29 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECONSTANTS_H_
@@ -49,7 +49,6 @@ const uint32_t PROC_ID_XTREEMFS_RMVOL = 44;
 const uint32_t PROC_ID_XTREEMFS_SHUTDOWN = 45;
 const uint32_t PROC_ID_XTREEMFS_UPDATE_FILE_SIZE = 46;
 const uint32_t PROC_ID_XTREEMFS_SET_REPLICA_UPDATE_POLICY = 48;
-const uint32_t PROC_ID_XTREEMFS_SET_READ_ONLY_XATTR = 49;
 const uint32_t PROC_ID_XTREEMFS_GET_FILE_CREDENTIALS = 50;
 const uint32_t PROC_ID_XTREEMFS_GET_XLOCSET = 51;
 const uint32_t PROC_ID_XTREEMFS_RESELECT_OSDS = 54;

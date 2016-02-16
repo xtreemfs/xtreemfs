@@ -692,16 +692,23 @@ public class FileHandleTest {
         int length = bytesIn.length;
 
         fileHandle.write(userCredentials, bytesIn, length, 0);
+        // Close to trigger the replication
+        fileHandle.close();
+        // and wait some time to let it finish.
+        Thread.sleep(5 * 1000);
 
         // mark new replica as complete.
-        fileHandle.checkAndMarkIfReadOnlyReplicaComplete(0, userCredentials);
+        fileHandle = volume.openFile(userCredentials, "/test.txt",
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
+        boolean complete = fileHandle.checkAndMarkIfReadOnlyReplicaComplete(1, userCredentials);
+        fileHandle.close();
+        assertTrue(complete);
 
         // re-open file to get replica with updated flags.
-        fileHandle.close();
         fileHandle = volume.openFile(userCredentials, "/test.txt",
                 SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
-        assertTrue((fileHandle.getReplica(0).getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE
+        assertTrue((fileHandle.getReplica(1).getReplicationFlags() & REPL_FLAG.REPL_FLAG_IS_COMPLETE
                 .getNumber()) != 0);
 
         // close volume and file, shut down client

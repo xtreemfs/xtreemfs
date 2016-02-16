@@ -1,4 +1,4 @@
-//automatically generated from MRC.proto at Wed Oct 28 15:06:28 CET 2015
+//automatically generated from MRC.proto at Wed Dec 02 17:29:29 CET 2015
 //(c) 2015. See LICENSE file for details.
 
 #ifndef MRCSERVICECLIENT_H
@@ -931,44 +931,21 @@ namespace pbrpc {
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest* request,
-                CallbackInterface<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse> *callback, void *context = NULL) {
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 20001, 48,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse(),
+                     creds, auth, request, data, data_length, NULL,
                      context, callback);
             }
 
-            SyncCallback<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse>* xtreemfs_set_replica_update_policy_sync(const std::string &address,
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_set_replica_update_policy_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_set_replica_update_policyRequest* request) {
                 const char* data = NULL; uint32_t data_length = 0;
-                SyncCallback<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse>();
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 20001, 48,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_replica_update_policyResponse(),
-                     NULL, sync_cb);
-                return sync_cb;
-            }
-
-            void xtreemfs_set_read_only_xattr(const std::string &address,
-                const xtreemfs::pbrpc::Auth& auth,
-                const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest* request,
-                CallbackInterface<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse> *callback, void *context = NULL) {
-                const char* data = NULL; uint32_t data_length = 0;
-                client_->sendRequest(address, 20001, 49,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse(),
-                     context, callback);
-            }
-
-            SyncCallback<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse>* xtreemfs_set_read_only_xattr_sync(const std::string &address,
-                const xtreemfs::pbrpc::Auth& auth,
-                const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::xtreemfs_set_read_only_xattrRequest* request) {
-                const char* data = NULL; uint32_t data_length = 0;
-                SyncCallback<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse>();
-                client_->sendRequest(address, 20001, 49,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_set_read_only_xattrResponse(),
+                     creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;
             }

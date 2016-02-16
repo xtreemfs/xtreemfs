@@ -309,6 +309,7 @@ DEFAULT_EXCEPTIONS(xtreemfs::Volume::AddReplica);
 DEFAULT_EXCEPTIONS(xtreemfs::Volume::ListReplicas);
 DEFAULT_EXCEPTIONS(xtreemfs::Volume::RemoveReplica);
 DEFAULT_EXCEPTIONS(xtreemfs::Volume::GetSuitableOSDs);
+DEFAULT_EXCEPTIONS(xtreemfs::Volume::SetReplicaUpdatePolicy);
 
 
 

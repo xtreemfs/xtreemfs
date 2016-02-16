@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class ObjectSetTest {
             byte[] otherObject = serialize(list);
             try {
                 deserialized = new ObjectSet(set.getStripeWidth(), 0, otherObject);
+                fail("should throw");
             } catch (Exception e) {
                 // correct
             }

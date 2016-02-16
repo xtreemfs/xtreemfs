@@ -516,6 +516,23 @@ class Volume {
       const std::string& path,
       int number_of_osds,
       std::list<std::string>* list_of_osd_uuids) = 0;
+
+  /** Sets the replica update policy of "path" to "policy".
+   *
+   * @param user_credentials    Name and Groups of the user.
+   * @param path    Path to the file.
+   * @param policy  Policy to set for the file
+   *
+   * @throws AddressToUUIDNotFoundException
+   * @throws IOException
+   * @throws PosixErrorException
+   * @throws UnknownAddressSchemeException
+   */
+  virtual void SetReplicaUpdatePolicy(
+        const xtreemfs::pbrpc::UserCredentials& user_credentials,
+        const std::string& path,
+        const std::string& policy) = 0;
+
 };
 
 }  // namespace xtreemfs

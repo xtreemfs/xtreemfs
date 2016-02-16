@@ -167,14 +167,13 @@ public class ReplicationStage extends Stage {
         if (error != null) {
             if (error.getErrorType() == ErrorType.INVALID_VIEW) {
                 // it could happen the request is rejected, because the XLoc is outdated caused by removing
-                // the replica of this OSD
-                // send client error
-                disseminationLayer.sendError(fileId, error);
+                // the replica of this OSD send client error
+                disseminationLayer.objectNotFetchedBecauseViewError(fileId, usedOSD, objectNo, error);
             } else {
-                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo, data);
-                if (data != null && data.getData() != null)
-                    BufferPool.free(data.getData());
+                disseminationLayer.objectNotFetchedBecauseError(fileId, usedOSD, objectNo, error);
             }
+            if (data != null && data.getData() != null)
+                BufferPool.free(data.getData());
         } else {
             // decode object list, if attached
             if (objectList != null) {

@@ -84,6 +84,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.unlink_osd_Request;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -1152,6 +1153,29 @@ public class VolumeImplementation implements Volume, AdminVolume {
         assert (response != null);
 
         metadataCache.updateXAttr(path, name, value);
+    }
+    
+    @Override
+    public void setReplicaUpdatePolicy(UserCredentials userCredentials, String path, String policy)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        xtreemfs_set_replica_update_policyRequest request = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                .setVolumeName(volumeName).setPath(path).setUpdatePolicy(policy).build();
+        RPCCaller.<xtreemfs_set_replica_update_policyRequest, emptyResponse> syncCall(SERVICES.MRC, userCredentials,
+                authBogus, volumeOptions, uuidResolver, mrcUUIDIterator, false, request,
+                new CallGenerator<xtreemfs_set_replica_update_policyRequest, emptyResponse>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public RPCResponse<emptyResponse> executeCall(InetSocketAddress server, Auth authHeader,
+                            UserCredentials userCreds, xtreemfs_set_replica_update_policyRequest input)
+                                    throws IOException {
+                        return mrcServiceClient.xtreemfs_set_replica_update_policy(server, authHeader, userCreds,
+                                input);
+                    }
+                });
+
+        // Required for backwards compatibility.
+        metadataCache.updateXAttr(path, "xtreemfs.set_repl_update_policy", policy);
     }
 
     /*

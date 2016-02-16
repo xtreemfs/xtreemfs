@@ -233,6 +233,11 @@ class VolumeImplementation : public Volume {
       int number_of_osds,
       std::list<std::string>* list_of_osd_uuids);
 
+  virtual void SetReplicaUpdatePolicy(
+        const xtreemfs::pbrpc::UserCredentials& user_credentials,
+        const std::string& path,
+        const std::string& policy);
+
   /** Starts the network client of the volume and its wrappers MRCServiceClient
    *  and OSDServiceClient. */
   void Start();

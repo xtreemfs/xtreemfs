@@ -597,6 +597,22 @@ public interface Volume {
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
 
     /**
+     * Sets the replica update policy of "path" to "policy".
+     * 
+     * @param userCredentials
+     *            Name and Groups of the user.
+     * @param path
+     *            Path to the file.
+     * @param policy
+     *            Policy to set for the file
+     * @throws IOException
+     * @throws PosixErrorException
+     * @throws AddressToUUIDNotFoundException
+     */
+    public void setReplicaUpdatePolicy(UserCredentials userCredentials, String path, String policy)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException;
+
+    /**
      * Returns a list of {@link StripeLocation} where each stripe of the file is located. To determine where the a
      * particular stripe is located the UUIDs of all replicas which have a copy of this stripe will be collected and
      * resolved to hostnames. If a uuid can't be resolved it will be deleted from the list because HDFS can't handle IP
@@ -741,7 +757,7 @@ public interface Volume {
      * @return The name of the volume.
      */
     public String getVolumeName();
-    
+
     /**
      * Used only for Hadoop Interface.
      * 

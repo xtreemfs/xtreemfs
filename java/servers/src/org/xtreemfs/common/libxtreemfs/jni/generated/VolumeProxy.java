@@ -260,4 +260,8 @@ public class VolumeProxy {
     xtreemfs_jniJNI.VolumeProxy_getSuitableOSDs(swigCPtr, this, user_credentials.toByteArray(), path, number_of_osds, StringList.getCPtr(list_of_osd_uuids), list_of_osd_uuids);
   }
 
+  public void setReplicaUpdatePolicy(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials user_credentials, String path, String policy) throws org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException, java.io.IOException, org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException, org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException {
+    xtreemfs_jniJNI.VolumeProxy_setReplicaUpdatePolicy(swigCPtr, this, user_credentials.toByteArray(), path, policy);
+  }
+
 }
