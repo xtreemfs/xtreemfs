@@ -42,45 +42,44 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 /**
  * Contains static methods for converting Java objects to JSON-compliant data
  * structures and vice versa.
- * 
+ *
  * @author stender
- * 
  */
 public class Converter {
-    
+
     /**
      * Converts an <code>ACLEntry</code> iterator to a mapping: userID:String ->
      * rights:Long.
-     * 
+     *
      * @param acl
      * @return
      */
     public static Map<String, Object> aclToMap(Iterator<ACLEntry> acl, FileAccessPolicy policy) {
-        
+
         if (acl == null)
             return null;
-        
+
         Map<String, Object> aclMap = new HashMap<String, Object>();
         while (acl.hasNext()) {
             ACLEntry next = acl.next();
             aclMap.put(next.getEntity(), policy.translatePermissions(next.getRights()));
         }
-        
+
         return aclMap;
     }
-    
+
     /**
      * Converts a mapping: userID:String -> rights:Long to an
      * <code>ACLEntry</code> array sorted by userID.
-     * 
+     *
      * @param aclMap
      * @return
      */
     public static ACLEntry[] mapToACL(StorageManager sMan, long fileId, Map<String, Object> aclMap) {
-        
+
         if (aclMap == null)
             return null;
-        
+
         ACLEntry[] acl = new ACLEntry[aclMap.size()];
         Iterator<Entry<String, Object>> entries = aclMap.entrySet().iterator();
         for (int i = 0; i < acl.length; i++) {
@@ -88,46 +87,45 @@ public class Converter {
             Entry<String, Object> entry = entries.next();
             acl[i] = sMan.createACLEntry(fileId, entry.getKey(), ((Long) entry.getValue()).shortValue());
         }
-        
+
         Arrays.sort(acl, new Comparator<ACLEntry>() {
             public int compare(ACLEntry o1, ACLEntry o2) {
                 return o1.getEntity().compareTo(o2.getEntity());
             }
         });
-        
+
         return acl;
     }
-    
+
     /**
      * Converts an XLocList to a String
-     * 
-     * @param xLocList
-     *            the XLocList
+     *
+     * @param xLocList the XLocList
      * @return the string representation of the XLocList
      */
     public static String xLocListToString(XLocList xLocList) {
-        
+
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (int i = 0; i < xLocList.getReplicaCount(); i++) {
             sb.append("[<");
-            XLoc repl = xLocList.getReplica(i);
-            StripingPolicy sp = repl.getStripingPolicy();
-            
+            XLoc replica = xLocList.getReplica(i);
+            StripingPolicy sp = replica.getStripingPolicy();
+
             sb.append(stripingPolicyToString(sp)).append(">, (");
-            for (int j = 0; j < repl.getOSDCount(); j++)
-                sb.append(repl.getOSD(j)).append(j == repl.getOSDCount() - 1 ? "" : ", ");
+            for (int j = 0; j < replica.getOSDCount(); j++)
+                sb.append(replica.getOSD(j)).append(j == replica.getOSDCount() - 1 ? "" : ", ");
             sb.append(")]").append(i == xLocList.getReplicaCount() - 1 ? "" : ", ");
         }
         sb.append(", ").append(xLocList.getVersion()).append(", ").append(xLocList.getReplUpdatePolicy())
                 .append("]");
-        
+
         return sb.toString();
     }
-    
+
     public static String xLocListToJSON(XLocList xLocList, OSDStatusManager osdMan) throws JSONException,
-        UnknownUUIDException {
-        
+            UnknownUUIDException {
+
         Map<String, Object> list = new HashMap();
         list.put("update-policy", xLocList.getReplUpdatePolicy());
         list.put("version", Long.valueOf(xLocList.getVersion()));
@@ -154,185 +152,120 @@ public class Converter {
             replicas.add(replica);
         }
         list.put("replicas", replicas);
-        
+
         return JSONParser.writeJSON(list);
     }
-    
-    // public static void main(String[] args) {
-    // BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0",
-    // 256, 2);
-    // BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1",
-    // "osd2" }, 0);
-    // BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4"
-    // }, 0);
-    // XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] {
-    // repl1, repl2 }, "policy", 3);
-    //        
-    // System.out.println(xLocListToString(xLocList));
-    // }
-    
-    /**
-     * Converts an XLocSet to an XLocList
-     * 
-     * @param sMan
-     *            the storage manager
-     * @param xLocSet
-     *            the XLocSet
-     * @return the XLocList
-     */
-    public static XLocList xLocSetToXLocList(StorageManager sMan, XLocSet.Builder xLocSet) {
-        
-        XLoc[] replicas = new XLoc[xLocSet.getReplicasCount()];
-        for (int i = 0; i < xLocSet.getReplicasCount(); i++) {
-            
-            Replica repl = xLocSet.getReplicas(i);
-            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp = repl.getStripingPolicy();
-            
-            replicas[i] = sMan.createXLoc(sMan.createStripingPolicy(sp.getType().toString(), sp
-                    .getStripeSize(), sp.getWidth()), repl.getOsdUuidsList().toArray(
-                new String[repl.getOsdUuidsList().size()]), repl.getReplicationFlags());
-        }
-        
-        return sMan.createXLocList(replicas, xLocSet.getReplicaUpdatePolicy(), xLocSet.getVersion());
-    }
-    
+
     /**
      * Converts an XLocList to an XLocSet
-     * 
-     * @param xLocList
-     *            the XLocList
+     *
+     * @param xLocList the XLocList
      * @return the xLocSet
      */
     public static XLocSet.Builder xLocListToXLocSet(XLocList xLocList) {
-        
+
         if (xLocList == null)
             return null;
-        
+
         XLocSet.Builder xLocSetBuilder = XLocSet.newBuilder().setReplicaUpdatePolicy(
-            xLocList.getReplUpdatePolicy()).setVersion(xLocList.getVersion()).setReadOnlyFileSize(0);
-        
+                xLocList.getReplUpdatePolicy()).setVersion(xLocList.getVersion()).setReadOnlyFileSize(0);
+
         for (int i = 0; i < xLocList.getReplicaCount(); i++) {
-            
+
             XLoc xRepl = xLocList.getReplica(i);
             StripingPolicy xSP = xRepl.getStripingPolicy();
-            
+
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
                     .newBuilder().setType(StripingPolicyType.valueOf(xSP.getPattern())).setStripeSize(
-                        xSP.getStripeSize()).setWidth(xSP.getWidth());
-            
+                            xSP.getStripeSize()).setWidth(xSP.getWidth());
+
             Replica.Builder replBuilder = Replica.newBuilder().setReplicationFlags(
-                xRepl.getReplicationFlags()).setStripingPolicy(sp);
+                    xRepl.getReplicationFlags()).setStripingPolicy(sp);
             for (int j = 0; j < xRepl.getOSDCount(); j++)
                 replBuilder.addOsdUuids(xRepl.getOSD(j));
-            
+
             xLocSetBuilder.addReplicas(replBuilder);
         }
-        
+
         return xLocSetBuilder;
     }
-    
+
     /**
      * Converts a string containing striping policy information to a
      * <code>StripingPolicy</code> object.
-     * 
-     * @param sMan
-     *            the storage manager
-     * @param spString
-     *            the striping policy string
+     *
+     * @param sMan     the storage manager
+     * @param spString the striping policy string
      * @return the striping policy
      */
     public static StripingPolicy stringToStripingPolicy(StorageManager sMan, String spString) {
-        
+
         StringTokenizer st = new StringTokenizer(spString, " ,\t");
         String policy = st.nextToken();
         if (policy.equals("RAID0"))
             policy = StripingPolicyType.STRIPING_POLICY_RAID0.toString();
-        
+
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
-        
+
         return sMan.createStripingPolicy(policy, size, width);
     }
-    
+
     /**
      * Converts a string containing striping policy information to a
      * <code>StripingPolicy</code> object.
-     * 
-     * @param sMan
-     *            the storage manager
-     * @param spString
-     *            the striping policy string
+     *
+     * @param spString the striping policy string
      * @return the striping policy
      */
     public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy jsonStringToStripingPolicy(
-        String spString) throws JSONException {
-        
+            String spString) throws JSONException {
+
         Map<String, Object> spMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(spString));
-        
+
         if (spMap == null || spMap.isEmpty())
             return null;
-        
+
         String pattern = (String) spMap.get("pattern");
         long size = (Long) spMap.get("size");
         long width = (Long) spMap.get("width");
-        
+
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
-            StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width).build();
+                StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width).build();
     }
-    
+
     /**
      * Converts a striping policy object to a string.
-     * 
-     * @param sp
-     *            the striping policy object
+     *
+     * @param sp the striping policy object
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(StripingPolicy sp) {
         return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
     }
-    
+
     /**
      * Converts a striping policy object to a string.
-     * 
-     * @param sp
-     *            the striping policy object
+     *
+     * @param sp the striping policy object
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp) {
+            org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp) {
         return sp.getType().toString() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
     }
-    
+
     public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder stripingPolicyToStripingPolicy(
-        StripingPolicy sp) {
+            StripingPolicy sp) {
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
-            StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize()).setWidth(
-            sp.getWidth());
+                StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize()).setWidth(
+                sp.getWidth());
     }
-    
+
     public static String stripingPolicyToJSONString(StripingPolicy sp) throws JSONException {
         return JSONParser.writeJSON(getStripingPolicyAsJSON(sp));
     }
-    
-    static Replica.Builder replicaFromJSON(String value) throws JSONException {
-        Map<String, Object> jsonObj = (Map<String, Object>) JSONParser.parseJSON(new JSONString(value));
-        long rf = (Long) jsonObj.get("replication-flags");
-        Map<String, Object> jsonSP = (Map<String, Object>) jsonObj.get("striping-policy");
-        final String spName = (String) jsonSP.get("pattern");
-        StripingPolicyType spType = StripingPolicyType.STRIPING_POLICY_RAID0;
-        final long width = (Long) jsonSP.get("width");
-        final long size = (Long) jsonSP.get("size");
-        org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
-                .newBuilder().setType(spType).setStripeSize((int) size).setWidth((int) width);
-        
-        List<String> osds = (List<String>) jsonObj.get("osds");
-        
-        Replica.Builder builder = Replica.newBuilder();
-        for (String osd : osds)
-            builder.addOsdUuids(osd);
-        return builder;
-    }
-    
+
     private static Map<String, Object> getStripingPolicyAsJSON(StripingPolicy sp) {
         Map<String, Object> spMap = new HashMap<String, Object>();
         spMap.put("pattern", sp.getPattern());
@@ -340,108 +273,67 @@ public class Converter {
         spMap.put("width", sp.getWidth());
         return spMap;
     }
-    
-    /**
-     * Converts a String array to a list of Strings.
-     * 
-     * @param array
-     * @return
-     */
-    public static List<String> stringArrayToList(String[] array) {
-        
-        if (array == null)
-            return null;
-        
-        List<String> list = new ArrayList<String>(array.length);
-        
-        for (String s : array)
-            list.add(s);
-        
-        return list;
-    }
-    
-    /**
-     * Converts a list of <code>FileAttributeEntity</code>s to a list containing
-     * maps storing file attribute information.
-     * 
-     * @param mappedData
-     * @return
-     */
-    public static List<XAttr> attrMapsToAttrList(StorageManager sMan, long fileId,
-        List<Map<String, Object>> mappedData) {
-        
-        List<XAttr> list = new LinkedList<XAttr>();
-        for (Map<String, Object> attr : mappedData)
-            list.add(sMan.createXAttr(fileId, (String) attr.get("userId"), (String) attr.get("key"),
-                (byte[]) attr.get("value")));
-        
-        return list;
-    }
-    
+
     public static short[] stringToShortArray(String shortList) {
-        
+
         StringTokenizer st = new StringTokenizer(shortList, " \t,;");
         short[] result = new short[st.countTokens()];
-        
+
         for (int i = 0; st.hasMoreTokens(); i++)
             result[i] = Short.parseShort(st.nextToken());
-        
+
         return result;
     }
-    
+
     public static String shortArrayToString(short[] shorts) {
-        
+
         String result = "";
         for (int i = 0; i < shorts.length; i++) {
             result += shorts[i];
             if (i < shorts.length - 1)
                 result += ",";
         }
-        
+
         return result;
     }
-    
+
     /**
      * Converts a replication policy object to a string.
-     * 
-     * @param rp
-     *            the replication policy object
+     *
+     * @param rp the replication policy object
      * @return a string containing the replication policy information
      */
     public static String replicationPolicyToString(ReplicationPolicy rp) {
         return rp.getName() + ", " + rp.getFactor() + ", " + rp.getFlags();
     }
-    
+
     /**
      * Converts a string containing replication policy information to a
      * <code>ReplicationPolicy</code> object.
-     * 
-     * @param sMan
-     *            the storage manager
-     * @param rpString
-     *            the replication policy string
+     *
+     * @param rpString the replication policy string
      * @return the replication policy
      */
-    public static ReplicationPolicy stringToReplicationPolicy(StorageManager sMan, String rpString) {
-        
+    public static ReplicationPolicy stringToReplicationPolicy(String rpString) {
+
         StringTokenizer st = new StringTokenizer(rpString, " ,\t");
-        
-        final String policy = rpString.startsWith(",")? "": st.nextToken();
+
+        final String policy = rpString.startsWith(",") ? "" : st.nextToken();
         final int numRepls = Integer.parseInt(st.nextToken());
         final int flags = Integer.parseInt(st.nextToken());
-        
+
         return new ReplicationPolicy() {
 
             @Override
             public String getName() {
                 return policy;
             }
-            
+
             @Override
             public int getFactor() {
                 return numRepls;
             }
-            
+
             @Override
             public int getFlags() {
                 return flags;
@@ -449,56 +341,55 @@ public class Converter {
 
         };
     }
-    
+
     /**
      * Converts a string containing replication policy information to a
      * <code>ReplicationPolicy</code> object.
-     * 
-     * @param rpString
-     *            the replication policy string
+     *
+     * @param rpString the replication policy string
      * @return the replication policy
      */
     public static ReplicationPolicy jsonStringToReplicationPolicy(String rpString) throws JSONException {
-        
+
         Map<String, Object> rpMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpString));
-        
+
         if (rpMap == null || rpMap.isEmpty())
             return null;
-        
+
         final String name = (String) rpMap.get("update-policy");
         if (name == null)
             return null;
-        
+
         Long factor = (Long) rpMap.get("replication-factor");
-        final int numRepls = factor == null ? 1 : factor.intValue();
-        
+        final int replicationFactor = factor == null ? 1 : factor.intValue();
+
         Long flags = (Long) rpMap.get("replication-flags");
-        final int replFlags = flags == null ? 0 : flags.intValue();
-        
+        final int replicationFlags = flags == null ? 0 : flags.intValue();
+
         return new ReplicationPolicy() {
-            
+
             @Override
             public String getName() {
                 return name;
             }
-            
+
             @Override
             public int getFactor() {
-                return numRepls;
+                return replicationFactor;
             }
-            
+
             @Override
             public int getFlags() {
-                return replFlags;
+                return replicationFlags;
             }
-            
+
         };
     }
-    
+
     public static String replicationPolicyToJSONString(ReplicationPolicy rp) throws JSONException {
         return JSONParser.writeJSON(getReplicationPolicyAsJSON(rp));
     }
-    
+
     private static Map<String, Object> getReplicationPolicyAsJSON(ReplicationPolicy rp) {
         Map<String, Object> rpMap = new HashMap<String, Object>();
         rpMap.put("update-policy", rp.getName());
@@ -506,5 +397,5 @@ public class Converter {
         rpMap.put("replication-flags", rp.getFlags());
         return rpMap;
     }
-    
+
 }
