@@ -845,8 +845,7 @@ public class MRCHelper {
 
             try {
 
-                ReplicationPolicy rp = null;
-                rp = Converter.jsonStringToReplicationPolicy(value);
+                ReplicationPolicy rp = Converter.jsonStringToReplicationPolicy(value);
 
                 if (rp.getFactor() == 1 && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(rp.getName())) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
