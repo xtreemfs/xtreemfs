@@ -75,7 +75,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             res.checkIfFileDoesNotExist();
             file = res.getFile();
 
-            fileId = MRCHelper.createGlobalFileId(sMan.getVolumeInfo(), file);
+            MRCHelper.createGlobalFileId(sMan.getVolumeInfo(), file);
 
             // Check whether the path prefix is searchable.
             faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser,
@@ -99,7 +99,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
                 && master.getConfig().getAdminPassword().equals(rq.getDetails().password));
 
         // whether the user has privileged permissions to set system attributes
-        // the admin password accounts for priviledged access
+        // the admin password accounts for privileged access
         faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser || privileged,
                 rq.getDetails().groupIds);
 
@@ -119,16 +119,11 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
      * This method has been separated to allow backwards compatibility with previous versions of the xtfsutil which is
      * was using xattribs to set the replica update policy via {@link MRCHelper#setSysAttrValue}.
      * 
-     * @param master
-     * @param sMan
-     * @param update
-     * @param file
-     * @param newReplUpdatePolicy
      * @throws UserException
      * @throws DatabaseException
      */
     public static void setReplicaUpdatePolicy(MRCRequestDispatcher master, StorageManager sMan, AtomicDBUpdate update,
-            FileMetadata file, String newReplUpdatePolicy) throws UserException, DatabaseException {
+            FileMetadata file, String newReplicaUpdatePolicy) throws UserException, DatabaseException {
         // Check if a xLocSetChange is already in progress.
         XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
         if (lock.isLocked()) {
@@ -139,22 +134,22 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         String curReplUpdatePolicy = curXLocList.getReplUpdatePolicy();
 
         // WaRa was renamed to WaR1.
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplUpdatePolicy)) {
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA.equals(newReplicaUpdatePolicy)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                     "Do no longer use the policy WaRa. Instead you're probably looking for the WaR1 policy (write all replicas, read from one)."
-                            + newReplUpdatePolicy);
+                            + newReplicaUpdatePolicy);
         }
 
         // Check allowed policies.
-        if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplUpdatePolicy)
-                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)
-                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)
-                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplUpdatePolicy))
+        if (!ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplicaUpdatePolicy)
+                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplicaUpdatePolicy)
+                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplicaUpdatePolicy)
+                && !ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplicaUpdatePolicy))
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                    "invalid replica update policy: " + newReplUpdatePolicy);
+                    "invalid replica update policy: " + newReplicaUpdatePolicy);
 
         // Removing a replicated policy is only allowed if just 1 replica exists.
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)) {
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplicaUpdatePolicy)) {
             // if there is more than one replica, report an error
             if (curXLocList.getReplicaCount() > 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
@@ -166,9 +161,9 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         // Do not allow to switch between read-only and read/write replication
         // as there are currently no mechanisms in place to guarantee that the replicas are synchronized.
         if ((ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(curReplUpdatePolicy)
-                && (ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplUpdatePolicy)
-                        || ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplUpdatePolicy)))
-                || (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)
+                && (ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(newReplicaUpdatePolicy)
+                        || ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(newReplicaUpdatePolicy)))
+                || (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplicaUpdatePolicy)
                         && (ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ.equals(curReplUpdatePolicy)
                                 || ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE.equals(curReplUpdatePolicy)))) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
@@ -177,8 +172,8 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
         // check if striping + rw replication would be set
         StripingPolicy stripingPolicy = file.getXLocList().getReplica(0).getStripingPolicy();
-        if (stripingPolicy.getWidth() > 1 && (newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
-                || newReplUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+        if (stripingPolicy.getWidth() > 1 && (newReplicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                || newReplicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                     "RW-replication of striped files is not supported yet.");
         }
@@ -189,7 +184,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             xLocs[i] = file.getXLocList().getReplica(i);
 
             // mark the first replica in the list as 'complete' (only relevant for read-only replication)
-            if (i == 0 && ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)) {
+            if (i == 0 && ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplicaUpdatePolicy)) {
                 int replFlags = ReplicationFlags
                         .setFullReplica(ReplicationFlags.setReplicaIsComplete(xLocs[i].getReplicationFlags()));
                 xLocs[i].setReplicationFlags(replFlags);
@@ -197,19 +192,19 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
         }
 
         // TODO (jdillmann): Invalidate old xLocSet?!?
-        XLocList newXLocList = sMan.createXLocList(xLocs, newReplUpdatePolicy, file.getXLocList().getVersion() + 1);
+        XLocList newXLocList = sMan.createXLocList(xLocs, newReplicaUpdatePolicy, file.getXLocList().getVersion() + 1);
 
         // Update the X-Locations list.
         file.setXLocList(newXLocList);
 
         // Set the file as readOnly in case of the read-only replication.
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplUpdatePolicy)) {
+        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplicaUpdatePolicy)) {
             file.setReadOnly(true);
         }
 
         // Remove read only state of file if readonly policy gets reverted.
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(curReplUpdatePolicy)
-                && ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplUpdatePolicy)) {
+                && ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(newReplicaUpdatePolicy)) {
             file.setReadOnly(false);
         }
 

@@ -217,7 +217,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             if (rpBytes == null)
                 return null;
             
-            return Converter.stringToReplicationPolicy(this, new String(rpBytes));
+            return Converter.stringToReplicationPolicy(new String(rpBytes));
             
         } catch (DatabaseException exc) {
             throw exc;
