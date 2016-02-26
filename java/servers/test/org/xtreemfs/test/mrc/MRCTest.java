@@ -53,6 +53,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
@@ -425,12 +426,9 @@ public class MRCTest {
                 FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates())).getCreds().getXlocs();
         assertEquals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, xLoc.getReplicaUpdatePolicy());
         
-        invokeSync(client.setxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "repl",
-            "xtreemfs.read_only", "true", ByteString.copyFrom("true".getBytes()), 0));
-        val = invokeSync(
-            client.getxattr(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "repl",
-                "xtreemfs.read_only")).getValue();
-        assertEquals("true", val);
+        xtreemfs_set_replica_update_policyRequest.Builder msg = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                .setVolumeName(volumeName).setPath("repl").setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
+        invokeSync(client.xtreemfs_set_replica_update_policy(mrcAddress, RPCAuthentication.authNone, uc, msg.build()));
         xLoc = invokeSync(
             client.open(mrcAddress, RPCAuthentication.authNone, uc, volumeName, "repl",
                 FileAccessManager.O_CREAT, 0, 0, getDefaultCoordinates())).getCreds().getXlocs();

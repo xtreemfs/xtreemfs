@@ -580,7 +580,7 @@ public class BabuDBStorageManager implements StorageManager {
             if (rp == null)
                 return null;
             
-            return Converter.stringToReplicationPolicy(this, new String(rp));
+            return Converter.stringToReplicationPolicy(new String(rp));
             
         } catch (DatabaseException exc) {
             throw exc;

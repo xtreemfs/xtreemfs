@@ -1558,6 +1558,34 @@ void VolumeImplementation::GetSuitableOSDs(
   response->DeleteBuffers();
 }
 
+void VolumeImplementation::SetReplicaUpdatePolicy(
+      const xtreemfs::pbrpc::UserCredentials& user_credentials,
+      const std::string& path,
+      const std::string& policy) {
+  xtreemfs_set_replica_update_policyRequest rq;
+  rq.set_volume_name(volume_name_);
+  rq.set_path(path);
+  rq.set_update_policy(policy);
+
+  boost::scoped_ptr<rpc::SyncCallbackBase> response(
+      ExecuteSyncRequest(
+          boost::bind(
+              &xtreemfs::pbrpc::MRCServiceClient::xtreemfs_set_replica_update_policy_sync,
+              mrc_service_client_.get(),
+              _1,
+              boost::cref(auth_bogus_),
+              boost::cref(user_credentials),
+              &rq),
+          mrc_uuid_iterator_.get(),
+          uuid_resolver_,
+          RPCOptionsFromOptions(volume_options_)));
+  response->DeleteBuffers();
+
+  // Required for backwards compatibility.
+  metadata_cache_.UpdateXAttr(path, "xtreemfs.set_repl_update_policy", policy);
+}
+
+
 /**
  * @remark Ownership is NOT transferred to the caller.
  *

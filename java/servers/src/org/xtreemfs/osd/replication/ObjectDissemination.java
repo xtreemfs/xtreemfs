@@ -16,7 +16,6 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.LRUCache;
-import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.monitoring.Monitoring;
@@ -26,13 +25,11 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
-import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 
 /**
  * Handles the fetching of replicas. <br>
@@ -170,9 +167,15 @@ public class ObjectDissemination {
         // update to newer cap, ...
         file.update(capability, xLoc, cow);
 
+        // if the view is still outdated, return an error.
+        if (file.isViewOutdated()) {
+            file.reportError(ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW, POSIXErrno.POSIX_ERROR_NONE,
+                    "this replicas view is outdated. the xlocset has to be updated."));
+        }
+
         // keep in mind current request
         if (file.isObjectInProgress(objectNo)) {
-            // propably another request is already fetching this object
+            // probably another request is already fetching this object
             file.addObjectForReplication(objectNo, rq);
         } else {
             file.addObjectForReplication(objectNo, rq);
@@ -182,9 +185,11 @@ public class ObjectDissemination {
                 file.replicate();
             } catch (TransferStrategyException e) {
                 if (e.getErrorCode() == TransferStrategyException.ErrorCode.NO_OSD_FOUND)
-                    file.reportError(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, "no OSD could be found for fetching an object",e.getStackTrace().toString()));
+                    file.reportError(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                            "no OSD could be found for fetching an object", e));
                 else if (e.getErrorCode() == TransferStrategyException.ErrorCode.NO_OSD_REACHABLE)
-                    file.reportError(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, "no OSD is reachable for fetching an object",e.getStackTrace().toString()));
+                    file.reportError(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                            "no OSD is reachable for fetching an object", e));
             }
 
             if (!file.isReplicating())
@@ -238,6 +243,21 @@ public class ObjectDissemination {
 //            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
 
         file.objectNotFetchedBecauseError(objectNo, usedOSD, error);
+
+        if (!file.isReplicating())
+            fileCompleted(file.fileID);
+    }
+
+    public void objectNotFetchedBecauseViewError(String fileID, final ServiceUUID usedOSD, long objectNo,
+            final ErrorResponse error) {
+        ReplicatingFile file = filesInProgress.get(fileID);
+        assert (file != null);
+
+        // // monitoring
+        // if (Monitoring.isEnabled())
+        // monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
+
+        file.objectNotFetchedBecauseViewError(objectNo, usedOSD, error);
 
         if (!file.isReplicating())
             fileCompleted(file.fileID);
@@ -313,6 +333,7 @@ public class ObjectDissemination {
                 // delete directly
                 filesInProgress.remove(fileID);
     }
+
 
     /**
      * @param objectSetBytes

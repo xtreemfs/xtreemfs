@@ -100,13 +100,13 @@ int main(int argc, char* argv[]) {
                 0);
 
     cout << endl << "Closing /example_replication.txt... ";
-	file->Close();
-	file = NULL;
-	cout << "ok!" << endl;
+    file->Close();
+    file = NULL;
+    cout << "ok!" << endl;
 
     // mark the file as read-only
-	cout << endl << "Marking /example_replication.txt read only... ";
-    volume->SetXAttr(user_credentials, "/example_replication.txt", "xtreemfs.read_only", "true", xtreemfs::pbrpc::XATTR_FLAGS_CREATE);
+    cout << endl << "Marking /example_replication.txt read only... ";
+    volume->SetReplicaUpdatePolicy(user_credentials, "/example_replication.txt", "ronly");
     cout << "ok!" << endl;
 
     // list replica(s) and their OSD(s)

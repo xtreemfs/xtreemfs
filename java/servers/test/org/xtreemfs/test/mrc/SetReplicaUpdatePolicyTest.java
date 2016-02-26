@@ -9,6 +9,7 @@
 package org.xtreemfs.test.mrc;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -106,25 +108,40 @@ public class SetReplicaUpdatePolicyTest {
         
         List<XAttr> xattrs = null;
         String replicaUpdatePolicy = null;
+        xtreemfs_set_replica_update_policyRequest.Builder msg = xtreemfs_set_replica_update_policyRequest.newBuilder()
+                .setFileId(fileId);
         
         //REPL_UPDATE_PC_NONE
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE).get();        
+        msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE);
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE));
         
         //REPL_UPDATE_PC_RONLY
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY).get();
+        msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY);
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY));
         
         //REPL_UPDATE_PC_WARONE
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE).get();
+        try {
+            msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
+            client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
+            fail();
+        } catch (Exception e) {
+            // ignore (could check if the error is the correct one)
+        }
+
+        // Reset to REPL_UPDATE_PC_NONE
+        msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE);
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
+
+        // REPL_UPDATE_PC_WARONE
+        msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE);
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE));
         
         //REPL_UPDATE_PC_WQRQ
-        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
+        msg.setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ);
+        client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
         assert(f.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ));
         
     }
@@ -155,8 +172,9 @@ public class SetReplicaUpdatePolicyTest {
         
         try {
             // try to set replica update policy to WQRQ (expect PBRPCException).
-            client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, fileId,
-                    ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ).get();
+            xtreemfs_set_replica_update_policyRequest.Builder msg = xtreemfs_set_replica_update_policyRequest
+                    .newBuilder().setFileId(fileId).setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ);
+            client.xtreemfs_set_replica_update_policy(mrcAddress, passwd, uc, msg.build()).get();
             assertTrue(false);
         } catch (PBRPCException e) {
             // replica update policy should not changed

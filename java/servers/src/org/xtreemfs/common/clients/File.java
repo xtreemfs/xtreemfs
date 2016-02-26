@@ -30,9 +30,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_file_siz
  * @author bjko
  */
 public class File {
-    
-    public static final String XTREEMFSSET_REPL_UPDATE_POLICY_XATTR = "xtreemfs.set_repl_update_policy";
-
     public static final String XTREEMFS_DEFAULT_RP = "xtreemfs.default_rp";
 
     private final Volume volume;
@@ -441,13 +438,13 @@ public class File {
                 raf.forceFileSize(osd_file_size);
             }
 
-            setxattr("xtreemfs.read_only", "true");
+            volume.setReplicaUpdatePolicy(path, ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY, userCreds);
         } else {
             if (getNumReplicas() > 1)
                 throw new IOException("File has still replicas.");
             else {
                 // set read only
-                setxattr("xtreemfs.read_only", "false");
+                volume.setReplicaUpdatePolicy(path, ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, userCreds);
             }
         }
     }
@@ -501,7 +498,7 @@ public class File {
     }
 
     public void setReplicaUpdatePolicy(String policy, UserCredentials userCreds) throws IOException {
-        volume.setxattr(this.getPath(), XTREEMFSSET_REPL_UPDATE_POLICY_XATTR, policy, userCreds);
+        volume.setReplicaUpdatePolicy(this.getPath(), policy, userCreds);
     }
     
     public void setReplicaUpdatePolicy(String policy) throws IOException {
