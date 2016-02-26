@@ -11,6 +11,13 @@ import java.util.Set;
 public interface FileVoucherClientInfo {
 
     /**
+     * Returns the client id for the current object
+     * 
+     * @return client id
+     */
+    public String getClientId();
+
+    /**
      * Adds the given expire time for the current client.
      * 
      * @param expireTime
@@ -43,6 +50,15 @@ public interface FileVoucherClientInfo {
      * @return
      */
     public boolean hasExpireTime(long expireTime);
+
+    /**
+     * Compares the given expire time with all expire times of the object and returns true, if one of them is newer than
+     * the given one
+     * 
+     * @param expireTime
+     * @return
+     */
+    public boolean hasNewerExpireTime(long expireTime);
 
     /**
      * Returns the number of listed expire times.

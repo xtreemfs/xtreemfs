@@ -574,8 +574,8 @@ public class BabuDBStorageHelper {
     }
 
     /**
-     * Generates the key for a FileVoucherInfo based on the key identifer, the fileID and the clientID, seperated by
-     * dots.
+     * Generates the key for a FileVoucherClientInfo based on the key identifer, the fileID and the clientID seperated
+     * by dots.
      * 
      * @param fileId
      *            the id of the file related to this key
@@ -588,6 +588,23 @@ public class BabuDBStorageHelper {
         String keyString = BabuDBStorageManager.FILE_VOUCHER_KEY_IDENTIFER + "." + fileId + ".c." + clientId;
 
         return keyString.getBytes();
+    }
+
+    /**
+     * Extracts the client id from the key of a FileVoucherClientInfo by splitting it apart on a specified expression.
+     * 
+     * @param key
+     * @return
+     */
+    public static String extractClientIdFromFileVoucherClientInfoKey(byte[] key) {
+
+        String keyString = new String(key);
+        String[] keySplits = keyString.split("\\.c\\.");
+        if (keySplits.length == 2) {
+            return keySplits[1];
+        } else {
+            throw new IllegalArgumentException("Not a valid file voucher client info key string!");
+        }
     }
 
     /**

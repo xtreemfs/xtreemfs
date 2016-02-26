@@ -64,6 +64,17 @@ public class BufferBackedFileVoucherClientInfo extends BufferBackedIndexMetadata
         return expireTimeSet.contains(expireTime);
     }
 
+    @Override
+    public boolean hasNewerExpireTime(long compareExpireTime) {
+        for (Long expireTime : expireTimeSet) {
+            if (expireTime > compareExpireTime) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * Updates the value buffer with the expire times. Iff the set of expireTime is empty, it will be set to null in
      * order to delete the entry.
@@ -103,5 +114,10 @@ public class BufferBackedFileVoucherClientInfo extends BufferBackedIndexMetadata
     @Override
     public int getExpireTimeSetSize() {
         return expireTimeSet.size();
+    }
+
+    @Override
+    public String getClientId() {
+        return BabuDBStorageHelper.extractClientIdFromFileVoucherClientInfoKey(keyBuf);
     }
 }
