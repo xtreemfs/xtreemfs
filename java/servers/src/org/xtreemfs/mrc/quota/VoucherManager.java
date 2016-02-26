@@ -198,6 +198,9 @@ public class VoucherManager {
                                         + quotaFileInformation.getGlobalFileId());
                     }
 
+                    // TODO(baerhold): keep here or separate method and operation
+                    clearAllClientVouchers(quotaFileInformation, clientId, fileVoucherInfo, update);
+
                     fileVoucherInfo.decreaseClientCount();
 
                     // if there is no open voucher anymore, clear general information and update quota information
@@ -228,6 +231,59 @@ public class VoucherManager {
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
         }
+    }
+
+    /**
+     * 
+     * 
+     * @param quotaFileInformation
+     * @param originalClientId
+     * @param fileVoucherInfo
+     *            will be used as inout parameter and has to be saved outside of this method
+     * @param update
+     * @throws UserException
+     */
+    private void clearAllClientVouchers(QuotaFileInformation quotaFileInformation, String originalClientId,
+            FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Try clearing other clients vouchers for file: "
+                + quotaFileInformation.getGlobalFileId());
+
+        long compareExpireTime = System.currentTimeMillis();
+
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+            DatabaseResultSet<FileVoucherClientInfo> allFileVoucherClientInfo = storageManager
+                    .getAllFileVoucherClientInfo(quotaFileInformation.getFileId());
+            while (allFileVoucherClientInfo.hasNext()) {
+                FileVoucherClientInfo fileVoucherClientInfo = allFileVoucherClientInfo.next();
+                if (fileVoucherClientInfo.getClientId().equals(originalClientId)) {
+                    continue;
+                }
+                
+                if (!fileVoucherClientInfo.hasNewerExpireTime(compareExpireTime)) {
+                    // clear expire times
+                    fileVoucherClientInfo.clearExpireTimeSet();
+                    storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
+                    
+                    // decrease client count without updating the db due to inout parameter
+                    fileVoucherInfo.decreaseClientCount();
+                }
+            }
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occured during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+        }
+
     }
 
     /**
