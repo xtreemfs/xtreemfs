@@ -196,8 +196,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         try {
             byte[] spBytes = getXAttr(fileId, SYSTEM_UID, DEFAULT_SP_ATTR_NAME);
             if (spBytes == null)
-                throw new DatabaseException("fileId " + fileId + " has no default striping policy",
-                        DatabaseException.ExceptionType.INTERNAL_DB_ERROR);
+                return null;
 
             return Converter.stringToStripingPolicy(this, new String(spBytes));
 
