@@ -14,6 +14,7 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.quota.Voucher.VoucherType;
 
 /**
  * This class contains all relevant information regarding the quota of an volume.
@@ -76,12 +77,11 @@ public class VolumeQuotaManager {
                 + volumeDefaultUserQuota + "]");
     }
 
-    public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
-        long voucherSize = getVoucher(quotaFileInformation, true, null);
-        return voucherSize > 0 || voucherSize == QuotaConstants.UNLIMITED_VOUCHER;
+    public Voucher checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
+        return getVoucher(quotaFileInformation, true, null);
     }
 
-    public long getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
+    public Voucher getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
         return getVoucher(quotaFileInformation, false, update);
     }
 
@@ -94,32 +94,35 @@ public class VolumeQuotaManager {
      * @return
      * @throws UserException
      */
-    private synchronized long getVoucher(QuotaFileInformation quotaFileInformation, boolean test, AtomicDBUpdate update)
-            throws UserException {
+    private synchronized Voucher getVoucher(QuotaFileInformation quotaFileInformation, boolean test,
+            AtomicDBUpdate update) throws UserException {
 
         int replicaCount = quotaFileInformation.getReplicaCount();
         QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, !test, update);
         long freeSpace = quotaInformation.getFreeSpace();
 
         long voucherSize = volumeVoucherSize;
+        Voucher voucher = new Voucher(VoucherType.LIMITED, voucherSize);
+
         if (quotaInformation.getVolumeQuota() == QuotaConstants.UNLIMITED_QUOTA
                 && quotaInformation.getUserQuota() == QuotaConstants.UNLIMITED_QUOTA
                 && quotaInformation.getGroupQuota() == QuotaConstants.UNLIMITED_QUOTA) {
             // no quota set at all: unlimited voucher
-            voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
+            voucher.setVoucherType(VoucherType.UNLIMITED);
         } else if (freeSpace / replicaCount == 0) { // can't get negative
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The " + quotaInformation.getQuotaType()
-                    + " quota has been reached!");
+            voucher.setVoucherType(VoucherType.NONE);
+            voucher.setEnforcedQuotaName(quotaInformation.getQuotaType());
         } else if ((replicaCount * voucherSize) > freeSpace) {
             voucherSize = freeSpace / replicaCount;
+            voucher.setVoucherSize(voucherSize);
         }
 
         // save voucherSize as blocked, if it isn't just a check
-        if (!test) {
+        if (!test && voucher.getVoucherType() == VoucherType.LIMITED) {
             updateSpaceUsage(quotaFileInformation, quotaInformation, 0, replicaCount * voucherSize, update);
         }
 
-        return voucherSize;
+        return voucher;
     }
 
     /**
