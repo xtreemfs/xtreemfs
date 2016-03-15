@@ -82,9 +82,10 @@ public class RenewCapabilityAndVoucherOperation extends MRCOperation {
 
                 if (renewCapabilityRequest.getIncreaseVoucher()) {
                     voucherSize = master.getMrcVoucherManager().checkAndRenewVoucher(quotaFileInformation,
-                            cap.getClientIdentity(), cap.getExpireMs(), newExpireMs, update);
+                            cap.getClientIdentity(), cap.getVoucherSize(), cap.getExpireMs(), newExpireMs, update);
                 } else {
-                    master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation, cap.getClientIdentity(),
+                    voucherSize = master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation,
+                            cap.getClientIdentity(),
                             cap.getExpireMs(), newExpireMs, update);
                 }
 
