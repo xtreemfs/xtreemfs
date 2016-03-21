@@ -183,6 +183,17 @@ public class DBAdminHelper {
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
             file = sMan.createFile(id, state.parentIds.get(0), name, atime, ctime, mtime, owner, owningGroup, rights,
                     w32Attrs, size, readOnly, epoch, issuedEpoch, update);
+
+            if (dbVersion <= 10) { // prior quota implementation: build up usage statistics
+                long volumeUsedSpace = sMan.getVolumeUsedSpace();
+                long userUsedSpace = sMan.getUserUsedSpace(owner);
+                long groupUsedSpace = sMan.getGroupUsedSpace(owningGroup);
+
+                sMan.setVolumeUsedSpace(volumeUsedSpace + size, update);
+                sMan.setUserUsedSpace(owner, userUsedSpace + size, update);
+                sMan.setGroupUsedSpace(owningGroup, groupUsedSpace + size, update);
+            }
+
             update.execute();
         }
 
