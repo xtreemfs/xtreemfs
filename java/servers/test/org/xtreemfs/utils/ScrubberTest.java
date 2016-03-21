@@ -209,7 +209,11 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations.
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // create file
@@ -462,7 +466,11 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations.
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // set replica update Policy
