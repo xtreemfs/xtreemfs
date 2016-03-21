@@ -29,7 +29,7 @@ public class ClientFactory {
     /**
      * Specifies the default ClientType that is used if the parameter is omitted.
      */
-    final static ClientType defaultType = ClientType.NATIVE;
+    final static ClientType defaultType = ClientType.JAVA;
 
     /**
      * Returns an instance of a default client of the specified type with one DIR Address.
