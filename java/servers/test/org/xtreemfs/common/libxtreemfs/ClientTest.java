@@ -17,6 +17,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.dir.DIRClient;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -128,7 +129,7 @@ public class ClientTest {
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
@@ -174,7 +175,7 @@ public class ClientTest {
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         // Create MRC Address List
@@ -230,7 +231,7 @@ public class ClientTest {
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         // Create and open volume.
@@ -286,7 +287,7 @@ public class ClientTest {
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         // Open a volume named "foobar".
@@ -341,7 +342,7 @@ public class ClientTest {
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
         String mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
-        Client client = ClientFactory.createClient(dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         // Open a volume named "foobar".

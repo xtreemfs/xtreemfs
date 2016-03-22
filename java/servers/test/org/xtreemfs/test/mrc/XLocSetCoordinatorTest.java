@@ -31,6 +31,7 @@ import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
@@ -121,7 +122,7 @@ public class XLocSetCoordinatorTest {
 
         options.setMaxTries(2);
 
-        client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         LEASE_TIMEOUT_MS = configs[0].getFleaseLeaseToMS();

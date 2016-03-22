@@ -18,6 +18,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.RPCCaller.CallGenerator;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -105,8 +106,8 @@ public class RPCCallerTest {
         final int NUMBER_OF_REPLICAS = 2;
 
         Options options = new Options();
-        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(dirServiceAddress,
-                userCredentials, null, options);
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
+        		dirServiceAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcServiceAddress, auth, userCredentials, VOLUME_NAME);
 

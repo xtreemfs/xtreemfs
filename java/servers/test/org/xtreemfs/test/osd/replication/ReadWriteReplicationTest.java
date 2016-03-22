@@ -23,6 +23,7 @@ import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
 import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -82,7 +83,7 @@ public class ReadWriteReplicationTest {
 
         options = new Options();
 
-        client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
     }
 

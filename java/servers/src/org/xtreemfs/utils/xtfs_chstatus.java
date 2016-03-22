@@ -15,6 +15,7 @@ import java.util.Map;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -139,7 +140,7 @@ public class xtfs_chstatus {
 
         String newStatusName = (arguments.size() == 2) ? arguments.get(1) : null;
 
-        AdminClient client = ClientFactory.createAdminClient(dirAddrs, RPCAuthentication.userService,
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddrs, RPCAuthentication.userService,
                 sslOptions, new Options());
         try {
             client.start();
