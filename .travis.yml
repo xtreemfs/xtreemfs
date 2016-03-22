@@ -5,10 +5,10 @@ jdk: openjdk7
 env:
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit     BUILD_JNI=true
-    - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true
-    - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true
-    - TEST_SUITE=travis-contrib   BUILD_JNI=true
+    - TEST_SUITE=travis-junit
+    - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true  SKIP_JNI=true
+    - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true  SKIP_JNI=true
+    - TEST_SUITE=travis-contrib
 
 sudo: false
 
@@ -16,13 +16,13 @@ addons:
   apt:
     packages:
       - libboost-all-dev
-      - libfuse-dev 
-      - fuse 
+      - libfuse-dev
+      - fuse
       - libssl-dev
       - libattr1-dev
       - make
       - cmake
-      - automake 
+      - automake
       - python
       - valgrind
       - net-tools

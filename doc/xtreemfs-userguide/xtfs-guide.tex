@@ -1813,6 +1813,7 @@ fuse-devel >= 2.6
 boost-devel >= 1.35
 openssl-devel >= 0.9.8
 libattr-devel >= 2
+java-1.6.0-openjdk or later*
 \end{verbatim}
 
  \item DEB-based distros: \begin{verbatim}
@@ -1825,6 +1826,7 @@ libboost-system1.35-dev or later
 libboost-thread1.35-dev or later
 libboost-program-options1.35-dev or later
 libboost-regex1.35-dev or later
+openjdk-6-jdk or later*
 \end{verbatim}
 \end{itemize}
 
@@ -1835,6 +1837,9 @@ $> sudo make install-client
 \end{verbatim}
 
 to complete the installation of XtreemFS.
+
+\texttt{*} The openjdk requirement is optional and can be omitted if the native JNI library  for Java is not needed (see \ref{sec:libjnixtreemfs_for_java}). To skip building the JNI library set the environment variable \texttt{SKIP\_JNI=true} when calling \texttt{make}.
+
 
 
 \section{Volume Management}
@@ -3507,7 +3512,8 @@ sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs
 
 Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library.
 
-To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. To install it from source either call ``\texttt{make client-jni}'' or set the environment variable \texttt{BUILD\_JNI=true} and call ``\texttt{make client}''. The library will then be found in  \path{cpp/build}.
+To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. The library is built by default when ``\texttt{make client}'' is called and can then be found in \path{cpp/build}. 
+To skip building the JNI library set the environment variable \texttt{SKIP\_JNI=true}.
 
 
 \chapter{Command Line Utilities}

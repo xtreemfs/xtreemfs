@@ -72,7 +72,7 @@ if (NOT WIN32)
 endif(NOT WIN32)
 
 if (SOLARIS)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthreads") 
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthreads")
   SET(LIBSOCKET_SOLARIS "socket")
   SET(LIBNSL_SOLARIS "nsl")
   # No libattr on Solaris.
@@ -93,7 +93,7 @@ IF (APPLE)
   # Update 8/12/2011: Setting macosx-version-min does break mount.xtreemfs for unknown reasons - so disabled for now.
   # Tell gcc to compile 10.4 compatible files (does not work otherwise on older Macs).
   #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmacosx-version-min=10.4")
-  
+
   SET(OSXFUSE_FUSE_H_INCLUDE_DIR "/usr/local/include/osxfuse/")
   if (EXISTS ${OSXFUSE_FUSE_H_INCLUDE_DIR})
     include_directories(${OSXFUSE_FUSE_H_INCLUDE_DIR})
@@ -102,20 +102,20 @@ ENDIF(APPLE)
 IF(WIN32)
   SET(Boost_USE_STATIC_LIBS true)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-  
+
   SET(CBFS_LICENSE "include/cbfs/cbfs_license.h")
   IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${CBFS_LICENSE}")
     ## Find CbFS
-    #  CBFS_ROOT        - Input variable: Set to 
+    #  CBFS_ROOT        - Input variable: Set to
     #  CBFS_FOUND       - Output variable: CBFS was found.
     #  CBFS_INCLUDE_DIR - Output variable: Directory which contains the CbFS.h file.
     #  CBFS_LIBRARIES   - Output variable: Will be set to CbFS.lib location.
     find_path(CBFS_INCLUDE_DIR CbFS.h PATHS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
     find_library(CBFS_LIBRARY CbFS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
-  
+
     include(FindPackageHandleStandardArgs)
     FIND_PACKAGE_HANDLE_STANDARD_ARGS(CBFS DEFAULT_MSG CBFS_LIBRARY CBFS_INCLUDE_DIR)
-  
+
     if (CBFS_FOUND)
       set(CBFS_LIBRARIES ${CBFS_LIBRARY})
       include_directories(${CBFS_INCLUDE_DIR})
@@ -350,7 +350,7 @@ if (BUILD_PRELOAD)
   ADD_EXECUTABLE(preload_test "test/ld_preload/preload_test.cpp")
 endif(BUILD_PRELOAD)
 
-if (GENERATE_JNI OR BUILD_JNI)
+if (GENERATE_JNI OR NOT SKIP_JNI)
   MESSAGE(STATUS "Configuring JNI Library.")
 
   set(JNI_LIB_NAME "jni-xtreemfs")
@@ -385,23 +385,23 @@ if (GENERATE_JNI OR BUILD_JNI)
     # include(${SWIG_USE_FILE})
     # Use modified UseSWIG.cmake
     include(cmake/UseSWIG.cmake)
-  
+
     set(CMAKE_SWIG_OUTDIR "${CMAKE_CURRENT_BINARY_DIR}/swig_generated/java")
     set(CMAKE_SWIG_FLAGS -package ${JNI_GEN_JAVA_PKG})
-    
+
     # Workaround to pass -D defines to SWIG -> fixed in modified UseSWIG.cmake
     # set(CMAKE_SWIG_FLAGS "$(CXX_DEFINES)")
-    
+
     set_source_files_properties("include/swig/xtreemfs.i" PROPERTIES CPLUSPLUS ON)
     # swig_add_module(${JNI_LIB_NAME} java "include/swig/xtreemfs.i" ${SRCS_LIBXTREEMFS})
     SWIG_MODULE_INITIALIZE(${JNI_LIB_NAME} java)
     SWIG_GENERATE_SOURCES(${JNI_LIB_NAME} swig_generated_sources "include/swig/xtreemfs.i")
-    # This assumes, that only one file is created. This is currently true for 
+    # This assumes, that only one file is created. This is currently true for
     # the xtreemfs.i and the UseSWIG macros, but could fail with future versions
     list(GET swig_generated_sources 0 swig_generated_file)
 
     # Add a file target which invokes swig when used as a source
-    # The JNI_GEN_C_FILE will be used by the jni library and thus the generated 
+    # The JNI_GEN_C_FILE will be used by the jni library and thus the generated
     # files are copied in time to the correct path.
     add_custom_command(
       OUTPUT ${JNI_GEN_C_FILE}
@@ -412,7 +412,7 @@ if (GENERATE_JNI OR BUILD_JNI)
       DEPENDS ${swig_generated_file})
 
   endif(GENERATE_JNI)
-endif(GENERATE_JNI OR BUILD_JNI)
+endif(GENERATE_JNI OR NOT SKIP_JNI)
 
 
 ################################################################################
