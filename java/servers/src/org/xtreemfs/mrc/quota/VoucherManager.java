@@ -106,10 +106,10 @@ public class VoucherManager {
             storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -161,10 +161,10 @@ public class VoucherManager {
             }
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -238,10 +238,10 @@ public class VoucherManager {
                                 + fileSize + " expireTimes: " + expireTimes.toString());
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -290,10 +290,10 @@ public class VoucherManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -354,10 +354,10 @@ public class VoucherManager {
                         -1 * replicaCount * quotaFileInformation.getFilesize(), 0, update);
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -447,10 +447,10 @@ public class VoucherManager {
                         + quotaFileInformation.getGlobalFileId());
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -512,10 +512,10 @@ public class VoucherManager {
             }
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -560,10 +560,10 @@ public class VoucherManager {
                 storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -605,10 +605,10 @@ public class VoucherManager {
             volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, blockedSpaceDifference,
                     update);
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -648,10 +648,10 @@ public class VoucherManager {
             volumeQuotaManager.transferOwnerSpace(quotaFileInformation, newOwnerId, filesize, blockedSpace, update);
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
@@ -692,10 +692,10 @@ public class VoucherManager {
                     update);
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 

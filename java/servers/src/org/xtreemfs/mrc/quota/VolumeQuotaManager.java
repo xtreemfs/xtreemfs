@@ -86,7 +86,7 @@ public class VolumeQuotaManager {
     }
 
     /**
-     * Checks the active quota and returns a voucher, if no exception occured
+     * Checks the active quota and returns a voucher, if no exception occurred
      * 
      * @param quotaFileInformation
      * @param test
@@ -182,10 +182,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
@@ -216,10 +216,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
@@ -251,10 +251,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
@@ -408,10 +408,10 @@ public class VolumeQuotaManager {
             }
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
@@ -461,10 +461,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
@@ -514,10 +514,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
