@@ -354,11 +354,11 @@ public class Converter {
         Map<String, Object> rpMap = (Map<String, Object>) JSONParser.parseJSON(new JSONString(rpString));
 
         if (rpMap == null || rpMap.isEmpty())
-            return null;
+            throw new JSONException();
 
         final String name = (String) rpMap.get("update-policy");
         if (name == null)
-            return null;
+            throw new JSONException();
 
         Long factor = (Long) rpMap.get("replication-factor");
         final int replicationFactor = factor == null ? 1 : factor.intValue();
