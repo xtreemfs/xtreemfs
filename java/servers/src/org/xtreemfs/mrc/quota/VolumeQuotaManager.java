@@ -40,7 +40,7 @@ public class VolumeQuotaManager {
 
     /**
      * Creates the volume quota manager and register at the mrc quota manager. Add a change listener to the volume info
-     * to get up to date information.
+     * to get up-to-date information.
      * 
      * @throws MRCException
      */
@@ -59,7 +59,7 @@ public class VolumeQuotaManager {
 
     /**
      * Sets the volume specific members with the database values instead of pulling them on every request. They will be
-     * uptodate due to the change listener on the volume.
+     * up-to-date due to the volume change listener.
      */
     public void init() {
         try {
@@ -257,7 +257,7 @@ public class VolumeQuotaManager {
     }
 
     /**
-     * Checks the quota and adds the replica values, if enough space is avilable
+     * Checks the quota and adds the replica values, if enough space is available
      * 
      * @param quotaFileInformation
      * @param filesize
@@ -274,7 +274,7 @@ public class VolumeQuotaManager {
         QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, true, update);
 
         if (quotaInformation.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space for a new replica! The "
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space available for a new replica! The "
                     + quotaInformation.getQuotaType() + " quota has been reached!");
         }
 
@@ -295,7 +295,7 @@ public class VolumeQuotaManager {
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") tries transfer the space information to the new owner.");
+                + ") tries to transfer the space information to the new owner.");
 
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerId(newOwnerId);
@@ -307,8 +307,9 @@ public class VolumeQuotaManager {
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.CHECK_QUOTA_ON_CHOWN && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
-                    + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC,
+                    "Not enough space available to transfer the ownership! The "
+                            + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
         }
 
         // remove space from old owner
@@ -332,7 +333,7 @@ public class VolumeQuotaManager {
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") tries transfer the space information to the new owner group.");
+                + ") tries to transfer the space information to the new owner group.");
 
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerGroupId(newOwnerGroupId);
@@ -345,8 +346,9 @@ public class VolumeQuotaManager {
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.CHECK_QUOTA_ON_CHOWN
                 && quotaInformationNewOwnerGroup.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
-                    + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC,
+                    "Not enough space available to transfer the ownership! The "
+                            + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
         }
 
         // remove space from old owner group

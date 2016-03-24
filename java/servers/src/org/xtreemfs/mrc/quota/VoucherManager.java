@@ -68,7 +68,7 @@ public class VoucherManager {
                     quotaFileInformation.getFileId(), clientId);
 
             if (fileVoucherInfo != null) {
-                // overwrite replica count, because added replica don't has to be installed yet, but is covered
+                // overwrite replica count, because added replica don't have to be installed yet, but are covered
                 // by the voucher and quota management.
                 quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
@@ -113,7 +113,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
         return newMaxFileSize;
@@ -139,7 +139,7 @@ public class VoucherManager {
             FileVoucherInfo fileVoucherInfo;
             fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
             if (fileVoucherInfo != null) {
-                // overwrite replica count, because added replica don't has to be installed yet, but is covered
+                // overwrite replica count, because added replica don't have to be installed yet, but are covered
                 // by the voucher and quota management.
                 quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
@@ -151,11 +151,12 @@ public class VoucherManager {
                 // voucher available
                 voucherAvailable = true;
             } else if (quotaFileInformation.getFilesize() > 0) {
-                // no voucher available to increase the maximum filesize, but the current filesize is not zero
+                // no voucher available to increase the maximum filesize, but the current filesize is greater than zero
                 voucherAvailable = true;
             } else if (fileVoucherInfo != null
                     && (fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace()) > 0) {
-                // no new voucher available to increase the maxmimum filesize, but the maximum filesize
+                // no new voucher available to increase the maxmimum filesize, but the maximum filesize is greater than
+                // zero
                 voucherAvailable = true;
             }
             
@@ -173,7 +174,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -219,7 +220,7 @@ public class VoucherManager {
                                         + quotaFileInformation.getGlobalFileId());
                     }
 
-                    // TODO(baerhold): keep here or separate method and operation
+                    // check for obsolete client vouchers
                     clearAllClientVouchers(quotaFileInformation, clientId, fileVoucherInfo, update);
 
                     fileVoucherInfo.decreaseClientCount();
@@ -250,7 +251,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -302,7 +303,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
     }
@@ -366,7 +367,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         } finally {
             if (allFileVoucherClientInfo != null) {
                 allFileVoucherClientInfo.destroy();
@@ -376,7 +377,8 @@ public class VoucherManager {
 
     /**
      * Checks whether there is an entry for the fileID, clientID and oldExpireTime and iff so, it get's a new voucher
-     * for the newExpireTime
+     * for the newExpireTime. If no new voucher is available, the maximum file size will be compared to the old maximum
+     * filesize of the client.
      * 
      * @param quotaFileInformation
      * @param clientId
@@ -385,7 +387,8 @@ public class VoucherManager {
      * @param update
      * @return the new voucher size
      * @throws UserException
-     *             if parameter couldn't be found or if no new voucher could be acquired
+     *             if parameter couldn't be found or if no new voucher could be acquired and old and new maximum
+     *             filesize are the same
      */
     public synchronized long checkAndRenewVoucher(QuotaFileInformation quotaFileInformation, String clientId,
             long oldMaxFileSize, long oldExpireTime, long newExpireTime, AtomicDBUpdate update) throws UserException {
@@ -410,7 +413,7 @@ public class VoucherManager {
                             .getFileId());
 
                     if (fileVoucherInfo != null) {
-                        // overwrite replica count, because added replica don't has to be installed yet, but is
+                        // overwrite replica count, because added replica don't have to be installed yet, but are
                         // covered by the voucher and quota management.
                         quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
                         Voucher voucher = volumeQuotaManager.getVoucher(quotaFileInformation, update);
@@ -459,14 +462,14 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
         return newMaxFileSize;
     }
 
     /**
-     * Used for periodic xcap renewal to avoid an increase of the voucher
+     * Used for periodic xcap renewal to avoid an increase of the maximum filesize
      * 
      * @param quotaFileInformation
      * @param clientId
@@ -524,7 +527,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
         return currentMaxFileSize;
@@ -572,7 +575,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -617,7 +620,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -660,7 +663,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -704,7 +707,7 @@ public class VoucherManager {
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
