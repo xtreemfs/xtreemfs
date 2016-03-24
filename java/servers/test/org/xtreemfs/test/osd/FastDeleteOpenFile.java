@@ -19,7 +19,7 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
-import org.xtreemfs.common.libxtreemfs.ClientImplementation;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
@@ -55,8 +55,6 @@ public class FastDeleteOpenFile {
 
     private static String               dirAddress;
 
-    private static ClientImplementation client;
-
     private static Options              options;
 
     @BeforeClass
@@ -72,16 +70,11 @@ public class FastDeleteOpenFile {
         mrcAddress = testEnv.getMRCAddress().getHostName() + ":" + testEnv.getMRCAddress().getPort();
 
         options = new Options();
-        client = (ClientImplementation) ClientFactory
-                .createClient(dirAddress, userCredentials, null, options);
-        client.start();
     }
 
     @AfterClass
     public static void shutdownTest() throws Exception {
         testEnv.shutdown();
-
-        client.shutdown();
     }
 
     @Test
@@ -91,7 +84,7 @@ public class FastDeleteOpenFile {
         String globalFileId = null;
 
         // Create client.
-        AdminClient client = ClientFactory.createAdminClient(dirAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         // Create and open volume.

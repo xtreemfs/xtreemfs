@@ -25,6 +25,7 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.xloc.ReplicationFlags;
@@ -92,8 +93,9 @@ public class ScrubberTest {
                 TestEnvironment.Services.OSD, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD });
         testEnv.start();
         SetupUtils.CHECKSUMS_ON = false;
+        
         // create client
-        client = ClientFactory.createAdminClient(dirAddress.getHostName() + ":" + dirAddress.getPort(),
+        client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddress.getHostName() + ":" + dirAddress.getPort(),
                 userCredentials, null, new Options());
         client.start();
 
@@ -164,7 +166,10 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations. 
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // create file
@@ -204,7 +209,11 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations.
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // create file
@@ -411,7 +420,11 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+        
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations. 
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // set replica update Policy
@@ -453,7 +466,11 @@ public class ScrubberTest {
         // create Volume
         client.createVolume(mrc1Address.getHostName() + ":" + mrc1Address.getPort(),
                 RPCAuthentication.authNone, userCredentials, VOLUME_NAME);
-        AdminVolume volume = client.openVolume(VOLUME_NAME, null, new Options());
+
+        // Disable the metadatacache to deal with mixed JNI/JAVA implementations.
+        Options options = new Options();
+        options.setMetadataCacheSize(0);
+        AdminVolume volume = client.openVolume(VOLUME_NAME, null, options);
         volume.start();
 
         // set replica update Policy
@@ -475,7 +492,7 @@ public class ScrubberTest {
 
         // truncate file on MRC
         file.truncate(userCredentials, 10, true);
-
+        
         s = file.getAttr(userCredentials);
         assertEquals(10, s.getSize());
 

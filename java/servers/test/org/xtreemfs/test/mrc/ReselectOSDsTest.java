@@ -23,12 +23,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
+import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
-import org.xtreemfs.common.libxtreemfs.Client;
+import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
-import org.xtreemfs.common.libxtreemfs.Volume;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -97,11 +98,11 @@ public class ReselectOSDsTest {
         String fileName = "testfile";
 
         Options options = new Options();
-        Client client = ClientFactory.createClient(dirServiceAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddress, userCredentials, null, options);
         client.start();
 
         client.createVolume(mrcServiceAddress, auth, userCredentials, volumeName);
-        Volume volume = client.openVolume(volumeName, null, options);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 2, 0);
         volume.setOSDSelectionPolicy(
                 userCredentials,
@@ -110,7 +111,7 @@ public class ReselectOSDsTest {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
         
-        AdminFileHandle file = (AdminFileHandle) volume.openFile(userCredentials, fileName,
+        AdminFileHandle file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR),
                 0777);
 
@@ -136,7 +137,7 @@ public class ReselectOSDsTest {
         // Wait for the new XLocSet to install (will probably take at least leaseTimeout seconds)
         Thread.sleep(20 * 1000);
 
-        file = (AdminFileHandle) volume.openFile(userCredentials, fileName,
+        file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR));
         List<Replica> replicas2 = file.getReplicasList();
 
@@ -166,11 +167,11 @@ public class ReselectOSDsTest {
         String fileName = "testfile";
 
         Options options = new Options();
-        Client client = ClientFactory.createClient(dirServiceAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddress, userCredentials, null, options);
         client.start();
 
         client.createVolume(mrcServiceAddress, auth, userCredentials, volumeName);
-        Volume volume = client.openVolume(volumeName, null, options);
+        AdminVolume volume = client.openVolume(volumeName, null, options);
         volume.setDefaultReplicationPolicy(userCredentials, "/", ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ, 3, 0);
         volume.setOSDSelectionPolicy(
                 userCredentials,
@@ -178,7 +179,7 @@ public class ReselectOSDsTest {
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT,
                         OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID }));
 
-        AdminFileHandle file = (AdminFileHandle) volume.openFile(userCredentials, fileName,
+        AdminFileHandle file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR),
                 0777);
 
@@ -204,7 +205,7 @@ public class ReselectOSDsTest {
         // Wait for the new XLocSet to install (will probably take at least leaseTimeout seconds)
         Thread.sleep(20 * 1000);
 
-        file = (AdminFileHandle) volume.openFile(userCredentials, fileName,
+        file = volume.openFile(userCredentials, fileName,
                 Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR));
         List<Replica> replicas2 = file.getReplicasList();
 

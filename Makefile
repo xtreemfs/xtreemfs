@@ -152,9 +152,9 @@ install-tools:
 	@cp -R man/man1/xtfs_* $(MAN_DIR)
 
 install-libs:
-# This could also install a shared libxtreemfs 
+# This could also install a shared libxtreemfs
 # but for now it only installs the libjni-xtreemfs if it exists.
-	@mkdir -p $(XTREEMFS_LIB_DIR) 
+	@mkdir -p $(XTREEMFS_LIB_DIR)
 	@if [ -f $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) ]; then \
 		cp $(XTREEMFS_CLIENT_BUILD_DIR)/$(XTREEMFS_JNI_LIBRARY) $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY); \
 	fi
@@ -229,11 +229,9 @@ ifdef BUILD_CLIENT_TESTS
 	CMAKE_BUILD_CLIENT_TESTS = -DBUILD_CLIENT_TESTS=true
 endif
 
-CMAKE_GENERATE_JNI = -DGENERATE_JNI=false
-ifdef BUILD_JNI
-	CMAKE_BUILD_JNI = -DBUILD_JNI=true
-else
-	CMAKE_BUILD_JNI = -DBUILD_JNI=false
+# Tell CMake if it should skip building the jni library
+ifdef SKIP_JNI
+	CMAKE_SKIP_JNI = -DSKIP_JNI=true
 endif
 
 # Do not use env variables to control the CMake behavior as stated in http://www.cmake.org/Wiki/CMake_FAQ#How_can_I_get_or_set_environment_variables.3F
@@ -298,7 +296,7 @@ client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
 client: check_client client_thirdparty set_version
-	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_BUILD_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
+	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_SKIP_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
 	@cp   -p $(XTREEMFS_CLIENT_BUILD_DIR)/*.xtreemfs $(XTREEMFS_BINARIES_DIR)
@@ -376,11 +374,8 @@ pbrpcgen_clean:
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
 
-.PHONY: jni-client 
-jni-client: CMAKE_BUILD_JNI = -DBUILD_JNI=true
-jni-client: client 
-
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
 jni-client-generate: client
+	@echo Attention: To ensure the JNI code is generated, call make distclean prior to make jni-client-generate
 

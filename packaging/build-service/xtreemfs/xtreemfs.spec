@@ -119,7 +119,6 @@ This package contains the XtreemFS JNI client library.
 export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
-export BUILD_JNI=true
 
 %if 0%{?mandriva_version} == 2008 || 0%{?centos_version} >= 501 || 0%{?rhel_version} >= 501 || 0%{?suse_version} == 1030
 export CCFLAGS="$CCFLAGS -fPIC"
@@ -137,7 +136,7 @@ export NO_BRP_CHECK_BYTECODE_VERSION=true
 
 make install \
   DESTDIR=$RPM_BUILD_ROOT \
-  LIB_DIR=%{_libdir}/%{name} 
+  LIB_DIR=%{_libdir}/%{name}
 
 ln -sf /usr/bin/mount.xtreemfs ${RPM_BUILD_ROOT}/sbin/mount.xtreemfs
 ln -sf /usr/bin/umount.xtreemfs ${RPM_BUILD_ROOT}/sbin/umount.xtreemfs

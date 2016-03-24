@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.VolumeNotFoundException;
 import org.xtreemfs.foundation.logging.Logging;
@@ -54,8 +55,8 @@ public class UUIDResolverTest {
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(dirAddress, userCredentials,
-                null, options);
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
+        		dirAddress, userCredentials, null, options);
         client.start();
 
         UUIDResolver resolver = client;
@@ -116,8 +117,8 @@ public class UUIDResolverTest {
         // should throw an VolumeNotFoundException
         // Do not retry here to avoid unnecessary lengthy executions.
         options.setMaxTries(1);
-        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient("doesntexists:44444",
-                userCredentials, null, options);
+        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
+        		"doesntexists:44444", userCredentials, null, options);
         clientFail.start();
         UUIDResolver resolverFail = clientFail;
         try {

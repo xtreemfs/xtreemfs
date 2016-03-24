@@ -23,6 +23,7 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
@@ -176,7 +177,7 @@ public class DIRTest {
 
         // change status of osd
         InetSocketAddress dirAddress = SetupUtils.getDIRAddr();
-        AdminClient adminClient = ClientFactory.createAdminClient(
+        AdminClient adminClient = ClientFactory.createAdminClient(ClientType.JAVA, 
                 dirAddress.getHostName() + ":" + dirAddress.getPort(), RPCAuthentication.userService, null,
                 new Options());
         adminClient.start();
