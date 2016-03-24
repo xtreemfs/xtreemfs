@@ -144,15 +144,20 @@ public class VoucherManager {
                 quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
 
-            boolean voucherAvailable = false;
             Voucher voucher = volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
             
-            // voucher available
-            voucherAvailable |= voucher.getVoucherType() != VoucherType.NONE;
-            // no voucher available to increase the maximum filesize, but the current filesize is not zero            
-            voucherAvailable |= quotaFileInformation.getFilesize() > 0;
-            // no new voucher available to increase the maxmimum filesize, but the maximum filesize            
-            voucherAvailable |= fileVoucherInfo != null && (fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace()) > 0;
+            boolean voucherAvailable = false;
+            if (voucher.getVoucherType() != VoucherType.NONE) {
+                // voucher available
+                voucherAvailable = true;
+            } else if (quotaFileInformation.getFilesize() > 0) {
+                // no voucher available to increase the maximum filesize, but the current filesize is not zero
+                voucherAvailable = true;
+            } else if (fileVoucherInfo != null
+                    && (fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace()) > 0) {
+                // no new voucher available to increase the maxmimum filesize, but the maximum filesize
+                voucherAvailable = true;
+            }
             
             if(!voucherAvailable){
                 // no voucher available and the current maximum filesize would be zero
