@@ -150,16 +150,14 @@ public class VolumeQuotaManager {
             QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
             AtomicDBUpdate update) throws UserException {
 
-        updateVolumeSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
-                update);
+        updateVolumeSpaceUsage(quotaInformation, filesizeDifference, blockedSpaceDifference, update);
         updateUserSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference, update);
         updateGroupSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
                 update);
     }
 
-    public synchronized void updateVolumeSpaceUsage(QuotaFileInformation quotaFileInformation,
-            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
-            AtomicDBUpdate update) throws UserException {
+    public synchronized void updateVolumeSpaceUsage(QuotaInformation quotaInformation, long filesizeDifference,
+            long blockedSpaceDifference, AtomicDBUpdate update) throws UserException {
         try {
             if (filesizeDifference != 0) {
                 long volumeUsedSpace = quotaInformation.getVolumeUsedSpace() + filesizeDifference;
@@ -373,8 +371,7 @@ public class VolumeQuotaManager {
 
         QuotaInformation quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
 
-        quotaInformation = getAndApplyVolumeQuotaInformation(quotaInformation, quotaFileInformation,
-                saveAppliedDefaultQuota, update);
+        quotaInformation = getAndApplyVolumeQuotaInformation(quotaInformation);
         quotaInformation = getAndApplyUserQuotaInformation(quotaInformation, quotaFileInformation,
                 saveAppliedDefaultQuota, update);
         quotaInformation = getAndApplyGroupQuotaInformation(quotaInformation, quotaFileInformation,
@@ -383,9 +380,7 @@ public class VolumeQuotaManager {
         return quotaInformation;
     }
 
-    private QuotaInformation getAndApplyVolumeQuotaInformation(QuotaInformation quotaInformation,
-            QuotaFileInformation quotaFileInformation, boolean saveAppliedDefaultQuota, AtomicDBUpdate update)
-            throws UserException {
+    private QuotaInformation getAndApplyVolumeQuotaInformation(QuotaInformation quotaInformation) throws UserException {
 
         if (quotaInformation == null) {
             quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
