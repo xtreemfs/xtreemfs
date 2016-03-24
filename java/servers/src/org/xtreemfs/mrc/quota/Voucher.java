@@ -16,14 +16,6 @@ public class Voucher {
     private long        voucherSize;
     private VoucherType voucherType;
 
-    public Voucher() {
-        this(VoucherType.NONE);
-    }
-
-    public Voucher(VoucherType voucherType) {
-        this(voucherType, 0);
-    }
-
     public Voucher(VoucherType voucherType, long voucherSize) {
         setVoucherType(voucherType);
         setVoucherSize(voucherSize);
