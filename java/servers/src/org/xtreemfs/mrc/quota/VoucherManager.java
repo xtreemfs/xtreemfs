@@ -23,6 +23,7 @@ import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherClientInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherInfo;
+import org.xtreemfs.mrc.quota.Voucher.VoucherType;
 
 /**
  * This class manages all voucher requested affairs and if necessary, it delegates them to reference classes.
@@ -67,30 +68,28 @@ public class VoucherManager {
                     quotaFileInformation.getFileId(), clientId);
 
             if (fileVoucherInfo != null) {
-                // overwrite replica count, because an added replica don't has to be installed yet, but is covered
+                // overwrite replica count, because added replica don't have to be installed yet, but are covered
                 // by the voucher and quota management.
                 quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
 
-            long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
-            long newBlockedSpace = voucherSize;
-            if (voucherSize == QuotaConstants.UNLIMITED_VOUCHER) {
-                newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
-                newBlockedSpace = 0;
-            }
+            Voucher voucher = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
+            // create or update file voucher info
             if (fileVoucherInfo == null) {
                 assert (fileVoucherClientInfo == null); // it has to be null
 
                 fileVoucherInfo = new BufferBackedFileVoucherInfo(quotaFileInformation.getFileId(),
-                        quotaFileInformation.getFilesize(), quotaFileInformation.getReplicaCount(), newBlockedSpace);
+                        quotaFileInformation.getFilesize(), quotaFileInformation.getReplicaCount(),
+                        voucher.getVoucherSize());
             } else {
                 if (fileVoucherClientInfo == null) {
                     fileVoucherInfo.increaseClientCount();
                 }
-                fileVoucherInfo.increaseBlockedSpaceByValue(newBlockedSpace);
+                fileVoucherInfo.increaseBlockedSpaceByValue(voucher.getVoucherSize());
             }
 
+            // create or update file voucher client info
             if (fileVoucherClientInfo == null) {
                 fileVoucherClientInfo = new BufferBackedFileVoucherClientInfo(quotaFileInformation.getFileId(),
                         clientId, expireTime);
@@ -98,21 +97,23 @@ public class VoucherManager {
                 fileVoucherClientInfo.addExpireTime(expireTime);
             }
 
-            if (voucherSize != QuotaConstants.UNLIMITED_VOUCHER) {
+            if (voucher.getVoucherType() != VoucherType.UNLIMITED) {
                 newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+            } else {
+                newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
             }
 
             storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
         return newMaxFileSize;
@@ -124,7 +125,8 @@ public class VoucherManager {
      * @param quotaFileInformation
      * @throws UserException
      */
-    public synchronized void checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
+    public synchronized void checkVoucherAvailability(QuotaFileInformation quotaFileInformation)
+            throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this,
                 "Check voucher availability for file: " + quotaFileInformation.getGlobalFileId());
@@ -137,22 +139,42 @@ public class VoucherManager {
             FileVoucherInfo fileVoucherInfo;
             fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
             if (fileVoucherInfo != null) {
-                // overwrite replica count, because an added replica don't has to be installed yet, but is covered
+                // overwrite replica count, because added replica don't have to be installed yet, but are covered
                 // by the voucher and quota management.
                 quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
             }
 
-            // ignore return value, because if no voucher is available, an exception will be thrown
-            volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
+            Voucher voucher = volumeQuotaManager.checkVoucherAvailability(quotaFileInformation);
+            
+            boolean voucherAvailable = false;
+            if (voucher.getVoucherType() != VoucherType.NONE) {
+                // voucher available
+                voucherAvailable = true;
+            } else if (quotaFileInformation.getFilesize() > 0) {
+                // no voucher available to increase the maximum filesize, but the current filesize is greater than zero
+                voucherAvailable = true;
+            } else if (fileVoucherInfo != null
+                    && (fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace()) > 0) {
+                // no new voucher available to increase the maxmimum filesize, but the maximum filesize is greater than
+                // zero
+                voucherAvailable = true;
+            }
+            
+            if(!voucherAvailable){
+                // no voucher available and the current maximum filesize would be zero
+                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The " + voucher.getEnforcedQuotaName()
+                        + " quota has been reached!");
+            }
+
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -198,6 +220,9 @@ public class VoucherManager {
                                         + quotaFileInformation.getGlobalFileId());
                     }
 
+                    // check for obsolete client vouchers
+                    clearAllClientVouchers(quotaFileInformation, clientId, fileVoucherInfo, update);
+
                     fileVoucherInfo.decreaseClientCount();
 
                     // if there is no open voucher anymore, clear general information and update quota information
@@ -219,15 +244,68 @@ public class VoucherManager {
                                 + fileSize + " expireTimes: " + expireTimes.toString());
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
+    }
+
+    /**
+     * 
+     * 
+     * @param quotaFileInformation
+     * @param originalClientId
+     * @param fileVoucherInfo
+     *            will be used as inout parameter and has to be saved outside of this method
+     * @param update
+     * @throws UserException
+     */
+    private void clearAllClientVouchers(QuotaFileInformation quotaFileInformation, String originalClientId,
+            FileVoucherInfo fileVoucherInfo, AtomicDBUpdate update) throws UserException {
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, this, "Try clearing other clients vouchers for file: "
+                + quotaFileInformation.getGlobalFileId());
+
+        long compareExpireTime = System.currentTimeMillis();
+
+        try {
+            VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
+                    .getVolumeId());
+            StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
+
+            DatabaseResultSet<FileVoucherClientInfo> allFileVoucherClientInfo = storageManager
+                    .getAllFileVoucherClientInfo(quotaFileInformation.getFileId());
+            while (allFileVoucherClientInfo.hasNext()) {
+                FileVoucherClientInfo fileVoucherClientInfo = allFileVoucherClientInfo.next();
+                if (fileVoucherClientInfo.getClientId().equals(originalClientId)) {
+                    continue;
+                }
+                
+                if (!fileVoucherClientInfo.hasNewerExpireTime(compareExpireTime)) {
+                    // clear expire times
+                    fileVoucherClientInfo.clearExpireTimeSet();
+                    storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
+                    
+                    // decrease client count without updating the db due to inout parameter
+                    fileVoucherInfo.decreaseClientCount();
+                }
+            }
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "An error occurred during the interaction with the database!");
+        } catch (MRCException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
+        }
+
     }
 
     /**
@@ -257,7 +335,7 @@ public class VoucherManager {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this,
                         "Delete file with voucher: " + quotaFileInformation.getGlobalFileId());
 
-                // overwrite replica count, because an added replica don't has to be installed yet, but is covered by
+                // overwrite replica count, because added replica don't has to be installed yet, but is covered by
                 // the voucher and quota management.
                 replicaCount = fileVoucherInfo.getReplicaCount();
 
@@ -282,14 +360,14 @@ public class VoucherManager {
                         -1 * replicaCount * quotaFileInformation.getFilesize(), 0, update);
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         } finally {
             if (allFileVoucherClientInfo != null) {
                 allFileVoucherClientInfo.destroy();
@@ -299,7 +377,8 @@ public class VoucherManager {
 
     /**
      * Checks whether there is an entry for the fileID, clientID and oldExpireTime and iff so, it get's a new voucher
-     * for the newExpireTime
+     * for the newExpireTime. If no new voucher is available, the maximum file size will be compared to the old maximum
+     * filesize of the client.
      * 
      * @param quotaFileInformation
      * @param clientId
@@ -308,10 +387,11 @@ public class VoucherManager {
      * @param update
      * @return the new voucher size
      * @throws UserException
-     *             if parameter couldn't be found or if no new voucher could be acquired
+     *             if parameter couldn't be found or if no new voucher could be acquired and old and new maximum
+     *             filesize are the same
      */
     public synchronized long checkAndRenewVoucher(QuotaFileInformation quotaFileInformation, String clientId,
-            long oldExpireTime, long newExpireTime, AtomicDBUpdate update) throws UserException {
+            long oldMaxFileSize, long oldExpireTime, long newExpireTime, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this,
                 "Renew voucher for file: " + quotaFileInformation.getGlobalFileId() + ": client: " + clientId
@@ -333,24 +413,29 @@ public class VoucherManager {
                             .getFileId());
 
                     if (fileVoucherInfo != null) {
-                        // overwrite replica count, because an added replica don't has to be installed yet, but is
+                        // overwrite replica count, because added replica don't have to be installed yet, but are
                         // covered by the voucher and quota management.
                         quotaFileInformation.setReplicaCount(fileVoucherInfo.getReplicaCount());
-                        long voucherSize = volumeQuotaManager.getVoucher(quotaFileInformation, update);
+                        Voucher voucher = volumeQuotaManager.getVoucher(quotaFileInformation, update);
 
-                        if (voucherSize == QuotaConstants.UNLIMITED_VOUCHER) {
-                            voucherSize = 0;
-                            newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
+                        if (voucher.getVoucherType() != VoucherType.NONE) {
+                            fileVoucherInfo.increaseBlockedSpaceByValue(voucher.getVoucherSize());
+                            storageManager.setFileVoucherInfo(fileVoucherInfo, update);
+
+                            fileVoucherClientInfo.addExpireTime(newExpireTime);
+                            storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
                         }
 
-                        fileVoucherInfo.increaseBlockedSpaceByValue(voucherSize);
-                        storageManager.setFileVoucherInfo(fileVoucherInfo, update);
 
-                        fileVoucherClientInfo.addExpireTime(newExpireTime);
-                        storageManager.setFileVoucherClientInfo(fileVoucherClientInfo, update);
-
-                        if (voucherSize != QuotaConstants.UNLIMITED_VOUCHER) {
+                        if (voucher.getVoucherType() == VoucherType.UNLIMITED) {
+                            newMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
+                        } else {
                             newMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+
+                            if (voucher.getVoucherType() == VoucherType.NONE && oldMaxFileSize == newMaxFileSize) {
+                                throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The "
+                                        + voucher.getEnforcedQuotaName() + " quota has been reached !");
+                            }
                         }
 
                         Logging.logMessage(Logging.LEVEL_DEBUG, this, "Renew voucher to " + newMaxFileSize
@@ -370,21 +455,21 @@ public class VoucherManager {
                         + quotaFileInformation.getGlobalFileId());
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
 
         return newMaxFileSize;
     }
 
     /**
-     * Used for periodic xcap renewal to avoid an increase of the voucher
+     * Used for periodic xcap renewal to avoid an increase of the maximum filesize
      * 
      * @param quotaFileInformation
      * @param clientId
@@ -393,18 +478,21 @@ public class VoucherManager {
      * @param update
      * @throws UserException
      */
-    public synchronized void addRenewedTimestamp(QuotaFileInformation quotaFileInformation, String clientId,
+    public synchronized long addRenewedTimestamp(QuotaFileInformation quotaFileInformation, String clientId,
             long oldExpireTime, long newExpireTime, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this,
                 "Add renewed timestamp for file: " + quotaFileInformation.getGlobalFileId() + ": client: " + clientId
                         + ", oldExpireTime: " + oldExpireTime + ", newExpireTime: " + newExpireTime);
 
+        long currentMaxFileSize = 0;
+
         try {
             VolumeQuotaManager volumeQuotaManager = mrcQuotaManager.getVolumeQuotaManagerById(quotaFileInformation
                     .getVolumeId());
             StorageManager storageManager = volumeQuotaManager.getVolStorageManager();
 
+            FileVoucherInfo fileVoucherInfo = storageManager.getFileVoucherInfo(quotaFileInformation.getFileId());
             FileVoucherClientInfo fileVoucherClientInfo = storageManager.getFileVoucherClientInfo(
                     quotaFileInformation.getFileId(), clientId);
 
@@ -423,16 +511,26 @@ public class VoucherManager {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "No open voucher for global fileId "
                         + quotaFileInformation.getGlobalFileId());
             }
+
+            // calculate the current maximum filesize
+            if (fileVoucherInfo.getBlockedSpace() == 0) {
+                currentMaxFileSize = QuotaConstants.UNLIMITED_VOUCHER;
+            } else {
+                currentMaxFileSize = fileVoucherInfo.getFilesize() + fileVoucherInfo.getBlockedSpace();
+            }
+
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
+
+        return currentMaxFileSize;
     }
 
     /**
@@ -470,14 +568,14 @@ public class VoucherManager {
                 storageManager.setFileVoucherInfo(fileVoucherInfo, update);
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -515,14 +613,14 @@ public class VoucherManager {
             volumeQuotaManager.updateSpaceUsage(quotaFileInformation, filesizeDifference, blockedSpaceDifference,
                     update);
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -558,14 +656,14 @@ public class VoucherManager {
             volumeQuotaManager.transferOwnerSpace(quotaFileInformation, newOwnerId, filesize, blockedSpace, update);
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 
@@ -602,14 +700,14 @@ public class VoucherManager {
                     update);
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         } catch (MRCException e) {
             Logging.logError(Logging.LEVEL_ERROR, this, e);
 
-            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assign quota manager!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "This volume has no assigned quota manager!");
         }
     }
 

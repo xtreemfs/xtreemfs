@@ -84,8 +84,8 @@ public class TruncateOperation extends MRCOperation {
         // save new expire time at voucher manager
         long newExpireMs = TimeSync.getGlobalTime() + master.getConfig().getCapabilityTimeout() * 1000;
         QuotaFileInformation quotaFileInformation = new QuotaFileInformation(idRes.getVolumeId(), file);
-        master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation, writeCap.getClientIdentity(),
-                writeCap.getExpireMs(), newExpireMs, update);
+        long voucherSize = master.getMrcVoucherManager().addRenewedTimestamp(quotaFileInformation,
+                writeCap.getClientIdentity(), writeCap.getExpireMs(), newExpireMs, update);
 
         // create a truncate capability from the previous write capability
         Capability truncCap = new Capability(writeCap.getFileId(),
@@ -95,10 +95,10 @@ public class TruncateOperation extends MRCOperation {
                 writeCap.isReplicateOnClose(),
                 !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
                         .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
-                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(),
-                        writeCap.getTraceConfig().getTraceRequests(), writeCap.getTraceConfig().getTracingPolicyConfig(),
-                        writeCap.getTraceConfig().getTracingPolicy(), writeCap.getVoucherSize(),
-                        newExpireMs, master.getConfig().getCapabilitySecret());
+                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), writeCap
+                        .getTraceConfig().getTraceRequests(), writeCap.getTraceConfig().getTracingPolicyConfig(),
+                        writeCap.getTraceConfig().getTracingPolicy(), voucherSize, newExpireMs, master.getConfig()
+                        .getCapabilitySecret());
 
         // set the response
         rq.setResponse(truncCap.getXCap());
