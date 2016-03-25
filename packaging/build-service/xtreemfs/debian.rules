@@ -15,9 +15,6 @@ endif
 BUILD_DIR:=$(CURDIR)/debian/xtreemfs
 export ANT_OPTS=-D"file.encoding=UTF-8"
 
-# Build JNI library
-export BUILD_JNI=true
-
 build: build-stamp
 build-stamp:
 	dh_testdir
