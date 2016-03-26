@@ -28,6 +28,9 @@ public class ClientFactory {
 
     /**
      * Specifies the default ClientType that is used if the parameter is omitted.
+     * 
+     * TODO: Switch to native client due to new features only implemented in the C++ client. To do this, many test junit
+     * testcases have to be changed.
      */
     final static ClientType defaultType = ClientType.NATIVE;
 

@@ -56,11 +56,14 @@ public class FileVoucherManager {
         if (!invalidClientExpireTimeSet.contains(expireTime + "." + clientId)) {
             if (!clientExpireTimeSet.contains(expireTime + "." + clientId)) {
                 clientExpireTimeSet.add(expireTime + "." + clientId);
-                voucherSizeMax = (voucherSizeMax < voucherSize) ? voucherSize : voucherSizeMax;
-                latestExpireTime = (latestExpireTime < expireTime) ? expireTime : latestExpireTime;
+
+                if (expireTime > latestExpireTime) {
+                    latestExpireTime = expireTime;
+                    voucherSizeMax = voucherSize;
+                }
 
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                        "Register Voucher! [FileID: %s, ClientId %s, latestExpireTime: %d, voucherSizeMaz: %d]",
+                        "Register Voucher! [FileID: %s, ClientId %s, latestExpireTime: %d, voucherSizeMax: %d]",
                         fileId, clientId, latestExpireTime, voucherSizeMax);
             } else {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,

@@ -68,6 +68,8 @@ public class QuotaTest {
     @BeforeClass
     public static void initializeTest() throws Exception {
         FSUtils.delTree(new java.io.File(SetupUtils.TEST_DIR));
+
+        // keep in mind: SetupUtils.Debug_Level and Logging.Level_Debug are not the same
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
@@ -1108,13 +1110,17 @@ public class QuotaTest {
             i++;
         }
 
-        // try to open again, although full quota is used
+        // try to open again and write a single byte, although a quota has been reached
         boolean error = false;
+        boolean firstPass = false;
         try {
             fileHandle = volume.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+            firstPass = true;
+
+            fileHandle.write(userCredentials, getContent(1).getBytes(), 1, fileSize * 1024);
         } catch (PosixErrorException e) {
             if (e.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOSPC)) {
-                error = true;
+                error = firstPass;
             }
         } finally {
             assertTrue(error);
@@ -1154,7 +1160,7 @@ public class QuotaTest {
         Volume volume3 = client.openVolume(VOLUME_NAME, null, options);
 
         String quota = "15";
-        String voucherSize = "5"; // in kb
+        String voucherSize = "5";
         String voucherSizeDouble = "10";
         String fileSize = "5";
         String fileSizeDouble = "10";
@@ -1204,16 +1210,18 @@ public class QuotaTest {
             FileHandle fileHandle2 = volume2.openFile(userCredentials, FILEPATH,
                     SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
 
-            // try to open again, although full quota is used
-            boolean error = false;
+            // try to open again, although full quota is used, it should get an xcap
+            boolean noError = false;
             try {
-                volume3.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+                FileHandle fileHandle3 = volume3.openFile(userCredentials, FILEPATH, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+                noError = true;
+                fileHandle3.close();
             } catch (PosixErrorException e) {
                 if (e.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOSPC)) {
-                    error = true;
+                    noError = false;
                 }
             } finally {
-                assertTrue(error);
+                assertTrue(noError);
             }
 
             // check blocked space & write content
@@ -1238,7 +1246,7 @@ public class QuotaTest {
             fileHandle2.write(userCredentials, getContent(fileSize).getBytes(), Integer.parseInt(fileSize),
                     Integer.parseInt(fileSizeDouble));
             fileHandle2.close();
-
+            
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
             assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
@@ -1253,6 +1261,107 @@ public class QuotaTest {
     }
 
     // TODO(baerhold): Multiple Clients which multiple Hosts (client identities) - how??
+
+    @Test
+    public void testMultipleClientMultipleOsds() throws Exception {
+        final String VOLUME_NAME = VOLUMENAME + "testMultipleClientMultipleOsds";
+
+        // Start native Client with default options.
+        Options options = new Options();
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
+        client.start();
+
+        // Create and open volume.
+        client.createVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        Volume volume = client.openVolume(VOLUME_NAME, null, options);
+
+        // 2nd client and 2nd credentials
+        UserCredentials userCredentials2 = UserCredentials.newBuilder().setUsername(USERNAME + 2)
+                .addGroups(GROUPNAME + 2).build();
+
+        Client client2 = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials2, null, options);
+        client2.start();
+        Volume volume2 = client.openVolume(VOLUME_NAME, null, options);
+
+        int stripeWidth = 2;
+        int stripeSize = 1; // in kb
+
+        String chunkSize = Integer.toString(stripeSize * 1024); // in kb
+        String quota = Integer.toString(stripeWidth * stripeSize * 1024); // in kb
+
+        // set default striping policy
+        String stripingPolicy = "{\"pattern\":\"STRIPING_POLICY_RAID0\",\"size\":" + stripeSize + ",\"width\":"
+                + stripeWidth + "}";
+        volume.setXAttr(userCredentials, "/", "xtreemfs.default_sp", stripingPolicy, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+
+        // set vouchersize > quota, so that the voucher will block all space
+        volume.setXAttr(userCredentials, "/", "xtreemfs.vouchersize", chunkSize, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+
+        volume.setXAttr(userCredentials, "/", "xtreemfs.quota", quota, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        volume.setXAttr(userCredentials, "/", "xtreemfs.userquota." + USERNAME, quota, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+        volume.setXAttr(userCredentials, "/", "xtreemfs.groupquota." + GROUPNAME, quota, XATTR_FLAGS.XATTR_FLAGS_CREATE);
+
+        // create file, get xcaps for 2 clients and write content in specific order
+        FileHandle fileHandle = volume.openFile(
+                userCredentials,
+                FILEPATH,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC.getNumber()
+                        | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber(), 0777);
+
+        assertEquals(chunkSize, volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
+        assertEquals(chunkSize, volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
+        assertEquals(chunkSize, volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
+
+        // 2nd client will get remaining space as voucher
+        FileHandle fileHandle2 = volume2.openFile(userCredentials, FILEPATH,
+                SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber());
+
+        assertEquals(quota, volume2.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
+        assertEquals(quota, volume2.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
+        assertEquals(quota, volume2.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
+
+        // write data
+        fileHandle2.write(userCredentials, getContent(chunkSize).getBytes(), Integer.parseInt(chunkSize), 0);
+
+        boolean noError = false;
+        try {
+            fileHandle.write(userCredentials, getContent(quota).getBytes(), Integer.parseInt(quota), 0);
+
+            noError = true;
+        } catch (PosixErrorException e) {
+            if (e.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOSPC)) {
+                noError = false;
+            }
+        } finally {
+            assertTrue(noError);
+        }
+
+        boolean error = false;
+        try {
+            fileHandle2.write(userCredentials, getContent(1).getBytes(), 1, Integer.parseInt(quota));
+        } catch (PosixErrorException e) {
+            if (e.getPosixError().equals(POSIXErrno.POSIX_ERROR_ENOSPC)) {
+                error = true;
+            }
+        } finally {
+            assertTrue(error);
+        }
+
+        fileHandle2.close();
+        fileHandle.close();
+
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.blockedspace"));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.userblockedspace." + USERNAME));
+        assertEquals("0", volume.getXAttr(userCredentials, "/", "xtreemfs.groupblockedspace." + GROUPNAME));
+
+        assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.usedspace"));
+        assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.userusedspace." + USERNAME));
+        assertEquals(quota, volume.getXAttr(userCredentials, "/", "xtreemfs.groupusedspace." + GROUPNAME));
+
+        client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
+        client.shutdown();
+    }
 
     // Helper
     private void addReplicas(Volume volume, String fileName, int replicaNumber) throws Exception {

@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.exceptions.PosixErrorException;
 import org.xtreemfs.foundation.SSLOptions;
@@ -66,7 +67,7 @@ public class xtfs_scrub {
 
     private static final int            DEFAULT_NUM_THREADS = 10;
 
-    private AdminVolume                 volume;
+    private final AdminVolume                 volume;
 
     private final boolean               repair, delete, silent;
 
@@ -198,6 +199,7 @@ public class xtfs_scrub {
                         try {
 
                             FileScrubbedListener fsListener = new FileScrubbedListener() {
+                                @Override
                                 public void fileScrubbed(String fileName, long bytesScrubbed,
                                         Collection<ReturnStatus> rstatus) {
                                     xtfs_scrub.this.fileScrubbed(fileName, bytesScrubbed, rstatus);
@@ -446,7 +448,10 @@ public class xtfs_scrub {
 
         Options userOptions = new Options();
 
-        AdminClient c = ClientFactory.createAdminClient(dirAddrs, credentials, sslOptions, userOptions);
+        // TODO: NativeClient necessary due to implemented quota features in C++ Client: finalize and clear voucher on
+        // close
+        AdminClient c = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddrs, credentials, sslOptions,
+                userOptions);
         AdminVolume volume = null;
         try {
             c.start();

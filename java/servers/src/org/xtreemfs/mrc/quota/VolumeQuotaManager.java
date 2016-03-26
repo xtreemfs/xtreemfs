@@ -14,6 +14,7 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.quota.Voucher.VoucherType;
 
 /**
  * This class contains all relevant information regarding the quota of an volume.
@@ -39,7 +40,7 @@ public class VolumeQuotaManager {
 
     /**
      * Creates the volume quota manager and register at the mrc quota manager. Add a change listener to the volume info
-     * to get up to date information.
+     * to get up-to-date information.
      * 
      * @throws MRCException
      */
@@ -58,7 +59,7 @@ public class VolumeQuotaManager {
 
     /**
      * Sets the volume specific members with the database values instead of pulling them on every request. They will be
-     * uptodate due to the change listener on the volume.
+     * up-to-date due to the volume change listener.
      */
     public void init() {
         try {
@@ -76,17 +77,16 @@ public class VolumeQuotaManager {
                 + volumeDefaultUserQuota + "]");
     }
 
-    public boolean checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
-        long voucherSize = getVoucher(quotaFileInformation, true, null);
-        return voucherSize > 0 || voucherSize == QuotaConstants.UNLIMITED_VOUCHER;
+    public Voucher checkVoucherAvailability(QuotaFileInformation quotaFileInformation) throws UserException {
+        return getVoucher(quotaFileInformation, true, null);
     }
 
-    public long getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
+    public Voucher getVoucher(QuotaFileInformation quotaFileInformation, AtomicDBUpdate update) throws UserException {
         return getVoucher(quotaFileInformation, false, update);
     }
 
     /**
-     * Checks the active quota and returns a voucher, if no exception occured
+     * Checks the active quota and returns a voucher, if no exception occurred
      * 
      * @param quotaFileInformation
      * @param test
@@ -94,32 +94,35 @@ public class VolumeQuotaManager {
      * @return
      * @throws UserException
      */
-    private synchronized long getVoucher(QuotaFileInformation quotaFileInformation, boolean test, AtomicDBUpdate update)
-            throws UserException {
+    private synchronized Voucher getVoucher(QuotaFileInformation quotaFileInformation, boolean test,
+            AtomicDBUpdate update) throws UserException {
 
         int replicaCount = quotaFileInformation.getReplicaCount();
         QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, !test, update);
         long freeSpace = quotaInformation.getFreeSpace();
 
         long voucherSize = volumeVoucherSize;
+        Voucher voucher = new Voucher(VoucherType.LIMITED, voucherSize);
+
         if (quotaInformation.getVolumeQuota() == QuotaConstants.UNLIMITED_QUOTA
                 && quotaInformation.getUserQuota() == QuotaConstants.UNLIMITED_QUOTA
                 && quotaInformation.getGroupQuota() == QuotaConstants.UNLIMITED_QUOTA) {
             // no quota set at all: unlimited voucher
-            voucherSize = QuotaConstants.UNLIMITED_VOUCHER;
+            voucher.setVoucherType(VoucherType.UNLIMITED);
         } else if (freeSpace / replicaCount == 0) { // can't get negative
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "The " + quotaInformation.getQuotaType()
-                    + " quota has been reached!");
+            voucher.setVoucherType(VoucherType.NONE);
+            voucher.setEnforcedQuotaName(quotaInformation.getQuotaType());
         } else if ((replicaCount * voucherSize) > freeSpace) {
             voucherSize = freeSpace / replicaCount;
+            voucher.setVoucherSize(voucherSize);
         }
 
         // save voucherSize as blocked, if it isn't just a check
-        if (!test) {
+        if (!test && voucher.getVoucherType() == VoucherType.LIMITED) {
             updateSpaceUsage(quotaFileInformation, quotaInformation, 0, replicaCount * voucherSize, update);
         }
 
-        return voucherSize;
+        return voucher;
     }
 
     /**
@@ -147,16 +150,14 @@ public class VolumeQuotaManager {
             QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
             AtomicDBUpdate update) throws UserException {
 
-        updateVolumeSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
-                update);
+        updateVolumeSpaceUsage(quotaInformation, filesizeDifference, blockedSpaceDifference, update);
         updateUserSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference, update);
         updateGroupSpaceUsage(quotaFileInformation, quotaInformation, filesizeDifference, blockedSpaceDifference,
                 update);
     }
 
-    public synchronized void updateVolumeSpaceUsage(QuotaFileInformation quotaFileInformation,
-            QuotaInformation quotaInformation, long filesizeDifference, long blockedSpaceDifference,
-            AtomicDBUpdate update) throws UserException {
+    public synchronized void updateVolumeSpaceUsage(QuotaInformation quotaInformation, long filesizeDifference,
+            long blockedSpaceDifference, AtomicDBUpdate update) throws UserException {
         try {
             if (filesizeDifference != 0) {
                 long volumeUsedSpace = quotaInformation.getVolumeUsedSpace() + filesizeDifference;
@@ -179,10 +180,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
@@ -213,10 +214,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
@@ -248,15 +249,15 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
     }
 
     /**
-     * Checks the quota and adds the replica values, if enough space is avilable
+     * Checks the quota and adds the replica values, if enough space is available
      * 
      * @param quotaFileInformation
      * @param filesize
@@ -273,7 +274,7 @@ public class VolumeQuotaManager {
         QuotaInformation quotaInformation = getAndApplyQuotaInformation(quotaFileInformation, true, update);
 
         if (quotaInformation.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space for a new replica! The "
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space available for a new replica! The "
                     + quotaInformation.getQuotaType() + " quota has been reached!");
         }
 
@@ -294,7 +295,7 @@ public class VolumeQuotaManager {
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") tries transfer the space information to the new owner.");
+                + ") tries to transfer the space information to the new owner.");
 
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerId(newOwnerId);
@@ -306,8 +307,9 @@ public class VolumeQuotaManager {
 
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.CHECK_QUOTA_ON_CHOWN && quotaInformationNewOwner.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
-                    + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC,
+                    "Not enough space available to transfer the ownership! The "
+                            + quotaInformationNewOwner.getQuotaType() + " quota has been reached!");
         }
 
         // remove space from old owner
@@ -331,7 +333,7 @@ public class VolumeQuotaManager {
             long filesize, long blockedSpace, AtomicDBUpdate update) throws UserException {
 
         Logging.logMessage(Logging.LEVEL_DEBUG, this, "VolumeQuotaManager(" + volumeId
-                + ") tries transfer the space information to the new owner group.");
+                + ") tries to transfer the space information to the new owner group.");
 
         QuotaFileInformation newQuotaFileInformation = new QuotaFileInformation(quotaFileInformation);
         newQuotaFileInformation.setOwnerGroupId(newOwnerGroupId);
@@ -344,8 +346,9 @@ public class VolumeQuotaManager {
         // SuppressWarning(unused): Due to checkQuotaOnChown, which is currently a hardcoded switch
         if (QuotaConstants.CHECK_QUOTA_ON_CHOWN
                 && quotaInformationNewOwnerGroup.getFreeSpace() < (filesize + blockedSpace)) {
-            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC, "Not enough space the transfer ownership! The "
-                    + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
+            throw new UserException(POSIXErrno.POSIX_ERROR_ENOSPC,
+                    "Not enough space available to transfer the ownership! The "
+                            + quotaInformationNewOwnerGroup.getQuotaType() + " quota has been reached!");
         }
 
         // remove space from old owner group
@@ -370,8 +373,7 @@ public class VolumeQuotaManager {
 
         QuotaInformation quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
 
-        quotaInformation = getAndApplyVolumeQuotaInformation(quotaInformation, quotaFileInformation,
-                saveAppliedDefaultQuota, update);
+        quotaInformation = getAndApplyVolumeQuotaInformation(quotaInformation);
         quotaInformation = getAndApplyUserQuotaInformation(quotaInformation, quotaFileInformation,
                 saveAppliedDefaultQuota, update);
         quotaInformation = getAndApplyGroupQuotaInformation(quotaInformation, quotaFileInformation,
@@ -380,9 +382,7 @@ public class VolumeQuotaManager {
         return quotaInformation;
     }
 
-    private QuotaInformation getAndApplyVolumeQuotaInformation(QuotaInformation quotaInformation,
-            QuotaFileInformation quotaFileInformation, boolean saveAppliedDefaultQuota, AtomicDBUpdate update)
-            throws UserException {
+    private QuotaInformation getAndApplyVolumeQuotaInformation(QuotaInformation quotaInformation) throws UserException {
 
         if (quotaInformation == null) {
             quotaInformation = new QuotaInformation(volumeQuota, 0, 0);
@@ -405,10 +405,10 @@ public class VolumeQuotaManager {
             }
 
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
@@ -458,10 +458,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
@@ -511,10 +511,10 @@ public class VolumeQuotaManager {
                 }
             }
         } catch (DatabaseException e) {
-            Logging.logError(Logging.LEVEL_ERROR, "An error occured during the interaction with the database!", e);
+            Logging.logError(Logging.LEVEL_ERROR, "An error occurred during the interaction with the database!", e);
 
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
-                    "An error occured during the interaction with the database!");
+                    "An error occurred during the interaction with the database!");
         }
 
         return quotaInformation;
