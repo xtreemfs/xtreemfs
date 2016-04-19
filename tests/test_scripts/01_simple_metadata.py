@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8  -*-
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Minor Gordon, Zuse Institute Berlin
@@ -30,7 +30,7 @@ class chmodTest(SimpleMetadataTestCase):
     def runTest( self ):
         open( TEST_FILE_NAME, "w+" ).close()
         os.chmod( TEST_FILE_NAME, stat.S_IWRITE | stat.S_IREAD )
-        
+
 class chownTest(SimpleMetadataTestCase):
     def runTest( self ):
         open( TEST_FILE_NAME, "w+" ).close()
@@ -54,14 +54,14 @@ class linkTest(SimpleMetadataTestCase):
         assert not os.path.exists( TEST_LINK_NAME )
         assert os.path.exists( TEST_FILE_NAME )
 
-        
+
 class mkdirTest(SimpleMetadataTestCase):
     def runTest( self ):
         os.mkdir( TEST_DIR_NAME )
         assert os.path.exists( TEST_DIR_NAME )
         os.mkdir( TEST_SUBDIR_PATH )
         assert os.path.exists( TEST_SUBDIR_PATH )
-        
+
 class mkdirNonASCIITest(SimpleMetadataTestCase):
     def runTest( self ):
         os.mkdir( TEST_DIR_NAME )
@@ -75,8 +75,8 @@ class readdirTest(SimpleMetadataTestCase):
         os.mkdir( TEST_DIR_NAME )
         os.mkdir( TEST_SUBDIR_PATH )
         assert len( os.listdir( TEST_DIR_NAME ) ) >= 1
-        
-        
+
+
 class renamedirTest(SimpleMetadataTestCase):
     def runTest( self ):
         os.mkdir( TEST_DIR_NAME )
@@ -99,9 +99,9 @@ class renamefileTest(SimpleMetadataTestCase):
         os.unlink( "renamefile" )
         assert not os.path.exists( "renamefile" )
         open( TEST_FILE_NAME, "w+" ).close()
-        assert os.path.exists( TEST_FILE_NAME )        
+        assert os.path.exists( TEST_FILE_NAME )
 
-        
+
 class rmdirTest(SimpleMetadataTestCase):
     def runTest( self ):
         os.mkdir( TEST_DIR_NAME )
@@ -118,7 +118,7 @@ class symlinkTest(SimpleMetadataTestCase):
         assert os.path.exists( TEST_LINK_NAME )
         assert os.readlink( TEST_LINK_NAME ) == TEST_FILE_NAME
         os.rename( TEST_LINK_NAME, "renamedlink" )
-        assert os.readlink( "renamedlink" ) == TEST_FILE_NAME        
+        assert os.readlink( "renamedlink" ) == TEST_FILE_NAME
         os.unlink( "renamedlink" )
         assert os.path.exists( TEST_FILE_NAME )
 
@@ -131,7 +131,7 @@ class unlinkTest(SimpleMetadataTestCase):
         assert not os.path.exists( TEST_FILE_NAME )
 
 
-def createTestSuite( *args, **kwds ):   
+def createTestSuite( *args, **kwds ):
     test_suite = unittest.TestSuite()
     test_suite.addTest( chmodTest() )
     test_suite.addTest( creatTest() )
@@ -145,10 +145,10 @@ def createTestSuite( *args, **kwds ):
     if hasattr( os, "symlink" ): test_suite.addTest( symlinkTest() )
     test_suite.addTest( unlinkTest() )
     return test_suite
-        
+
 
 if __name__ == "__main__":
     result = unittest.TextTestRunner( verbosity=2 ).run( createTestSuite() )
     if not result.wasSuccessful():
         sys.exit(1)
-    
+

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Zuse Institute Berlin
 # Licensed under the BSD License, see LICENSE file for details.

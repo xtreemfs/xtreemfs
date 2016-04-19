@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Zuse Institute Berlin
 # Licensed under the BSD License, see LICENSE file for details.
@@ -15,7 +15,7 @@ START_STOP_SERVICE_RETRIES = 3
 
 class TeeLog:
     def __init__(self, fp):
-        self.file = fp 
+        self.file = fp
         self.stdout = sys.stdout
 
     def close(self):
@@ -150,11 +150,11 @@ class TestEnvironment:
                                       'passphrase',
                                       os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                       'passphrase')
-            
+
             if snmp_enabled:
                 self.__dir.enable_snmp(dir_port+2000,'localhost',
-                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))	 
-            
+                                       os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
+
             self.__dir.write_config_file()
 
             self.__mrc = test_server.MRC(START_STOP_SERVICE_RETRIES,
@@ -174,9 +174,9 @@ class TestEnvironment:
                                       os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                       'passphrase')
             if snmp_enabled:
-                self.__mrc.enable_snmp(dir_port -2 +2000,'localhost', 
+                self.__mrc.enable_snmp(dir_port -2 +2000,'localhost',
                                        os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
-            
+
             self.__mrc.write_config_file()
 
             for osdNum in range(maxOsds):
@@ -196,9 +196,9 @@ class TestEnvironment:
                                    'passphrase',
                                    os.path.join(self.__xtreemfs_dir, "tests", "certs", "trusted.jks"),
                                    'passphrase')
-                    
+
                 if snmp_enabled:
-                    osd.enable_snmp(dir_port+2000+2+osdNum,'localhost', 
+                    osd.enable_snmp(dir_port+2000+2+osdNum,'localhost',
                                        os.path.join(self.__xtreemfs_dir,"config","snmp.acl"))
                 osd.write_config_file()
                 self.__osds.append(osd)
@@ -215,7 +215,7 @@ class TestEnvironment:
             if ssl_enabled:
                 pkcs12_file_path = os.path.join(self.__xtreemfs_dir, "tests", "certs", "Client.p12")
                 pkcs12_passphrase = 'passphrase'
-            
+
             for k, v in self.__config.getVolumeConfigs().items():
                 volume = Volume(name=k,
                                 mount_point_dir_path=os.path.join(self.__test_dir, "mnt", k),
@@ -253,10 +253,10 @@ class TestEnvironment:
         print 'xtestenv: All volumes unmounted.'
 
         print 'xtestenv: Stopping services...'
-        
+
         for osdNum in range(len(self.__osds)):
             self.__osds[osdNum].stop()
-            
+
         self.__mrc.stop()
         self.__dir.stop()
         print 'xtestenv: All services stopped.'
@@ -506,11 +506,11 @@ if __name__ == "__main__":
     print 'XtreemFS base dir  :', options.xtreemfs_dir
     print 'Test dir           :', options.test_dir
     print 'Debug level        :', options.debug_level
-    
+
     if options.clean_test_dir and os.path.exists(options.test_dir):
         print "Cleaning test dir  : " + options.test_dir
         try:
-            for dir_name in ( "config", "run", "data", "log", "mnt" ):  
+            for dir_name in ( "config", "run", "data", "log", "mnt" ):
                 shutil.rmtree(os.path.join(options.test_dir, dir_name))
         except:
             print "Failed to clean all directories below: " + options.test_dir
@@ -543,7 +543,7 @@ if __name__ == "__main__":
         if len(positional_args) is not 1:
             option_parser.print_usage(sys.stdout)
             sys.exit(2)
-        
+
         print 'Executing test set :', positional_args[0]
 
         testEnv = TestEnvironment(options.config_file_path,
