@@ -237,7 +237,9 @@ public final class NativeHelper {
         op.setMetadata_cache_size(BigInteger.valueOf(o.getMetadataCacheSize()));
         op.setMax_tries(o.getMaxTries());
         op.setMax_read_tries(o.getMaxReadTries());
+        op.setMax_write_tries(o.getMaxWriteTries());
         op.setMax_view_renewals(o.getMaxViewRenewals());
+        op.setRetry_delay_s(o.getRetryDelay_s());
         op.setAsync_writes_max_request_size_kb(o.getMaxWriteahead());
         op.setEnable_async_writes(o.isEnableAsyncWrites());
         op.setPeriodic_file_size_updates_interval_s(o.getPeriodicFileSizeUpdatesIntervalS());
@@ -251,7 +253,6 @@ public final class NativeHelper {
         op.setMetadata_cache_ttl_s(BigInteger.valueOf(o.getMetadataCacheTTLs()));
         op.setPeriodic_xcap_renewal_interval_s(o.getPeriodicXcapRenewalIntervalS());
         op.setRequest_timeout_s(o.getRequestTimeout_s());
-        op.setRetry_delay_s(o.getRetryDelay_s());
         op.setXLoc_install_poll_interval_s(o.getXLocInstallPollIntervalS());
 
         return op;
