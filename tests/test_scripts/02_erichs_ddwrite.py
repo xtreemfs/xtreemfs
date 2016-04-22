@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8  -*-
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Minor Gordon, Zuse Institute Berlin
@@ -13,7 +13,7 @@ class ErichsddwriteTest(unittest.TestCase):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
-    
+
     def setUp( self ):
         self.client_processes = []
 
@@ -21,10 +21,10 @@ class ErichsddwriteTest(unittest.TestCase):
         for client_process in self.client_processes:
             client_process.terminate()
             client_process.wait()
-            
+
         for file_name in glob( self.__class__.__name__ + "*" ):
             os.unlink( file_name )
-    
+
     def runTest( self ):
         class_name = self.__class__.__name__
         for clients_count in xrange( 2, 4, 2 ):
@@ -32,7 +32,7 @@ class ErichsddwriteTest(unittest.TestCase):
                 args = "dd if=/dev/zero of=%(class_name)s_%(client_i)u bs=1MB count=10" % locals()
                 client_process = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
                 self.client_processes.append( client_process )
-                
+
             while len( self.client_processes ) > 0:
                 client_i = 0
                 while client_i < len( self.client_processes ):
@@ -44,14 +44,14 @@ class ErichsddwriteTest(unittest.TestCase):
                             del self.client_processes[client_i]
                     else:
                         client_i ++ 1
-                        
-                time.sleep( 0.5 )
-                        
 
-def createTestSuite( *args, **kwds ): 
+                time.sleep( 0.5 )
+
+
+def createTestSuite( *args, **kwds ):
     if not sys.platform.startswith( "win" ):
         return unittest.TestSuite( [ErichsddwriteTest( *args, **kwds )] )
-        
+
 
 if __name__ == "__main__":
     if not sys.platform.startswith( "win" ):
@@ -60,4 +60,4 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         print sys.modules[__name__].__file__.split( os.sep )[-1], "not supported on Windows"
-    
+

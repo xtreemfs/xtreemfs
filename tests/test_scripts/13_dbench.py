@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8  -*-
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Minor Gordon, Zuse Institute Berlin
@@ -11,7 +11,7 @@ from datetime import datetime
 # Constants
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
 DBENCH_CLIENT_TXT_GZ_FILE_PATH = os.path.join( MY_DIR_PATH, "dbench-client.txt.gz" )
-                               
+
 
 class dbenchTest(unittest.TestCase):
     def __init__( self, direct_io=True, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
@@ -26,7 +26,7 @@ class dbenchTest(unittest.TestCase):
            assert len( gzip_client_txt_gz_data ) > 0
            open( "dbench-client.txt", "wb" ).write( gzip_client_txt_gz_data )
            assert os.stat( "dbench-client.txt" ).st_size > 0
-        
+
            args = "dbench -c dbench-client.txt -D . 5"
            isodatetime = datetime.today().isoformat()[:-7].replace( '-', '' ).replace( ':', '' )
            stdout = open(sys.argv[4] + "/log/dbench-stdout-"+isodatetime+".txt", "a+" )
@@ -37,10 +37,10 @@ class dbenchTest(unittest.TestCase):
             print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
 
 
-def createTestSuite( *args, **kwds ): 
+def createTestSuite( *args, **kwds ):
     if not sys.platform.startswith( "win" ):
         return unittest.TestSuite( [dbenchTest( *args, **kwds )] )
-                
+
 
 if __name__ == "__main__":
     if not sys.platform.startswith( "win" ):

@@ -8,7 +8,6 @@ package org.xtreemfs.common.libxtreemfs;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -375,7 +374,19 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         return write(userCredentials, buffer, count, offset);
     }
 
-    private int write(UserCredentials userCredentials, ReusableBuffer buffer, int count, long offset)
+    private int write(final UserCredentials userCredentials, final ReusableBuffer buffer, final int count,
+            final long offset) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        ViewCheckedOperation<Integer> operation = new ViewCheckedOperation<Integer>() {
+            @Override
+            Integer doOperation() throws IOException {
+                return doWrite(userCredentials, buffer, count, offset);
+            }
+        };
+        return operation.execute();
+    }
+
+    private int doWrite(UserCredentials userCredentials, ReusableBuffer buffer, int count, long offset)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         FileCredentials.Builder fcBuilder = FileCredentials.newBuilder();
         synchronized (this) {
@@ -510,7 +521,20 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
         flush(false);
     }
 
-    protected void flush(boolean closeFile) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+    private void flush(final boolean closeFile)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        ViewCheckedOperation<Void> operation = new ViewCheckedOperation<Void>() {
+            @Override
+            Void doOperation() throws IOException {
+                doFlush(closeFile);
+                return null;
+            }
+        };
+        operation.execute();
+    }
+
+    private void doFlush(boolean closeFile) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         fileInfo.flush(this, closeFile);
         throwIfAsyncWritesFailed();
     }
@@ -582,7 +606,19 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * @throws IOException
      * @throws PosixErrorException
      **/
-    protected void truncatePhaseTwoAndThree(UserCredentials userCredentials, long newFileSize, boolean updateOnlyMRC)
+    protected void truncatePhaseTwoAndThree(final UserCredentials userCredentials, final long newFileSize,
+            final boolean updateOnlyMRC) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        ViewCheckedOperation<Void> operation = new ViewCheckedOperation<Void>() {
+            @Override
+            Void doOperation() throws IOException {
+                doTruncatePhaseTwoAndThree(userCredentials, newFileSize, updateOnlyMRC);
+                return null;
+            }
+        };
+        operation.execute();
+    }
+
+    protected void doTruncatePhaseTwoAndThree(UserCredentials userCredentials, long newFileSize, boolean updateOnlyMRC)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
 
         OSDWriteResponse response = null;
@@ -647,7 +683,20 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * .RPC.UserCredentials, int, long, long, boolean, boolean)
      */
     @Override
-    public Lock acquireLock(UserCredentials userCredentials, int processId, long offset, long length,
+    public Lock acquireLock(final UserCredentials userCredentials, final int processId, final long offset,
+            final long length, final boolean exclusive, final boolean waitForLock)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        ViewCheckedOperation<Lock> operation = new ViewCheckedOperation<Lock>() {
+            @Override
+            Lock doOperation() throws IOException {
+                return doAcquireLock(userCredentials, processId, offset, length, exclusive, waitForLock);
+            }
+        };
+        return operation.execute();
+    }
+
+    private Lock doAcquireLock(UserCredentials userCredentials, int processId, long offset, long length,
             boolean exclusive, boolean waitForLock) throws IOException, PosixErrorException,
             AddressToUUIDNotFoundException {
         // Create Lock object for the acquire lock request.
@@ -732,8 +781,20 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * .RPC.UserCredentials, int, long, long, boolean)
      */
     @Override
-    public Lock checkLock(UserCredentials userCredentials, int processId, long offset, long length, boolean exclusive)
+    public Lock checkLock(final UserCredentials userCredentials, final int processId, final long offset,
+            final long length, final boolean exclusive)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+        ViewCheckedOperation<Lock> operation = new ViewCheckedOperation<Lock>() {
+            @Override
+            Lock doOperation() throws IOException {
+                return doCheckLock(userCredentials, processId, offset, length, exclusive);
+            }
+        };
+        return operation.execute();
+    }
+
+    private Lock doCheckLock(UserCredentials userCredentials, int processId, long offset, long length,
+            boolean exclusive) throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         // Create lock object for the check lock request.
         Lock.Builder lockBuilder = Lock.newBuilder();
         lockBuilder.setClientUuid(clientUuid);
@@ -785,7 +846,22 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * .RPC.UserCredentials, int, long, long, boolean)
      */
     @Override
-    public void releaseLock(UserCredentials userCredentials, int processId, long offset, long length, boolean exclusive)
+    public void releaseLock(final UserCredentials userCredentials, final int processId, final long offset,
+            final long length, final boolean exclusive)
+            throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
+
+        ViewCheckedOperation<Void> operation = new ViewCheckedOperation<Void>() {
+            @Override
+            Void doOperation() throws IOException {
+                doReleaseLock(userCredentials, processId, offset, length, exclusive);
+                return null;
+            }
+        };
+        operation.execute();
+    }
+
+    private void doReleaseLock(UserCredentials userCredentials, int processId, long offset, long length,
+            boolean exclusive)
             throws IOException, PosixErrorException, AddressToUUIDNotFoundException {
         Lock.Builder lockBuilder = Lock.newBuilder();
         lockBuilder.setClientUuid(clientUuid);

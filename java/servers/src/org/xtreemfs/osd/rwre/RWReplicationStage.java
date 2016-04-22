@@ -1295,8 +1295,7 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     final ErrorResponse err = ErrorUtils.getInternalServerError(ex);
                     failed(state, err, "processPrepareOp");
                     if (state.getState() == ReplicaState.BACKUP || state.getState() == ReplicaState.PRIMARY) {
-                        // Request is not in queue, we must notify
-                        // callback.
+                        // Request is not in queue, we must notify callback.
                         callback.failed(err);
                     }
                 }

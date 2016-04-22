@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8  -*-
 
 # Copyright (c) 2009-2011 by Bjoern Kolbeck, Minor Gordon, Zuse Institute Berlin
@@ -16,7 +16,7 @@ class fsxTest(unittest.TestCase):
         self.direct_io = direct_io
         self.stdout = stdout
         self.stderr = stderr
-        
+
     def runTest( self ):
         if os.path.exists(MY_DIR_PATH+"/../utils/fsx.bin") == False:
             compiler = distutils.ccompiler.new_compiler()
@@ -31,12 +31,12 @@ class fsxTest(unittest.TestCase):
         p = subprocess.Popen( args, shell=True, stdout=self.stdout, stderr=self.stderr )
         retcode = p.wait()
         self.assertEqual( retcode, 0 )
-        
 
-def createTestSuite( *args, **kwds ): 
+
+def createTestSuite( *args, **kwds ):
     if not sys.platform.startswith( "win" ):
         return unittest.TestSuite( [fsxTest( *args, **kwds )] )
-        
+
 
 if __name__ == "__main__":
     if not sys.platform.startswith( "win" ):
@@ -45,4 +45,4 @@ if __name__ == "__main__":
             sys.exit(1)
     else:
         print sys.modules[__name__].__file__.split( os.sep )[-1], "not supported on Windows"
-    
+
