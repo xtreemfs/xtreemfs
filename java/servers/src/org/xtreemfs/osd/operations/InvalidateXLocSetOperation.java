@@ -69,9 +69,7 @@ public class InvalidateXLocSetOperation extends OSDOperation {
     }
 
     private void postInvalidation(final OSDRequest rq, final LeaseState leaseState) {
-        if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
-            invalidationFinished(rq, leaseState, null);
-        } else {
+        if (ReplicaUpdatePolicies.isRW(rq.getLocationList().getReplicaUpdatePolicy())) {
             master.getStorageStage().internalGetReplicaState(rq.getFileId(),
                     rq.getLocationList().getLocalReplica().getStripingPolicy(), 0,
                     new InternalGetReplicaStateCallback() {
@@ -85,6 +83,8 @@ public class InvalidateXLocSetOperation extends OSDOperation {
                             }
                         }
                     });
+        } else {
+            invalidationFinished(rq, leaseState, null);
         }
     }
 

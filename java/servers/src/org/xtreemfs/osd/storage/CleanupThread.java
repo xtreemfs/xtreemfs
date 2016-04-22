@@ -357,7 +357,7 @@ public class CleanupThread extends LifeCycleThread {
                         zombieFiles.put(fName, fData);
                     }
 
-                    // TODO(jdillmann): results.add...
+                    // TODO: results.add...
                 }
 
                 if (zombieFiles.size() != 0) {
@@ -421,7 +421,7 @@ public class CleanupThread extends LifeCycleThread {
                         final String fName = volume.id + ":" + fileId;
                         deleteFile(fName, cowEnabled);
                     }
-                    // TODO(jdillmann): results.add(...)
+                    // TODO: results.add(...)
                     // results.add(String.format(ZOMBIES_DELETED_FORMAT, zombieFiles.keySet().size(),
                     // (volume.isDead() ? "dead" : "existing"), volume.id));
                 }

@@ -667,8 +667,7 @@ public class MRCHelper {
                 ReplicationPolicy replPolicy = sMan.getDefaultReplicationPolicy(file.getId());
                 if (sp != null
                         && sp.getWidth() > 1
-                        && replPolicy != null && (replPolicy.getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || replPolicy
-                                .getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                        && replPolicy != null && ReplicaUpdatePolicies.isRW(replPolicy.getName())) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "Striping of rw-replicated Files is not supported yet.");
                 }
@@ -854,8 +853,7 @@ public class MRCHelper {
 
                 // check if rw replication + striping would be set
                 if (sMan.getDefaultStripingPolicy(file.getId()).getWidth() > 1
-                        && (rp.getName().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE) || rp.getName().equals(
-                                ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ))) {
+                        && ReplicaUpdatePolicies.isRW(rp.getName())) {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "RW-replication of striped files is not supported yet.");
                 }

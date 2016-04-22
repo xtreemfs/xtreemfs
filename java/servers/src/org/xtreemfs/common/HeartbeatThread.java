@@ -600,7 +600,6 @@ public class HeartbeatThread extends LifeCycleThread {
 
         final HeartbeatThread hbt = this;
 
-        // TODO(jdillmann): Test on different VMs and operating systems.
         try {
             Signal.handle(new Signal("USR2"), new SignalHandler() {
 

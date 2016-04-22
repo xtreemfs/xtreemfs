@@ -961,7 +961,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             if (replica.getOsdUuids(0).equals(osdUuid)) {
                 uuidFound = true;
                 // Check replication flags, if it's a full replica.
-                if (xlocs.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
+                if (ReplicaUpdatePolicies.isRO(xlocs.getReplicaUpdatePolicy())
                         && ((replica.getReplicationFlags() & REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()) == 0)) {
                     // Nothing to do here because the replication does not need to be
                     // triggered for partial replicas.

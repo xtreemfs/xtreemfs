@@ -906,7 +906,9 @@ public class Volume {
         }
 
         if (xLocSet.getVersion() > expectedVersion) {
-            // TODO (jdillmann): Unexpected! Decide what to do
+            String msg = "Missed the expected xLocSet after installing a new view. Please check if the xLocSet is correct.";
+            Logging.logMessage(Logging.LEVEL_NOTICE, this, msg);
+            throw new IOException(msg);
         }
 
         return xLocSet;

@@ -63,17 +63,18 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        int numReplicas = rq.getLocationList().getNumReplicas();
+        String replicaUpdatePolicy = rq.getLocationList().getReplicaUpdatePolicy();
+
+        if (ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)) {
             // file is read only
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EPERM, "Cannot write on read-only files.");
             return;
-        }
 
-        // TODO(jdillmann): Use centralized method to check if a lease is required.
-        if (rq.getLocationList().getNumReplicas() > 1
-                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+        } else if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedTruncate(rq, args);
-        } else {
+
+        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)) {
 
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
@@ -86,6 +87,10 @@ public final class TruncateOperation extends OSDOperation {
                         step2(rq, args, result, error);
                     }
             });
+
+        } else {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);
         }
     }
 

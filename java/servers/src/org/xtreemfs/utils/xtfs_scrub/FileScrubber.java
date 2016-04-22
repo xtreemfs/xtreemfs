@@ -70,7 +70,7 @@ public class FileScrubber implements Runnable {
         String replicaUpdatePolicy = fileHandle.getReplicaUpdatePolicy();
 
         // If file has only one replica, treat it as non replicated.
-        if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
+        if (ReplicaUpdatePolicies.isRO(replicaUpdatePolicy) 
                 && fileHandle.getReplicasList().size() > 1) {
             scrubReadOnlyReplicatedFile();
         } else {
@@ -181,7 +181,7 @@ public class FileScrubber implements Runnable {
             for (String osd : replica.getOsdUuidsList()) {
                 if (removedOSDs.contains(osd)) {
                     // If file is not replicated or has only one replica, delete it.
-                    if (fileHandle.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)
+                    if (ReplicaUpdatePolicies.isNONE(fileHandle.getReplicaUpdatePolicy())
                             || fileHandle.getReplicasList().size() == 1) {
                         String errMsg = "file data was stored on removed OSD. File is lost.";
 

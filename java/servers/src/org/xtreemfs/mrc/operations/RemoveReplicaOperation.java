@@ -142,7 +142,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         assert (oldXLocList != null);
 
         // Do not delete replicas from non-replicated files.
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(oldXLocList.getReplUpdatePolicy())) {
+        if (ReplicaUpdatePolicies.isNONE(oldXLocList.getReplUpdatePolicy())) {
             throw new UserException(
                     POSIXErrno.POSIX_ERROR_EINVAL,
                     "Replica cannot be removed because the file's replication policy is set to 'none' i.e., "
@@ -156,7 +156,6 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 
             replica = oldXLocList.getReplica(i);
 
-            // FIXME (jdillmann): This is not true!
             // Compare the first elements from the lists; since an OSD may
             // only occur once in each X-Locations list, it is not necessary
             // to go through the entire list.
@@ -182,7 +181,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 
         // If the file is read-only replicated, check if at
         // least one complete or one full replica remains.
-        if (ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(oldXLocList.getReplUpdatePolicy())) {
+        if (ReplicaUpdatePolicies.isRO(oldXLocList.getReplUpdatePolicy())) {
 
             boolean completeOrFullExists = false;
             for (int k = 0; k < newXLocList.getReplicaCount(); k++) {

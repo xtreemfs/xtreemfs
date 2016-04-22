@@ -47,10 +47,6 @@ public class CheckFileListOperation extends MRCOperation {
             response.setVolumeExists(false);
         }
 
-        if (rqArgs.getFileIdsCount() == 0) {
-            // TODO(jdillmann): state ??
-        }
-
         if (sMan != null && rqArgs.getFileIdsCount() > 0) {
 
             for (String fileId : rqArgs.getFileIdsList()) {

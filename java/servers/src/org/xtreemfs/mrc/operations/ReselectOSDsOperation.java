@@ -99,9 +99,7 @@ public class ReselectOSDsOperation extends MRCOperation implements XLocSetCoordi
         int numReplicas = curXLocList.getReplicaCount();
         
         // Reselecting OSDs is only available for RW replicated files
-        if (!(replicationUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)
-                || replicationUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
-                || replicationUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA))) {
+        if (!ReplicaUpdatePolicies.isRW(replicationUpdatePolicy)) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                     "Reselection OSDs is not available for this ReplicaUpdatePolicy.");
         } 

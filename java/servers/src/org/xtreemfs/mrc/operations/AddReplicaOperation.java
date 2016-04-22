@@ -210,7 +210,6 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         if (file == null)
             throw new UserException(POSIXErrno.POSIX_ERROR_ENOENT, "file '" + fileId + "' does not exist");
         
-        // TODO (jdillmann): At least log the errors -> if the unlocking has not been successful, well then ehm not good.
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         
         // Update the X-Locations list.

@@ -76,7 +76,7 @@ public final class DeleteOperation extends OSDOperation {
             // File is not open and can be deleted immediately.
 
             // Cancel replication of file
-            if (rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY))
+            if (ReplicaUpdatePolicies.isRO(rq.getLocationList().getReplicaUpdatePolicy()))
                 master.getReplicationStage().cancelReplicationForFile(args.getFileId());
 
             master.getDeletionStage().deleteObjects(args.getFileId(), null, rq.getCowPolicy().cowEnabled(), rq, false,

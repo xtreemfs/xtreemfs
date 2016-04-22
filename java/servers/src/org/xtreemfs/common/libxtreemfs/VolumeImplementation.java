@@ -1355,7 +1355,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         }
         
         // Trigger the ronly replication at this point by reading at least one byte.
-        if (newXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        if (ReplicaUpdatePolicies.isRO(newXLocSet.getReplicaUpdatePolicy())) {
             AdminFileHandle fileHandle = openFile(userCredentials, path,
                     SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
             try {
