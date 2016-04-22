@@ -140,6 +140,24 @@ public class TestEnvironment {
     }
 
     /**
+     * Returns the OSD configs currently used.
+     */
+    public OSDConfig[] getOSDConfigs() {
+        return osdConfigs.clone();
+    }
+
+    /**
+     * Returns the OSD UUIDS currently used.
+     */
+    public String[] getOSDUUIDs() {
+        String[] OSDUUIDs = new String[osdConfigs.length];
+        for (int i = 0; i < osdConfigs.length; i++) {
+            OSDUUIDs[i] = osdConfigs[i].getUUID().toString();
+        }
+        return OSDUUIDs;
+    }
+
+    /**
      * Stops the OSD with the UUID "osdUuid".
      * 
      * @param osdUuid

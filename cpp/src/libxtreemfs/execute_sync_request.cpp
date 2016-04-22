@@ -312,8 +312,7 @@ rpc::SyncCallbackBase* ExecuteSyncRequest(
            // or this last retry should be delayed.
            (attempt == options.max_retries() && options.delay_last_attempt()))) {  // NOLINT
         if (delayRetry) {
-          DelayNextRetry(options, request_sent_time, delay_error, level,
-                         response);  // NOLINT
+          DelayNextRetry(options, request_sent_time, delay_error, level, response);  // NOLINT
         }else{
           if (Logging::log->loggingActive(LEVEL_DEBUG)) {
             Logging::log->getLog(LEVEL_DEBUG) << "Retry without delay" << endl;
