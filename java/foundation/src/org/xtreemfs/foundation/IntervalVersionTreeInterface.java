@@ -20,16 +20,18 @@ public interface IntervalVersionTreeInterface {
     public void insert(Interval i);
 
     /**
-     * Insert the Interval given as begin, end and version to the current tree.
+     * Insert the Interval given as begin (inclusive), end (exclusive) and version to the current tree.
      * 
      * @param begin
+     *            inclusive
      * @param end
+     *            exclusive
      * @param version
      */
     public void insert(long begin, long end, long version);
 
     /**
-     * Returns all overlapping Intervals
+     * Returns all overlapping Intervals.
      * 
      * @param i
      *            Interval to check for overlaps. * @return List of Intervals
@@ -37,10 +39,12 @@ public interface IntervalVersionTreeInterface {
     public List<Interval> getVersions(Interval i);
 
     /**
-     * Returns all overlapping Intervals
+     * Returns all overlapping intervals between begin (inclusive) and end (exclusive).
      * 
      * @param begin
+     *            inclusive
      * @param end
+     *            exclusive
      * @return List of Intervals
      */
     public List<Interval> getVersions(long begin, long end);
@@ -53,10 +57,27 @@ public interface IntervalVersionTreeInterface {
         long end;
         long version;
 
+        /**
+         * Create an interval from begin to end.
+         * 
+         * @param begin
+         *            inclusive
+         * @param end
+         *            exclusive
+         */
         public Interval(long begin, long end) {
             this(begin, end, 0);
         }
 
+        /**
+         * Create an interval from begin to end.
+         * 
+         * @param begin
+         *            inclusive
+         * @param end
+         *            exclusive
+         * @param version
+         */
         public Interval(long begin, long end, long version) {
             this.begin = begin;
             this.end = end;

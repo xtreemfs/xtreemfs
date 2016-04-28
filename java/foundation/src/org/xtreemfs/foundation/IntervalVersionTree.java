@@ -25,6 +25,11 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
         this.highest = end;
     }
 
+    public IntervalVersionTree() {
+        this.root = null;
+        this.highest = 0;
+    }
+
     @Override
     public void insert(Interval i) {
         this.insert(i.begin, i.end, i.version);
@@ -37,7 +42,7 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
         }
 
         if (end <= begin) {
-            throw new IllegalArgumentException("Intervals must be bigger the 1");
+            throw new IllegalArgumentException("Intervals must be at least 1");
         }
 
         if (end >= highest) {
@@ -50,8 +55,8 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
         this.root = insert(begin, end, version, this.root);
     }
 
-    /*
-     * insert into tree and balance after
+    /**
+     * Insert interval from begin (inclusive) to end (exclusive) into the tree and balance.
      */
     static IntervalNode insert(long begin, long end, long version, IntervalNode node) {
         if (node == null) {
@@ -61,29 +66,29 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
             // same interval...just set version
             node.interval.version = version;
 
-        } else if (end < node.interval.begin) {
+        } else if (end <= node.interval.begin) {
             // new interval is left of current
             node.left = insert(begin, end, version, node.left);
 
         } else if (begin <= node.interval.begin && end < node.interval.end) {
             // new interval overlaps with a left portion of the current interval...relinquish overlapping part pass new interval to the left
             node.left = insert(begin, end, version, node.left);
-            node.interval.begin = end + 1;
+            node.interval.begin = end;
 
-        } else if (begin > node.interval.end) {
+        } else if (begin >= node.interval.end) {
             // new interval is left of current
             node.right = insert(begin, end, version, node.right);
 
         } else if (begin > node.interval.begin && end >= node.interval.end) {
             // new interval overlaps with a right portion of the current interval...relinquish overlapping part pass new interval to the right
             node.right = insert(begin, end, version, node.right);
-            node.interval.end = begin - 1;
+            node.interval.end = begin;
 
         } else if (begin > node.interval.begin && end < node.interval.end) {
             // new interval fits into current interval
             IntervalNode newNode = new IntervalNode(begin, end, version);
-            newNode.left = insert(node.interval.begin, begin - 1, node.interval.version, node.left);
-            newNode.right = insert(end + 1, node.interval.end, node.interval.version, node.right);
+            newNode.left = insert(node.interval.begin, begin, node.interval.version, node.left);
+            newNode.right = insert(end, node.interval.end, node.interval.version, node.right);
             node = newNode;
 
         } else if (begin <= node.interval.begin && end >= node.interval.end) {
@@ -144,31 +149,32 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
     static IntervalNode shrinkSubTree(long begin, long end, IntervalNode node) {
         if (node == null) {
             return node;
-        } else if (begin > node.interval.end) {
+        } else if (begin >= node.interval.end) {
             // right subtree needs to shrink
             assert(node.right != null);
             node.right = shrinkSubTree(begin, end, node.right);
 
-        } else if (end < node.interval.begin) {
+        } else if (end <= node.interval.begin) {
             // left subtree needs to shrink
             assert(node.left != null);
             node.left = shrinkSubTree(begin, end, node.left);
 
         } else if (begin > node.interval.begin) {
             // node has to give up part of its interval and the whole right subtree
-            node.interval.end = begin - 1;
+            node.interval.end = begin;
             node.right = null;
 
         } else if (end < node.interval.end) {
             // node has to give up part of its interval and maybe left subtree
-            node.interval.begin = end + 1;
+            node.interval.begin = end;
             node.left = null;
+
         } else if (begin <= node.interval.begin){
-            // the node interval and its complete left subtree is absorbed by some other node
+            // the node interval and its complete right subtree is absorbed by some other node
             return shrinkSubTree(begin, end, node.left);
 
         } else if (end >= node.interval.end) {
-            // the node interval and its complete right subtree is absorbed by some other node
+            // the node interval and its complete left subtree is absorbed by some other node
             return shrinkSubTree(begin, end, node.right);
 
         }
@@ -177,32 +183,111 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
 
     @Override
     public LinkedList<Interval> getVersions(Interval i) {
-        return getVersions(i.begin, i.end, this.root, new LinkedList<Interval>());
+        return getVersions(i.begin, i.end);
     }
 
     @Override
-    public  LinkedList<Interval> getVersions(long begin, long end) {
-        return getVersions(begin, end, this.root, new LinkedList<Interval>());
+    public LinkedList<Interval> getVersions(long begin, long end) {
+        LinkedList<Interval> versions = new LinkedList<Interval>();
+        getVersions(begin, end, this.root, versions);
+        return versions;
     }
 
-    static LinkedList<Interval> getVersions(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {
+    static void getVersions(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {
 
         if (node == null) {
-            return acc;
+            return;
+
         } else if (begin >= node.interval.begin && end <= node.interval.end) {
-            acc.add(new Interval(begin, end, node.interval.version));
+            // The lookup interval is completely covered by the current interval
+            addInterval(acc, begin, end, node.interval.version);
+
         } else if (begin < node.interval.begin && end <= node.interval.end) {
-            acc.add(new Interval(node.interval.begin, end, node.interval.version));
-            return getVersions(begin, end, node.left, acc);
+            // The lookup interval is beginning left of the current interval: descend left
+            getVersions(begin, end, node.left, acc);
+
+            // If the lookup and the current interval overlap add the overlap to the result
+            if (end > node.interval.begin) {
+                addInterval(acc, node.interval.begin, end, node.interval.version);
+            }
+
         } else if (begin >= node.interval.begin && end > node.interval.end) {
-            acc.add(new Interval(begin, node.interval.end, node.interval.version));
-            return getVersions(begin, end, node.right, acc);
+            // If the lookup and the current interval overlap add the overlap to the result
+            if (begin < node.interval.end) {
+                addInterval(acc, begin, node.interval.end, node.interval.version);
+            }
+
+            // The lookup interval is ending right of the current interval: descend right
+            getVersions(begin, end, node.right, acc);
+
         } else if (begin < node.interval.begin && end > node.interval.end) {
-            acc.add(new Interval(node.interval.begin, node.interval.end, node.interval.version));
-            return getVersions(begin, end, node.right, getVersions(begin, end, node.left, acc));
+            getVersions(begin, end, node.left, acc);
+            addInterval(acc, node.interval);
+            getVersions(begin, end, node.right, acc);
         }
-        return acc;
     }
+
+    /**
+     * Add the interval defined by begin, end and version to list. If the intervals lines up with the last interval in
+     * the list, and their version matches, the last interval is simply expanded.
+     * 
+     * @param acc
+     *            list of intervals
+     * @param begin
+     * @param end
+     * @param version
+     */
+    static void addInterval(LinkedList<Interval> acc, long begin, long end, long version) {
+        Interval last = acc.peekLast();
+        if (last != null && begin <= last.end && last.version == version) {
+            // There is no gap between the last and current interval and the version matches:
+            // The last interval can simply be expanded.
+            last.end = end;
+        } else {
+            acc.add(new Interval(begin, end, version));
+        }
+
+    }
+
+    /**
+     * @see #addInterval(LinkedList, long, long, long)
+     * @param acc
+     *            list of intervals
+     * @param i
+     *            interval to add
+     */
+    static void addInterval(LinkedList<Interval> acc, Interval i) {
+        addInterval(acc, i.begin, i.end, i.version);
+    }
+
+    /**
+     * Merge successive intervals with the same version to create a compact tree.
+     * 
+     * @return compacted IntervalVersionTree
+     */
+    IntervalVersionTree compact() {
+        LinkedList<Interval> intervals = new LinkedList<Interval>();
+        compact(root, intervals);
+        
+        IntervalVersionTree tree = new IntervalVersionTree();
+        for (Interval i : intervals) {
+            // TODO (jdillmann): Could be optimized
+            tree.insert(i);
+        }
+        
+        return tree;
+    }
+
+    static void compact(IntervalNode node, LinkedList<Interval> acc) {
+        if (node == null) {
+            return;
+        }
+
+        compact(node.left, acc);
+        addInterval(acc, node.interval);
+        compact(node.right, acc);
+    }
+
 
     /**
      * Truncate the IntervalTree to end at max.
@@ -210,8 +295,8 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
      * @param max
      */
     public void truncate(long max) {
-        if (max < 1) {
-            throw new IllegalArgumentException("Cannot truncate to 0 since Intervals have to be at least of length 1.");
+        if (max < 0) {
+            throw new IllegalArgumentException("Cannot truncate to negative values.");
         }
 
         if (max < this.highest) {
@@ -221,10 +306,13 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
     }
 
     static IntervalNode truncate(long max, IntervalNode node) {
-        if (max < node.interval.begin) {
+        if (node == null) {
+            // The whole tree got truncated.
+            return null;
+
+        } else if (max < node.interval.begin) {
             // The max is left of the current interval.
             // Drop the root and its right subtree and truncate the remaining left subtree.
-            // This will work, as every IntervalVersionTree is beginning at 0
             return truncate(max, node.left);
 
         } else if (max <= node.interval.end) {
@@ -256,7 +344,9 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         toString(root, sb);
-        sb.setLength(sb.length() - 1);
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
         return sb.toString();
     }
 
@@ -265,16 +355,12 @@ public class IntervalVersionTree implements IntervalVersionTreeInterface {
             return;
         }
 
-        if (node.left != null) {
-            toString(node.left, sb);
-        }
+        toString(node.left, sb);
         
         sb.append(node.interval.toString());
         sb.append(" ");
 
-        if (node.right != null) {
-            toString(node.right, sb);
-        }
+        toString(node.right, sb);
     }
 
     /*
