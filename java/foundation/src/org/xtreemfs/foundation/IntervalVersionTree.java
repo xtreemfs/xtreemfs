@@ -9,7 +9,7 @@ package org.xtreemfs.foundation;
 
 import java.util.List;
 
-public interface IntervalVersionTree {
+public abstract class IntervalVersionTree {
 
     /**
      * Insert the Interval i into the current tree.
@@ -17,7 +17,9 @@ public interface IntervalVersionTree {
      * @param i
      *            Interval to insert
      */
-    public void insert(Interval i);
+    public void insert(Interval i) {
+        insert(i.begin, i.end, i.version);
+    }
 
     /**
      * Insert the Interval given as begin (inclusive), end (exclusive) and version to the current tree.
@@ -28,15 +30,18 @@ public interface IntervalVersionTree {
      *            exclusive
      * @param version
      */
-    public void insert(long begin, long end, long version);
+    public abstract void insert(long begin, long end, long version);
 
     /**
      * Returns all overlapping Intervals.
      * 
      * @param i
-     *            Interval to check for overlaps. * @return List of Intervals
+     *            Interval to check for overlaps.
+     * @return List of Intervals
      */
-    public List<Interval> getVersions(Interval i);
+    public List<Interval> getVersions(Interval i) {
+        return getVersions(i.begin, i.end);
+    }
 
     /**
      * Returns all overlapping intervals between begin (inclusive) and end (exclusive).
@@ -47,7 +52,7 @@ public interface IntervalVersionTree {
      *            exclusive
      * @return List of Intervals
      */
-    public List<Interval> getVersions(long begin, long end);
+    public abstract List<Interval> getVersions(long begin, long end);
 
     /**
      * Interval Objects containing the begin, end and version of an interval.

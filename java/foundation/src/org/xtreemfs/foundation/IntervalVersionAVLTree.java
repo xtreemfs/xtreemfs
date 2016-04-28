@@ -12,7 +12,7 @@ import java.util.LinkedList;
 /**
  * @author Jan Fajerski
  */
-public class IntervalVersionAVLTree implements IntervalVersionTree {
+public class IntervalVersionAVLTree extends IntervalVersionTree {
 
     IntervalNode root;
     long         highest;
@@ -28,11 +28,6 @@ public class IntervalVersionAVLTree implements IntervalVersionTree {
     public IntervalVersionAVLTree() {
         this.root = null;
         this.highest = 0;
-    }
-
-    @Override
-    public void insert(Interval i) {
-        this.insert(i.begin, i.end, i.version);
     }
 
     @Override
@@ -179,11 +174,6 @@ public class IntervalVersionAVLTree implements IntervalVersionTree {
 
         }
         return node;
-    }
-
-    @Override
-    public LinkedList<Interval> getVersions(Interval i) {
-        return getVersions(i.begin, i.end);
     }
 
     @Override
