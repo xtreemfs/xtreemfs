@@ -8,7 +8,6 @@
 package org.xtreemfs.foundation;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -30,23 +29,23 @@ public class IntervalVersionAVLTreeTest {
 
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1024);
         expected.add(new Interval(0, 1024));
-        versions = tree.getVersions(0, 1024);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         tree.insert(1024, 2048, 1);
         expected.add(new Interval(1024, 2048, 1));
-        versions = tree.getVersions(0, 2048);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         tree.insert(2048, 4096, 2);
         expected.add(new Interval(2048, 4096, 2));
-        versions = tree.getVersions(0, 4096);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         tree.insert(0, 1024, 3);
         expected.get(0).version = 3;
-        versions = tree.getVersions(0, 4096);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -58,14 +57,14 @@ public class IntervalVersionAVLTreeTest {
         tree.insert(1024, 4096, 1);
         expected.add(new Interval(0, 1024, 0));
         expected.add(new Interval(1024, 4096, 1));
-        versions = tree.getVersions(0, 4096);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         tree.insert(0, 512, 1);
-        expected.get(0).begin = 512;
-        expected.add(new Interval(0, 512, 1));
-        versions = tree.getVersions(0, 4096);
-        assertTrue(expected.containsAll(versions));
+        expected.addFirst(new Interval(0, 512, 1));
+        expected.get(1).begin = 512;
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -78,8 +77,8 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(0, 512, 0));
         expected.add(new Interval(512, 1536, 1));
         expected.add(new Interval(1536, 2048, 0));
-        versions = tree.getVersions(0, 2048);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -93,8 +92,8 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(0, 500, 0));
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1800, 2048, 0));
-        versions = tree.getVersions(0, 2048);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         expected = new LinkedList<Interval>();
         tree = new IntervalVersionAVLTree(0, 2048);
@@ -106,15 +105,15 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(5, 500, 0));
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1800, 2048, 0));
-        versions = tree.getVersions(0, 2048);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         tree = new IntervalVersionAVLTree(0, 1024);
         expected = new LinkedList<Interval>();
         expected.add(new Interval(0, 2048, 1));
         tree.insert(0, 2048, 1);
-        versions = tree.getVersions(0, 2048);
-        assertTrue(expected.containsAll(versions));
+        versions = tree.getVersions(0, 8192);
+        assertEquals(expected, versions);
 
         // Test with full tree of height 2, where the first and the last leaf are shrinked
         tree = createFullTestTree();
@@ -123,8 +122,18 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(500, 4000, 7));
         expected.add(new Interval(4000, 4096, 6));
         tree.insert(new Interval(500, 4000, 7));
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
+        
+        // Test with tree of height 1, where the full 
+        tree = new IntervalVersionAVLTree();
+        tree.insert(new Interval(0, 1024, 0));
+        tree.insert(new Interval(1024, 2048, 2));
+        tree.insert(new Interval(0, 2048, 3));
+        expected.clear();
+        expected.add(new Interval(0, 2048, 3));
+        assertEquals(expected, tree.getVersions(0, 8192));
     }
+
 
     @Test
     public void testRetrieve() {
@@ -138,7 +147,7 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(0, 512, 0));
         expected.add(new Interval(512, 1536, 1));
         expected.add(new Interval(1536, 2048, 0));
-        versions = tree.getVersions(0, 2048);
+        versions = tree.getVersions(0, 8192);
         assertEquals(expected, versions);
 
         // Retrieve only the root
@@ -232,7 +241,7 @@ public class IntervalVersionAVLTreeTest {
         tree.insert(2048, 4096, 0);
 
         expected.add(new Interval(0, 4096, 0));
-        versions = tree.getVersions(0, 4096);
+        versions = tree.getVersions(0, 8192);
         assertEquals(expected, versions);
     }
 
@@ -279,7 +288,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 2048);
         tree.truncate(2048);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
@@ -287,7 +296,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 4000);
         tree.truncate(4000);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(2, tree.root.height);
         assertEquals(0, tree.root.balance);
 
@@ -295,7 +304,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 2500);
         tree.truncate(2500);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
@@ -303,7 +312,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 500);
         tree.truncate(500);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(0, tree.root.height);
         assertEquals(0, tree.root.balance);
 
@@ -311,7 +320,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 1000);
         tree.truncate(1000);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(1, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
@@ -319,7 +328,7 @@ public class IntervalVersionAVLTreeTest {
         tree = createFullTestTree();
         expected = tree.getVersions(0, 1500);
         tree.truncate(1500);
-        assertEquals(expected, tree.getVersions(0, 4096));
+        assertEquals(expected, tree.getVersions(0, 8192));
         assertEquals(1, tree.root.height);
         assertEquals(0, tree.root.balance);
     }

@@ -8,6 +8,7 @@
 package org.xtreemfs.foundation;
 
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * @author Jan Fajerski
@@ -53,7 +54,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
     /**
      * Insert interval from begin (inclusive) to end (exclusive) into the tree and balance.
      */
-    static IntervalNode insert(long begin, long end, long version, IntervalNode node) {
+    IntervalNode insert(long begin, long end, long version, IntervalNode node) {
         if (node == null) {
             return new IntervalNode(begin, end, version);
 
@@ -89,10 +90,10 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         } else if (begin <= node.interval.begin && end >= node.interval.end) {
             // new interval surrounds current interval
             if (node.left != null && begin < node.interval.begin) {
-                node.left = shrinkSubTree(begin, node.interval.begin, node.left);
+                node.left = truncateMax(begin, node.left);
             }
             if (node.right != null && end > node.interval.end) {
-                node.right = shrinkSubTree(node.interval.end, end, node.right);
+                node.right = truncateMin(end, node.right);
             }
             node.interval.begin = begin;
             node.interval.end = end;
@@ -138,42 +139,56 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         return h;
     }
 
-    /*
-     * shrink will always be called from a node that wants to grow. so the subtree will shrink to one side, not "in the middle"
-     */
-    static IntervalNode shrinkSubTree(long begin, long end, IntervalNode node) {
+    IntervalNode truncateMax(long max, IntervalNode node) {
         if (node == null) {
+            // The whole tree got truncated.
             return node;
-        } else if (begin >= node.interval.end) {
-            // right subtree needs to shrink
-            assert(node.right != null);
-            node.right = shrinkSubTree(begin, end, node.right);
-
-        } else if (end <= node.interval.begin) {
-            // left subtree needs to shrink
-            assert(node.left != null);
-            node.left = shrinkSubTree(begin, end, node.left);
-
-        } else if (begin > node.interval.begin) {
-            // node has to give up part of its interval and the whole right subtree
-            node.interval.end = begin;
-            node.right = null;
-
-        } else if (end < node.interval.end) {
-            // node has to give up part of its interval and maybe left subtree
-            node.interval.begin = end;
-            node.left = null;
-
-        } else if (begin <= node.interval.begin){
-            // the node interval and its complete right subtree is absorbed by some other node
-            return shrinkSubTree(begin, end, node.left);
-
-        } else if (end >= node.interval.end) {
-            // the node interval and its complete left subtree is absorbed by some other node
-            return shrinkSubTree(begin, end, node.right);
-
         }
-        return node;
+
+        if (max <= node.interval.begin) {
+            // The max is left of the current interval.
+            // Drop the node and its right subtree and truncate the remaining left subtree.
+            return truncateMax(max, node.left);
+
+        } else if (max > node.interval.end) {
+            // The max is right of the current interval.
+            // Truncate the right subtree and return the rotated current interval.
+            node.right = truncateMax(max, node.right);
+            return rotate(node);
+
+        } else { // if (max > node.interval.begin && max <= node.interval.end) {
+            // The max is within the current interval.
+            // Adjust it and drop its right subtree and return it.
+            node.interval.end = max;
+            node.right = null;
+            return rotate(node);
+        }
+    }
+
+    IntervalNode truncateMin(long min, IntervalNode node) {
+        if (node == null) {
+            // The whole tree got truncated.
+            return node;
+        }
+
+        if (min >= node.interval.end) {
+            // The min is right of the current interval.
+            // Drop the node and its left subtree and truncate the remaining right subtree.
+            return truncateMin(min, node.right);
+
+        } else if (min < node.interval.begin) {
+            // The min is left of the current interval.
+            // Truncate the left subtree and return the rotated current interval.
+            node.left = truncateMin(min, node.left);
+            return rotate(node);
+
+        } else { // if (min >= node.interval.begin && min < node.interval.end) {
+            // The min is within the current interval.
+            // Adjust it and drop its left subtree and return it.
+            node.interval.begin = min;
+            node.left = null;
+            return rotate(node);
+        }
     }
 
     @Override
@@ -278,12 +293,18 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         compact(node.right, acc);
     }
 
+    public List<Interval> serialize() {
+        LinkedList<Interval> intervals = new LinkedList<Interval>();
+        compact(root, intervals);
+        return intervals;
+    }
 
     /**
      * Truncate the IntervalTree to end at max.
      * 
      * @param max
      */
+    // TODO (jdillmann): Rename to truncateMax
     public void truncate(long max) {
         if (max < 0) {
             throw new IllegalArgumentException("Cannot truncate to negative values.");
@@ -291,43 +312,18 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
 
         if (max < this.highest) {
             this.highest = max;
-            root = truncate(max, root);
+            root = truncateMax(max, root);
         }
     }
 
-    static IntervalNode truncate(long max, IntervalNode node) {
-        if (node == null) {
-            // The whole tree got truncated.
-            return null;
+    /**
+     * Worst case guess of the number of intervals in this tree (including the node itself)
+     */
+    int maxIntervals(IntervalNode node) {
+        if (node == null)
+            return 0;
 
-        } else if (max < node.interval.begin) {
-            // The max is left of the current interval.
-            // Drop the root and its right subtree and truncate the remaining left subtree.
-            return truncate(max, node.left);
-
-        } else if (max <= node.interval.end) {
-            // && max >= node.interval.begin
-            // The max is within the current interval.
-            // Adjust it and drop its right subtree and return it.
-            node.interval.end = max;
-            node.right = null;
-
-            return rotate(node);
-
-        } else if (node.right != null) {
-            // && max > node.interval.end
-            // The max is right of the current interval and there are intervals right of it.
-            // Truncate the right subtree and return the rotated current interval.
-            node.right = truncate(max, node.right);
-
-            return rotate(node);
-        } else {
-            // max > node.interval.end && node.right == null
-            // The max is right of the current interval and there are no intervals right of it.
-            // Return the current node.
-            return node;
-        }
-
+        return 1 + (2 ^ node.height - 1) + (2 ^ (node.height - Math.abs(node.balance)) - 1);
     }
 
     @Override
