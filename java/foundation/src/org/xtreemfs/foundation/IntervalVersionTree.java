@@ -33,7 +33,8 @@ public abstract class IntervalVersionTree {
     public abstract void insert(long begin, long end, long version);
 
     /**
-     * Returns all overlapping Intervals.
+     * Returns all overlapping Intervals. <br>
+     * Adjacent intervals with the same version will be merged.
      * 
      * @param i
      *            Interval to check for overlaps.
@@ -44,7 +45,8 @@ public abstract class IntervalVersionTree {
     }
 
     /**
-     * Returns all overlapping intervals between begin (inclusive) and end (exclusive).
+     * Returns all overlapping intervals between begin (inclusive) and end (exclusive). <br>
+     * Adjacent intervals with the same version will be merged.
      * 
      * @param begin
      *            inclusive
@@ -55,12 +57,21 @@ public abstract class IntervalVersionTree {
     public abstract List<Interval> getVersions(long begin, long end);
 
     /**
+     * Returns all intervals stored in the the tree in ascending order. <br>
+     * Adjacent intervals with the same version will be merged.
+     * 
+     * @return List of Intervals
+     */
+    public abstract List<Interval> serialize();
+
+
+    /**
      * Interval Objects containing the begin, end and version of an interval.
      */
     public static class Interval {
-        long begin;
-        long end;
-        long version;
+        public long begin;
+        public long end;
+        public long version;
 
         /**
          * Create an interval from begin to end.

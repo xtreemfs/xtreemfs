@@ -25,7 +25,7 @@ public class IntervalVersionAVLTreeTest {
     @Test
     public final void testBasicNonOverlappingIntervals() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1024);
         expected.add(new Interval(0, 1024));
@@ -52,7 +52,7 @@ public class IntervalVersionAVLTreeTest {
     public final void testInsertOfOverlappingIntervals() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         tree.insert(1024, 4096, 1);
         expected.add(new Interval(0, 1024, 0));
@@ -71,7 +71,7 @@ public class IntervalVersionAVLTreeTest {
     public final void testInsertOfIntervalInsideOfExisting() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         tree.insert(512, 1536, 1);
         expected.add(new Interval(0, 512, 0));
@@ -85,7 +85,7 @@ public class IntervalVersionAVLTreeTest {
     public final void testInsertOfSurroundingInterval() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         tree.insert(512, 1536, 1);
         tree.insert(500, 1800, 2);
@@ -139,7 +139,7 @@ public class IntervalVersionAVLTreeTest {
     public void testRetrieve() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         tree.insert(512, 1536, 1);
 
@@ -173,7 +173,7 @@ public class IntervalVersionAVLTreeTest {
     public final void testPartialRetrieve() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         tree.insert(512, 1536, 1);
         expected.add(new Interval(0, 512, 0));
@@ -238,7 +238,7 @@ public class IntervalVersionAVLTreeTest {
     @Test
     public void testCompactRetrieve() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        LinkedList<Interval> versions;
+        List<Interval> versions;
 
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1024);
         tree.insert(1024, 2048, 0);
@@ -251,7 +251,7 @@ public class IntervalVersionAVLTreeTest {
 
     @Test
     public void testTruncate() {
-        LinkedList<Interval> expected = new LinkedList<Interval>();
+        List<Interval> expected = new LinkedList<Interval>();
 
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 10);
         expected.add(new Interval(0, 10, 0));

@@ -201,7 +201,57 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
     }
 
     @Override
-    public LinkedList<Interval> getVersions(long begin, long end) {
+    public List<Interval> serialize() {
+        LinkedList<Interval> intervals = new LinkedList<Interval>();
+        serialize(root, intervals);
+        return intervals;
+    }
+
+    static void serialize(IntervalNode node, LinkedList<Interval> acc) {
+        if (node == null) {
+            return;
+        }
+
+        serialize(node.left, acc);
+        addInterval(acc, node.interval);
+        serialize(node.right, acc);
+    }
+
+    /**
+     * Add the interval defined by begin, end and version to list. If the intervals lines up with the last interval in
+     * the list, and their version matches, the last interval is simply expanded.
+     * 
+     * @param acc
+     *            list of intervals
+     * @param begin
+     * @param end
+     * @param version
+     */
+    static void addInterval(LinkedList<Interval> acc, long begin, long end, long version) {
+        Interval last = acc.peekLast();
+        if (last != null && begin <= last.end && last.version == version) {
+            // There is no gap between the last and current interval and the version matches:
+            // The last interval can simply be expanded.
+            last.end = end;
+        } else {
+            acc.add(new Interval(begin, end, version));
+        }
+
+    }
+
+    /**
+     * @see #addInterval(LinkedList, long, long, long)
+     * @param acc
+     *            list of intervals
+     * @param i
+     *            interval to add
+     */
+    static void addInterval(LinkedList<Interval> acc, Interval i) {
+        addInterval(acc, i.begin, i.end, i.version);
+    }
+
+    @Override
+    public List<Interval> getVersions(long begin, long end) {
         LinkedList<Interval> versions = new LinkedList<Interval>();
         getVersions(begin, end, this.root, versions);
         return versions;
@@ -241,38 +291,6 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         }
     }
 
-    /**
-     * Add the interval defined by begin, end and version to list. If the intervals lines up with the last interval in
-     * the list, and their version matches, the last interval is simply expanded.
-     * 
-     * @param acc
-     *            list of intervals
-     * @param begin
-     * @param end
-     * @param version
-     */
-    static void addInterval(LinkedList<Interval> acc, long begin, long end, long version) {
-        Interval last = acc.peekLast();
-        if (last != null && begin <= last.end && last.version == version) {
-            // There is no gap between the last and current interval and the version matches:
-            // The last interval can simply be expanded.
-            last.end = end;
-        } else {
-            acc.add(new Interval(begin, end, version));
-        }
-
-    }
-
-    /**
-     * @see #addInterval(LinkedList, long, long, long)
-     * @param acc
-     *            list of intervals
-     * @param i
-     *            interval to add
-     */
-    static void addInterval(LinkedList<Interval> acc, Interval i) {
-        addInterval(acc, i.begin, i.end, i.version);
-    }
 
     /**
      * Merge successive intervals with the same version to create a compact tree.
@@ -281,7 +299,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
      */
     IntervalVersionAVLTree compact() {
         LinkedList<Interval> intervals = new LinkedList<Interval>();
-        compact(root, intervals);
+        serialize(root, intervals);
         
         IntervalVersionAVLTree tree = new IntervalVersionAVLTree();
         for (Interval i : intervals) {
@@ -292,21 +310,6 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         return tree;
     }
 
-    static void compact(IntervalNode node, LinkedList<Interval> acc) {
-        if (node == null) {
-            return;
-        }
-
-        compact(node.left, acc);
-        addInterval(acc, node.interval);
-        compact(node.right, acc);
-    }
-
-    public List<Interval> serialize() {
-        LinkedList<Interval> intervals = new LinkedList<Interval>();
-        compact(root, intervals);
-        return intervals;
-    }
 
     /**
      * Truncate the IntervalTree to end at max.
@@ -323,16 +326,6 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
             this.highest = max;
             root = truncateMax(max, root);
         }
-    }
-
-    /**
-     * Worst case guess of the number of intervals in this tree (including the node itself)
-     */
-    int maxIntervals(IntervalNode node) {
-        if (node == null)
-            return 0;
-
-        return (int) (1 + (Math.pow(2, node.height) - 1) + (Math.pow(2, (node.height - Math.abs(node.balance))) - 1));
     }
 
     /**
@@ -374,6 +367,19 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
 
         toString(node.right, sb);
     }
+
+    // Helper methods
+
+    /**
+     * Worst case guess of the number of intervals in this tree (including the node itself)
+     */
+    static int maxIntervals(IntervalNode node) {
+        if (node == null)
+            return 0;
+
+        return (int) (1 + (Math.pow(2, node.height) - 1) + (Math.pow(2, (node.height - Math.abs(node.balance))) - 1));
+    }
+
 
     /*
      * A node contains the left and the right branch, the middle index of this node and a lists of intervals.
