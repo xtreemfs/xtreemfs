@@ -337,6 +337,37 @@ public class IntervalVersionAVLTreeTest {
         assertEquals(0, tree.root.balance);
     }
 
+    @Test
+    public void testOverwrites() {
+        IntervalVersionAVLTree tree = new IntervalVersionAVLTree();
+        tree.insert(new Interval(0, 1024, 0));
+        assertEquals(0, tree.getOverwrites());
+
+        tree.insert(new Interval(1024, 2048, 1));
+        assertEquals(0, tree.getOverwrites());
+
+        tree.insert(new Interval(0, 1024, 2));
+        assertEquals(1, tree.getOverwrites());
+
+        tree.resetOverwrites();
+        tree.insert(new Interval(0, 2048, 3));
+        assertEquals(2, tree.getOverwrites());
+
+        tree = createFullTestTree();
+        tree.insert(new Interval(0, 4096, 7));
+        assertEquals(7, tree.getOverwrites());
+
+        tree = createFullTestTree();
+        tree.insert(new Interval(500, 4000));
+        assertEquals(5, tree.getOverwrites());
+
+        tree = createFullTestTree();
+        tree.insert(new Interval(500, 4000));
+        assertEquals(5, tree.getOverwrites());
+
+        // TODO(jdillmann): Test on unbalanced trees
+    }
+
     IntervalVersionAVLTree createFullTestTree() {
         IntervalNode root = new IntervalNode(1536, 2048, 3);
         IntervalNode node;

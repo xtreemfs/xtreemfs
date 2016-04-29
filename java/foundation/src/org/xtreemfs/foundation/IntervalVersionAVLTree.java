@@ -18,6 +18,9 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
     IntervalNode root;
     long         highest;
 
+    /** Number of intervals (approximate) that have been overwritten by subsequent inserts. */
+    int          overwrites = 0;
+
     public IntervalVersionAVLTree(long begin, long end) {
         if (begin != 0) {
             throw new IllegalArgumentException("IntervalVersionAVLTree must start at 0");
@@ -43,9 +46,6 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
 
         if (end >= highest) {
             this.highest = end;
-            if (begin == 0) {
-                this.root = new IntervalNode(begin, end, version);
-            }
         }
 
         this.root = insert(begin, end, version, this.root);
@@ -61,6 +61,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         } else if (begin == node.interval.begin && end == node.interval.end) {
             // same interval...just set version
             node.interval.version = version;
+            overwrites++;
 
         } else if (end <= node.interval.begin) {
             // new interval is left of current
@@ -87,6 +88,8 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
             newNode.right = insert(end, node.interval.end, node.interval.version, node.right);
             node = newNode;
 
+            overwrites++;
+
         } else if (begin <= node.interval.begin && end >= node.interval.end) {
             // new interval surrounds current interval
             if (node.left != null && begin < node.interval.begin) {
@@ -98,6 +101,8 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
             node.interval.begin = begin;
             node.interval.end = end;
             node.interval.version = version;
+
+            overwrites++;
         }
 
         return rotate(node);
@@ -148,6 +153,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         if (max <= node.interval.begin) {
             // The max is left of the current interval.
             // Drop the node and its right subtree and truncate the remaining left subtree.
+            overwrites = overwrites + 1 + maxIntervals(node.right);
             return truncateMax(max, node.left);
 
         } else if (max > node.interval.end) {
@@ -159,6 +165,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         } else { // if (max > node.interval.begin && max <= node.interval.end) {
             // The max is within the current interval.
             // Adjust it and drop its right subtree and return it.
+            overwrites = overwrites + maxIntervals(node.right);
             node.interval.end = max;
             node.right = null;
             return rotate(node);
@@ -174,6 +181,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         if (min >= node.interval.end) {
             // The min is right of the current interval.
             // Drop the node and its left subtree and truncate the remaining right subtree.
+            overwrites = overwrites + 1 + maxIntervals(node.left);
             return truncateMin(min, node.right);
 
         } else if (min < node.interval.begin) {
@@ -185,6 +193,7 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         } else { // if (min >= node.interval.begin && min < node.interval.end) {
             // The min is within the current interval.
             // Adjust it and drop its left subtree and return it.
+            overwrites = overwrites + maxIntervals(node.left);
             node.interval.begin = min;
             node.left = null;
             return rotate(node);
@@ -323,7 +332,24 @@ public class IntervalVersionAVLTree extends IntervalVersionTree {
         if (node == null)
             return 0;
 
-        return 1 + (2 ^ node.height - 1) + (2 ^ (node.height - Math.abs(node.balance)) - 1);
+        return (int) (1 + (Math.pow(2, node.height) - 1) + (Math.pow(2, (node.height - Math.abs(node.balance))) - 1));
+    }
+
+    /**
+     * Number of intervals that have been overwritten since the last reset. <br>
+     * The number of overwrites is a good indicator to trigger the truncation of an IntervalVersionTree log.
+     * 
+     * @return number of overwrites since last reset
+     */
+    public int getOverwrites() {
+        return overwrites;
+    }
+
+    /**
+     * Reset the internal overwrite counter to 0.
+     */
+    public void resetOverwrites() {
+        overwrites = 0;
     }
 
     @Override
