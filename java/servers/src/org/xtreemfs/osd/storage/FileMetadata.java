@@ -23,30 +23,38 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 public class FileMetadata {
     
     private Map<Long, Long>            latestObjVersions;
-    
+
     private Map<Long, Long>            largestObjVersions;
-    
+
     private Map<Long, Map<Long, Long>> objChecksums;
-    
+
     private long                       filesize;
-    
+
     private long                       lastObjectNumber;
-    
+
     private long                       globalLastObjectNumber;
-    
+
     private long                       truncateEpoch;
-    
+
     private final StripingPolicyImpl   stripingPolicy;
-    
+
     private VersionTable               versionTable;
 
-    private RandomAccessFile[]       handles;
+    private IntervalVersionTreeLog     ecVersionsCur;
+    private IntervalVersionTreeLog     ecVersionsNext;
 
-    private long                     mdFileLength;
+    private RandomAccessFile[]         handles;
+
+    private long                       mdFileLength;
     
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
         stripingPolicy = sp;
+    }
+
+    @Override
+    public String toString() {
+        return "(fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber + ")";
     }
     
     public long getFilesize() {
@@ -113,6 +121,28 @@ public class FileMetadata {
         this.versionTable = versionTable;
     }
     
+    public VersionTable getVersionTable() {
+        return versionTable;
+    }
+
+    public void initEcVersionsCur(IntervalVersionTreeLog tree) {
+        assert (this.ecVersionsCur == null);
+        this.ecVersionsCur = tree;
+    }
+
+    public IntervalVersionTreeLog getEcVersionCur() {
+        return ecVersionsCur;
+    }
+
+    public void initEcVersionsNext(IntervalVersionTreeLog tree) {
+        assert (this.ecVersionsNext == null);
+        this.ecVersionsNext = tree;
+    }
+
+    public IntervalVersionTreeLog getEcVersionsNext() {
+        return ecVersionsNext;
+    }
+
     public void updateObjectVersion(long objId, long newVersion) {
         
         latestObjVersions.put(objId, newVersion);
@@ -138,10 +168,7 @@ public class FileMetadata {
         objChecksums.remove(objId + "." + objVer);
     }
     
-    public String toString() {
-        return "(fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber + ")";
-    }
-    
+
     public long getTruncateEpoch() {
         return truncateEpoch;
     }
@@ -172,13 +199,10 @@ public class FileMetadata {
         return stripingPolicy;
     }
     
-    public VersionTable getVersionTable() {
-        return versionTable;
-    }
-
     /**
      * @return the handles
      */
+    @Deprecated
     public RandomAccessFile[] getHandles() {
         return handles;
     }
@@ -186,6 +210,7 @@ public class FileMetadata {
     /**
      * @param handles the handles to set
      */
+    @Deprecated
     public void setHandles(RandomAccessFile[] handles) {
         this.handles = handles;
     }
@@ -193,6 +218,7 @@ public class FileMetadata {
     /**
      * @return the mdFileLength
      */
+    @Deprecated
     public long getMdFileLength() {
         return mdFileLength;
     }
@@ -200,8 +226,8 @@ public class FileMetadata {
     /**
      * @param mdFileLength the mdFileLength to set
      */
+    @Deprecated
     public void setMdFileLength(long mdFileLength) {
         this.mdFileLength = mdFileLength;
     }
-    
 }

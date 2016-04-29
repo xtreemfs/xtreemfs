@@ -38,6 +38,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
  *
  * @author bjko
  */
+@Deprecated
 public class SingleFileStorageLayout extends StorageLayout {
 
     public static final int   SL_TAG = 0x00020001;

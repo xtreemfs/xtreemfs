@@ -42,6 +42,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
@@ -79,6 +80,12 @@ public class HashStorageLayout extends StorageLayout {
      * file that stores the latest XLocSet version this replica belonged to and if it is invalidated
      */
     public static final String             XLOC_VERSION_STATE_FILENAME   = ".version_state";
+
+    /*
+     * files that store the IntervalVersionTreea used for erasure coding.
+     */
+    public static final String             EC_VERSIONS_CUR               = ".ec_versions_cur";
+    public static final String             EC_VERSIONS_NEXT              = ".ec_versions_next";
 
     /**
      * file that stores the invalid expire times for a file
@@ -887,8 +894,26 @@ public class HashStorageLayout extends StorageLayout {
 
             info.initObjectChecksums(objChecksums);
 
-            // determine filesize from lastObjectNumber
+            // Load the VersionTrees required for Erasure Coding
+            if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                // filesize could be restored from versionvector, but to stay consistent with the
+                // other policies store only the local filesize to FileMetadat
+
+                IntervalVersionTreeLog ecVerLogCur = new IntervalVersionTreeLog(EC_VERSIONS_CUR);
+                ecVerLogCur.load();
+                info.initEcVersionsCur(ecVerLogCur);
+
+                IntervalVersionTreeLog ecVerLogNext = new IntervalVersionTreeLog(EC_VERSIONS_NEXT);
+                ecVerLogNext.load();
+                info.initEcVersionsNext(ecVerLogNext);
+
+            } else {
+                info.initEcVersionsCur(new IntervalVersionTreeLog());
+                info.initEcVersionsNext(new IntervalVersionTreeLog());
+            }
+
             if (lastObjNum > -1) {
+                // determine filesize from lastObjectNumber
                 File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
                 long lastObjSize = lastObjFile.length();
                 // check for empty padding file
@@ -902,6 +927,7 @@ public class HashStorageLayout extends StorageLayout {
                 assert (fsize >= 0);
                 info.setFilesize(fsize);
                 info.setLastObjectNumber(lastObjNum);
+
             } else {
                 // empty file!
                 info.setFilesize(0l);
@@ -940,6 +966,8 @@ public class HashStorageLayout extends StorageLayout {
             info.initLargestObjectVersions(new HashMap<Long, Long>());
             info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
             info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
+            info.initEcVersionsCur(new IntervalVersionTreeLog());
+            info.initEcVersionsNext(new IntervalVersionTreeLog());
         }
 
         info.setGlobalLastObjectNumber(-1);
@@ -974,8 +1002,7 @@ public class HashStorageLayout extends StorageLayout {
 
                 @Override
                 public boolean accept(File dir, String name) {
-                    if (name.startsWith(".")) // ignore special files (metadata,
-                    // .tepoch)
+                    if (name.startsWith(".")) // ignore special files (metadata, .tepoch)
                     {
                         return false;
                     } else {
@@ -1187,6 +1214,7 @@ public class HashStorageLayout extends StorageLayout {
                 for (File ch : dir.listFiles()) {
                     // handle the directories (hash and fileName)
                     if (ch != null && ch.isDirectory()) {
+                        // FIXME (jdillmann): Exclude EC Meta
                         l.status.push(currentDir + "/" + ch.getName());
                         // get information from the objects
                     } else if (ch != null && ch.isFile() && !ch.getName().contains(".")
@@ -1239,7 +1267,7 @@ public class HashStorageLayout extends StorageLayout {
                         l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(),
                                 new FileData(fileSize, (int) (objectSize / 1024)));
                     } else {
-                        // No data file exists, but the folders some metadata is still in place.
+                        // No data file exists, but the folders metadata is still in place.
                         l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), 
                                 new FileData(true));
                     }

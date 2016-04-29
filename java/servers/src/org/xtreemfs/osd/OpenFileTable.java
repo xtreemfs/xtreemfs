@@ -53,6 +53,8 @@ public final class OpenFileTable {
      *            fileId
      * @param expTime
      *            expiration time
+     * @param write
+     *            true if this file should be copied on write
      */
     public CowPolicy refresh(String fId, long expTime, boolean write) {
         OpenFileTableEntry currEntry = openFiles.get(fId);
@@ -102,6 +104,8 @@ public final class OpenFileTable {
      *            fileId
      * @param expTime
      *            expiration time
+     * @param write
+     *            true if this file should be copied on write
      */
     public void openFile(String fId, long expTime, CowPolicy policy, boolean write) {
         assert (openFiles.containsKey(fId) == false);

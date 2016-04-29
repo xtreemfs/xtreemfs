@@ -23,7 +23,6 @@ import java.util.List;
 import org.xtreemfs.foundation.IntervalVersionAVLTree;
 import org.xtreemfs.foundation.IntervalVersionTree.Interval;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.osd.stages.StorageStage;
 
 
 /**
@@ -33,14 +32,20 @@ import org.xtreemfs.osd.stages.StorageStage;
  */
 public class IntervalVersionTreeLog {
 
-    StorageStage           storageStage;
     IntervalVersionAVLTree tree;
-
     File                   vtLogFile;
 
     /** Size in bytes of the input buffer used for reading and writing */
     private static int     IO_BUFSIZE = 8192;
 
+    public IntervalVersionTreeLog() {
+        vtLogFile = null;
+        tree = new IntervalVersionAVLTree();
+    }
+
+    public IntervalVersionTreeLog(String vtLogFileName) throws IOException {
+        this(new File(vtLogFileName));
+    }
 
     public IntervalVersionTreeLog(File vtLogFile) throws IOException {
         this.vtLogFile = vtLogFile;
