@@ -124,7 +124,7 @@ public class IntervalVersionAVLTreeTest {
         tree.insert(new Interval(500, 4000, 7));
         assertEquals(expected, tree.getVersions(0, 8192));
         
-        // Test with tree of height 1, where the full 
+        // Test with tree of height 1, where the whole range is overwritten
         tree = new IntervalVersionAVLTree();
         tree.insert(new Interval(0, 1024, 0));
         tree.insert(new Interval(1024, 2048, 2));
@@ -207,13 +207,17 @@ public class IntervalVersionAVLTreeTest {
         assertEquals(0, tree.root.balance);
 
         tree = new IntervalVersionAVLTree(0, 2048);
-
         tree.insert(512, 1536, 1);
         tree.insert(0, 5, 1);
         tree.insert(500, 511, 1);
         tree.insert(500, 2047, 2);
-        printTree(tree.root);
-        fail();
+        assertEquals(1, Math.abs(tree.root.balance));
+        
+        tree = createFullTestTree();
+        tree.insert(new Interval(0, 128, 7));
+        tree.insert(new Interval(128, 256, 8));
+        assertEquals(1, Math.abs(tree.root.balance));
+
     }
 
     @Test
