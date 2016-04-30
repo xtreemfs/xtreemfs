@@ -8,6 +8,8 @@ package org.xtreemfs.osd.storage;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +17,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -57,6 +58,10 @@ public class IntervalVersionTreeLog {
         }
     }
 
+    public void insert(Interval i) throws Exception {
+        insert(i.begin, i.end, i.version);
+    }
+
     public void insert(long begin, long end, long version) throws IOException {
         // TODO (jdillmann): Investigate if it would be faster to keep the handle open. What about mem?
 
@@ -80,6 +85,10 @@ public class IntervalVersionTreeLog {
             if (out != null)
                 out.close();
         }
+    }
+
+    public List<Interval> getVersions(Interval i) throws Exception {
+        return tree.getVersions(i);
     }
 
     // @Override
@@ -145,17 +154,17 @@ public class IntervalVersionTreeLog {
      * @throws IOException
      */
     void load(IntervalVersionAVLTree tree, InputStream inputStream) throws IOException {
-        ObjectInputStream objectStream = new ObjectInputStream(inputStream);
+        DataInputStream dataStream = new DataInputStream(inputStream);
 
         boolean complete = true;
         try {
             long begin, end, version;
             while(true) {
-                begin = objectStream.readLong();
+                begin = dataStream.readLong();
 
                 complete = false;
-                end = objectStream.readLong();
-                version = objectStream.readLong();
+                end = dataStream.readLong();
+                version = dataStream.readLong();
                 complete = true;
 
                 tree.insert(begin, end, version);
@@ -169,21 +178,21 @@ public class IntervalVersionTreeLog {
 
 
     /**
-     * Writes long triples from the tree nodes to the input stream.
+     * Writes long triples from the tree nodes to the output stream.
      * 
      * @param tree
      * @param outputStream
      * @throws IOException
      */
     void save(IntervalVersionAVLTree tree, OutputStream outputStream) throws IOException {
-        ObjectOutputStream objectStream = new ObjectOutputStream(outputStream);
+        DataOutputStream dataStream = new DataOutputStream(outputStream);
 
         for (Interval i : tree.serialize()) {
-            objectStream.writeLong(i.begin);
-            objectStream.writeLong(i.end);
-            objectStream.writeLong(i.version);
+            dataStream.writeLong(i.begin);
+            dataStream.writeLong(i.end);
+            dataStream.writeLong(i.version);
         }
-        objectStream.flush();
+        dataStream.flush();
     }
 
     /**

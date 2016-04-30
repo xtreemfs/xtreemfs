@@ -6,9 +6,9 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.LinkedList;
 
 import org.junit.After;
@@ -45,13 +45,13 @@ public class IntervalVersionTreeLogTest {
 
         ByteArrayInputStream in;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ObjectOutputStream obj_out = new ObjectOutputStream(out);
+        DataOutputStream data_out = new DataOutputStream(out);
         
         // Single Interval
-        obj_out.writeLong(0);
-        obj_out.writeLong(128);
-        obj_out.writeLong(1);
-        obj_out.flush();
+        data_out.writeLong(0);
+        data_out.writeLong(128);
+        data_out.writeLong(1);
+        data_out.flush();
         in = new ByteArrayInputStream(out.toByteArray());
         tree = new IntervalVersionAVLTree();
         logTree.load(tree, in);
@@ -59,10 +59,10 @@ public class IntervalVersionTreeLogTest {
         assertEquals(expected, tree.getVersions(0, 512));
 
         // Two intervals with a gap
-        obj_out.writeLong(384);
-        obj_out.writeLong(512);
-        obj_out.writeLong(2);
-        obj_out.flush();
+        data_out.writeLong(384);
+        data_out.writeLong(512);
+        data_out.writeLong(2);
+        data_out.flush();
         in = new ByteArrayInputStream(out.toByteArray());
         tree = new IntervalVersionAVLTree();
         logTree.load(tree, in);
@@ -70,10 +70,10 @@ public class IntervalVersionTreeLogTest {
         assertEquals(expected, tree.getVersions(0, 512));
 
         // Add third interval in between
-        obj_out.writeLong(128);
-        obj_out.writeLong(384);
-        obj_out.writeLong(3);
-        obj_out.flush();
+        data_out.writeLong(128);
+        data_out.writeLong(384);
+        data_out.writeLong(3);
+        data_out.flush();
         in = new ByteArrayInputStream(out.toByteArray());
         tree = new IntervalVersionAVLTree();
         logTree.load(tree, in);
@@ -85,10 +85,10 @@ public class IntervalVersionTreeLogTest {
         
         
         // Overwrite the middle interval and part of the outer intervals
-        obj_out.writeLong(64);
-        obj_out.writeLong(448);
-        obj_out.writeLong(4);
-        obj_out.flush();
+        data_out.writeLong(64);
+        data_out.writeLong(448);
+        data_out.writeLong(4);
+        data_out.flush();
         in = new ByteArrayInputStream(out.toByteArray());
         tree = new IntervalVersionAVLTree();
         logTree.load(tree, in);
@@ -99,8 +99,8 @@ public class IntervalVersionTreeLogTest {
         assertEquals(expected, tree.getVersions(0, 512));
 
         // Test corrupt file:
-        obj_out.writeLong(0);
-        obj_out.flush();
+        data_out.writeLong(0);
+        data_out.flush();
         in = new ByteArrayInputStream(out.toByteArray());
         try { 
             tree = new IntervalVersionAVLTree();
@@ -120,13 +120,13 @@ public class IntervalVersionTreeLogTest {
         ByteArrayOutputStream out;
 
         ByteArrayOutputStream expected = new ByteArrayOutputStream();
-        ObjectOutputStream expected_oos = new ObjectOutputStream(expected);
+        DataOutputStream expected_dos = new DataOutputStream(expected);
 
         tree.insert(new Interval(0, 512, 0));
-        expected_oos.writeLong(0);
-        expected_oos.writeLong(512);
-        expected_oos.writeLong(0);
-        expected_oos.flush();
+        expected_dos.writeLong(0);
+        expected_dos.writeLong(512);
+        expected_dos.writeLong(0);
+        expected_dos.flush();
 
         out = new ByteArrayOutputStream();
         logTree.save(tree, out);
@@ -134,15 +134,10 @@ public class IntervalVersionTreeLogTest {
 
 
         tree.insert(new Interval(512, 1024, 1));
-        expected.reset();
-        expected_oos = new ObjectOutputStream(expected);
-        expected_oos.writeLong(0);
-        expected_oos.writeLong(512);
-        expected_oos.writeLong(0);
-        expected_oos.writeLong(512);
-        expected_oos.writeLong(1024);
-        expected_oos.writeLong(1);
-        expected_oos.flush();
+        expected_dos.writeLong(512);
+        expected_dos.writeLong(1024);
+        expected_dos.writeLong(1);
+        expected_dos.flush();
 
         out = new ByteArrayOutputStream();
         logTree.save(tree, out);
