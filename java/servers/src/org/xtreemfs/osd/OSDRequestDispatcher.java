@@ -46,6 +46,8 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
 import org.xtreemfs.foundation.checksums.provider.JavaChecksumProvider;
+import org.xtreemfs.foundation.flease.FleaseConfig;
+import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.Schemes;
@@ -199,6 +201,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     private OSDPolicyContainer                          policyContainer;
 
+    protected final RPCNIOSocketClient                  rpcClientForFlease;
+
+    protected final FleasePrefixHandler                 fleaseHandler;
+
+    protected final FleaseMasterEpochThread             masterEpochThread;
+
+    protected final FleaseStage                         fleaseStage;
+
+
     /**
      * reachability of services
      */
@@ -318,6 +329,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000, 5 * 60 * 1000, "OSDRequestDispatcher (for replication)");
         rpcClientForReplication.setLifeCycleListener(this);
         
+        // client used for flease communications.
+        rpcClientForFlease = new RPCNIOSocketClient(clientSSLopts, 15000, 60000 * 5, "OSDRequestDispatcher (flease)");
+        rpcClientForFlease.setLifeCycleListener(this);
+
         // initialize ServiceAvailability
         this.serviceAvailability = new ServiceAvailability();
         
@@ -354,13 +369,22 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         replStage = new ReplicationStage(this, config.getMaxRequestsQueueLength());
         replStage.setLifeCycleListener(this);
         
-        rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength());
+        fleaseHandler = new FleasePrefixHandler(this, rpcClientForReplication);
+        masterEpochThread = new FleaseMasterEpochThread(storageLayout, config.getMaxRequestsQueueLength());
+        
+        FleaseConfig fcfg = new FleaseConfig(config.getFleaseLeaseToMS(), config.getFleaseDmaxMS(),
+                config.getFleaseMsgToMS(), null, config.getUUID().toString(), config.getFleaseRetries());
+        fleaseStage = new FleaseStage(fcfg, config.getObjDir() + "/", fleaseHandler, false, fleaseHandler,
+                fleaseHandler, masterEpochThread);
+        fleaseStage.setLifeCycleListener(this);
+        
+        rwrStage = new RWReplicationStage(this, serverSSLopts, config.getMaxRequestsQueueLength(), fleaseStage,
+                fleaseHandler);
         rwrStage.setLifeCycleListener(this);
 
         tracingStage = new TracingStage(this, config.getMaxRequestsQueueLength());
         tracingStage.setLifeCycleListener(this);
 
-        
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
         // ----------------------------------------
@@ -558,9 +582,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             rpcServer.start();
             rpcClient.start();
             rpcClientForReplication.start();
+            rpcClientForFlease.start();
 
             rpcServer.waitForStartup();
             rpcClient.waitForStartup();
+            rpcClientForReplication.waitForStartup();
+            rpcClientForFlease.waitForStartup();
 
             udpCom.start();
             preprocStage.start();
@@ -572,6 +599,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.start();
             rwrStage.start();
             tracingStage.start();
+            masterEpochThread.start();
+            fleaseStage.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -582,6 +611,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.waitForStartup();
             rwrStage.waitForStartup();
             tracingStage.waitForStartup();
+            masterEpochThread.waitForStartup();
+            fleaseStage.waitForStartup();
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -613,10 +644,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             rpcServer.shutdown();
             rpcClient.shutdown();
             rpcClientForReplication.shutdown();
+            rpcClientForFlease.shutdown();
 
             rpcServer.waitForShutdown();
             rpcClient.waitForShutdown();
-            rpcClientForReplication.waitForShutdown();
+            rpcClientForFlease.waitForShutdown();
 
             serviceAvailability.shutdown();
 
@@ -632,6 +664,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.shutdown();
             cvThread.cleanupStop();
             cvThread.shutdown();
+            masterEpochThread.shutdown();
+            fleaseStage.shutdown();
+
             serviceAvailability.shutdown();
 
             udpCom.waitForShutdown();
@@ -644,6 +679,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             tracingStage.waitForShutdown();
             cThread.waitForShutdown();
             cvThread.waitForShutdown();
+            masterEpochThread.waitForShutdown();
+            fleaseStage.waitForShutdown();
 
             if (statusServer != null) {
                 statusServer.shutdown();
@@ -683,6 +720,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cThread.shutdown();
             cvThread.cleanupStop();
             cvThread.shutdown();
+            masterEpochThread.shutdown();
+            fleaseStage.shutdown();
+
             serviceAvailability.shutdown();
 
             statusServer.shutdown();
@@ -1137,6 +1177,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         } catch (InterruptedException ex) {
             return null;
         }
+    }
+
+    public FleaseStage getFleaseStage() {
+        return fleaseStage;
+    }
+
+    public FleasePrefixHandler getFleaseHandler() {
+        return fleaseHandler;
     }
 
 }

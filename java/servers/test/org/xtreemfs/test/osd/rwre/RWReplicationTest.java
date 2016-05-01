@@ -115,7 +115,7 @@ public class RWReplicationTest {
     @Test
     public void testReplicationWithClient() throws Exception {
         UserCredentials uc = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
-        Auth passwd = passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
+        Auth passwd = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(AuthPassword.newBuilder().setPassword("")).build();
 
         Client c = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15000, 60000, null);
         c.start();

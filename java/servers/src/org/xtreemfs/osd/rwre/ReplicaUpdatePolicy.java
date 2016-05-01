@@ -16,6 +16,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;
 import org.xtreemfs.osd.rwre.ReplicatedFileState.ReplicaState;
@@ -78,7 +79,7 @@ public abstract class ReplicaUpdatePolicy {
     }
 
     public static String cellToFileId(ASCIIString cellId) {
-        return cellId.toString().substring(FILE_CELLID_PREFIX.length());
+        return FleasePrefixHandler.stripPrefix(cellId).toString();
     }
 
     public static ASCIIString fileToCellId(String fileId) {

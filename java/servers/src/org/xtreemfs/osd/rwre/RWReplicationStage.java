@@ -27,8 +27,6 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.foundation.flease.FleaseConfig;
-import org.xtreemfs.foundation.flease.FleaseMessageSenderInterface;
 import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.flease.FleaseStatusListener;
 import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
@@ -47,6 +45,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
+import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -74,11 +73,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  * 
  * @author bjko
  */
-public class RWReplicationStage extends Stage implements FleaseMessageSenderInterface {
+public class RWReplicationStage extends Stage {
 
     public static final int STAGEOP_REPLICATED_WRITE          = 1;
     public static final int STAGEOP_CLOSE                     = 2;
-    public static final int STAGEOP_PROCESS_FLEASE_MSG        = 3;
     public static final int STAGEOP_PREPAREOP                 = 5;
     public static final int STAGEOP_TRUNCATE                  = 6;
     public static final int STAGEOP_GETSTATUS                 = 7;
@@ -118,10 +116,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private final FleaseStage                      fstage;
 
-    private final RPCNIOSocketClient               fleaseClient;
-
-    private final OSDServiceClient                 fleaseOsdClient;
-
     private final ASCIIString                      localID;
 
     private int                                    numObjsInFlight;
@@ -134,41 +128,33 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
     private final Queue<ReplicatedFileState>       filesInReset;
 
-    private final FleaseMasterEpochThread          masterEpochThread;
-
     private final AtomicInteger                    externalRequestsInQueue;
 
-    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength)
-            throws IOException {
+    public RWReplicationStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength,
+            FleaseStage fstage, FleasePrefixHandler fleaseHandler) throws IOException {
         super("RWReplSt", maxRequestsQueueLength);
         this.master = master;
         client = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "RWReplicationStage");
-        fleaseClient = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "RWReplicationStage (flease)");
         osdClient = new OSDServiceClient(client, null);
-        fleaseOsdClient = new OSDServiceClient(fleaseClient, null);
         files = new HashMap<String, ReplicatedFileState>();
         cellToFileId = new HashMap<ASCIIString, String>();
         numObjsInFlight = 0;
         filesInReset = new LinkedList<ReplicatedFileState>();
         externalRequestsInQueue = new AtomicInteger(0);
 
+        // TODO (jdillmann): make local id a parameter?
         localID = new ASCIIString(master.getConfig().getUUID().toString());
 
-        masterEpochThread = new FleaseMasterEpochThread(master.getStorageStage().getStorageLayout(),
-                maxRequestsQueueLength);
-
-        FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(), master.getConfig()
-                .getFleaseDmaxMS(), master.getConfig().getFleaseMsgToMS(), null, localID.toString(), master.getConfig()
-                .getFleaseRetries());
-
-        fstage = new FleaseStage(fcfg, master.getConfig().getObjDir() + "/", this, false,
+        this.fstage = fstage;
+        fleaseHandler.registerPrefix("/file/", // ReplicaUpdatePolicy.FILE_CELLID_PREFIX
                 new FleaseViewChangeListenerInterface() {
 
                     @Override
                     public void viewIdChangeEvent(ASCIIString cellId, int viewId, boolean onProposal) {
                         eventViewIdChanged(cellId, viewId, onProposal);
                     }
-                }, new FleaseStatusListener() {
+                },
+                new FleaseStatusListener() {
 
                     @Override
                     public void statusChanged(ASCIIString cellId, Flease lease) {
@@ -177,48 +163,35 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
                     }
 
                     @Override
-                    public void leaseFailed(ASCIIString cellID, FleaseException error) {
+                    public void leaseFailed(ASCIIString cellId, FleaseException error) {
                         // change state
                         // flush pending requests
-                        eventLeaseStateChanged(cellID, null, error);
+                        eventLeaseStateChanged(cellId, null, error);
                     }
-                }, masterEpochThread);
-        fstage.setLifeCycleListener(master);
+                });
     }
 
     @Override
     public void start() {
-        masterEpochThread.start();
         client.start();
-        fleaseClient.start();
-        fstage.start();
         super.start();
     }
 
     @Override
     public void shutdown() {
         client.shutdown();
-        fleaseClient.shutdown();
-        fstage.shutdown();
-        masterEpochThread.shutdown();
         super.shutdown();
     }
 
     @Override
     public void waitForStartup() throws Exception {
-        masterEpochThread.waitForStartup();
         client.waitForStartup();
-        fleaseClient.waitForStartup();
-        fstage.waitForStartup();
         super.waitForStartup();
     }
 
     @Override
     public void waitForShutdown() throws Exception {
         client.waitForShutdown();
-        fleaseClient.waitForShutdown();
-        fstage.waitForShutdown();
-        masterEpochThread.waitForShutdown();
         super.waitForShutdown();
     }
 
@@ -908,44 +881,12 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         this.enqueueOperation(STAGEOP_CLOSE, new Object[] { fileId }, null, null);
     }
 
-    public void receiveFleaseMessage(ReusableBuffer message, InetSocketAddress sender) {
-        // this.enqueueOperation(STAGEOP_PROCESS_FLEASE_MSG, new Object[]{message,sender}, null, null);
-        try {
-            FleaseMessage msg = new FleaseMessage(message);
-            BufferPool.free(message);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
-    }
-
     public void getStatus(StatusCallback callback) {
         this.enqueueOperation(STAGEOP_GETSTATUS, new Object[] {}, null, callback);
     }
 
     public static interface StatusCallback extends RWReplicationFailableCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
-    }
-
-    @Override
-    public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
-        ReusableBuffer data = BufferPool.allocate(message.getSize());
-        message.serialize(data);
-        data.flip();
-        try {
-            RPCResponse r = fleaseOsdClient.xtreemfs_rwr_flease_msg(recipient, RPCAuthentication.authNone,
-                    RPCAuthentication.userService, master.getHostName(), master.getConfig().getPort(), data);
-            r.registerListener(new RPCResponseAvailableListener() {
-
-                @Override
-                public void responseAvailable(RPCResponse r) {
-                    r.freeBuffers();
-                }
-            });
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-        }
     }
 
     @Override
@@ -962,7 +903,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
             break;
         }
         case STAGEOP_CLOSE: processFileClosed(method); break;
-        case STAGEOP_PROCESS_FLEASE_MSG: processFleaseMessage(method); break;
         case STAGEOP_PREPAREOP: {
             externalRequestsInQueue.decrementAndGet();
             processPrepareOp(method);
@@ -984,21 +924,6 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
         case STAGEOP_GET_REPLICATED_FILE_STATE: processGetInvalidatedResetStatus(method); break; 
 
         default : throw new IllegalArgumentException("no such stageop");
-        }
-    }
-
-    private void processFleaseMessage(StageRequest method) {
-        try {
-            final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
-            final InetSocketAddress sender = (InetSocketAddress) method.getArgs()[1];
-
-            FleaseMessage msg = new FleaseMessage(data);
-            BufferPool.free(data);
-            msg.setSender(sender);
-            fstage.receiveMessage(msg);
-
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
         }
     }
 

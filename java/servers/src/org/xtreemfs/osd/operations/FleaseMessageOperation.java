@@ -9,6 +9,7 @@
 package org.xtreemfs.osd.operations;
 
 import java.net.InetSocketAddress;
+
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
@@ -36,12 +37,12 @@ public class FleaseMessageOperation extends OSDOperation {
         xtreemfs_rwr_flease_msgRequest args = (xtreemfs_rwr_flease_msgRequest) rq.getRequestArgs();
         try {
             InetSocketAddress sender = new InetSocketAddress(args.getSenderHostname(), args.getSenderPort());
-            master.getRWReplicationStage().receiveFleaseMessage(rq.getRpcRequest().getData().createViewBuffer(),sender);
-            rq.sendSuccess(null,null);
+            master.getFleaseHandler().receiveMessage(rq.getRpcRequest().getData().createViewBuffer(), sender);
+            rq.sendSuccess(null, null);
         } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_WARN, this,ex);
+            Logging.logError(Logging.LEVEL_WARN, this, ex);
         }
-        
+
     }
 
     @Override
@@ -58,6 +59,5 @@ public class FleaseMessageOperation extends OSDOperation {
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         return null;
     }
-
 
 }

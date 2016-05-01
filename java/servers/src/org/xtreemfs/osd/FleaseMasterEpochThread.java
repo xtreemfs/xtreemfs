@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.osd.rwre;
+package org.xtreemfs.osd;
 
 import java.io.IOException;
 
@@ -35,7 +35,8 @@ public class FleaseMasterEpochThread extends Stage implements MasterEpochHandler
     protected void processMethod(StageRequest method) {
         final Continuation callback = (Continuation) method.getCallback();
         final FleaseMessage message = (FleaseMessage) method.getArgs()[0];
-        final String fileId = ReplicaUpdatePolicy.cellToFileId(message.getCellId());
+        final String fileId = FleasePrefixHandler.stripPrefix(message.getCellId()).toString();
+
         switch (method.getStageMethod()) {
             case STAGEOP_GET_MEPOCH: {
                 try {

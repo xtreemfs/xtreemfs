@@ -9,17 +9,21 @@
 package org.xtreemfs.foundation.buffer;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
  *
  * @author bjko
  */
 public final class ASCIIString implements Serializable {
-    private static final long serialVersionUID = 4633232360908659139L;
+    private static final long    serialVersionUID = 4633232360908659139L;
 
-    private byte[] data;
+    private static final Charset charset          = Charset.forName("US-ASCII");
 
-    private int hash;
+    private byte[]               data;
+
+    private int                  hash;
 
     protected ASCIIString() {
 
@@ -29,7 +33,7 @@ public final class ASCIIString implements Serializable {
      * Creates a new instance of ASCIIString
      */
     public ASCIIString(String str) {
-        this.data = str.getBytes();
+        this.data = str.getBytes(charset);
     }
 
     /**
@@ -40,7 +44,7 @@ public final class ASCIIString implements Serializable {
     }
 
     public String toString() {
-        return new String(data);
+        return new String(data, charset);
     }
 
     public char charAt(int index) {
@@ -102,6 +106,28 @@ public final class ASCIIString implements Serializable {
 
     public int getSerializedSize() {
         return length()+Integer.SIZE/8;
+    }
+    
+    /**
+     * Splits the string on the last occurrence of the separator character.
+     * 
+     * @param separator
+     *            Character to split the string at
+     * @param include
+     *            If set to true, the separator is included in the first result
+     * @return ASCIIString[] of size two if the separator is found, otherwise the current string is set as only element
+     */
+    public ASCIIString[] splitLast(byte separator, boolean include) {
+        int m = (include ? 1 : 0);
+
+        for (int i = data.length - 1; i >= 0; i--) {
+            if (data[i] == separator) {
+                return new ASCIIString[]{
+                        new ASCIIString(Arrays.copyOfRange(data, 0, i + m)),
+                        new ASCIIString(Arrays.copyOfRange(data, i + 1, data.length)) };
+            }
+        }
+        return new ASCIIString[] { this };
     }
 
 }
