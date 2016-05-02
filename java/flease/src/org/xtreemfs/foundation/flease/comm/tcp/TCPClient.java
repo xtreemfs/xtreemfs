@@ -15,10 +15,12 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  *
@@ -69,7 +71,8 @@ public class TCPClient {
                     if (cc != null)
                         cc.connectSucces();
                     else {
-                        Logging.logMessage(Logging.LEVEL_ERROR, this,"connect for unknown connection: "+connection);
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this,
+                                "connect for unknown connection: " + connection);
                         connection.close();
                     }
                 } finally {

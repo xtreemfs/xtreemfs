@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.List;
+
 import org.xtreemfs.foundation.flease.comm.tcp.TCPFleaseCommunicator;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -35,7 +36,7 @@ public class FleaseStats extends Thread {
         try {
             out = new PrintWriter(logfile);
         } catch (IOException ex) {
-            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,"cannot write to %s, due to %s",logfile,ex.toString());
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this,"cannot write to %s, due to %s",logfile,ex.toString());
             ex.printStackTrace();
             throw ex;
         }
@@ -48,13 +49,13 @@ public class FleaseStats extends Thread {
 
     public void run() {
         long t = 0;
-        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"collecting statistics");
+        Logging.logMessage(Logging.LEVEL_INFO, Category.flease, this,"collecting statistics");
         do {
             try {
                 try {
                     sleep(INTERVAL_IN_MS);
                 } catch (InterruptedException ex) {
-                    Logging.logMessage(Logging.LEVEL_INFO, this,"interrupted");
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.flease, this, "interrupted");
                     break;
                 }
                 t += INTERVAL_IN_MS;
@@ -75,12 +76,12 @@ public class FleaseStats extends Thread {
                 printValues2(tcpIn, tcpOut,t,"x");
                 printValues(inTimers, durTimers,t,"T");
             } catch (Throwable thr) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,thr.toString());
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this,thr.toString());
             }
 
         } while (!quit);
         out.close();
-        Logging.logMessage(Logging.LEVEL_INFO, Category.replication, this,"done");
+        Logging.logMessage(Logging.LEVEL_INFO, Category.flease, this,"done");
     }
 
     void printValues(int numRq, List<Integer> durations, long t, String type) {

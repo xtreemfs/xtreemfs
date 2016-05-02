@@ -7,18 +7,25 @@
 
 package org.xtreemfs.foundation.flease.comm.tcp;
 
-import org.xtreemfs.foundation.flease.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.flease.FleaseConfig;
+import org.xtreemfs.foundation.flease.FleaseMessageSenderInterface;
+import org.xtreemfs.foundation.flease.FleaseStage;
+import org.xtreemfs.foundation.flease.FleaseStatusListener;
+import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
+import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  *
@@ -85,7 +92,8 @@ public class TCPFleaseCommunicator implements FleaseMessageSenderInterface {
                             c.readingHdr = false;
                             int size = buffer.getInt();
                             if ((size <= 0) || (size > 2048)) {
-                                Logging.logMessage(Logging.LEVEL_ERROR, this,"warining: invalid fragment size: %d",size);
+                                Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this,
+                                        "warning: invalid fragment size: %d", size);
                                 connection.close();
                                 return;
                             }
@@ -108,7 +116,7 @@ public class TCPFleaseCommunicator implements FleaseMessageSenderInterface {
                     }
                 } catch (Exception ex) {
                     Logging.logError(Logging.LEVEL_ERROR, this,ex);
-                    Logging.logMessage(Logging.LEVEL_ERROR, this,buffer.toString());
+                    Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this, buffer.toString());
                     connection.close();
                 }
 
@@ -124,11 +132,11 @@ public class TCPFleaseCommunicator implements FleaseMessageSenderInterface {
             }
 
             public void onWriteFailed(IOException exception, Object context) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,"write failed: "+context);
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this, "write failed: " + context);
             }
 
             public void onConnectFailed(InetSocketAddress endpoint, IOException exception, Object context) {
-                Logging.logMessage(Logging.LEVEL_ERROR, this,"could not connect to: "+endpoint);
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.flease, this, "could not connect to: " + endpoint);
             }
         });
 

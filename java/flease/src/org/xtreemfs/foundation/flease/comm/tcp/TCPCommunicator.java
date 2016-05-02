@@ -23,6 +23,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
@@ -111,7 +112,9 @@ public class TCPCommunicator extends LifeCycleThread {
                     try {
                         int bytesWritten = connection.getChannel().write(buffer.getBuffer());
                         if (Logging.isDebug()) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"directly wrote %d bytes to %s",bytesWritten,connection.getChannel().socket().getRemoteSocketAddress().toString());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,
+                                    "directly wrote %d bytes to %s", bytesWritten,
+                                    connection.getChannel().socket().getRemoteSocketAddress().toString());
                         }
                         if (bytesWritten < 0) {
                             if (context != null)
@@ -153,7 +156,8 @@ public class TCPCommunicator extends LifeCycleThread {
                 sendQueueSize.incrementAndGet();
                 connection.addToSendQueue(new TCPConnection.SendRequest(buffer, context));
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"enqueued write to %s",connection.getEndpoint());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "enqueued write to %s",
+                            connection.getEndpoint());
                 }
                 selector.wakeup();
             } else {
@@ -162,7 +166,8 @@ public class TCPCommunicator extends LifeCycleThread {
                     sendQueueSize.incrementAndGet();
                     connection.addToSendQueue(new TCPConnection.SendRequest(buffer, context));
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"enqueued write to %s",connection.getEndpoint());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "enqueued write to %s",
+                                connection.getEndpoint());
                     }
                 } else {
                     BufferPool.free(buffer);
@@ -459,7 +464,8 @@ public class TCPCommunicator extends LifeCycleThread {
                 // send data
                 final long numBytesWritten = channel.write(srq.getData().getBuffer());
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"wrote %d bytes to %s",numBytesWritten,channel.socket().getRemoteSocketAddress().toString());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "wrote %d bytes to %s",
+                            numBytesWritten, channel.socket().getRemoteSocketAddress().toString());
                 }
                 if (numBytesWritten == -1) {
                     if (Logging.isInfo()) {

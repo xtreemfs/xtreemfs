@@ -11,9 +11,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * Thread to deliver delayed packets and to set availability status of hosts.
@@ -164,7 +166,7 @@ public class DelayedDelivery extends LifeCycleThread {
 
                         iter.remove();
                         if (debug)
-                            Logging.logMessage(Logging.LEVEL_DEBUG,this,"unblocked "+portNo);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "unblocked " + portNo);
                     } else {
                         blockedPorts.put(portNo,round+1);
                     }
@@ -178,7 +180,7 @@ public class DelayedDelivery extends LifeCycleThread {
                         int rand = (int)(Math.random()*(double)(keys.length));
                         blockedPorts.put(keys[rand],1);
                         if (debug)
-                            Logging.logMessage(Logging.LEVEL_DEBUG,this,"blocked   "+keys[rand]);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "blocked   " + keys[rand]);
                     }
                 }
 
