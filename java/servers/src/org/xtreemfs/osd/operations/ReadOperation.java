@@ -87,7 +87,8 @@ public final class ReadOperation extends OSDOperation {
 
         if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedRead(rq, args);
-        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)) {
+        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
+                || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP
                     ? rq.getCapability().getSnapTimestamp() : 0;
 

@@ -84,7 +84,7 @@ public final class WriteOperation extends OSDOperation {
 
             if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
                 replicatedWrite(rq, args, syncWrite);
-            } else if (numReplicas == 1) {
+            } else if (numReplicas == 1 || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getStorageStage().writeObject(args.getFileId(), args.getObjectNumber(), sp,

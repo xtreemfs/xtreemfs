@@ -74,7 +74,8 @@ public final class TruncateOperation extends OSDOperation {
         } else if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedTruncate(rq, args);
 
-        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)) {
+        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
+                || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
 
             master.getStorageStage().truncate(args.getFileId(), args.getNewFileSize(),
                 rq.getLocationList().getLocalReplica().getStripingPolicy(),
