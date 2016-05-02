@@ -28,10 +28,10 @@ import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.AdminFileHandle;
 import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
+import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.libxtreemfs.Options;
 import org.xtreemfs.common.libxtreemfs.Volume;
-import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.exceptions.AddressToUUIDNotFoundException;
 import org.xtreemfs.common.libxtreemfs.exceptions.InvalidViewException;
 import org.xtreemfs.common.xloc.ReplicationFlags;
@@ -161,13 +161,6 @@ public class XLocSetCoordinatorTest {
         removeReadOutdated(volumeName, "/testfile-wo-renewal", false);
     }
 
-
-    /**
-     * Test to ensure the appropriate error (invalid view) is returned, when the WqRq policy is active and a client
-     * tries to read, and thus form an majority, based on an outdated XLocSet. TODO(jdillmann): Should test if flease
-     * transmits the views, when the removed replica does miss the .version_state file
-     */
-
     /**
      * Remove the primary replica and provoke an invalid view error by accessing the file with an outdated xLocSet.
      * 
@@ -253,13 +246,6 @@ public class XLocSetCoordinatorTest {
         addReadOutdated(volumeName, "/testfile-with-renewal", true);
         addReadOutdated(volumeName, "/testfile-wo-renewal", false);
     }
-
-
-    /**
-     * Test to ensure the appropriate error (invalid view) is returned, when new replicas are added to a file with the
-     * WqRw policy and a client tries to get access with an outdated xLocSet. TODO(jdillmann): Should test if flease
-     * transmits the views, when the removed replica does miss the .version_state file
-     */
 
     /**
      * Add additional replicas and and provoke an invalid view error by accessing the file with an outdated xLocSet.

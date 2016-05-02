@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.ASCIIString;
@@ -96,7 +97,9 @@ public class FleaseSim {
                     public void sendMessage(FleaseMessage message, InetSocketAddress recipient) {
                         assert(message != null);
                         if (DEBUG_COMM_MSGS)
-                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"received message for delivery to port %d: %s",recipient.getPort(),message.toString());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,
+                                    "received message for delivery to port %d: %s", recipient.getPort(),
+                                    message.toString());
                         message.setSender(new InetSocketAddress("localhost", portNo));
                         com.send(recipient.getPort(), message);
                     }

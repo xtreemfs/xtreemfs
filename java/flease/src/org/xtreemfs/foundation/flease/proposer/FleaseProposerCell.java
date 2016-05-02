@@ -178,7 +178,7 @@ public class FleaseProposerCell {
         this.markedClose = false;
         this.handoverTo = null;
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,"opened new cell id %s with majority = %d ",cellId,majority);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,"opened new cell id %s with majority = %d ",cellId,majority);
         }
     }
     

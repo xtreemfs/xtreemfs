@@ -741,9 +741,8 @@ public class PreprocStage extends Stage {
                 // Persist the view.
                 layout.setXLocSetVersionState(fileId, newstate);
                 // Inform flease about the new view.
-                // TODO(jdillmann): Use centralized method to check if a lease is required.
                 if (locset.getNumReplicas() > 1
-                        && ReplicaUpdatePolicies.isRwReplicated(locset.getReplicaUpdatePolicy())) {
+                        && ReplicaUpdatePolicies.isRW(locset.getReplicaUpdatePolicy())) {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
                     master.getRWReplicationStage().setView(fileId, cellId, newstate);
                 }
@@ -851,8 +850,7 @@ public class PreprocStage extends Stage {
             state = stateBuilder.build();
             layout.setXLocSetVersionState(fileId, state);
             
-            // TODO(jdillmann): Use centralized method to check if a lease is required.
-            if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRwReplicated(xLoc.getReplicaUpdatePolicy())) {
+            if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRW(xLoc.getReplicaUpdatePolicy())) {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             } else {
                 callback.invalidateComplete(LeaseState.NONE, null);

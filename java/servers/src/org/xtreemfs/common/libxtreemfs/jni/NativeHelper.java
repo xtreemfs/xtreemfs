@@ -221,7 +221,6 @@ public final class NativeHelper {
 
     public static ClientProxy createClientProxy(String[] dirServiceAddressesArray, UserCredentials userCredentials,
             SSLOptions sslOptions, Options options) {
-        // TODO (jdillmann): Think about moving this to the factory.
         StringVector dirServiceAddressesVector = StringVector.from(Arrays.asList(dirServiceAddressesArray));
         ServiceAddresses dirServiceAddresses = new ServiceAddresses(dirServiceAddressesVector);
         OptionsProxy optionsProxy = NativeHelper.migrateOptions(options);

@@ -44,10 +44,13 @@ public class RepairObjectOperation extends OSDOperation {
         }
         String replPolicy = rq.getLocationList().getReplicaUpdatePolicy();
           
-        if (replPolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        if (ReplicaUpdatePolicies.isRO(replPolicy)) {
         	repairROnlyObject(rq, args);
-        } else {
+        } else if (ReplicaUpdatePolicies.isRW(replPolicy)) {
             repairRWObject(rq, args);
+        } else {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Invalid ReplicaUpdatePolicy: " + replPolicy);
         }
     }
 

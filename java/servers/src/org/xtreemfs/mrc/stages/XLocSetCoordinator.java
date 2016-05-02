@@ -278,7 +278,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         // Ensure the next view won't be propagated until it is installed at the MRC.
         final XLocSet newXLocSet = Converter.xLocListToXLocSet(newXLocList).setVersion(curXLocSet.getVersion()).build();
 
-        if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
+        final String replicaUpdatePolicy = curXLocSet.getReplicaUpdatePolicy();
+
+        if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WQRQ)) {
             // Invalidate the majority of the replicas, get their ReplicaStatus and calculate the AuthState.
             int numAcksMajority = (int) Math.ceil(((double) curXLocSet.getReplicasCount() + 1.0) / 2.0);
             ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numAcksMajority);
@@ -287,8 +289,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // Update the required number of replicas while they are invalidated.
             updateReplicas(fileId, cap, newXLocSet, curXLocSet, authState);
 
-        } else if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
-                || curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
+        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)
+                || replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARA)) {
             // Invalidate all of the replicas.
             int numAcksMajority = curXLocSet.getReplicasCount();
             ReplicaStatus[] states = invalidateReplicas(fileId, cap, curXLocSet, numAcksMajority);
@@ -297,7 +299,7 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
             // Update the required number of replicas while they are invalidated.
             updateReplicas(fileId, cap, newXLocSet, curXLocSet, authState);
 
-        } else if (curXLocSet.getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        } else if (replicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
             // In case of the read-only replication the replicas will be invalidated. But the coordination takes place
             // at the client by libxtreemfs.
             // The INVALIDATION request will be send to every replica, but the coordination continues on the first
@@ -598,8 +600,8 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
 
         // If a primary exists, wait until the lease has timed out.
         // This is required, since the lease can't be actively returned.
-        // TODO (jdillmann): If the primary did response we could continue to update phase (but still would have to wait
-        // until leaseTO before finally installing the new xLoc)
+        // TODO (Improvement): If the primary did response we could continue to update phase (but still would have to
+        // wait until leaseTO before finally installing the new xLoc)
         synchronized (listener) {
             if (listener.primaryExists) {
                 long now = System.currentTimeMillis();

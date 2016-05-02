@@ -12,10 +12,12 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.flease.FleaseStage;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 
 /**
  * A tool to simulate package loss, temporary host disconnects and message delay.
@@ -184,13 +186,15 @@ public class Communicator extends LifeCycleThread {
 
                     if (blockedPorts.containsKey(p.msg.getSender().getPort())) {
                         if (debug)
-                            Logging.logMessage(Logging.LEVEL_DEBUG,this,"msg dropped, port blocked "+p.msg.getSender().getPort());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,
+                                    "msg dropped, port blocked " + p.msg.getSender().getPort());
                         continue;
                     }
 
                     if (blockedPorts.containsKey(p.recipientPort)) {
                         if (debug)
-                            Logging.logMessage(Logging.LEVEL_DEBUG,this,"msg dropped, port blocked "+p.recipientPort);
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,
+                                    "msg dropped, port blocked " + p.recipientPort);
                         continue;
                     }
 
@@ -199,7 +203,8 @@ public class Communicator extends LifeCycleThread {
                         int delay = delayPacket();
                         if ((delay > 0) && !p.requeued) {
                             if (debug)
-                                Logging.logMessage(Logging.LEVEL_DEBUG,this,"msg delayed "+delay+"ms "+p.recipientPort+" -> "+p.msg.getSender().getPort());
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "msg delayed " + delay
+                                        + "ms " + p.recipientPort + " -> " + p.msg.getSender().getPort());
                             dd.add(p,delay);
                         } else {
 
@@ -212,7 +217,8 @@ public class Communicator extends LifeCycleThread {
                         }
                     } else {
                         if (debug)
-                            Logging.logMessage(Logging.LEVEL_DEBUG,this,"msg lost "+p.recipientPort+" -> "+p.msg.getSender().getPort());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this,
+                                    "msg lost " + p.recipientPort + " -> " + p.msg.getSender().getPort());
                     }
 
 

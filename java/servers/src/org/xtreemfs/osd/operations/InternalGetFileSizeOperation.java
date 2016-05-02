@@ -58,9 +58,8 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
         final String replUpdatePolicy = args.getFileCredentials().getXlocs().getReplicaUpdatePolicy();
-
-        if (replUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE)
-                || replUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)) {
+        
+        if (ReplicaUpdatePolicies.isNONE(replUpdatePolicy) || ReplicaUpdatePolicies.isRO(replUpdatePolicy)) {
             master.getStorageStage().getFilesize(args.getFileId(), sp, rq.getCapability().getSnapTimestamp(), rq,
                     new GetFileSizeCallback() {
 
@@ -69,8 +68,11 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                             step2(rq, args, fileSize, error);
                         }
                     });
-        } else {
+        } else if (ReplicaUpdatePolicies.isRW(replUpdatePolicy)) {
             rwReplicatedGetFS(rq, args);
+        } else {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Invalid ReplicaUpdatePolicy: " + replUpdatePolicy);
         }
 
     }
@@ -138,8 +140,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     }
 
     private void rwReplicatedGetFS(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args) {
-        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(),
- rq.getLocationList(), 0, 0,
+        master.getRWReplicationStage().prepareOperation(args.getFileCredentials(), rq.getLocationList(), 0, 0,
                 RWReplicationStage.Operation.READ,
                 new RWReplicationStage.RWReplicationCallback() {
 

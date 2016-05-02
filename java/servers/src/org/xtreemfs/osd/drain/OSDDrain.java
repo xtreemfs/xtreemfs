@@ -446,9 +446,8 @@ public class OSDDrain {
                     xlocsetResp.freeBuffers();
             }
 
-            // TODO(jdillmann): Use centralized method to check if a lease is required.
             fileInfo.isReplicaChangeCoordinated = (xlocset.getReplicasCount() > 1 
-                    && ReplicaUpdatePolicies.isRwReplicated(xlocset.getReplicaUpdatePolicy()));
+                    && ReplicaUpdatePolicies.isRW(xlocset.getReplicaUpdatePolicy()));
 
             fileInfo.oldReplicationPolicy = xlocset.getReplicaUpdatePolicy();
 
@@ -511,7 +510,7 @@ public class OSDDrain {
                 removeReplica(fileInfo, fileInfo.oldReplica);
             } catch (OSDDrainException e) {
                 // In case the old replica could not be removed inform the user to intervene manually before redraining.
-                // TODO(jdillmann): resolve fileID to path
+                // TODO: resolve fileID to path
                 String message = "Could not remove the replica for file with id: " + fileInfo.fileID
                         + " from the OSD: " + osdUUID.toString() + "\n"
                         + "It is NOT SAFE to call xtfs_remove_osd again. Please remove the replica manually before "

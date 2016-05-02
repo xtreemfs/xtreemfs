@@ -66,7 +66,16 @@ public class Logging {
         /**
          * logs messages from tests
          */
-        test
+        test,
+        /**
+         * log messages regarding flease
+         */
+        flease,
+        /**
+         * log messages regarding babudb
+         */
+        babudb,
+
     }
     
     protected static final char      ABBREV_LEVEL_INFO  = 'I';

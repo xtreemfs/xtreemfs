@@ -214,8 +214,7 @@ public class OpenOperation extends MRCOperation {
             defaultReplPolicy = sMan.getDefaultReplicationPolicy(1);
         
         // flag indicating whether on-close replication will be triggered
-        boolean replicateOnClose = defaultReplPolicy != null
-            && ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(defaultReplPolicy.getName());
+        boolean replicateOnClose = defaultReplPolicy != null && ReplicaUpdatePolicies.isRO(defaultReplPolicy.getName());
         
         // if no replicas have been assigned yet ...
         if ((xLocList == null || xLocList.getReplicaCount() == 0) && (create || write)) {
@@ -223,9 +222,9 @@ public class OpenOperation extends MRCOperation {
             // if the file is supposed to be read-only replicated, create a
             // non-replicated file and defer the replication until the file is
             // closed
-            boolean singleReplica = defaultReplPolicy == null
-                || ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(defaultReplPolicy.getName())
-                || replicateOnClose;
+            boolean singleReplica = (defaultReplPolicy == null)
+                    || ReplicaUpdatePolicies.isNONE(defaultReplPolicy.getName())
+                    || replicateOnClose;
             
             if (singleReplica) {
                 

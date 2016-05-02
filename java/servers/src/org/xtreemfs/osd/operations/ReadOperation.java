@@ -82,21 +82,27 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        // TODO(jdillmann): Use centralized method to check if a lease is required.
-        if (rq.getLocationList().getNumReplicas() > 1
-                && ReplicaUpdatePolicies.isRwReplicated(rq.getLocationList().getReplicaUpdatePolicy())) {
+        int numReplicas = rq.getLocationList().getNumReplicas();
+        String replicaUpdatePolicy = rq.getLocationList().getReplicaUpdatePolicy();
+
+        if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedRead(rq, args);
+        } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
+                || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
+            final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                    ? rq.getCapability().getSnapTimestamp() : 0;
+
+            master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp, args.getOffset(),
+                    args.getLength(), snapVerTS, rq, new ReadObjectCallback() {
+
+                        @Override
+                        public void readComplete(ObjectInformation result, ErrorResponse error) {
+                            postRead(rq, args, result, error);
+                        }
+                    });
         } else {
-            final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
-
-            master.getStorageStage().readObject(args.getFileId(), args.getObjectNumber(), sp,
-                args.getOffset(),args.getLength(), snapVerTS, rq, new ReadObjectCallback() {
-
-                @Override
-                public void readComplete(ObjectInformation result, ErrorResponse error) {
-                    postRead(rq, args, result, error);
-                }
-            });
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);
         }
     }
 
@@ -138,7 +144,7 @@ public final class ReadOperation extends OSDOperation {
             rq.sendError(error);
         } else {
             if (result.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST
-                    && rq.getLocationList().getReplicaUpdatePolicy().equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
+                    && ReplicaUpdatePolicies.isRO(rq.getLocationList().getReplicaUpdatePolicy())
                     && rq.getLocationList().getNumReplicas() > 1
                     && !rq.getLocationList().getLocalReplica().isComplete()) {
                 // read only replication!
