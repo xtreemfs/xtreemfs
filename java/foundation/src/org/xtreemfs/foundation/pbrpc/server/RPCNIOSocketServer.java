@@ -373,9 +373,9 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                                 final int msgLen = buf.getInt();
                                 final int dataLen = buf.getInt();
 
-                                if ((hdrLen <= 0) || (hdrLen >= MAX_FRAGMENT_SIZE)
-                                        || (msgLen < 0) || (msgLen >= MAX_FRAGMENT_SIZE)
-                                        || (dataLen < 0) || (dataLen >= MAX_FRAGMENT_SIZE)) {
+                                if ((hdrLen <= 0) || (hdrLen > MAX_FRAGMENT_SIZE)
+                                        || (msgLen < 0) || (msgLen > MAX_FRAGMENT_SIZE)
+                                        || (dataLen < 0) || (dataLen > MAX_FRAGMENT_SIZE)) {
                                     Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this,
                                             "invalid record marker size (%d/%d/%d) received, closing connection to client %s",
                                             hdrLen, msgLen, dataLen, channel.socket()
