@@ -208,6 +208,7 @@ public class VolumeImplementation implements Volume, AdminVolume {
         // register all stripe translators
         this.stripeTranslators = new HashMap<StripingPolicyType, StripeTranslator>();
         stripeTranslators.put(StripingPolicyType.STRIPING_POLICY_RAID0, new StripeTranslatorRaid0());
+        stripeTranslators.put(StripingPolicyType.STRIPING_POLICY_ERASURECODE, new StripeTranslatorEC());
     }
 
     /*

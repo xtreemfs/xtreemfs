@@ -74,4 +74,43 @@ void StripeTranslatorRaid0::TranslateReadRequest(
   }
 }
 
+void StripeTranslatorEC::TranslateWriteRequest(
+    const char* buf, size_t size, int64_t offset, PolicyContainer policies,
+    std::vector<WriteOperation>* operations) const {
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+
+  size_t obj_number = static_cast<size_t>(offset) / stripe_size;
+  size_t req_offset = static_cast<size_t>(offset) % stripe_size;
+
+  std::vector<size_t> osd_offsets;
+  for (PolicyContainer::iterator i = policies.begin();
+       i != policies.end();
+       ++i) {
+    osd_offsets.push_back(0);
+  }
+
+  operations->push_back(WriteOperation(obj_number, osd_offsets, size, req_offset, buf));
+}
+
+void StripeTranslatorEC::TranslateReadRequest(
+    char* buf, size_t size, int64_t offset, PolicyContainer policies,
+    std::vector<ReadOperation>* operations) const {
+  // stripe size is stored in kB
+  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+
+  size_t obj_number = static_cast<size_t>(offset) / stripe_size;
+  size_t req_offset = static_cast<size_t>(offset) % stripe_size;
+
+  std::vector<size_t> osd_offsets;
+  for (PolicyContainer::iterator i = policies.begin();
+       i != policies.end();
+       ++i) {
+    osd_offsets.push_back(0);
+  }
+
+  operations->push_back(ReadOperation(obj_number, osd_offsets, size, req_offset, buf));
+}
+
 }  // namespace xtreemfs
+

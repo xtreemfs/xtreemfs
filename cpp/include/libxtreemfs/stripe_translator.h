@@ -92,6 +92,23 @@ class StripeTranslatorRaid0 : public StripeTranslator {
       std::vector<ReadOperation>* operations) const;
 };
 
+class StripeTranslatorEC : public StripeTranslator {
+ public:
+  virtual void TranslateWriteRequest(
+      const char *buf,
+      size_t size,
+      int64_t offset,
+      PolicyContainer policies,
+      std::vector<WriteOperation>* operations) const;
+
+  virtual void TranslateReadRequest(
+      char *buf,
+      size_t size,
+      int64_t offset,
+      PolicyContainer policies,
+      std::vector<ReadOperation>* operations) const;
+};
+
 }  // namespace xtreemfs
 
 #endif  // CPP_INCLUDE_LIBXTREEMFS_STRIPE_TRANSLATOR_H_
