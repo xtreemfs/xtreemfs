@@ -702,6 +702,7 @@ public class MRCHelper {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "Striping of rw-replicated Files is not supported yet.");
                 }
+                // FIXME (jdillmann): Handle EC files
 
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
 
@@ -888,6 +889,7 @@ public class MRCHelper {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "RW-replication of striped files is not supported yet.");
                 }
+                // FIXME (jdillmann): Handle EC files
 
                 sMan.setDefaultReplicationPolicy(file.getId(), rp, update);
 

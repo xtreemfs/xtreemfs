@@ -89,6 +89,9 @@ public final class TruncateOperation extends OSDOperation {
                     }
             });
 
+        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
+            // FIXME (jdillmann): do!
+
         } else {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);

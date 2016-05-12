@@ -76,6 +76,8 @@ public class FileScrubber implements Runnable {
         } else {
             scrubRWOrNonReplicatedFile();
         }
+        // FIXME (jdillmann): Handle EC files
+
         listener.fileScrubbed(fileName, byteCounter, returnStatus);
         try {
             fileHandle.close();

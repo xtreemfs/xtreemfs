@@ -83,7 +83,9 @@ public class InvalidateXLocSetOperation extends OSDOperation {
                             }
                         }
                     });
+            // FIXME (jdillmann): Handle EC Policy?
         } else {
+
             invalidationFinished(rq, leaseState, null);
         }
     }

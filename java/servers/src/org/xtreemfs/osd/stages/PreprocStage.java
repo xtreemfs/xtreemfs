@@ -488,10 +488,10 @@ public class PreprocStage extends Stage {
             for (OpenFileTableEntry entry : closedWrittenFiles) {
                 if (!entry.isClosed() && entry.isWrite()) {
                     entry.clearWrite();
-
                     OSDOperation createVersionEvent = master.getInternalEvent(EventCreateFileVersion.class);
-                    createVersionEvent.startInternalEvent(new Object[] { entry.getFileId(),
-                            metadataCache.getFileInfo(entry.getFileId()) });
+                    createVersionEvent.startInternalEvent(
+                            new Object[] { entry.getFileId(), metadataCache.getFileInfo(entry.getFileId()) });
+
                 }
             }
 
@@ -746,6 +746,7 @@ public class PreprocStage extends Stage {
                     ASCIIString cellId = ReplicaUpdatePolicy.fileToCellId(fileId);
                     master.getRWReplicationStage().setView(fileId, cellId, newstate);
                 }
+                // FIXME (jdillmann): Handle EC Policy?
             } catch (IOException e) {
                 return ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                         "Invalid view. Local version could not be written.");
@@ -853,6 +854,7 @@ public class PreprocStage extends Stage {
             if (xLoc.getNumReplicas() > 1 && ReplicaUpdatePolicies.isRW(xLoc.getReplicaUpdatePolicy())) {
                 master.getRWReplicationStage().invalidateReplica(fileId, fileCreds, xLoc, callback);
             } else {
+                // FIXME (jdillmann): Handle EC Policy?
                 callback.invalidateComplete(LeaseState.NONE, null);
             }
 

@@ -71,6 +71,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
         } else if (ReplicaUpdatePolicies.isRW(replUpdatePolicy)) {
             rwReplicatedGetFS(rq, args);
         } else {
+            // FIXME (jdillmann): Handle EC Policy?
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replUpdatePolicy);
         }

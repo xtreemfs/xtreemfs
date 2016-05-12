@@ -258,6 +258,8 @@ public class OpenOperation extends MRCOperation {
                 if (defaultReplPolicy != null)
                     numReplicas = defaultReplPolicy.getFactor();
                 
+                // FIXME (jdillmann): Handle EC Policy
+
                 // assign as many new replicas as needed
                 List<XLoc> repls = new ArrayList<XLoc>();
                 for (int i = 0; i < numReplicas; i++) {

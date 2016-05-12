@@ -54,6 +54,8 @@ public final class DeleteOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final unlink_osd_Request args = (unlink_osd_Request) rq.getRequestArgs();
 
+        // FIXME (jdillmann): Handle EC Policy
+
         // If the file is open, the deleteOnClose flag will be set.
         master.getPreprocStage().checkDeleteOnClose(args.getFileId(), new DeleteOnCloseCallback() {
 

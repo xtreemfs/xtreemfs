@@ -100,6 +100,8 @@ public final class ReadOperation extends OSDOperation {
                             postRead(rq, args, result, error);
                         }
                     });
+        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
+            // FIXME (jdillmann): do!
         } else {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);

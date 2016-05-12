@@ -49,6 +49,7 @@ public class RepairObjectOperation extends OSDOperation {
         } else if (ReplicaUpdatePolicies.isRW(replPolicy)) {
             repairRWObject(rq, args);
         } else {
+            // FIXME (jdillmann): Handle EC Policy?
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replPolicy);
         }
