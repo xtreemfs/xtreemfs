@@ -32,7 +32,8 @@ before_script:
   - XTREEMFS_DIR=`pwd`
 
 script:
-  - make client server hadoop-client -j2
+  - mkdir xtreemfs-$TRAVIS_TAG-bin
+  - make client server hadoop-client install DESTDIR=xtreemfs-$TRAVIS_TAG-bin -j2 && tar czf xtreemfs-$TRAVIS_TAG-bin/xtreemfs-$TRAVIS_TAG-bin.tar.gz xtreemfs-$TRAVIS_TAG-bin
   - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
 
 after_failure:
@@ -44,3 +45,15 @@ after_failure:
   - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
   - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
   - if [[ $CONTRIB_RESULT = "false" ]]; then cat $TEST_DIR_/log/hadoop-*-junit.log; fi
+
+deploy:
+  provider: releases
+  api_key:
+    # robert-schmidtke's encrypted GitHub API key
+    secure: XnC5jy6a6cLMVglnl6KTBkr3o8ir3ulKqKKjc669yUjAET7LfTyGdWcTHsekPxhiUMOnM4mwjna519yrGseTRUE6ff4Ba0FrBDwMK4bXdPyeVnCG59wUndFUTBKlOgFOz3tD4g/ZfdicufnCTRILjCqwDL2U3MNY31LoUssM77o=
+  file: xtreemfs-$TRAVIS_TAG-bin/xtreemfs-$TRAVIS_TAG-bin.tar.gz
+  skip_cleanup: true
+  overwrite: true
+  on:
+    repo: xtreemfs/xtreemfs
+    tags: true
