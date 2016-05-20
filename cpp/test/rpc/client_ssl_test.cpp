@@ -272,7 +272,7 @@ protected:
     PRINTF("SetUp() %s -- ", typeid(*this).name());
     initialize_logger(options_.log_level_string,
                       options_.log_file_path,
-                      LEVEL_WARN);
+                      LEVEL_DEBUG);
     
     dir_log_file_name_ = options_.log_file_path + "_dir";
     mrc_log_file_name_ = options_.log_file_path + "_mrc";
@@ -303,7 +303,7 @@ protected:
   }
 
   virtual void TearDown() {
-    PRINTF("TearDown() -- ");
+    PRINTF("TearDown() --\n");
     if (client_.get() != NULL) {
       client_->Shutdown();
     }
@@ -316,6 +316,18 @@ protected:
     if (external_dir_.get() != NULL) {
       external_dir_->Shutdown();
     }
+
+    PRINTF("Showing log file '%s'\n", options_.log_file_path.c_str());
+    std::ifstream logfile(options_.log_file_path.c_str());
+    if (logfile.is_open()) {
+      std::string line;
+      while (getline(logfile, line)) {
+        PRINTF("%s\n", line.c_str());
+      }
+      logfile.close();
+    } else {
+      PRINTF("Could not open log file '%s'\n", options_.log_file_path.c_str());
+    }
     
     if (!HasFailure()) {
       unlink(options_.log_file_path.c_str());
@@ -325,7 +337,7 @@ protected:
     }
 
     shutdown_logger();
-    std::cout << "done" << std::endl;
+    PRINTF("done\n");
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
