@@ -30,7 +30,7 @@ addons:
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
   - XTREEMFS_DIR=`pwd`
-  - XTREEMFS_DIST_DIR="xtreemfs-${TRAVIS_TAG}-dist"
+  - XTREEMFS_DIST_DIR="xtreemfs-${TRAVIS_TAG}-$(lsb_release -c -s)-dist"
   - XTREEMFS_DIST_TAR="${XTREEMFS_DIST_DIR}/${XTREEMFS_DIST_DIR}.tar.gz"
 
 script:
@@ -48,16 +48,16 @@ after_failure:
   - if [[ $CONTRIB_RESULT = "false" ]]; then cat $TEST_DIR_/log/hadoop-*-junit.log; fi
 
 before_deploy:
-  - mkdir $XTREEMFS_DIST_DIR
-  - make install DESTDIR=${XTREEMFS_DIST_DIR}
-  - tar czf $XTREEMFS_DIST_TAR $XTREEMFS_DIST_DIR
+  - mkdir "${XTREEMFS_DIST_DIR}"
+  - make install DESTDIR="${XTREEMFS_DIST_DIR}"
+  - tar czf "${XTREEMFS_DIST_TAR}" "${XTREEMFS_DIST_DIR}"
 
 deploy:
   provider: releases
   api_key:
     # robert-schmidtke's encrypted GitHub API key
-    secure: XnC5jy6a6cLMVglnl6KTBkr3o8ir3ulKqKKjc669yUjAET7LfTyGdWcTHsekPxhiUMOnM4mwjna519yrGseTRUE6ff4Ba0FrBDwMK4bXdPyeVnCG59wUndFUTBKlOgFOz3tD4g/ZfdicufnCTRILjCqwDL2U3MNY31LoUssM77o=
-  file: $XTREEMFS_DIST_TAR
+    secure: "XnC5jy6a6cLMVglnl6KTBkr3o8ir3ulKqKKjc669yUjAET7LfTyGdWcTHsekPxhiUMOnM4mwjna519yrGseTRUE6ff4Ba0FrBDwMK4bXdPyeVnCG59wUndFUTBKlOgFOz3tD4g/ZfdicufnCTRILjCqwDL2U3MNY31LoUssM77o="
+  file: "${XTREEMFS_DIST_TAR}"
   skip_cleanup: true
   overwrite: true
   on:
