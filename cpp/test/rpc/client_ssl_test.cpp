@@ -317,16 +317,24 @@ protected:
       external_dir_->Shutdown();
     }
 
-    PRINTF("Showing log file '%s'\n", options_.log_file_path.c_str());
-    std::ifstream logfile(options_.log_file_path.c_str());
-    if (logfile.is_open()) {
-      std::string line;
-      while (getline(logfile, line)) {
-        PRINTF("%s\n", line.c_str());
+    const char *logfiles[4];
+    logfiles[0] = options_.log_file_path.c_str();
+    logfiles[1] = dir_log_file_name_.c_str();
+    logfiles[2] = mrc_log_file_name_.c_str();
+    logfiles[3] = osd_log_file_name_.c_str();
+
+    for (int i = 0; i < 4; ++i) {
+      PRINTF("Showing log file '%s'\n", logfiles[i]);
+      std::ifstream logfile(logfiles[i]);
+      if (logfile.is_open()) {
+        std::string line;
+        while (getline(logfile, line)) {
+          PRINTF("%s\n", line.c_str());
+        }
+        logfile.close();
+      } else {
+        PRINTF("Could not open log file '%s'\n", logfiles[i]);
       }
-      logfile.close();
-    } else {
-      PRINTF("Could not open log file '%s'\n", options_.log_file_path.c_str());
     }
     
     if (!HasFailure()) {
