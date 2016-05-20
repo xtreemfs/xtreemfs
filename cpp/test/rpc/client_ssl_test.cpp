@@ -329,17 +329,23 @@ protected:
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
+    PRINTF("CreateVolume() -- ");
     client_->CreateVolume(mrc_url_.service_addresses,
                         auth_,
                         user_credentials_,
                         volume_name);
+    std::cout << "done" << std::endl;
+    PRINTF("OpenVolume() -- ");
     client_->OpenVolume(volume_name,
                         options_.GenerateSSLOptions(),
                         options_);
+    std::cout << "done" << std::endl;
+    PRINTF("DeleteVolume() --");
     client_->DeleteVolume(mrc_url_.service_addresses,
                           auth_,
                           user_credentials_,
                           volume_name);
+    std::cout << "done" << std::endl;
   }
   
   size_t count_occurrences_in_file(std::string file_path, std::string s) {
