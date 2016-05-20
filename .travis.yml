@@ -9,6 +9,7 @@ env:
     - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-contrib
+    - TEST_SUITE=travis-deploy
 
 sudo: false
 
@@ -63,3 +64,4 @@ deploy:
   on:
     repo: xtreemfs/xtreemfs
     tags: true
+    condition: "$TEST_SUITE = travis-deploy"
