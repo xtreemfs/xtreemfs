@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdexcept>
 #include <string>
+#include <typeinfo>
 #include <openssl/opensslv.h>
 
 #include "libxtreemfs/client.h"
@@ -28,6 +29,17 @@
 #include "libxtreemfs/xtreemfs_exception.h"
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
+
+namespace testing {
+namespace internal {
+  enum GTestColor {
+    COLOR_DEFAULT, COLOR_RED, COLOR_GREEN, COLOR_YELLOW
+  };
+
+  extern void ColoredPrintf(GTestColor color, const char* fmt, ...);
+} // namespace internal
+} // namespace testing
+#define PRINTF(...)  do { testing::internal::ColoredPrintf(testing::internal::COLOR_GREEN, "[          ] "); testing::internal::ColoredPrintf(testing::internal::COLOR_YELLOW, __VA_ARGS__); } while(0)
 
 /** 
  * The working directory is assumed to be cpp/build.
@@ -232,6 +244,7 @@ char g_ssl_tls_version_tlsv12[] = "tlsv12";
 class ClientTest : public ::testing::Test {
 protected:  
   ClientTest() {
+    PRINTF("ClientTest() -- ");
     char *xtreemfs_test_dir = getenv("XTREEMFS_TEST_DIR");
     if (xtreemfs_test_dir == NULL ||
         (xtreemfs_test_dir_ = xtreemfs_test_dir).empty()) {
@@ -252,9 +265,11 @@ protected:
     } else {
       tmpdir_ = "/tmp/";
     }
+    std::cout << "done" << std::endl;
   }
   
   virtual void SetUp() {
+    PRINTF("SetUp() %s -- ", typeid(*this).name());
     initialize_logger(options_.log_level_string,
                       options_.log_file_path,
                       LEVEL_WARN);
@@ -284,9 +299,11 @@ protected:
                                                  options_));
 
     client_->Start();
+    std::cout << "done" << std::endl;
   }
 
   virtual void TearDown() {
+    PRINTF("TearDown() -- ");
     if (client_.get() != NULL) {
       client_->Shutdown();
     }
@@ -308,6 +325,7 @@ protected:
     }
 
     shutdown_logger();
+    std::cout << "done" << std::endl;
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
