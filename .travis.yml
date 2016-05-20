@@ -31,7 +31,7 @@ before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
   - XTREEMFS_DIR=`pwd`
   - XTREEMFS_DIST_DIR="xtreemfs-${TRAVIS_TAG}-$(lsb_release -c -s)-dist"
-  - XTREEMFS_DIST_TAR="${XTREEMFS_DIST_DIR}/${XTREEMFS_DIST_DIR}.tar.gz"
+  - XTREEMFS_DIST_TAR="${XTREEMFS_DIST_DIR}.tar.gz"
 
 script:
   - make client server hadoop-client -j2
