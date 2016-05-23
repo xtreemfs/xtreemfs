@@ -422,7 +422,7 @@ public class OSDPolicyTest {
                 .setName("osd5").setVersion(1).setUuid("osd5").setData(getDefaultServiceDataMap()));
         
         UUIDResolver.addTestMapping("osd1", "xtreemfs1.zib.de", 2222, false);
-        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.berlin.de", 2222, false);
         UUIDResolver.addTestMapping("osd3", "xtreemfs.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
@@ -436,7 +436,7 @@ public class OSDPolicyTest {
         assertEquals("osd2", sortedList.getServices(3).getUuid());
         assertEquals("osd5", sortedList.getServices(4).getUuid());
         
-        clientAddr = InetAddress.getByName("www.heise.de");
+        clientAddr = InetAddress.getByName("www.berlin.de");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
             clientAddr, null, null, Integer.MAX_VALUE);
         
@@ -461,7 +461,7 @@ public class OSDPolicyTest {
                 .setName("osd5").setVersion(1).setUuid("osd5").setData(getDefaultServiceDataMap()));
         
         UUIDResolver.addTestMapping("osd1", "bla.xtreemfs.zib.de", 2222, false);
-        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.berlin.de", 2222, false);
         UUIDResolver.addTestMapping("osd3", "blub.xtreemfs.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
@@ -482,7 +482,7 @@ public class OSDPolicyTest {
             clientAddr, null, null, 4);
         assertEquals(0, sortedList.getServicesCount());
         
-        clientAddr = InetAddress.getByName("www.heise.de");
+        clientAddr = InetAddress.getByName("www.berlin.de");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
             clientAddr, null, null, 1);
         assertEquals(1, sortedList.getServicesCount());
@@ -544,7 +544,7 @@ public class OSDPolicyTest {
                 .setVersion(1).setUuid("osd5").setName("osd5").setData(sdm));
         
         UUIDResolver.addTestMapping("osd1", "bla.xtreemfs.zib.de", 2222, false);
-        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.berlin.de", 2222, false);
         UUIDResolver.addTestMapping("osd3", "blub.xtreemfs.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
