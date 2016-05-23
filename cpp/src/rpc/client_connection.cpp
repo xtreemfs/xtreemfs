@@ -268,9 +268,12 @@ void ClientConnection::PostConnect(const boost::system::error_code& err,
         ostringstream oss;
         oss
           << "Boost error message: '" << err.message() << "' (value: '" << err.value() << "')"
-          << ", OpenSSL library: '" << ERR_lib_error_string(err.value()) << "'"
-          << ", OpenSSL function: '" << ERR_func_error_string(err.value()) << "'"
-          << ", OpenSSL reason: '" << ERR_reason_error_string(err.value()) << "'";
+          << ", OpenSSL library number: '" << ERR_GET_LIB(err.value()) << "'"
+          << ", OpenSSL function code: '" << ERR_GET_FUNC(err.value()) << "'"
+          << ", OpenSSL reason code: '" << ERR_GET_REASON(err.value()) << "'";
+        char buf[512];
+        ERR_error_string_n(err.value(), buf, sizeof(buf));
+        oss << ", OpenSSL error string: '" << buf << "'";
         ssl_error_info = oss.str();
       }
 #endif  // HAS_OPENSSL
