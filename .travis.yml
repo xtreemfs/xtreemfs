@@ -34,9 +34,13 @@ before_script:
   - XTREEMFS_DIST_DIR="xtreemfs-${TRAVIS_TAG}-$(lsb_release -c -s)-dist"
   - XTREEMFS_DIST_TAR="${XTREEMFS_DIST_DIR}.tar.gz"
 
-script:
-  - make client server hadoop-client -j2
-  - ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
+script: |
+  if [[ $TEST_SUITE = "travis-deploy" ]]; then
+    true
+  else
+    make client server hadoop-client -j2
+    ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
+  fi
 
 after_failure:
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
