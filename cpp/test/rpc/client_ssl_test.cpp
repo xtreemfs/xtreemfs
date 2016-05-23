@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <stdexcept>
 #include <string>
-#include <typeinfo>
 #include <openssl/opensslv.h>
 
 #include "libxtreemfs/client.h"
