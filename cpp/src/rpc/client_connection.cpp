@@ -265,7 +265,13 @@ void ClientConnection::PostConnect(const boost::system::error_code& err,
       string ssl_error_info;
 #ifdef HAS_OPENSSL
       if (err.category() == asio::error::ssl_category) {
-        ssl_error_info = ERR_error_string(ERR_get_error(), NULL);
+        ostringstream oss;
+        oss
+          << "Boost error message: '" << err.message() << "' (value: '" << err.value() << "')"
+          << ", OpenSSL library: '" << ERR_lib_error_string(err.value()) << "'"
+          << ", OpenSSL function: '" << ERR_func_error_string(err.value()) << "'"
+          << ", OpenSSL reason: '" << ERR_reason_error_string(err.value()) << "'";
+        ssl_error_info = oss.str();
       }
 #endif  // HAS_OPENSSL
       SendError(POSIX_ERROR_EIO,
