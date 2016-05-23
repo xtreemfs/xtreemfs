@@ -30,6 +30,7 @@
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
+// http://stackoverflow.com/questions/16491675/how-to-send-custom-message-in-google-c-testing-framework/
 namespace testing {
 namespace internal {
   enum GTestColor {
@@ -244,7 +245,6 @@ char g_ssl_tls_version_tlsv12[] = "tlsv12";
 class ClientTest : public ::testing::Test {
 protected:  
   ClientTest() {
-    PRINTF("ClientTest() -- ");
     char *xtreemfs_test_dir = getenv("XTREEMFS_TEST_DIR");
     if (xtreemfs_test_dir == NULL ||
         (xtreemfs_test_dir_ = xtreemfs_test_dir).empty()) {
@@ -265,11 +265,9 @@ protected:
     } else {
       tmpdir_ = "/tmp/";
     }
-    std::cout << "done" << std::endl;
   }
   
   virtual void SetUp() {
-    PRINTF("SetUp() %s -- ", typeid(*this).name());
     initialize_logger(options_.log_level_string,
                       options_.log_file_path,
                       LEVEL_DEBUG);
@@ -299,11 +297,9 @@ protected:
                                                  options_));
 
     client_->Start();
-    std::cout << "done" << std::endl;
   }
 
   virtual void TearDown() {
-    PRINTF("TearDown() --\n");
     if (client_.get() != NULL) {
       client_->Shutdown();
     }
@@ -323,49 +319,42 @@ protected:
     logfiles[2] = mrc_log_file_name_.c_str();
     logfiles[3] = osd_log_file_name_.c_str();
 
-    for (int i = 0; i < 4; ++i) {
-      PRINTF("Showing log file '%s'\n", logfiles[i]);
-      std::ifstream logfile(logfiles[i]);
-      if (logfile.is_open()) {
-        std::string line;
-        while (getline(logfile, line)) {
-          PRINTF("%s\n", line.c_str());
+    if (HasFailure()) {
+      for (int i = 0; i < 4; ++i) {
+        PRINTF("Showing log file '%s'\n", logfiles[i]);
+        std::ifstream logfile(logfiles[i]);
+        if (logfile.is_open()) {
+          std::string line;
+          while (getline(logfile, line)) {
+            PRINTF("%s\n", line.c_str());
+          }
+          logfile.close();
+        } else {
+          PRINTF("Could not open log file '%s'\n", logfiles[i]);
         }
-        logfile.close();
-      } else {
-        PRINTF("Could not open log file '%s'\n", logfiles[i]);
       }
     }
     
-    if (!HasFailure()) {
-      unlink(options_.log_file_path.c_str());
-      unlink(dir_log_file_name_.c_str());
-      unlink(mrc_log_file_name_.c_str());
-      unlink(osd_log_file_name_.c_str());
-    }
+    unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
 
     shutdown_logger();
-    PRINTF("done\n");
   }
   
   void CreateOpenDeleteVolume(std::string volume_name) {
-    PRINTF("CreateVolume() -- ");
     client_->CreateVolume(mrc_url_.service_addresses,
                         auth_,
                         user_credentials_,
                         volume_name);
-    std::cout << "done" << std::endl;
-    PRINTF("OpenVolume() -- ");
     client_->OpenVolume(volume_name,
                         options_.GenerateSSLOptions(),
                         options_);
-    std::cout << "done" << std::endl;
-    PRINTF("DeleteVolume() --");
     client_->DeleteVolume(mrc_url_.service_addresses,
                           auth_,
                           user_credentials_,
                           volume_name);
-    std::cout << "done" << std::endl;
   }
   
   size_t count_occurrences_in_file(std::string file_path, std::string s) {
