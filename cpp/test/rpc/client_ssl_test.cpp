@@ -29,6 +29,18 @@
 #include "pbrpc/RPC.pb.h"
 #include "util/logging.h"
 
+// http://stackoverflow.com/questions/16491675/how-to-send-custom-message-in-google-c-testing-framework/
+namespace testing {
+namespace internal {
+  enum GTestColor {
+    COLOR_DEFAULT, COLOR_RED, COLOR_GREEN, COLOR_YELLOW
+  };
+
+  extern void ColoredPrintf(GTestColor color, const char* fmt, ...);
+} // namespace internal
+} // namespace testing
+#define PRINTF(...)  do { testing::internal::ColoredPrintf(testing::internal::COLOR_GREEN, "[          ] "); testing::internal::ColoredPrintf(testing::internal::COLOR_YELLOW, __VA_ARGS__); } while(0)
+
 /** 
  * The working directory is assumed to be cpp/build.
  */
@@ -257,7 +269,7 @@ protected:
   virtual void SetUp() {
     initialize_logger(options_.log_level_string,
                       options_.log_file_path,
-                      LEVEL_WARN);
+                      LEVEL_DEBUG);
     
     dir_log_file_name_ = options_.log_file_path + "_dir";
     mrc_log_file_name_ = options_.log_file_path + "_mrc";
@@ -299,13 +311,33 @@ protected:
     if (external_dir_.get() != NULL) {
       external_dir_->Shutdown();
     }
-    
-    if (!HasFailure()) {
-      unlink(options_.log_file_path.c_str());
-      unlink(dir_log_file_name_.c_str());
-      unlink(mrc_log_file_name_.c_str());
-      unlink(osd_log_file_name_.c_str());
+
+    const char *logfiles[4];
+    logfiles[0] = options_.log_file_path.c_str();
+    logfiles[1] = dir_log_file_name_.c_str();
+    logfiles[2] = mrc_log_file_name_.c_str();
+    logfiles[3] = osd_log_file_name_.c_str();
+
+    if (HasFailure()) {
+      for (int i = 0; i < 4; ++i) {
+        PRINTF("Showing log file '%s'\n", logfiles[i]);
+        std::ifstream logfile(logfiles[i]);
+        if (logfile.is_open()) {
+          std::string line;
+          while (getline(logfile, line)) {
+            PRINTF("%s\n", line.c_str());
+          }
+          logfile.close();
+        } else {
+          PRINTF("Could not open log file '%s'\n", logfiles[i]);
+        }
+      }
     }
+    
+    unlink(options_.log_file_path.c_str());
+    unlink(dir_log_file_name_.c_str());
+    unlink(mrc_log_file_name_.c_str());
+    unlink(osd_log_file_name_.c_str());
 
     shutdown_logger();
   }

@@ -19,4 +19,4 @@ export XTREEMFS_MRC_URL="$3"
 export XTREEMFS_TEST_DIR="$4"
 
 cd cpp/build
-make test
+make test ARGS=-VV

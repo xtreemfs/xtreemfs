@@ -7,7 +7,7 @@
 # 5: notice
 # 6: info (default)
 # 7: debug
-debug.level = 6
+debug.level = 7
 
 # optional debug categories - a space or comma-separated list of log message categories
 # all (default) - enable logging for all categories
