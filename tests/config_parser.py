@@ -103,7 +103,10 @@ class TestConfig:
         activeVolumeConfigs = dict()
         activeTests = list()
 
-        self.__curren_test_set = self.__testSets[self.__testSetName]
+        try:
+            self.__curren_test_set = self.__testSets[self.__testSetName]
+        except KeyError:
+            raise Exception('Invalid TestSet: "' + self.__testSetName + '"')
 
         if self.__testSetName.startswith(MANUAL_TEST_SET_NAME):
             #skip this for manual set-ups.
