@@ -546,14 +546,19 @@ if __name__ == "__main__":
 
         print 'Executing test set :', positional_args[0]
 
-        testEnv = TestEnvironment(options.config_file_path,
-                                  positional_args[0],
-                                  options.volume,
-                                  options.xtreemfs_dir,
-                                  options.test_dir,
-                                  options.debug_level,
-                                  options.storage_threads,
-                                  options.progress)
+        try:
+            testEnv = TestEnvironment(options.config_file_path,
+                                      positional_args[0],
+                                      options.volume,
+                                      options.xtreemfs_dir,
+                                      options.test_dir,
+                                      options.debug_level,
+                                      options.storage_threads,
+                                      options.progress)
+        except Exception as e:
+            print "Exception during creation of Test Environment: {0}, exiting.".format(e.args[0])
+            sys.exit(1)
+
         testEnv.start()
         try:
             failed = testEnv.runTests()
