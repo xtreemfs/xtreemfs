@@ -56,7 +56,7 @@ after_failure:
 before_deploy:
   - mkdir "${XTREEMFS_DIST_DIR}"
   - make client server hadoop-client install DESTDIR="${XTREEMFS_DIST_DIR}"
-  - tar czf "${XTREEMFS_DIST_TAR}" "${XTREEMFS_DIST_DIR}"
+  - tar czf "${XTREEMFS_DIST_TAR}" "${XTREEMFS_DIST_DIR}/*"
 
 deploy:
   provider: releases
