@@ -897,13 +897,15 @@ public class HashStorageLayout extends StorageLayout {
             // Load the VersionTrees required for Erasure Coding
             if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
                 // filesize could be restored from versionvector, but to stay consistent with the
-                // other policies store only the local filesize to FileMetadat
+                // other policies store only the local filesize to FileMetadata
 
-                IntervalVersionTreeLog ecVerLogCur = new IntervalVersionTreeLog(EC_VERSIONS_CUR);
+                File ecVerLogCurFile = new File(fileDir, EC_VERSIONS_CUR);
+                IntervalVersionTreeLog ecVerLogCur = new IntervalVersionTreeLog(ecVerLogCurFile);
                 ecVerLogCur.load();
                 info.initEcVersionsCur(ecVerLogCur);
 
-                IntervalVersionTreeLog ecVerLogNext = new IntervalVersionTreeLog(EC_VERSIONS_NEXT);
+                File ecVerLogNextFile = new File(fileDir, EC_VERSIONS_NEXT);
+                IntervalVersionTreeLog ecVerLogNext = new IntervalVersionTreeLog(ecVerLogNextFile);
                 ecVerLogNext.load();
                 info.initEcVersionsNext(ecVerLogNext);
 
