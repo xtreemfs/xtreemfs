@@ -39,6 +39,8 @@ public abstract class StripingPolicyImpl {
     public static StripingPolicyImpl getPolicy(Replica replica, int relOsdPosition) {
         if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
             return new RAID0Impl(replica,relOsdPosition);
+        } else if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+            return new ECStripingPolicyImpl(replica, relOsdPosition);
         } else {
             throw new IllegalArgumentException("unknown striping policy requested...request was " +
                     replica.getStripingPolicy().getType());
@@ -118,8 +120,10 @@ public abstract class StripingPolicyImpl {
     public abstract boolean isLocalObject(long objNo, int relativeOsdNo);
 
 
+    @Deprecated
     public abstract long getLocalObjectNumber(long objectNo);
 
+    @Deprecated
     public abstract long getGloablObjectNumber(long osdLocalObjNo);
 
     /**

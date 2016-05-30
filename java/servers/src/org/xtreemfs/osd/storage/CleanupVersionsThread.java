@@ -13,9 +13,9 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.Map.Entry;
 
 import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -29,13 +29,13 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.storage.StorageLayout.FileList;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getxattrRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getxattrResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 
 /**
  * 
@@ -244,6 +244,7 @@ public class CleanupVersionsThread extends LifeCycleThread {
                         
                         // get the metadata; provide any striping policy
                         // (doesn't matter here ...)
+                        // FIXME (jdillmann): Policy will mater now
                         FileMetadata md = layout.getFileMetadataNoCaching(RAID0Impl.getPolicy(Replica
                                 .newBuilder().setReplicationFlags(0).setStripingPolicy(
                                     StripingPolicy.newBuilder().setType(

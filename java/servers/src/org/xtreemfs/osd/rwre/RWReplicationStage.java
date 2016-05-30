@@ -819,12 +819,8 @@ public class RWReplicationStage extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "Dropping request from rwre queue due to overload");
         }
     }
-
-    public static interface RWReplicationFailableCallback {
-        public void failed(ErrorResponse ex);
-    }
     
-    public static interface RWReplicationCallback extends RWReplicationFailableCallback {
+    public static interface RWReplicationCallback extends FallibleCallback {
         public void success(long newObjectVersion);
         public void redirect(String redirectTo);
     }
@@ -885,7 +881,7 @@ public class RWReplicationStage extends Stage {
         this.enqueueOperation(STAGEOP_GETSTATUS, new Object[] {}, null, callback);
     }
 
-    public static interface StatusCallback extends RWReplicationFailableCallback {
+    public static interface StatusCallback extends FallibleCallback {
         public void statusComplete(Map<String, Map<String, String>> status);
     }
 
@@ -1503,7 +1499,7 @@ public class RWReplicationStage extends Stage {
         this.enqueueOperation(STAGEOP_GET_REPLICATED_FILE_STATE, new Object[] { fileId }, request, null, callback);
     }
 
-    public interface GetReplicatedFileStateCallback extends RWReplicationFailableCallback {
+    public interface GetReplicatedFileStateCallback extends FallibleCallback {
         public void getReplicatedFileStateComplete(ReplicatedFileStateSimple state);
     }
 

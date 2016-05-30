@@ -1257,6 +1257,8 @@ public class HashStorageLayout extends StorageLayout {
                     }
                 }
 
+                // FIXME (jdillmann): make sure "fake" EC file ids are handled correctly
+
                 // dir is a fileName-directory
                 if (isFileNameDir) {
                     if (newestFirst != null) {
@@ -1294,6 +1296,7 @@ public class HashStorageLayout extends StorageLayout {
         directories.push(storageDir);
 
         File currentFile;
+        // FIXME (jdillmann): make sure "fake" EC file ids are handled correctly
 
         while (!directories.empty()) {
             currentFile = new File(directories.pop());
@@ -1301,7 +1304,8 @@ public class HashStorageLayout extends StorageLayout {
                 if (f != null && f.isDirectory() && !f.getName().contains(":")) {
                     directories.push(f.getAbsolutePath());
                 } else {
-                    if (f != null && !f.getName().contains(".") && !f.getName().endsWith(".ser")) {
+                    // Ignoring "." in names will ignore EC .next .code .delta directories as well
+                    if (f != null && !f.getName().contains(".")) {
                         fileList.add(f.getName());
                     }
                 }

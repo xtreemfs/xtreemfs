@@ -75,7 +75,10 @@ public class Logging {
          * log messages regarding babudb
          */
         babudb,
-
+        /**
+         * log messages regarding erasure coding
+         */
+        ec
     }
     
     protected static final char      ABBREV_LEVEL_INFO  = 'I';

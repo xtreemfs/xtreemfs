@@ -374,6 +374,8 @@ public class CleanupThread extends LifeCycleThread {
             for (Volume volume : zombieFilesPerVolume.keySet()) {
                 // restore files if the flag is set (files from dead volumes cannot be restored
                 if (!volume.isDead() && lostAndFound) {
+                    // FIXME (jdillmann): Check if this actually works with Replication/Striping and maybe exclude for EC
+                    
                     Map<String, FileData> zombieFiles = zombieFilesPerVolume.get(volume);
 
                     for (String fileName : zombieFiles.keySet()) {

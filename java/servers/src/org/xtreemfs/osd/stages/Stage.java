@@ -19,7 +19,6 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {
@@ -174,11 +173,11 @@ public abstract class Stage extends LifeCycleThread {
      *            the stage method to execute
      */
     protected abstract void processMethod(StageRequest method);
-    
-    public static interface NullCallback {
-        public void callback(ErrorResponse ex);
+
+    public static interface FallibleCallback {
+        public void failed(ErrorResponse ex);
     }
-    
+
     public static final class StageRequest {
         
         private int              stageMethod;

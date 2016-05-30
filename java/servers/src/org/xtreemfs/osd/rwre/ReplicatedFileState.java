@@ -25,7 +25,7 @@ import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.osd.rwre.RWReplicationStage.RWReplicationFailableCallback;
+import org.xtreemfs.osd.stages.Stage.FallibleCallback;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectVersionMapping;
@@ -256,8 +256,8 @@ public class ReplicatedFileState {
             // Respond with the error, if a callback of type RWReplicationCallback exists.
             for (StageRequest rq : pendingRequests) {
                 Object callback = rq.getCallback();
-                if (callback != null && callback instanceof RWReplicationFailableCallback) {
-                    ((RWReplicationFailableCallback) callback).failed(error);
+                if (callback != null && callback instanceof FallibleCallback) {
+                    ((FallibleCallback) callback).failed(error);
                 }
             }
         }
