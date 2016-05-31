@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2015 by Jan Fajerski, Johannes Dillmann
+ * Copyright (c) 2016 by Johannes Dillmann
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.foundation;
+package org.xtreemfs.foundation.intervals;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -15,105 +15,112 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Test;
-import org.xtreemfs.foundation.IntervalVersionAVLTree.IntervalNode;
-import org.xtreemfs.foundation.IntervalVersionTree.Interval;
+import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector.IntervalNode;
 
-/**
- * @author Jan Fajerski
- */
-public class IntervalVersionAVLTreeTest {
+public class AVLTreeIntervalVectorTest {
     @Test
     public final void testBasicNonOverlappingIntervals() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        List<Interval> versions;
+        IntervalVector versions;
 
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1024);
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 1024));
         expected.add(new Interval(0, 1024));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
-        tree.insert(1024, 2048, 1);
+        tree.insert(new Interval(1024, 2048, 1));
         expected.add(new Interval(1024, 2048, 1));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
-        tree.insert(2048, 4096, 2);
+        tree.insert(new Interval(2048, 4096, 2));
         expected.add(new Interval(2048, 4096, 2));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
-        tree.insert(0, 1024, 3);
-        expected.get(0).version = 3;
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        tree.insert(new Interval(0, 1024, 3));
+        expected.set(0, new Interval(0, 1024, 3));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
     }
 
     @Test
     public final void testInsertOfOverlappingIntervals() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        IntervalVector versions;
 
-        tree.insert(1024, 4096, 1);
-        expected.add(new Interval(0, 1024, 0));
+        tree.insert(new Interval(1024, 4096, 1));
+        expected.add(new Interval(0, 1024, -1));
         expected.add(new Interval(1024, 4096, 1));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
-        tree.insert(0, 512, 1);
-        expected.addFirst(new Interval(0, 512, 1));
-        expected.get(1).begin = 512;
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        tree.insert(new Interval(0, 512, 1));
+        expected.clear();
+        expected.add(new Interval(0, 512, 1));
+        expected.add(new Interval(512, 1024, -1));
+        expected.add(new Interval(1024, 4096, 1));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
     }
 
     @Test
     public final void testInsertOfIntervalInsideOfExisting() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        IntervalVector versions;
 
-        tree.insert(512, 1536, 1);
+        tree.insert(new Interval(0, 2048, 0));
+        tree.insert(new Interval(512, 1536, 1));
         expected.add(new Interval(0, 512, 0));
         expected.add(new Interval(512, 1536, 1));
         expected.add(new Interval(1536, 2048, 0));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
     }
 
     @Test
     public final void testInsertOfSurroundingInterval() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+        IntervalVector versions;
 
-        tree.insert(512, 1536, 1);
-        tree.insert(500, 1800, 2);
+        tree.insert(new Interval(512, 1536, 1));
+        tree.insert(new Interval(500, 1800, 2));
         expected.add(new Interval(0, 500, 0));
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1800, 2048, 0));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
+        
         expected = new LinkedList<Interval>();
-        tree = new IntervalVersionAVLTree(0, 2048);
-        tree.insert(512, 1536, 1);
-        tree.insert(0, 5, 1);
-        tree.insert(500, 512, 1);
-        tree.insert(500, 1800, 2);
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+
+        tree.insert(new Interval(512, 1536, 1));
+        tree.insert(new Interval(0, 5, 1));
+        tree.insert(new Interval(500, 512, 1));
+        tree.insert(new Interval(500, 1800, 2));
         expected.add(new Interval(0, 5, 1));
         expected.add(new Interval(5, 500, 0));
         expected.add(new Interval(500, 1800, 2));
         expected.add(new Interval(1800, 2048, 0));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
-        tree = new IntervalVersionAVLTree(0, 1024);
+        
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 1024, 0));
+        
         expected = new LinkedList<Interval>();
         expected.add(new Interval(0, 2048, 1));
-        tree.insert(0, 2048, 1);
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        tree.insert(new Interval(0, 2048, 1));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
         // Test with full tree of height 2, where the first and the last leaf are shrinked
         tree = createFullTestTree();
@@ -122,148 +129,162 @@ public class IntervalVersionAVLTreeTest {
         expected.add(new Interval(500, 4000, 7));
         expected.add(new Interval(4000, 4096, 6));
         tree.insert(new Interval(500, 4000, 7));
-        assertEquals(expected, tree.getVersions(0, 8192));
-        
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
+
         // Test with tree of height 1, where the whole range is overwritten
-        tree = new IntervalVersionAVLTree();
+        tree = new AVLTreeIntervalVector();
         tree.insert(new Interval(0, 1024, 0));
         tree.insert(new Interval(1024, 2048, 2));
         tree.insert(new Interval(0, 2048, 3));
         expected.clear();
         expected.add(new Interval(0, 2048, 3));
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
     }
-
 
     @Test
     public void testRetrieve() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+        IntervalVector versions;
 
-        tree.insert(512, 1536, 1);
+        tree.insert(new Interval(512, 1536, 1));
 
         // Retrieve the whole tree
         expected.add(new Interval(0, 512, 0));
         expected.add(new Interval(512, 1536, 1));
         expected.add(new Interval(1536, 2048, 0));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
 
         // Retrieve only the root
         expected.clear();
         expected.add(new Interval(512, 1536, 1));
-        versions = tree.getVersions(512, 1536);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(512, 1536);
+        assertEquals(expected, versions.serialize());
 
         // Retrieve from right tree, but not the root
         expected.clear();
         expected.add(new Interval(1536, 2048, 0));
-        versions = tree.getVersions(1536, 2048);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(1536, 2048);
+        assertEquals(expected, versions.serialize());
 
         // Retrieve from left tree, but not the root
         expected.clear();
         expected.add(new Interval(0, 512, 0));
-        versions = tree.getVersions(0, 512);
-        assertEquals(expected, versions);
+        versions = tree.getOverlapping(0, 512);
+        assertEquals(expected, versions.serialize());
     }
 
     @Test
-    public final void testPartialRetrieve() {
+    public final void testSlice() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+        IntervalVector versions;
 
-        tree.insert(512, 1536, 1);
+        tree.insert(new Interval(512, 1536, 1));
         expected.add(new Interval(0, 512, 0));
         expected.add(new Interval(512, 1536, 1));
         expected.add(new Interval(1536, 2000, 0));
-        versions = tree.getVersions(0, 2000);
-        assertEquals(expected, versions);
+        versions = tree.getSlice(0, 2000);
+        assertEquals(expected, versions.serialize());
 
         // Retrieve from right tree, but not the root
         expected.clear();
         expected.add(new Interval(1550, 2048, 0));
-        versions = tree.getVersions(1550, 2048);
-        assertEquals(expected, versions);
+        versions = tree.getSlice(1550, 2048);
+        assertEquals(expected, versions.serialize());
 
         // Retrieve from left tree, but not the root
         expected.clear();
         expected.add(new Interval(0, 500, 0));
-        versions = tree.getVersions(0, 500);
-        assertEquals(expected, versions);
+        versions = tree.getSlice(0, 500);
+        assertEquals(expected, versions.serialize());
+
+        // Retrieve surrounding
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(1024, 2048, 1));
+        expected.clear();
+        expected.add(new Interval(0, 1024, -1));
+        expected.add(new Interval(1024, 2048, 1));
+        expected.add(new Interval(2048, 3072, -1));
+        versions = tree.getSlice(0, 3072);
+        assertEquals(expected, versions.serialize());
     }
 
     @Test
     public final void testBalance() {
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 2048);
-        tree.insert(0, 1024, 1);
-        tree.insert(0, 512, 2);
-        tree.insert(0, 256, 3);
-        tree.insert(0, 128, 4);
-        tree.insert(0, 64, 5);
-        tree.insert(0, 32, 6);
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+
+        tree.insert(new Interval(0, 1024, 1));
+        tree.insert(new Interval(0, 512, 2));
+        tree.insert(new Interval(0, 256, 3));
+        tree.insert(new Interval(0, 128, 4));
+        tree.insert(new Interval(0, 64, 5));
+        tree.insert(new Interval(0, 32, 6));
         assertEquals(0, tree.root.balance);
 
-        tree = new IntervalVersionAVLTree(0, 2048);
-        tree.insert(512, 1536, 1);
-        tree.insert(0, 5, 1);
-        tree.insert(500, 511, 1);
-        tree.insert(500, 2047, 2);
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 2048, 0));
+
+        tree.insert(new Interval(512, 1536, 1));
+        tree.insert(new Interval(0, 5, 1));
+        tree.insert(new Interval(500, 511, 1));
+        tree.insert(new Interval(500, 2047, 2));
         assertEquals(1, Math.abs(tree.root.balance));
-        
+
         tree = createFullTestTree();
         tree.insert(new Interval(0, 128, 7));
         tree.insert(new Interval(128, 256, 8));
         assertEquals(1, Math.abs(tree.root.balance));
-
     }
 
     @Test
-    public void testCompact() {
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1);
-        tree.insert(new Interval(1, 2, 0));
-        tree.insert(new Interval(2, 3, 0));
-
-        tree = createFullTestTree();
-        printTree(tree.root);
-
-        System.out.println(tree);
-        tree = tree.compact();
-        System.out.println(tree);
-        fail();
-    }
-
-    @Test
-    public void testCompactRetrieve() {
+    public void testSerialize() {
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        List<Interval> versions;
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
 
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 1024);
-        tree.insert(1024, 2048, 0);
-        tree.insert(2048, 4096, 0);
-
+        // Test if fragmented Intervals will be joined.
+        tree.insert(new Interval(0, 1024, 0));
+        tree.insert(new Interval(1024, 2048, 0));
+        tree.insert(new Interval(2048, 4096, 0));
         expected.add(new Interval(0, 4096, 0));
-        versions = tree.getVersions(0, 8192);
-        assertEquals(expected, versions);
+        assertEquals(expected, tree.serialize());
+
+        // Test if gaps are filled
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 512, 0));
+        tree.insert(new Interval(1024, 1536, 0));
+        expected.clear();
+        expected.add(new Interval(0, 512, 0));
+        expected.add(new Interval(512, 1024, -1));
+        expected.add(new Interval(1024, 1536, 0));
+        assertEquals(expected, tree.serialize());
     }
 
     @Test
     public void testTruncate() {
         List<Interval> expected = new LinkedList<Interval>();
+        IntervalVector versions;
 
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 10);
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(0, 10, 0));
         expected.add(new Interval(0, 10, 0));
 
         // truncate without effect
         tree.truncate(20);
-        assertEquals(10, tree.highest);
-        assertEquals(expected, tree.getVersions(0, 20));
+        assertEquals(10, tree.end);
+        versions = tree.getOverlapping(0, 20);
+        assertEquals(expected, versions.serialize());
 
         tree.truncate(10);
-        assertEquals(10, tree.highest);
-        assertEquals(expected, tree.getVersions(0, 20));
+        assertEquals(10, tree.end);
+        versions = tree.getOverlapping(0, 20);
+        assertEquals(expected, versions.serialize());
 
         // truncate to less then 0 should throw an exception
         try {
@@ -277,69 +298,76 @@ public class IntervalVersionAVLTreeTest {
         tree.truncate(5);
         expected.clear();
         expected.add(new Interval(0, 5, 0));
-        assertEquals(5, tree.highest);
-        assertEquals(expected, tree.getVersions(0, 20));
+        assertEquals(5, tree.end);
+        versions = tree.getOverlapping(0, 20);
+        assertEquals(expected, versions.serialize());
 
         // simple truncate on a single interval to the begin
         tree.truncate(1);
         expected.clear();
         expected.add(new Interval(0, 1, 0));
-        assertEquals(1, tree.highest);
-        assertEquals(expected, tree.getVersions(0, 20));
-
+        assertEquals(1, tree.end);
+        versions = tree.getOverlapping(0, 20);
+        assertEquals(expected, versions.serialize());
 
         // test dropping the right tree
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 2048);
+        expected = tree.getSlice(0, 2048).serialize();
         tree.truncate(2048);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on rightmost node
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 4000);
+        expected = tree.getSlice(0, 4000).serialize();
         tree.truncate(4000);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(2, tree.root.height);
         assertEquals(0, tree.root.balance);
 
         // test truncating on leftmost right node (drops parent and its right tree)
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 2500);
+        expected = tree.getSlice(0, 2500).serialize();
         tree.truncate(2500);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on the leftmost node (drops root and every other node)
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 500);
+        expected = tree.getSlice(0, 500).serialize();
         tree.truncate(500);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(0, tree.root.height);
         assertEquals(0, tree.root.balance);
 
         // test truncating on the left root node (drops root and nodes right tree)
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 1000);
+        expected = tree.getSlice(0, 1000).serialize();
         tree.truncate(1000);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(1, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on the rightmost left node
         tree = createFullTestTree();
-        expected = tree.getVersions(0, 1500);
+        expected = tree.getSlice(0, 1500).serialize();
         tree.truncate(1500);
-        assertEquals(expected, tree.getVersions(0, 8192));
+        versions = tree.getOverlapping(0, 8192);
+        assertEquals(expected, versions.serialize());
         assertEquals(1, tree.root.height);
         assertEquals(0, tree.root.balance);
     }
 
     @Test
     public void testOverwrites() {
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree();
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new Interval(0, 1024, 0));
         assertEquals(0, tree.getOverwrites());
 
@@ -368,26 +396,29 @@ public class IntervalVersionAVLTreeTest {
         // TODO(jdillmann): Test on unbalanced trees
     }
 
-    IntervalVersionAVLTree createFullTestTree() {
-        IntervalNode root = new IntervalNode(1536, 2048, 3);
+    AVLTreeIntervalVector createFullTestTree() {
+        IntervalNode root = new IntervalNode(new Interval(1536, 2048, 3));
         IntervalNode node;
 
-        node = new IntervalNode(512, 1024, 1);
-        node.left = new IntervalNode(0, 512, 0);
-        node.right = new IntervalNode(1024, 1536, 2);
+        node = new IntervalNode(new Interval(512, 1024, 1));
+        node.left = new IntervalNode(new Interval(0, 512, 0));
+        node.right = new IntervalNode(new Interval(1024, 1536, 2));
         node.checkHeight();
         root.left = node;
 
-        node = new IntervalNode(2560, 3584, 5);
-        node.left = new IntervalNode(2048, 2560, 4);
-        node.right = new IntervalNode(3584, 4096, 6);
+        node = new IntervalNode(new Interval(2560, 3584, 5));
+        node.left = new IntervalNode(new Interval(2048, 2560, 4));
+        node.right = new IntervalNode(new Interval(3584, 4096, 6));
         node.checkHeight();
         root.right = node;
 
         root.checkHeight();
 
-        IntervalVersionAVLTree tree = new IntervalVersionAVLTree(0, 4096);
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.root = root;
+        tree.maxVersion = 6;
+        tree.end = 4096;
+
         return tree;
     }
 
@@ -503,5 +534,4 @@ public class IntervalVersionAVLTreeTest {
         }
 
     }
-
 }
