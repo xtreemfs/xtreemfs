@@ -217,7 +217,9 @@ public class AVLTreeIntervalVectorTest {
 
     @Test
     public final void testBalance() {
-        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector tree;
+                
+        tree = new AVLTreeIntervalVector();
         tree.insert(new Interval(0, 2048, 0));
 
         tree.insert(new Interval(0, 1024, 1));
@@ -236,7 +238,31 @@ public class AVLTreeIntervalVectorTest {
         tree.insert(new Interval(500, 511, 1));
         tree.insert(new Interval(500, 2047, 2));
         assertEquals(1, Math.abs(tree.root.balance));
+        
+        
+        // simple examples for double rotation
+        // 1              3
+        //  \_    =>    _/ \_ 
+        //     5      1       5 
+        // 3 _/
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(1, 2));
+        tree.insert(new Interval(5, 6));
+        tree.insert(new Interval(3, 4));
+        assertEquals(0, tree.root.balance);
+        
+        //     5          3
+        //   _/   =>    _/ \_ 
+        // 1          1       5 
+        //  \_3
+        tree = new AVLTreeIntervalVector();
+        tree.insert(new Interval(5, 6));
+        tree.insert(new Interval(1, 2));
+        tree.insert(new Interval(3, 4));
+        assertEquals(0, tree.root.balance);
+        
 
+        // complicated case with more levels
         tree = createFullTestTree();
         tree.insert(new Interval(0, 128, 7));
         tree.insert(new Interval(128, 256, 8));

@@ -101,12 +101,26 @@ public class AVLTreeIntervalVector extends IntervalVector {
     IntervalNode rotate(IntervalNode node) {
         node.checkHeight();
 
-        if (node.balance < -1) {
-            node = rotateLeft(node);
-        }
+        if (node.balance == -2) {
+            if (node.right.balance == -1) {
+                // single (left) rotation
+                node = rotateLeft(node);
 
-        if (node.balance > 1) {
-            node = rotateRight(node);
+            } else {
+                // double rotation on the right
+                node.right = rotateRight(node.right);
+                node = rotateLeft(node);
+            }
+
+        } else if (node.balance == 2) {
+            if (node.left.balance == 1) {
+                // single (right) rotation
+                node = rotateRight(node);
+            } else {
+                // double rotation on the left
+                node.left = rotateLeft(node.left);
+                node = rotateRight(node);
+            }
         }
 
         return node;
@@ -237,35 +251,23 @@ public class AVLTreeIntervalVector extends IntervalVector {
     }
 
     void getOverlapping(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {
-
         if (node == null) {
             return;
-
-        } else if (begin >= node.interval.start && end <= node.interval.end) {
-            // The lookup interval is completely covered by the current interval
-            addInterval(acc, node.interval);
-
-        } else if (begin < node.interval.start && end <= node.interval.end) {
-            // The lookup interval is beginning left of the current interval: descend left
+        } 
+        
+        // Descend left if the lookup starts left of the current node 
+        if (begin < node.interval.start) {
             getOverlapping(begin, end, node.left, acc);
-
-            // If the lookup and the current interval overlap add the overlap to the result
-            if (end > node.interval.start) {
-                addInterval(acc, node.interval);
-            }
-
-        } else if (begin >= node.interval.start && end > node.interval.end) {
-            // If the lookup and the current interval overlap add the overlap to the result
-            if (begin < node.interval.end) {
-                addInterval(acc, node.interval);
-            }
-
-            // The lookup interval is ending right of the current interval: descend right
-            getOverlapping(begin, end, node.right, acc);
-
-        } else if (begin < node.interval.start && end > node.interval.end) {
-            getOverlapping(begin, end, node.left, acc);
+        }
+        
+        // Add the current node if it overlaps with the lookup
+        if (begin < node.interval.end && node.interval.start < end) {
             addInterval(acc, node.interval);
+        }
+        
+        
+        // Descend right if the lookup end right of the current node 
+        if (end > node.interval.end) {
             getOverlapping(begin, end, node.right, acc);
         }
     }
