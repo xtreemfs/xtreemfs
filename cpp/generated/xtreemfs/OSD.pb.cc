@@ -156,6 +156,12 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* Interval_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   Interval_reflection_ = NULL;
+const ::google::protobuf::Descriptor* xtreemfs_ec_get_interval_vectorsRequest_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  xtreemfs_ec_get_interval_vectorsRequest_reflection_ = NULL;
+const ::google::protobuf::Descriptor* xtreemfs_ec_get_interval_vectorsResponse_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  xtreemfs_ec_get_interval_vectorsResponse_reflection_ = NULL;
 const ::google::protobuf::EnumDescriptor* OSDHealthResult_descriptor_ = NULL;
 
 }  // namespace
@@ -936,6 +942,38 @@ void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(Interval));
+  xtreemfs_ec_get_interval_vectorsRequest_descriptor_ = file->message_type(45);
+  static const int xtreemfs_ec_get_interval_vectorsRequest_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsRequest, file_credentials_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsRequest, file_id_),
+  };
+  xtreemfs_ec_get_interval_vectorsRequest_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      xtreemfs_ec_get_interval_vectorsRequest_descriptor_,
+      xtreemfs_ec_get_interval_vectorsRequest::default_instance_,
+      xtreemfs_ec_get_interval_vectorsRequest_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsRequest, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsRequest, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(xtreemfs_ec_get_interval_vectorsRequest));
+  xtreemfs_ec_get_interval_vectorsResponse_descriptor_ = file->message_type(46);
+  static const int xtreemfs_ec_get_interval_vectorsResponse_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsResponse, cur_intervals_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsResponse, next_intervals_),
+  };
+  xtreemfs_ec_get_interval_vectorsResponse_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      xtreemfs_ec_get_interval_vectorsResponse_descriptor_,
+      xtreemfs_ec_get_interval_vectorsResponse::default_instance_,
+      xtreemfs_ec_get_interval_vectorsResponse_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsResponse, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(xtreemfs_ec_get_interval_vectorsResponse, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(xtreemfs_ec_get_interval_vectorsResponse));
   OSDHealthResult_descriptor_ = file->enum_type(0);
 }
 
@@ -1039,6 +1077,10 @@ void protobuf_RegisterTypes(const ::std::string&) {
     xtreemfs_rwr_reset_statusResponse_descriptor_, &xtreemfs_rwr_reset_statusResponse::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     Interval_descriptor_, &Interval::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    xtreemfs_ec_get_interval_vectorsRequest_descriptor_, &xtreemfs_ec_get_interval_vectorsRequest::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    xtreemfs_ec_get_interval_vectorsResponse_descriptor_, &xtreemfs_ec_get_interval_vectorsResponse::default_instance());
 }
 
 }  // namespace
@@ -1134,6 +1176,10 @@ void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto() {
   delete xtreemfs_rwr_reset_statusResponse_reflection_;
   delete Interval::default_instance_;
   delete Interval_reflection_;
+  delete xtreemfs_ec_get_interval_vectorsRequest::default_instance_;
+  delete xtreemfs_ec_get_interval_vectorsRequest_reflection_;
+  delete xtreemfs_ec_get_interval_vectorsResponse::default_instance_;
+  delete xtreemfs_ec_get_interval_vectorsResponse_reflection_;
 }
 
 void protobuf_AddDesc_xtreemfs_2fOSD_2eproto() {
@@ -1285,117 +1331,127 @@ void protobuf_AddDesc_xtreemfs_2fOSD_2eproto() {
     "xtreemfs_rwr_reset_statusResponse\022\017\n\007run"
     "ning\030\001 \002(\010\022\020\n\010complete\030\002 \002(\010\"C\n\010Interval"
     "\022\r\n\005start\030\001 \002(\004\022\013\n\003end\030\002 \002(\004\022\017\n\007version\030"
-    "\003 \002(\004\022\n\n\002id\030\004 \002(\004*\215\001\n\017OSDHealthResult\022\034\n"
-    "\030OSD_HEALTH_RESULT_PASSED\020\000\022\035\n\031OSD_HEALT"
-    "H_RESULT_WARNING\020\001\022\034\n\030OSD_HEALTH_RESULT_"
-    "FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT_NOT_AVAIL\020"
-    "\0032\350 \n\nOSDService\022L\n\004read\022\033.xtreemfs.pbrp"
-    "c.readRequest\032\032.xtreemfs.pbrpc.ObjectDat"
-    "a\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.xtreemfs.pb"
-    "rpc.truncateRequest\032 .xtreemfs.pbrpc.OSD"
-    "WriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unlink\022\".xtree"
-    "mfs.pbrpc.unlink_osd_Request\032\035.xtreemfs."
-    "pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022T\n\005write\022\034."
-    "xtreemfs.pbrpc.writeRequest\032 .xtreemfs.p"
-    "brpc.OSDWriteResponse\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027xt"
-    "reemfs_broadcast_gmax\022..xtreemfs.pbrpc.x"
-    "treemfs_broadcast_gmaxRequest\032\035.xtreemfs"
-    ".pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022j\n\025xtreemf"
-    "s_check_object\022,.xtreemfs.pbrpc.xtreemfs"
-    "_check_objectRequest\032\032.xtreemfs.pbrpc.Ob"
-    "jectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_cleanup_ge"
-    "t_results\022\034.xtreemfs.pbrpc.emptyRequest\032"
-    "4.xtreemfs.pbrpc.xtreemfs_cleanup_get_re"
-    "sultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtreemfs_clean"
-    "up_is_running\022\034.xtreemfs.pbrpc.emptyRequ"
-    "est\0323.xtreemfs.pbrpc.xtreemfs_cleanup_is"
-    "_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_cl"
-    "eanup_start\022-.xtreemfs.pbrpc.xtreemfs_cl"
-    "eanup_startRequest\032\035.xtreemfs.pbrpc.empt"
-    "yResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs_cleanup_s"
-    "tatus\022\034.xtreemfs.pbrpc.emptyRequest\032/.xt"
-    "reemfs.pbrpc.xtreemfs_cleanup_statusResp"
-    "onse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cleanup_stop\022\034"
-    ".xtreemfs.pbrpc.emptyRequest\032\035.xtreemfs."
-    "pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022g\n\037xtreemfs"
-    "_cleanup_versions_start\022\034.xtreemfs.pbrpc"
-    ".emptyRequest\032\035.xtreemfs.pbrpc.emptyResp"
-    "onse\"\007\215\265\030#\000\000\000\022\205\001\n\032xtreemfs_finalize_vouc"
-    "hers\0221.xtreemfs.pbrpc.xtreemfs_finalize_"
-    "vouchersRequest\032+.xtreemfs.pbrpc.OSDFina"
-    "lizeVouchersResponse\"\007\215\265\030\026\000\000\000\022o\n\026xtreemf"
-    "s_repair_object\022-.xtreemfs.pbrpc.xtreemf"
-    "s_repair_objectRequest\032\035.xtreemfs.pbrpc."
-    "emptyResponse\"\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr_f"
-    "etch\022).xtreemfs.pbrpc.xtreemfs_rwr_fetch"
-    "Request\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030"
-    "I\000\000\000\022u\n\027xtreemfs_rwr_flease_msg\022..xtreem"
-    "fs.pbrpc.xtreemfs_rwr_flease_msgRequest\032"
-    "\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030G\000\000\000\240"
-    "\265\030\001\022^\n\023xtreemfs_rwr_notify\022\037.xtreemfs.pb"
-    "rpc.FileCredentials\032\035.xtreemfs.pbrpc.emp"
-    "tyResponse\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_set_"
-    "primary_epoch\0225.xtreemfs.pbrpc.xtreemfs_"
-    "rwr_set_primary_epochRequest\032\032.xtreemfs."
-    "pbrpc.ObjectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rw"
-    "r_status\022*.xtreemfs.pbrpc.xtreemfs_rwr_s"
-    "tatusRequest\032\035.xtreemfs.pbrpc.ReplicaSta"
-    "tus\"\007\215\265\030L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022,."
-    "xtreemfs.pbrpc.xtreemfs_rwr_truncateRequ"
-    "est\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030J"
-    "\000\000\000\022m\n\023xtreemfs_rwr_update\022*.xtreemfs.pb"
-    "rpc.xtreemfs_rwr_updateRequest\032\035.xtreemf"
-    "s.pbrpc.emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xt"
-    "reemfs_rwr_auth_state\022..xtreemfs.pbrpc.x"
-    "treemfs_rwr_auth_stateRequest\032\035.xtreemfs"
-    ".pbrpc.emptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemf"
-    "s_rwr_reset_complete\0222.xtreemfs.pbrpc.xt"
-    "reemfs_rwr_reset_completeRequest\032\035.xtree"
-    "mfs.pbrpc.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xtre"
-    "emfs_internal_get_gmax\0221.xtreemfs.pbrpc."
-    "xtreemfs_internal_get_gmaxRequest\032\034.xtre"
-    "emfs.pbrpc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtre"
-    "emfs_internal_truncate\022\037.xtreemfs.pbrpc."
-    "truncateRequest\032 .xtreemfs.pbrpc.OSDWrit"
-    "eResponse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_internal"
-    "_get_file_size\0226.xtreemfs.pbrpc.xtreemfs"
-    "_internal_get_file_sizeRequest\0327.xtreemf"
-    "s.pbrpc.xtreemfs_internal_get_file_sizeR"
-    "esponse\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal_r"
-    "ead_local\0223.xtreemfs.pbrpc.xtreemfs_inte"
-    "rnal_read_localRequest\032).xtreemfs.pbrpc."
-    "InternalReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n x"
-    "treemfs_internal_get_object_set\0227.xtreem"
-    "fs.pbrpc.xtreemfs_internal_get_object_se"
-    "tRequest\032\032.xtreemfs.pbrpc.ObjectList\"\007\215\265"
-    "\030,\000\000\000\022\205\001\n!xtreemfs_internal_get_fileid_l"
-    "ist\022\034.xtreemfs.pbrpc.emptyRequest\0329.xtre"
-    "emfs.pbrpc.xtreemfs_internal_get_fileid_"
-    "listResponse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_a"
-    "cquire\022\033.xtreemfs.pbrpc.lockRequest\032\024.xt"
-    "reemfs.pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_l"
-    "ock_check\022\033.xtreemfs.pbrpc.lockRequest\032\024"
-    ".xtreemfs.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemf"
-    "s_lock_release\022\033.xtreemfs.pbrpc.lockRequ"
-    "est\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\0304"
-    "\000\000\000\022f\n\rxtreemfs_ping\022%.xtreemfs.pbrpc.xt"
-    "reemfs_pingMesssage\032%.xtreemfs.pbrpc.xtr"
-    "eemfs_pingMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_"
-    "shutdown\022\034.xtreemfs.pbrpc.emptyRequest\032\035"
-    ".xtreemfs.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000\022\222"
-    "\001\n\034xtreemfs_xloc_set_invalidate\0223.xtreem"
-    "fs.pbrpc.xtreemfs_xloc_set_invalidateReq"
-    "uest\0324.xtreemfs.pbrpc.xtreemfs_xloc_set_"
-    "invalidateResponse\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreemfs"
-    "_rwr_auth_state_invalidated\022..xtreemfs.p"
-    "brpc.xtreemfs_rwr_auth_stateRequest\0321.xt"
-    "reemfs.pbrpc.xtreemfs_rwr_reset_statusRe"
-    "sponse\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs_rwr_reset_s"
-    "tatus\0220.xtreemfs.pbrpc.xtreemfs_rwr_rese"
-    "t_statusRequest\0321.xtreemfs.pbrpc.xtreemf"
-    "s_rwr_reset_statusResponse\"\007\215\265\030S\000\000\000\032\007\225\265\030"
-    "1u\000\000B(\n&org.xtreemfs.pbrpc.generatedinte"
-    "rfaces", 9966);
+    "\003 \002(\004\022\n\n\002id\030\004 \002(\004\"u\n\'xtreemfs_ec_get_int"
+    "erval_vectorsRequest\0229\n\020file_credentials"
+    "\030\001 \002(\0132\037.xtreemfs.pbrpc.FileCredentials\022"
+    "\017\n\007file_id\030\002 \002(\t\"\215\001\n(xtreemfs_ec_get_int"
+    "erval_vectorsResponse\022/\n\rcur_intervals\030\001"
+    " \003(\0132\030.xtreemfs.pbrpc.Interval\0220\n\016next_i"
+    "ntervals\030\002 \003(\0132\030.xtreemfs.pbrpc.Interval"
+    "*\215\001\n\017OSDHealthResult\022\034\n\030OSD_HEALTH_RESUL"
+    "T_PASSED\020\000\022\035\n\031OSD_HEALTH_RESULT_WARNING\020"
+    "\001\022\034\n\030OSD_HEALTH_RESULT_FAILED\020\002\022\037\n\033OSD_H"
+    "EALTH_RESULT_NOT_AVAIL\020\0032\211\"\n\nOSDService\022"
+    "L\n\004read\022\033.xtreemfs.pbrpc.readRequest\032\032.x"
+    "treemfs.pbrpc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n"
+    "\010truncate\022\037.xtreemfs.pbrpc.truncateReque"
+    "st\032 .xtreemfs.pbrpc.OSDWriteResponse\"\007\215\265"
+    "\030\013\000\000\000\022T\n\006unlink\022\".xtreemfs.pbrpc.unlink_"
+    "osd_Request\032\035.xtreemfs.pbrpc.emptyRespon"
+    "se\"\007\215\265\030\014\000\000\000\022T\n\005write\022\034.xtreemfs.pbrpc.wr"
+    "iteRequest\032 .xtreemfs.pbrpc.OSDWriteResp"
+    "onse\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027xtreemfs_broadcast_"
+    "gmax\022..xtreemfs.pbrpc.xtreemfs_broadcast"
+    "_gmaxRequest\032\035.xtreemfs.pbrpc.emptyRespo"
+    "nse\"\007\215\265\030\024\000\000\000\022j\n\025xtreemfs_check_object\022,."
+    "xtreemfs.pbrpc.xtreemfs_check_objectRequ"
+    "est\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000"
+    "\022{\n\034xtreemfs_cleanup_get_results\022\034.xtree"
+    "mfs.pbrpc.emptyRequest\0324.xtreemfs.pbrpc."
+    "xtreemfs_cleanup_get_resultsResponse\"\007\215\265"
+    "\030\036\000\000\000\022y\n\033xtreemfs_cleanup_is_running\022\034.x"
+    "treemfs.pbrpc.emptyRequest\0323.xtreemfs.pb"
+    "rpc.xtreemfs_cleanup_is_runningResponse\""
+    "\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_cleanup_start\022-.xtr"
+    "eemfs.pbrpc.xtreemfs_cleanup_startReques"
+    "t\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030 \000\000"
+    "\000\022q\n\027xtreemfs_cleanup_status\022\034.xtreemfs."
+    "pbrpc.emptyRequest\032/.xtreemfs.pbrpc.xtre"
+    "emfs_cleanup_statusResponse\"\007\215\265\030!\000\000\000\022]\n\025"
+    "xtreemfs_cleanup_stop\022\034.xtreemfs.pbrpc.e"
+    "mptyRequest\032\035.xtreemfs.pbrpc.emptyRespon"
+    "se\"\007\215\265\030\"\000\000\000\022g\n\037xtreemfs_cleanup_versions"
+    "_start\022\034.xtreemfs.pbrpc.emptyRequest\032\035.x"
+    "treemfs.pbrpc.emptyResponse\"\007\215\265\030#\000\000\000\022\205\001\n"
+    "\032xtreemfs_finalize_vouchers\0221.xtreemfs.p"
+    "brpc.xtreemfs_finalize_vouchersRequest\032+"
+    ".xtreemfs.pbrpc.OSDFinalizeVouchersRespo"
+    "nse\"\007\215\265\030\026\000\000\000\022o\n\026xtreemfs_repair_object\022-"
+    ".xtreemfs.pbrpc.xtreemfs_repair_objectRe"
+    "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265"
+    "\030$\000\000\000\022d\n\022xtreemfs_rwr_fetch\022).xtreemfs.p"
+    "brpc.xtreemfs_rwr_fetchRequest\032\032.xtreemf"
+    "s.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u\n\027xtreemfs_"
+    "rwr_flease_msg\022..xtreemfs.pbrpc.xtreemfs"
+    "_rwr_flease_msgRequest\032\035.xtreemfs.pbrpc."
+    "emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemfs_r"
+    "wr_notify\022\037.xtreemfs.pbrpc.FileCredentia"
+    "ls\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030K\000"
+    "\000\000\022|\n\036xtreemfs_rwr_set_primary_epoch\0225.x"
+    "treemfs.pbrpc.xtreemfs_rwr_set_primary_e"
+    "pochRequest\032\032.xtreemfs.pbrpc.ObjectData\""
+    "\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_status\022*.xtreem"
+    "fs.pbrpc.xtreemfs_rwr_statusRequest\032\035.xt"
+    "reemfs.pbrpc.ReplicaStatus\"\007\215\265\030L\000\000\000\022m\n\025x"
+    "treemfs_rwr_truncate\022,.xtreemfs.pbrpc.xt"
+    "reemfs_rwr_truncateRequest\032\035.xtreemfs.pb"
+    "rpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n\023xtreemfs_r"
+    "wr_update\022*.xtreemfs.pbrpc.xtreemfs_rwr_"
+    "updateRequest\032\035.xtreemfs.pbrpc.emptyResp"
+    "onse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs_rwr_auth_s"
+    "tate\022..xtreemfs.pbrpc.xtreemfs_rwr_auth_"
+    "stateRequest\032\035.xtreemfs.pbrpc.emptyRespo"
+    "nse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_reset_compl"
+    "ete\0222.xtreemfs.pbrpc.xtreemfs_rwr_reset_"
+    "completeRequest\032\035.xtreemfs.pbrpc.emptyRe"
+    "sponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_internal_get"
+    "_gmax\0221.xtreemfs.pbrpc.xtreemfs_internal"
+    "_get_gmaxRequest\032\034.xtreemfs.pbrpc.Intern"
+    "alGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_internal_tru"
+    "ncate\022\037.xtreemfs.pbrpc.truncateRequest\032 "
+    ".xtreemfs.pbrpc.OSDWriteResponse\"\007\215\265\030)\000\000"
+    "\000\022\233\001\n\037xtreemfs_internal_get_file_size\0226."
+    "xtreemfs.pbrpc.xtreemfs_internal_get_fil"
+    "e_sizeRequest\0327.xtreemfs.pbrpc.xtreemfs_"
+    "internal_get_file_sizeResponse\"\007\215\265\030*\000\000\000\022"
+    "\207\001\n\034xtreemfs_internal_read_local\0223.xtree"
+    "mfs.pbrpc.xtreemfs_internal_read_localRe"
+    "quest\032).xtreemfs.pbrpc.InternalReadLocal"
+    "Response\"\007\215\265\030+\000\000\000\022\200\001\n xtreemfs_internal_"
+    "get_object_set\0227.xtreemfs.pbrpc.xtreemfs"
+    "_internal_get_object_setRequest\032\032.xtreem"
+    "fs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022\205\001\n!xtreemf"
+    "s_internal_get_fileid_list\022\034.xtreemfs.pb"
+    "rpc.emptyRequest\0329.xtreemfs.pbrpc.xtreem"
+    "fs_internal_get_fileid_listResponse\"\007\215\265\030"
+    "-\000\000\000\022S\n\025xtreemfs_lock_acquire\022\033.xtreemfs"
+    ".pbrpc.lockRequest\032\024.xtreemfs.pbrpc.Lock"
+    "\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_check\022\033.xtree"
+    "mfs.pbrpc.lockRequest\032\024.xtreemfs.pbrpc.L"
+    "ock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock_release\022\033."
+    "xtreemfs.pbrpc.lockRequest\032\035.xtreemfs.pb"
+    "rpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n\rxtreemfs_p"
+    "ing\022%.xtreemfs.pbrpc.xtreemfs_pingMesssa"
+    "ge\032%.xtreemfs.pbrpc.xtreemfs_pingMesssag"
+    "e\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdown\022\034.xtreem"
+    "fs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.e"
+    "mptyResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtreemfs_xloc_"
+    "set_invalidate\0223.xtreemfs.pbrpc.xtreemfs"
+    "_xloc_set_invalidateRequest\0324.xtreemfs.p"
+    "brpc.xtreemfs_xloc_set_invalidateRespons"
+    "e\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreemfs_rwr_auth_state_i"
+    "nvalidated\022..xtreemfs.pbrpc.xtreemfs_rwr"
+    "_auth_stateRequest\0321.xtreemfs.pbrpc.xtre"
+    "emfs_rwr_reset_statusResponse\"\007\215\265\030R\000\000\000\022\211"
+    "\001\n\031xtreemfs_rwr_reset_status\0220.xtreemfs."
+    "pbrpc.xtreemfs_rwr_reset_statusRequest\0321"
+    ".xtreemfs.pbrpc.xtreemfs_rwr_reset_statu"
+    "sResponse\"\007\215\265\030S\000\000\000\022\236\001\n xtreemfs_ec_get_i"
+    "nterval_vectors\0227.xtreemfs.pbrpc.xtreemf"
+    "s_ec_get_interval_vectorsRequest\0328.xtree"
+    "mfs.pbrpc.xtreemfs_ec_get_interval_vecto"
+    "rsResponse\"\007\215\265\030T\000\000\000\032\007\225\265\0301u\000\000B(\n&org.xtre"
+    "emfs.pbrpc.generatedinterfaces", 10390);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/OSD.proto", &protobuf_RegisterTypes);
   InternalGmax::default_instance_ = new InternalGmax();
@@ -1443,6 +1499,8 @@ void protobuf_AddDesc_xtreemfs_2fOSD_2eproto() {
   xtreemfs_rwr_reset_statusRequest::default_instance_ = new xtreemfs_rwr_reset_statusRequest();
   xtreemfs_rwr_reset_statusResponse::default_instance_ = new xtreemfs_rwr_reset_statusResponse();
   Interval::default_instance_ = new Interval();
+  xtreemfs_ec_get_interval_vectorsRequest::default_instance_ = new xtreemfs_ec_get_interval_vectorsRequest();
+  xtreemfs_ec_get_interval_vectorsResponse::default_instance_ = new xtreemfs_ec_get_interval_vectorsResponse();
   InternalGmax::default_instance_->InitAsDefaultInstance();
   Lock::default_instance_->InitAsDefaultInstance();
   ObjectData::default_instance_->InitAsDefaultInstance();
@@ -1488,6 +1546,8 @@ void protobuf_AddDesc_xtreemfs_2fOSD_2eproto() {
   xtreemfs_rwr_reset_statusRequest::default_instance_->InitAsDefaultInstance();
   xtreemfs_rwr_reset_statusResponse::default_instance_->InitAsDefaultInstance();
   Interval::default_instance_->InitAsDefaultInstance();
+  xtreemfs_ec_get_interval_vectorsRequest::default_instance_->InitAsDefaultInstance();
+  xtreemfs_ec_get_interval_vectorsResponse::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto);
 }
 
@@ -15214,6 +15274,529 @@ void Interval::Swap(Interval* other) {
   ::google::protobuf::Metadata metadata;
   metadata.descriptor = Interval_descriptor_;
   metadata.reflection = Interval_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int xtreemfs_ec_get_interval_vectorsRequest::kFileCredentialsFieldNumber;
+const int xtreemfs_ec_get_interval_vectorsRequest::kFileIdFieldNumber;
+#endif  // !_MSC_VER
+
+xtreemfs_ec_get_interval_vectorsRequest::xtreemfs_ec_get_interval_vectorsRequest()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::InitAsDefaultInstance() {
+  file_credentials_ = const_cast< ::xtreemfs::pbrpc::FileCredentials*>(&::xtreemfs::pbrpc::FileCredentials::default_instance());
+}
+
+xtreemfs_ec_get_interval_vectorsRequest::xtreemfs_ec_get_interval_vectorsRequest(const xtreemfs_ec_get_interval_vectorsRequest& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::SharedCtor() {
+  _cached_size_ = 0;
+  file_credentials_ = NULL;
+  file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+xtreemfs_ec_get_interval_vectorsRequest::~xtreemfs_ec_get_interval_vectorsRequest() {
+  SharedDtor();
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::SharedDtor() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (this != default_instance_) {
+    delete file_credentials_;
+  }
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* xtreemfs_ec_get_interval_vectorsRequest::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return xtreemfs_ec_get_interval_vectorsRequest_descriptor_;
+}
+
+const xtreemfs_ec_get_interval_vectorsRequest& xtreemfs_ec_get_interval_vectorsRequest::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  return *default_instance_;
+}
+
+xtreemfs_ec_get_interval_vectorsRequest* xtreemfs_ec_get_interval_vectorsRequest::default_instance_ = NULL;
+
+xtreemfs_ec_get_interval_vectorsRequest* xtreemfs_ec_get_interval_vectorsRequest::New() const {
+  return new xtreemfs_ec_get_interval_vectorsRequest;
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_file_credentials()) {
+      if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+    }
+    if (has_file_id()) {
+      if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+        file_id_->clear();
+      }
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool xtreemfs_ec_get_interval_vectorsRequest::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_file_credentials()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_file_id;
+        break;
+      }
+
+      // required string file_id = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_file_id:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_file_id()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->file_id().data(), this->file_id().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  if (has_file_credentials()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, this->file_credentials(), output);
+  }
+
+  // required string file_id = 2;
+  if (has_file_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->file_id().data(), this->file_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      2, this->file_id(), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* xtreemfs_ec_get_interval_vectorsRequest::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  if (has_file_credentials()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        1, this->file_credentials(), target);
+  }
+
+  // required string file_id = 2;
+  if (has_file_id()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->file_id().data(), this->file_id().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        2, this->file_id(), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int xtreemfs_ec_get_interval_vectorsRequest::ByteSize() const {
+  int total_size = 0;
+
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    if (has_file_credentials()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->file_credentials());
+    }
+
+    // required string file_id = 2;
+    if (has_file_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->file_id());
+    }
+
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const xtreemfs_ec_get_interval_vectorsRequest* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const xtreemfs_ec_get_interval_vectorsRequest*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::MergeFrom(const xtreemfs_ec_get_interval_vectorsRequest& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_file_credentials()) {
+      mutable_file_credentials()->::xtreemfs::pbrpc::FileCredentials::MergeFrom(from.file_credentials());
+    }
+    if (from.has_file_id()) {
+      set_file_id(from.file_id());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::CopyFrom(const xtreemfs_ec_get_interval_vectorsRequest& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool xtreemfs_ec_get_interval_vectorsRequest::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+
+  if (has_file_credentials()) {
+    if (!this->file_credentials().IsInitialized()) return false;
+  }
+  return true;
+}
+
+void xtreemfs_ec_get_interval_vectorsRequest::Swap(xtreemfs_ec_get_interval_vectorsRequest* other) {
+  if (other != this) {
+    std::swap(file_credentials_, other->file_credentials_);
+    std::swap(file_id_, other->file_id_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata xtreemfs_ec_get_interval_vectorsRequest::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = xtreemfs_ec_get_interval_vectorsRequest_descriptor_;
+  metadata.reflection = xtreemfs_ec_get_interval_vectorsRequest_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int xtreemfs_ec_get_interval_vectorsResponse::kCurIntervalsFieldNumber;
+const int xtreemfs_ec_get_interval_vectorsResponse::kNextIntervalsFieldNumber;
+#endif  // !_MSC_VER
+
+xtreemfs_ec_get_interval_vectorsResponse::xtreemfs_ec_get_interval_vectorsResponse()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::InitAsDefaultInstance() {
+}
+
+xtreemfs_ec_get_interval_vectorsResponse::xtreemfs_ec_get_interval_vectorsResponse(const xtreemfs_ec_get_interval_vectorsResponse& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::SharedCtor() {
+  _cached_size_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+xtreemfs_ec_get_interval_vectorsResponse::~xtreemfs_ec_get_interval_vectorsResponse() {
+  SharedDtor();
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* xtreemfs_ec_get_interval_vectorsResponse::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return xtreemfs_ec_get_interval_vectorsResponse_descriptor_;
+}
+
+const xtreemfs_ec_get_interval_vectorsResponse& xtreemfs_ec_get_interval_vectorsResponse::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  return *default_instance_;
+}
+
+xtreemfs_ec_get_interval_vectorsResponse* xtreemfs_ec_get_interval_vectorsResponse::default_instance_ = NULL;
+
+xtreemfs_ec_get_interval_vectorsResponse* xtreemfs_ec_get_interval_vectorsResponse::New() const {
+  return new xtreemfs_ec_get_interval_vectorsResponse;
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::Clear() {
+  cur_intervals_.Clear();
+  next_intervals_.Clear();
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool xtreemfs_ec_get_interval_vectorsResponse::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_cur_intervals:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_cur_intervals()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(10)) goto parse_cur_intervals;
+        if (input->ExpectTag(18)) goto parse_next_intervals;
+        break;
+      }
+
+      // repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_next_intervals:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_next_intervals()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_next_intervals;
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+  for (int i = 0; i < this->cur_intervals_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, this->cur_intervals(i), output);
+  }
+
+  // repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+  for (int i = 0; i < this->next_intervals_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      2, this->next_intervals(i), output);
+  }
+
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* xtreemfs_ec_get_interval_vectorsResponse::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+  for (int i = 0; i < this->cur_intervals_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        1, this->cur_intervals(i), target);
+  }
+
+  // repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+  for (int i = 0; i < this->next_intervals_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        2, this->next_intervals(i), target);
+  }
+
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int xtreemfs_ec_get_interval_vectorsResponse::ByteSize() const {
+  int total_size = 0;
+
+  // repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+  total_size += 1 * this->cur_intervals_size();
+  for (int i = 0; i < this->cur_intervals_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->cur_intervals(i));
+  }
+
+  // repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+  total_size += 1 * this->next_intervals_size();
+  for (int i = 0; i < this->next_intervals_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->next_intervals(i));
+  }
+
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const xtreemfs_ec_get_interval_vectorsResponse* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const xtreemfs_ec_get_interval_vectorsResponse*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::MergeFrom(const xtreemfs_ec_get_interval_vectorsResponse& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  cur_intervals_.MergeFrom(from.cur_intervals_);
+  next_intervals_.MergeFrom(from.next_intervals_);
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::CopyFrom(const xtreemfs_ec_get_interval_vectorsResponse& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool xtreemfs_ec_get_interval_vectorsResponse::IsInitialized() const {
+
+  for (int i = 0; i < cur_intervals_size(); i++) {
+    if (!this->cur_intervals(i).IsInitialized()) return false;
+  }
+  for (int i = 0; i < next_intervals_size(); i++) {
+    if (!this->next_intervals(i).IsInitialized()) return false;
+  }
+  return true;
+}
+
+void xtreemfs_ec_get_interval_vectorsResponse::Swap(xtreemfs_ec_get_interval_vectorsResponse* other) {
+  if (other != this) {
+    cur_intervals_.Swap(&other->cur_intervals_);
+    next_intervals_.Swap(&other->next_intervals_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata xtreemfs_ec_get_interval_vectorsResponse::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = xtreemfs_ec_get_interval_vectorsResponse_descriptor_;
+  metadata.reflection = xtreemfs_ec_get_interval_vectorsResponse_reflection_;
   return metadata;
 }
 

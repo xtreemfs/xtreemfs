@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
-//(c) 2015. See LICENSE file for details.
+//automatically generated from OSD.proto at Thu Jun 02 16:52:25 CEST 2016
+//(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
 
@@ -503,6 +503,19 @@ public class OSDServiceClient {
     public RPCResponse<OSD.xtreemfs_rwr_reset_statusResponse> xtreemfs_rwr_reset_status(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, OSD.AuthoritativeReplicaState state) throws IOException {
          final OSD.xtreemfs_rwr_reset_statusRequest msg = OSD.xtreemfs_rwr_reset_statusRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setState(state).build();
          return xtreemfs_rwr_reset_status(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> xtreemfs_ec_get_interval_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_get_interval_vectorsRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> response = new RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse>(OSD.xtreemfs_ec_get_interval_vectorsResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 84, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> xtreemfs_ec_get_interval_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
+         final OSD.xtreemfs_ec_get_interval_vectorsRequest msg = OSD.xtreemfs_ec_get_interval_vectorsRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
+         return xtreemfs_ec_get_interval_vectors(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

@@ -400,6 +400,18 @@ message Interval {
   required uint64 id = 4;
 }
 
+message xtreemfs_ec_get_interval_vectorsRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+}
+
+message xtreemfs_ec_get_interval_vectorsResponse {
+  // FIXME (jdillmann): Could be sent as data to circumvent inefficient big protobuf msgs
+  repeated Interval cur_intervals = 1;
+  repeated Interval next_intervals = 2;
+}
+
+
 
 service OSDService {
 
@@ -622,5 +634,11 @@ service OSDService {
   // Used for polling if a operation requires a certain AuthState to be available on a certain replica.
   rpc xtreemfs_rwr_reset_status(xtreemfs_rwr_reset_statusRequest) returns (xtreemfs_rwr_reset_statusResponse) {
     option(proc_id)=83;
+  };
+
+  // TODO (jdillmann): DOC
+  rpc xtreemfs_ec_get_interval_vectors(xtreemfs_ec_get_interval_vectorsRequest)
+      returns (xtreemfs_ec_get_interval_vectorsResponse) {
+    option(proc_id)=84;
   };
 }

@@ -1,5 +1,5 @@
-//automatically generated from OSD.proto at Wed Oct 28 15:06:28 CET 2015
-//(c) 2015. See LICENSE file for details.
+//automatically generated from OSD.proto at Thu Jun 02 16:52:25 CEST 2016
+//(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
 #define OSDSERVICECLIENT_H
@@ -872,6 +872,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse>();
                 client_->sendRequest(address, 30001, 83,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_ec_get_interval_vectors(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 84,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>* xtreemfs_ec_get_interval_vectors_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>();
+                client_->sendRequest(address, 30001, 84,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }

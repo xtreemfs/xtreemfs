@@ -1,5 +1,5 @@
-//automatically generated at Wed Dec 02 17:29:29 CET 2015
-//(c) 2015. See LICENSE file for details.
+//automatically generated at Thu Jun 02 16:52:25 CEST 2016
+//(c) 2016. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
 
@@ -418,6 +418,10 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 83: {
           return new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest();
+          break;
+        }
+        case 84: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsRequest();
           break;
         }
         default: {
