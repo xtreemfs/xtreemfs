@@ -40,9 +40,6 @@ public class FileMetadata {
 
     private VersionTable               versionTable;
 
-    private IntervalVersionTreeLog     ecVersionsCur;
-    private IntervalVersionTreeLog     ecVersionsNext;
-
     private RandomAccessFile[]         handles;
 
     private long                       mdFileLength;
@@ -123,24 +120,6 @@ public class FileMetadata {
     
     public VersionTable getVersionTable() {
         return versionTable;
-    }
-
-    public void initEcVersionsCur(IntervalVersionTreeLog tree) {
-        assert (this.ecVersionsCur == null);
-        this.ecVersionsCur = tree;
-    }
-
-    public IntervalVersionTreeLog getEcVersionCur() {
-        return ecVersionsCur;
-    }
-
-    public void initEcVersionsNext(IntervalVersionTreeLog tree) {
-        assert (this.ecVersionsNext == null);
-        this.ecVersionsNext = tree;
-    }
-
-    public IntervalVersionTreeLog getEcVersionsNext() {
-        return ecVersionsNext;
     }
 
     public void updateObjectVersion(long objId, long newVersion) {

@@ -164,4 +164,17 @@ public class ImmutableListIntervalVector extends IntervalVector {
         // document it
         return new ArrayList<Interval>(intervals);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Interval interval : intervals) {
+            sb.append(interval.toString()).append(" ");
+        }
+
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
+    }
 }

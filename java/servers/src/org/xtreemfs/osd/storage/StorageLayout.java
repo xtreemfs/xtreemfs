@@ -21,6 +21,7 @@ import java.util.Stack;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -495,6 +496,13 @@ public abstract class StorageLayout {
      */
     public abstract void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet)
             throws IOException;
+
+    // FIXME (jdillmann): Doc
+    public abstract void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+            throws IOException;
+
+    // FIXME (jdillmann): Doc
+    public abstract boolean getECIntervalVector(String fileId, boolean next, IntervalVector vector) throws IOException;
 
     public static final class FileList {
         // directories to scan

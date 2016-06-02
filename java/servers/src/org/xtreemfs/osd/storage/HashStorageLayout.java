@@ -8,6 +8,8 @@
 
 package org.xtreemfs.osd.storage;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -37,15 +39,18 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.checksums.ChecksumAlgorithm;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.ec.ECHelper;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
+import com.google.protobuf.Message;
 import com.google.protobuf.UninitializedMessageException;
 
 /**
@@ -86,6 +91,12 @@ public class HashStorageLayout extends StorageLayout {
      */
     public static final String             EC_VERSIONS_CUR               = ".ec_versions_cur";
     public static final String             EC_VERSIONS_NEXT              = ".ec_versions_next";
+    // public static final String EC_DIR = ".ec";
+    // public static final String EC_NEXT_DIR = "next";
+    // public static final String EC_CODE_DIR = "code";
+    // public static final String EC_DELTA_DIR = "delta";
+    // public static final String EC_VERSIONS_CUR = "versions_cur";
+    // public static final String EC_VERSIONS_NEXT = "versions_next";
 
     /**
      * file that stores the invalid expire times for a file
@@ -894,26 +905,6 @@ public class HashStorageLayout extends StorageLayout {
 
             info.initObjectChecksums(objChecksums);
 
-            // Load the VersionTrees required for Erasure Coding
-            if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
-                // filesize could be restored from versionvector, but to stay consistent with the
-                // other policies store only the local filesize to FileMetadata
-
-                File ecVerLogCurFile = new File(fileDir, EC_VERSIONS_CUR);
-                IntervalVersionTreeLog ecVerLogCur = new IntervalVersionTreeLog(ecVerLogCurFile);
-                ecVerLogCur.load();
-                info.initEcVersionsCur(ecVerLogCur);
-
-                File ecVerLogNextFile = new File(fileDir, EC_VERSIONS_NEXT);
-                IntervalVersionTreeLog ecVerLogNext = new IntervalVersionTreeLog(ecVerLogNextFile);
-                ecVerLogNext.load();
-                info.initEcVersionsNext(ecVerLogNext);
-
-            } else {
-                info.initEcVersionsCur(new IntervalVersionTreeLog());
-                info.initEcVersionsNext(new IntervalVersionTreeLog());
-            }
-
             if (lastObjNum > -1) {
                 // determine filesize from lastObjectNumber
                 File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
@@ -968,8 +959,6 @@ public class HashStorageLayout extends StorageLayout {
             info.initLargestObjectVersions(new HashMap<Long, Long>());
             info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
             info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
-            info.initEcVersionsCur(new IntervalVersionTreeLog());
-            info.initEcVersionsNext(new IntervalVersionTreeLog());
         }
 
         info.setGlobalLastObjectNumber(-1);
@@ -1542,5 +1531,72 @@ public class HashStorageLayout extends StorageLayout {
                 output.close();
             }
         }
+    }
+
+    @Override
+    public void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+            throws IOException {
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        fileDir.mkdirs();
+
+        File vectorFile = next ? new File(fileDir, EC_VERSIONS_NEXT) : new File(fileDir, EC_VERSIONS_CUR);
+        if (!vectorFile.exists()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "IntervalVector logfile created (%s).",
+                    vectorFile.toString());
+            vectorFile.createNewFile();
+        }
+
+        BufferedOutputStream output = null;
+        try {
+            output = new BufferedOutputStream(new FileOutputStream(vectorFile, append));
+            for (Interval interval : vector.serialize()) {
+                Message msg = ECHelper.interval2proto(interval);
+                msg.writeDelimitedTo(output);
+            }
+        } finally {
+            if (output != null) {
+                output.close();
+            }
+        }
+    }
+
+    @Override
+    public boolean getECIntervalVector(String fileId, boolean next, IntervalVector vector) throws IOException {
+
+        File fileDir = new File(generateAbsoluteFilePath(fileId));
+        File vectorFile = next ? new File(fileDir, EC_VERSIONS_NEXT) : new File(fileDir, EC_VERSIONS_CUR);
+
+        if (!fileDir.exists() || !vectorFile.exists()) {
+            Logging.logMessage(Logging.LEVEL_INFO, this, "Could not get %s IntervalVector for fileId %s",
+                    (next ? "next" : "current"), fileId);
+            return false;
+            // throw new FileNotFoundException()
+        }
+
+        BufferedInputStream input = null;
+        try {
+            input = new BufferedInputStream(new FileInputStream(vectorFile));
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Interval.Builder msg;
+            msg = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Interval.newBuilder();
+
+            boolean eof = false;
+            while (!eof) {
+                msg.clear();
+
+                if (msg.mergeDelimitedFrom(input)) {
+                    Interval interval = ECHelper.proto2interval(msg);
+                    vector.insert(interval);
+                } else {
+                    eof = true;
+                }
+            }
+
+        } finally {
+            if (input != null) {
+                input.close();
+            }
+        }
+
+        return true;
     }
 }

@@ -45,6 +45,7 @@ public class Interval implements Comparable<Interval> {
      * @param end
      *            exclusive
      * @param version
+     * @param id
      */
     public Interval(long start, long end, long version, long id) {
         if (end <= start && start >= 0) {

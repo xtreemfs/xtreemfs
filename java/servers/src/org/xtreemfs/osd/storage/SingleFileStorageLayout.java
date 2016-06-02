@@ -26,6 +26,7 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.checksums.ChecksumAlgorithm;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
@@ -536,6 +537,17 @@ public class SingleFileStorageLayout extends StorageLayout {
 
     @Override
     public void setInvalidClientExpireTimeSet(String fileId, Set<String> invalidClientExpireTimeSet) throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+            throws IOException {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean getECIntervalVector(String fileId, boolean next, IntervalVector vector) throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }
