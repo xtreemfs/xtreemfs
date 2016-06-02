@@ -104,9 +104,9 @@ message TruncateLog {
   repeated TruncateRecord records = 1;
 }
 
-// Version of the latest XLocSet a Replica has beeen part of 
+// Version of the latest XLocSet a Replica has beeen part of
 // and a flag indicating if the Replica is currently participating
-// in a XLocSetChange 
+// in a XLocSetChange
 message XLocSetVersionState {
   required fixed32 version = 1;
   required bool invalidated = 2;
@@ -167,6 +167,7 @@ message readRequest {
   // Offset within the object.
   required fixed32 offset = 5;
   // Length of data to be read, must be <= stripe_size - offset.
+  // Except for atomic operations where a master coordinates the whole read.
   required fixed32 length = 6;
 }
 
@@ -390,8 +391,18 @@ enum OSDHealthResult {
    OSD_HEALTH_RESULT_NOT_AVAIL = 3;
 }
 
+
+// Erasure Coding related messages --------------------------------------------
+message Interval {
+  required uint64 start = 1;
+  required uint64 end = 2;
+  required uint64 version = 3;
+  required uint64 id = 4;
+}
+
+
 service OSDService {
-  
+
   option(interface_id)=30001;
 
   // POSIX/FUSE operations ----------------------------------------
@@ -470,13 +481,13 @@ service OSDService {
   rpc xtreemfs_cleanup_stop(emptyRequest) returns(emptyResponse) {
     option(proc_id)=34;
   };
-  
+
   // Removes superflous object versions.
   // Part of the experimental snapshots implementation.
   rpc xtreemfs_cleanup_versions_start(emptyRequest) returns(emptyResponse) {
     option(proc_id)=35;
   };
-  
+
   // finalize multiple requests with voucher information
   rpc xtreemfs_finalize_vouchers(xtreemfs_finalize_vouchersRequest) returns(OSDFinalizeVouchersResponse) {
     option(proc_id)=22;
@@ -599,11 +610,11 @@ service OSDService {
   rpc xtreemfs_xloc_set_invalidate(xtreemfs_xloc_set_invalidateRequest) returns(xtreemfs_xloc_set_invalidateResponse) {
     option(proc_id)=81;
   };
-  
-  // Sets the authoritative state on a replica during an xLocSet change. 
+
+  // Sets the authoritative state on a replica during an xLocSet change.
   // This operation invalidets replicas not yet invalidated and does not require
   // a valid view.
-  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(xtreemfs_rwr_reset_statusResponse) { 
+  rpc xtreemfs_rwr_auth_state_invalidated(xtreemfs_rwr_auth_stateRequest) returns(xtreemfs_rwr_reset_statusResponse) {
     option(proc_id)=82;
   };
 

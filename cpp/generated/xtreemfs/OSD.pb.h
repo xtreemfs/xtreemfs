@@ -82,6 +82,7 @@ class xtreemfs_xloc_set_invalidateRequest;
 class xtreemfs_xloc_set_invalidateResponse;
 class xtreemfs_rwr_reset_statusRequest;
 class xtreemfs_rwr_reset_statusResponse;
+class Interval;
 
 enum OSDHealthResult {
   OSD_HEALTH_RESULT_PASSED = 0,
@@ -4842,6 +4843,118 @@ class xtreemfs_rwr_reset_statusResponse : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_rwr_reset_statusResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class Interval : public ::google::protobuf::Message {
+ public:
+  Interval();
+  virtual ~Interval();
+
+  Interval(const Interval& from);
+
+  inline Interval& operator=(const Interval& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const Interval& default_instance();
+
+  void Swap(Interval* other);
+
+  // implements Message ----------------------------------------------
+
+  Interval* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const Interval& from);
+  void MergeFrom(const Interval& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required uint64 start = 1;
+  inline bool has_start() const;
+  inline void clear_start();
+  static const int kStartFieldNumber = 1;
+  inline ::google::protobuf::uint64 start() const;
+  inline void set_start(::google::protobuf::uint64 value);
+
+  // required uint64 end = 2;
+  inline bool has_end() const;
+  inline void clear_end();
+  static const int kEndFieldNumber = 2;
+  inline ::google::protobuf::uint64 end() const;
+  inline void set_end(::google::protobuf::uint64 value);
+
+  // required uint64 version = 3;
+  inline bool has_version() const;
+  inline void clear_version();
+  static const int kVersionFieldNumber = 3;
+  inline ::google::protobuf::uint64 version() const;
+  inline void set_version(::google::protobuf::uint64 value);
+
+  // required uint64 id = 4;
+  inline bool has_id() const;
+  inline void clear_id();
+  static const int kIdFieldNumber = 4;
+  inline ::google::protobuf::uint64 id() const;
+  inline void set_id(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Interval)
+ private:
+  inline void set_has_start();
+  inline void clear_has_start();
+  inline void set_has_end();
+  inline void clear_has_end();
+  inline void set_has_version();
+  inline void clear_has_version();
+  inline void set_has_id();
+  inline void clear_has_id();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::google::protobuf::uint64 start_;
+  ::google::protobuf::uint64 end_;
+  ::google::protobuf::uint64 version_;
+  ::google::protobuf::uint64 id_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static Interval* default_instance_;
 };
 // ===================================================================
 
@@ -9723,6 +9836,98 @@ inline bool xtreemfs_rwr_reset_statusResponse::complete() const {
 inline void xtreemfs_rwr_reset_statusResponse::set_complete(bool value) {
   set_has_complete();
   complete_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// Interval
+
+// required uint64 start = 1;
+inline bool Interval::has_start() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void Interval::set_has_start() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void Interval::clear_has_start() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void Interval::clear_start() {
+  start_ = GOOGLE_ULONGLONG(0);
+  clear_has_start();
+}
+inline ::google::protobuf::uint64 Interval::start() const {
+  return start_;
+}
+inline void Interval::set_start(::google::protobuf::uint64 value) {
+  set_has_start();
+  start_ = value;
+}
+
+// required uint64 end = 2;
+inline bool Interval::has_end() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void Interval::set_has_end() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void Interval::clear_has_end() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void Interval::clear_end() {
+  end_ = GOOGLE_ULONGLONG(0);
+  clear_has_end();
+}
+inline ::google::protobuf::uint64 Interval::end() const {
+  return end_;
+}
+inline void Interval::set_end(::google::protobuf::uint64 value) {
+  set_has_end();
+  end_ = value;
+}
+
+// required uint64 version = 3;
+inline bool Interval::has_version() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void Interval::set_has_version() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void Interval::clear_has_version() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void Interval::clear_version() {
+  version_ = GOOGLE_ULONGLONG(0);
+  clear_has_version();
+}
+inline ::google::protobuf::uint64 Interval::version() const {
+  return version_;
+}
+inline void Interval::set_version(::google::protobuf::uint64 value) {
+  set_has_version();
+  version_ = value;
+}
+
+// required uint64 id = 4;
+inline bool Interval::has_id() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void Interval::set_has_id() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void Interval::clear_has_id() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void Interval::clear_id() {
+  id_ = GOOGLE_ULONGLONG(0);
+  clear_has_id();
+}
+inline ::google::protobuf::uint64 Interval::id() const {
+  return id_;
+}
+inline void Interval::set_id(::google::protobuf::uint64 value) {
+  set_has_id();
+  id_ = value;
 }
 
 
