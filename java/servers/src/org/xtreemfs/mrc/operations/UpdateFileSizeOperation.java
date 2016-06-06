@@ -26,9 +26,9 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -177,10 +177,11 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 int newVer = xLocList.getVersion() + 1;
                 int initialReplCount = xLocList.getReplicaCount();
                 
-                // mark the first replica as complete
+                // mark the first replica as complete and full
+                // and use the strategy set in the default replication policy
                 XLoc firstRepl = repls.get(0);
                 firstRepl.setReplicationFlags(ReplicationFlags.setFullReplica(ReplicationFlags
-                        .setReplicaIsComplete(firstRepl.getReplicationFlags())));
+                        .setReplicaIsComplete(defaultReplPolicy.getFlags())));
                 
                 // determine the replication flags for the new replicas:
                 // full + 'rarest first' strategy for full replicas,
