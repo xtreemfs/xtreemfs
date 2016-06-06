@@ -88,6 +88,14 @@ public class ReplicationFlags {
         return resetOther(flags) == RarestFirstStrategy.REPLICATION_FLAG.getNumber();
     }
 
+    public static boolean containsStrategy(int flags) {
+        return (resetOther(flags) > 0);
+    }
+
+    public static int getStrategy(int flags) {
+        return resetOther(flags);
+    }
+
     /**
      * resets the bits used for strategies to zero
      */

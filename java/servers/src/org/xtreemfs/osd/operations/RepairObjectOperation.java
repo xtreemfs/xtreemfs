@@ -58,7 +58,7 @@ public class RepairObjectOperation extends OSDOperation {
     	if (rq.getLocationList().getLocalReplica().isComplete()) {
     		
     		//rest complete flag, otherwise replica is unable to fetch objects
-            rq.getLocationList().getLocalReplica().resetCompleteFlagAndRestoreStrageyFlag();
+            rq.getLocationList().getLocalReplica().resetCompleteFlagAndRestoreStrategyFlag();
     	}
     	//Assumption: fetched Object is not corrupted
 		master.getReplicationStage().fetchObject(args.getFileId(), args.getObjectNumber(), rq.getLocationList(),

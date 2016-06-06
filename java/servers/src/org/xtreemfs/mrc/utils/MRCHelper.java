@@ -273,6 +273,37 @@ public class MRCHelper {
     }
 
     /**
+     * Restores the strategy flag if it is not set yet. <br>
+     * If the defaultReplicationPolicy is present and contains strategy
+     * flags, they are used. Otherwise the general defaults are used.
+     * 
+     * @param defaultReplicationPolicy
+     *            Maybe null
+     */
+    public static int restoreStrategyFlag(int replFlags, ReplicationPolicy defaultReplicationPolicy) {
+        // Restore the strategy only if none is set yet.
+        if (ReplicationFlags.containsStrategy(replFlags)) {
+            return replFlags;
+        }
+
+        if (defaultReplicationPolicy != null
+                && ReplicationFlags.containsStrategy(defaultReplicationPolicy.getFlags())) {
+            // Use the default strategy if it is set
+            replFlags = replFlags | ReplicationFlags.getStrategy(defaultReplicationPolicy.getFlags());
+
+        } else if (ReplicationFlags.isPartialReplica(replFlags)) {
+            // Assumption: partial replica -> sequential prefetching
+            replFlags = ReplicationFlags.setSequentialPrefetchingStrategy(replFlags);
+
+        } else {
+            // Assumption: full replica -> rarest first strategy
+            replFlags = ReplicationFlags.setRarestFirstStrategy(replFlags);
+        }
+
+        return replFlags;
+    }
+
+    /**
      * Checks whether the given replica (i.e. list of OSDs) can be added to the
      * given X-Locations list without compromising consistency.
      *
