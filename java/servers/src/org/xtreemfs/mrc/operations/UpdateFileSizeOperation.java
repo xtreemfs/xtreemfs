@@ -177,11 +177,16 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 int newVer = xLocList.getVersion() + 1;
                 int initialReplCount = xLocList.getReplicaCount();
                 
-                // mark the first replica as complete and full
-                // and use the strategy set in the default replication policy
                 XLoc firstRepl = repls.get(0);
-                firstRepl.setReplicationFlags(ReplicationFlags.setFullReplica(ReplicationFlags
-                        .setReplicaIsComplete(defaultReplPolicy.getFlags())));
+                
+                int replFlags = firstRepl.getReplicationFlags();
+
+                // Add the default strategy, if the current replication flags miss it.
+                replFlags = MRCHelper.restoreStrategyFlag(replFlags, defaultReplPolicy);
+
+                // mark the first replica as complete and full
+                firstRepl.setReplicationFlags(
+                        ReplicationFlags.setFullReplica(ReplicationFlags.setReplicaIsComplete(replFlags)));
                 
                 // determine the replication flags for the new replicas:
                 // full + 'rarest first' strategy for full replicas,

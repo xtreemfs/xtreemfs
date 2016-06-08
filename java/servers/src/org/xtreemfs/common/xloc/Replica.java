@@ -131,7 +131,7 @@ public class Replica {
      * Resets the complete Flag and restores the strategy flag.
      * 
      */
-    public void resetCompleteFlagAndRestoreStrageyFlag() {
+    public void resetCompleteFlagAndRestoreStrategyFlag() {
     	int replFlags = replica.getReplicationFlags();
     	
         // Reset complete Flag
@@ -149,7 +149,7 @@ public class Replica {
     	//set new replication flags
     	replica = replica.toBuilder().setReplicationFlags(replFlags).build();
     }
-    
+
     /**
      * checks if this replica is a partial (ondemand) or full replica
      * @return true, if partial; false if full

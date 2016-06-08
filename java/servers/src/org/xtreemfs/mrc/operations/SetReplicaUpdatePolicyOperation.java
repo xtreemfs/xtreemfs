@@ -20,6 +20,7 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
@@ -185,8 +186,19 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
 
             // mark the first replica in the list as 'complete' (only relevant for read-only replication)
             if (i == 0 && ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY.equals(newReplicaUpdatePolicy)) {
-                int replFlags = ReplicationFlags
-                        .setFullReplica(ReplicationFlags.setReplicaIsComplete(xLocs[i].getReplicationFlags()));
+                int replFlags = xLocs[i].getReplicationFlags();
+
+                // Add the default strategy, if the current replication flags miss it.
+                if (!ReplicationFlags.containsStrategy(replFlags)) {
+                    // FIXME: use the parent directory's default replication policy (see also UpdateFileSizeOperation)
+                    ReplicationPolicy defaultReplPolicy = sMan.getDefaultReplicationPolicy(file.getId());
+                    if (defaultReplPolicy == null)
+                        defaultReplPolicy = sMan.getDefaultReplicationPolicy(1);
+                    replFlags = MRCHelper.restoreStrategyFlag(replFlags, defaultReplPolicy);
+                }
+                
+                // Mark the replica as full and complete.
+                replFlags = ReplicationFlags.setFullReplica(ReplicationFlags.setReplicaIsComplete(replFlags));
                 xLocs[i].setReplicationFlags(replFlags);
             }
         }
