@@ -62,9 +62,10 @@ public abstract class IntervalVector {
     public abstract boolean compareLEQThen(IntervalVector o);
 
     /**
-     * Sorted
-     * copy
-     * zusammenhängend
+     * Sorted, zusammenhängend
+     * 
+     * Note: The returned List will be immutable, but not necessarily thread safe.
+     * 
      * @return
      */
     public abstract List<Interval> serialize();

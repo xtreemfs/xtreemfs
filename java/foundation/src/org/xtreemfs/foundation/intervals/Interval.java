@@ -11,7 +11,7 @@ package org.xtreemfs.foundation.intervals;
  * Interval Objects containing the start, end and version of an interval. <br>
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
-public class Interval implements Comparable<Interval> {
+public class Interval {
     public final static Interval COMPLETE = new Interval(-1, -1);
 
     public final long            start;
@@ -58,36 +58,84 @@ public class Interval implements Comparable<Interval> {
         this.id = id;
     }
 
-    @Override
-    public boolean equals(Object other) {
-        if (other == null)
-            return false;
-        if (other == this)
-            return true;
-        if (!(other instanceof Interval))
-            return false;
-        Interval interval = (Interval) other;
-        return this.start == interval.start 
-                && this.end == interval.end 
-                && this.version == interval.version
-                && this.id == interval.id;
+    /**
+     * Special Interval subclasses could have an attachment.
+     * 
+     * @return the attachment if existent or null
+     */
+    public Object getAttachment() {
+        return null;
     }
 
     @Override
-    // FIXME (jdillmann): This doesn't make sense!
-    public int compareTo(Interval o) {
-        if (start < o.start || end > o.end) {
-            // If this intervals range is greater it's versions are greater, too
-            // FIXME (jdillmann): What to to on truncates?
-            return 1;
-        }
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
 
-        // Java 6 equivalent of Long.compare(this.version, o.version)
-        return Long.valueOf(this.version).compareTo(Long.valueOf(o.version));
+        // if (getClass() != obj.getClass())
+        // return false;
+
+        if (!(obj instanceof Interval))
+            return false;
+
+        Interval other = (Interval) obj;
+        if (end != other.end)
+            return false;
+        if (id != other.id)
+            return false;
+        if (start != other.start)
+            return false;
+        if (version != other.version)
+            return false;
+        return true;
+    }
+
+    public boolean equalsVersionId(Interval o) {
+        if (o == null) {
+            return false;
+        }
+        return (version == o.version && id == o.id);
     }
 
     @Override
     public String toString() {
         return String.format("([%d:%d], %d, %d)", start, end, version, id);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (int) (end ^ (end >>> 32));
+        result = prime * result + (int) (id ^ (id >>> 32));
+        result = prime * result + (int) (start ^ (start >>> 32));
+        result = prime * result + (int) (version ^ (version >>> 32));
+        return result;
+    }
+
+    /**
+     * Interval implementation that allows to add an attachment.<br>
+     * Attachments are ignored when checking on equality or generating hashCodes.<br>
+     * TODO (jdillmann): Maybe merge to Interval
+     */
+    public static class IntervalWithAttachment extends Interval {
+        final Object attachment;
+
+        public IntervalWithAttachment(long start, long end, long version, long id, Object attachment) {
+            super(start, end, version, id);
+            this.attachment = attachment;
+        }
+
+        @Override
+        public Object getAttachment() {
+            return attachment;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
+        }
     }
 }

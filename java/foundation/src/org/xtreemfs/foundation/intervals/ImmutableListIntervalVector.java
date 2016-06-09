@@ -8,10 +8,12 @@
 package org.xtreemfs.foundation.intervals;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+// FIXME (jdillmann): Rename
 public class ImmutableListIntervalVector extends IntervalVector {
 
     final List<Interval> intervals;
@@ -21,10 +23,22 @@ public class ImmutableListIntervalVector extends IntervalVector {
         this.intervals = vector.serialize();
     }
 
+    /**
+     * Initialize an empty ListIntervalVector, to which sorted, gapless and non overlapping intervals can be appended
+     * with {@link #append(Interval)}.
+     */
+    public ImmutableListIntervalVector() {
+        this.intervals = new ArrayList<Interval>();
+    }
+
+    /**
+     * Initialize a ListIntervalVector from the interval list. <br>
+     * Note: The interval list has to be sorted and may not contain any gaps or overlaps.
+     * 
+     * @param intervals
+     */
     public ImmutableListIntervalVector(List<Interval> intervals) {
-        // FIXME (jdillmann): Sicherstellen, dass keine Lücken existieren
-        this.intervals = new ArrayList<Interval>(intervals);
-        // Collections.sort(this.intervals);
+        this.intervals = intervals;
     }
 
     @Override
@@ -57,6 +71,36 @@ public class ImmutableListIntervalVector extends IntervalVector {
     @Override
     public void insert(Interval i) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Append the interval to this vector if it does not overlap with any segment.<br>
+     * Note: Gaps will be filled.
+     * 
+     * @param interval
+     *            to append.
+     * @throws IllegalArgumentException
+     *             if the interval overlaps
+     */
+    public void append(Interval interval) {
+        int n = intervals.size();
+        if (n == 0) {
+            intervals.add(interval);
+            return;
+        }
+
+        Interval last = intervals.get(n - 1);
+        if (last.end > interval.start) {
+            throw new IllegalAccessError("Interval to append has to start after the last interval in this vector.");
+        }
+
+        if (last.end < interval.start) {
+            // add gap interval
+            Interval gap = new Interval(last.end, interval.start);
+            intervals.add(gap);
+        }
+
+        intervals.add(interval);
     }
 
     @Override
@@ -160,9 +204,7 @@ public class ImmutableListIntervalVector extends IntervalVector {
 
     @Override
     public List<Interval> serialize() {
-        // TODO (jdillmann): Think about not copying, as this will be much faster and I now what to do. And i would
-        // document it
-        return new ArrayList<Interval>(intervals);
+        return Collections.unmodifiableList(intervals);
     }
 
     @Override
