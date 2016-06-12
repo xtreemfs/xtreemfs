@@ -239,6 +239,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/jdmkrt.jar
 /usr/share/java/jdmktk.jar
 /usr/share/java/commons-codec-1.3.jar
+/usr/share/java/JavaReedSolomon.jar
 %doc LICENSE
 
 %files server

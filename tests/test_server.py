@@ -64,8 +64,8 @@ class Server:
         self._config['snmp.port'] = snmp_port
         self._config['snmp.address'] = snmp_address
         self._config['snmp.aclfile'] = snmp_aclfile
-        
-         
+
+
     # Imports the configuration from the config file.
     def read_config_file(self):
         self._config = dict()
@@ -162,6 +162,7 @@ class Server:
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
                              os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "commons-codec-1.3.jar")),
+                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "JavaReedSolomon.jar")),
                              )
             else:
                 classpath = (
@@ -172,6 +173,7 @@ class Server:
                              os.path.join("/usr/share/java", "Foundation.jar"),
                              os.path.join("/usr/share/java", "jdmkrt.jar"),
                              os.path.join("/usr/share/java", "commons-codec-1.3.jar"),
+                             os.path.join("/usr/share/java", "JavaReedSolomon.jar"),
                              )
 
             if sys.platform.startswith("win"):
@@ -229,7 +231,7 @@ class Server:
 
                         try: os.kill(pid, signo)
                         except: pass
-                        
+
                         sleep(0.5)
 
                         try:

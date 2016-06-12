@@ -13,6 +13,7 @@
 	<classpathentry kind="lib" path="../lib/jdmkrt.jar"/>
 	<classpathentry kind="lib" path="../lib/jdmktk.jar"/>
 	<classpathentry kind="lib" path="../lib/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="../lib/JavaReedSolomon.jar"/>
 	<classpathentry kind="src" path="/xtreemfs_foundation"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xtreemfs_flease"/>
 	<classpathentry kind="output" path="build/classes"/>

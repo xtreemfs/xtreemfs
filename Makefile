@@ -183,6 +183,7 @@ uninstall:
 	@rm -f $(XTREEMFS_JAR_DIR)/jdmktk.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/protobuf-java-2.5.0.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/JavaReedSolomon.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 

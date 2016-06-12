@@ -1,5 +1,5 @@
 # Copyright 1999-2007 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2 
+# Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
 
@@ -78,7 +78,7 @@ src_install() {
   java-pkg_dojar java/servers/dist/XtreemFS.jar
 
   java-pkg_jarinto /usr/share/${PN}/java/lib
-  java-pkg_dojar java/lib/protobuf-java-2.5.0.jar java/lib/BabuDB.jar java/lib/commons-codec-1.3.jar java/lib/jdmktk.jar java/lib/jdmkrt.jar
+  java-pkg_dojar java/lib/protobuf-java-2.5.0.jar java/lib/BabuDB.jar java/lib/commons-codec-1.3.jar java/lib/jdmktk.jar java/lib/jdmkrt.jar java/lib/JavaReedSolomon.jar
 
   java-pkg_jarinto /usr/share/${PN}/java/foundation/dist
   java-pkg_dojar java/foundation/dist/Foundation.jar
