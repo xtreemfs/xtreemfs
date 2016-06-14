@@ -393,11 +393,15 @@ enum OSDHealthResult {
 
 
 // Erasure Coding related messages --------------------------------------------
-message Interval {
+
+// Named IntervalMsg to distinguish from Java Interval interface
+message IntervalMsg {
   required uint64 start = 1;
   required uint64 end = 2;
   required uint64 version = 3;
   required uint64 id = 4;
+  optional uint64 op_start = 5;
+  optional uint64 op_end = 6;
 }
 
 message xtreemfs_ec_get_interval_vectorsRequest {
@@ -407,9 +411,17 @@ message xtreemfs_ec_get_interval_vectorsRequest {
 
 message xtreemfs_ec_get_interval_vectorsResponse {
   // FIXME (jdillmann): Could be sent as data to circumvent inefficient big protobuf msgs
-  repeated Interval cur_intervals = 1;
-  repeated Interval next_intervals = 2;
+  repeated IntervalMsg cur_intervals = 1;
+  repeated IntervalMsg next_intervals = 2;
 }
+
+
+// Redundant as this will just be repeated Intervals
+// Requires more space then just repeating Intervals in other messages
+// message IntervalVector {
+//   repeated IntervalMsg interval = 1;
+// }
+
 
 
 

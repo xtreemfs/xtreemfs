@@ -82,7 +82,7 @@ class xtreemfs_xloc_set_invalidateRequest;
 class xtreemfs_xloc_set_invalidateResponse;
 class xtreemfs_rwr_reset_statusRequest;
 class xtreemfs_rwr_reset_statusResponse;
-class Interval;
+class IntervalMsg;
 class xtreemfs_ec_get_interval_vectorsRequest;
 class xtreemfs_ec_get_interval_vectorsResponse;
 
@@ -4848,14 +4848,14 @@ class xtreemfs_rwr_reset_statusResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class Interval : public ::google::protobuf::Message {
+class IntervalMsg : public ::google::protobuf::Message {
  public:
-  Interval();
-  virtual ~Interval();
+  IntervalMsg();
+  virtual ~IntervalMsg();
 
-  Interval(const Interval& from);
+  IntervalMsg(const IntervalMsg& from);
 
-  inline Interval& operator=(const Interval& from) {
+  inline IntervalMsg& operator=(const IntervalMsg& from) {
     CopyFrom(from);
     return *this;
   }
@@ -4869,17 +4869,17 @@ class Interval : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const Interval& default_instance();
+  static const IntervalMsg& default_instance();
 
-  void Swap(Interval* other);
+  void Swap(IntervalMsg* other);
 
   // implements Message ----------------------------------------------
 
-  Interval* New() const;
+  IntervalMsg* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const Interval& from);
-  void MergeFrom(const Interval& from);
+  void CopyFrom(const IntervalMsg& from);
+  void MergeFrom(const IntervalMsg& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -4930,7 +4930,21 @@ class Interval : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 id() const;
   inline void set_id(::google::protobuf::uint64 value);
 
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.Interval)
+  // optional uint64 op_start = 5;
+  inline bool has_op_start() const;
+  inline void clear_op_start();
+  static const int kOpStartFieldNumber = 5;
+  inline ::google::protobuf::uint64 op_start() const;
+  inline void set_op_start(::google::protobuf::uint64 value);
+
+  // optional uint64 op_end = 6;
+  inline bool has_op_end() const;
+  inline void clear_op_end();
+  static const int kOpEndFieldNumber = 6;
+  inline ::google::protobuf::uint64 op_end() const;
+  inline void set_op_end(::google::protobuf::uint64 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.IntervalMsg)
  private:
   inline void set_has_start();
   inline void clear_has_start();
@@ -4940,6 +4954,10 @@ class Interval : public ::google::protobuf::Message {
   inline void clear_has_version();
   inline void set_has_id();
   inline void clear_has_id();
+  inline void set_has_op_start();
+  inline void clear_has_op_start();
+  inline void set_has_op_end();
+  inline void clear_has_op_end();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -4947,16 +4965,18 @@ class Interval : public ::google::protobuf::Message {
   ::google::protobuf::uint64 end_;
   ::google::protobuf::uint64 version_;
   ::google::protobuf::uint64 id_;
+  ::google::protobuf::uint64 op_start_;
+  ::google::protobuf::uint64 op_end_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
 
   void InitAsDefaultInstance();
-  static Interval* default_instance_;
+  static IntervalMsg* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -5113,28 +5133,28 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
 
   // accessors -------------------------------------------------------
 
-  // repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+  // repeated .xtreemfs.pbrpc.IntervalMsg cur_intervals = 1;
   inline int cur_intervals_size() const;
   inline void clear_cur_intervals();
   static const int kCurIntervalsFieldNumber = 1;
-  inline const ::xtreemfs::pbrpc::Interval& cur_intervals(int index) const;
-  inline ::xtreemfs::pbrpc::Interval* mutable_cur_intervals(int index);
-  inline ::xtreemfs::pbrpc::Interval* add_cur_intervals();
-  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >&
+  inline const ::xtreemfs::pbrpc::IntervalMsg& cur_intervals(int index) const;
+  inline ::xtreemfs::pbrpc::IntervalMsg* mutable_cur_intervals(int index);
+  inline ::xtreemfs::pbrpc::IntervalMsg* add_cur_intervals();
+  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
       cur_intervals() const;
-  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >*
+  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
       mutable_cur_intervals();
 
-  // repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+  // repeated .xtreemfs.pbrpc.IntervalMsg next_intervals = 2;
   inline int next_intervals_size() const;
   inline void clear_next_intervals();
   static const int kNextIntervalsFieldNumber = 2;
-  inline const ::xtreemfs::pbrpc::Interval& next_intervals(int index) const;
-  inline ::xtreemfs::pbrpc::Interval* mutable_next_intervals(int index);
-  inline ::xtreemfs::pbrpc::Interval* add_next_intervals();
-  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >&
+  inline const ::xtreemfs::pbrpc::IntervalMsg& next_intervals(int index) const;
+  inline ::xtreemfs::pbrpc::IntervalMsg* mutable_next_intervals(int index);
+  inline ::xtreemfs::pbrpc::IntervalMsg* add_next_intervals();
+  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
       next_intervals() const;
-  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >*
+  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
       mutable_next_intervals();
 
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_interval_vectorsResponse)
@@ -5142,8 +5162,8 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval > cur_intervals_;
-  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval > next_intervals_;
+  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg > cur_intervals_;
+  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg > next_intervals_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -10039,94 +10059,138 @@ inline void xtreemfs_rwr_reset_statusResponse::set_complete(bool value) {
 
 // -------------------------------------------------------------------
 
-// Interval
+// IntervalMsg
 
 // required uint64 start = 1;
-inline bool Interval::has_start() const {
+inline bool IntervalMsg::has_start() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void Interval::set_has_start() {
+inline void IntervalMsg::set_has_start() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void Interval::clear_has_start() {
+inline void IntervalMsg::clear_has_start() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void Interval::clear_start() {
+inline void IntervalMsg::clear_start() {
   start_ = GOOGLE_ULONGLONG(0);
   clear_has_start();
 }
-inline ::google::protobuf::uint64 Interval::start() const {
+inline ::google::protobuf::uint64 IntervalMsg::start() const {
   return start_;
 }
-inline void Interval::set_start(::google::protobuf::uint64 value) {
+inline void IntervalMsg::set_start(::google::protobuf::uint64 value) {
   set_has_start();
   start_ = value;
 }
 
 // required uint64 end = 2;
-inline bool Interval::has_end() const {
+inline bool IntervalMsg::has_end() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void Interval::set_has_end() {
+inline void IntervalMsg::set_has_end() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void Interval::clear_has_end() {
+inline void IntervalMsg::clear_has_end() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void Interval::clear_end() {
+inline void IntervalMsg::clear_end() {
   end_ = GOOGLE_ULONGLONG(0);
   clear_has_end();
 }
-inline ::google::protobuf::uint64 Interval::end() const {
+inline ::google::protobuf::uint64 IntervalMsg::end() const {
   return end_;
 }
-inline void Interval::set_end(::google::protobuf::uint64 value) {
+inline void IntervalMsg::set_end(::google::protobuf::uint64 value) {
   set_has_end();
   end_ = value;
 }
 
 // required uint64 version = 3;
-inline bool Interval::has_version() const {
+inline bool IntervalMsg::has_version() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void Interval::set_has_version() {
+inline void IntervalMsg::set_has_version() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void Interval::clear_has_version() {
+inline void IntervalMsg::clear_has_version() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void Interval::clear_version() {
+inline void IntervalMsg::clear_version() {
   version_ = GOOGLE_ULONGLONG(0);
   clear_has_version();
 }
-inline ::google::protobuf::uint64 Interval::version() const {
+inline ::google::protobuf::uint64 IntervalMsg::version() const {
   return version_;
 }
-inline void Interval::set_version(::google::protobuf::uint64 value) {
+inline void IntervalMsg::set_version(::google::protobuf::uint64 value) {
   set_has_version();
   version_ = value;
 }
 
 // required uint64 id = 4;
-inline bool Interval::has_id() const {
+inline bool IntervalMsg::has_id() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void Interval::set_has_id() {
+inline void IntervalMsg::set_has_id() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void Interval::clear_has_id() {
+inline void IntervalMsg::clear_has_id() {
   _has_bits_[0] &= ~0x00000008u;
 }
-inline void Interval::clear_id() {
+inline void IntervalMsg::clear_id() {
   id_ = GOOGLE_ULONGLONG(0);
   clear_has_id();
 }
-inline ::google::protobuf::uint64 Interval::id() const {
+inline ::google::protobuf::uint64 IntervalMsg::id() const {
   return id_;
 }
-inline void Interval::set_id(::google::protobuf::uint64 value) {
+inline void IntervalMsg::set_id(::google::protobuf::uint64 value) {
   set_has_id();
   id_ = value;
+}
+
+// optional uint64 op_start = 5;
+inline bool IntervalMsg::has_op_start() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void IntervalMsg::set_has_op_start() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void IntervalMsg::clear_has_op_start() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void IntervalMsg::clear_op_start() {
+  op_start_ = GOOGLE_ULONGLONG(0);
+  clear_has_op_start();
+}
+inline ::google::protobuf::uint64 IntervalMsg::op_start() const {
+  return op_start_;
+}
+inline void IntervalMsg::set_op_start(::google::protobuf::uint64 value) {
+  set_has_op_start();
+  op_start_ = value;
+}
+
+// optional uint64 op_end = 6;
+inline bool IntervalMsg::has_op_end() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void IntervalMsg::set_has_op_end() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void IntervalMsg::clear_has_op_end() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void IntervalMsg::clear_op_end() {
+  op_end_ = GOOGLE_ULONGLONG(0);
+  clear_has_op_end();
+}
+inline ::google::protobuf::uint64 IntervalMsg::op_end() const {
+  return op_end_;
+}
+inline void IntervalMsg::set_op_end(::google::protobuf::uint64 value) {
+  set_has_op_end();
+  op_end_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -10245,52 +10309,52 @@ inline void xtreemfs_ec_get_interval_vectorsRequest::set_allocated_file_id(::std
 
 // xtreemfs_ec_get_interval_vectorsResponse
 
-// repeated .xtreemfs.pbrpc.Interval cur_intervals = 1;
+// repeated .xtreemfs.pbrpc.IntervalMsg cur_intervals = 1;
 inline int xtreemfs_ec_get_interval_vectorsResponse::cur_intervals_size() const {
   return cur_intervals_.size();
 }
 inline void xtreemfs_ec_get_interval_vectorsResponse::clear_cur_intervals() {
   cur_intervals_.Clear();
 }
-inline const ::xtreemfs::pbrpc::Interval& xtreemfs_ec_get_interval_vectorsResponse::cur_intervals(int index) const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_interval_vectorsResponse::cur_intervals(int index) const {
   return cur_intervals_.Get(index);
 }
-inline ::xtreemfs::pbrpc::Interval* xtreemfs_ec_get_interval_vectorsResponse::mutable_cur_intervals(int index) {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::mutable_cur_intervals(int index) {
   return cur_intervals_.Mutable(index);
 }
-inline ::xtreemfs::pbrpc::Interval* xtreemfs_ec_get_interval_vectorsResponse::add_cur_intervals() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::add_cur_intervals() {
   return cur_intervals_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >&
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
 xtreemfs_ec_get_interval_vectorsResponse::cur_intervals() const {
   return cur_intervals_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >*
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
 xtreemfs_ec_get_interval_vectorsResponse::mutable_cur_intervals() {
   return &cur_intervals_;
 }
 
-// repeated .xtreemfs.pbrpc.Interval next_intervals = 2;
+// repeated .xtreemfs.pbrpc.IntervalMsg next_intervals = 2;
 inline int xtreemfs_ec_get_interval_vectorsResponse::next_intervals_size() const {
   return next_intervals_.size();
 }
 inline void xtreemfs_ec_get_interval_vectorsResponse::clear_next_intervals() {
   next_intervals_.Clear();
 }
-inline const ::xtreemfs::pbrpc::Interval& xtreemfs_ec_get_interval_vectorsResponse::next_intervals(int index) const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_interval_vectorsResponse::next_intervals(int index) const {
   return next_intervals_.Get(index);
 }
-inline ::xtreemfs::pbrpc::Interval* xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals(int index) {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals(int index) {
   return next_intervals_.Mutable(index);
 }
-inline ::xtreemfs::pbrpc::Interval* xtreemfs_ec_get_interval_vectorsResponse::add_next_intervals() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::add_next_intervals() {
   return next_intervals_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >&
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
 xtreemfs_ec_get_interval_vectorsResponse::next_intervals() const {
   return next_intervals_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::Interval >*
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
 xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals() {
   return &next_intervals_;
 }
