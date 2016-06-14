@@ -46,6 +46,7 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.ec.ECHelper;
+import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
@@ -1576,15 +1577,15 @@ public class HashStorageLayout extends StorageLayout {
         BufferedInputStream input = null;
         try {
             input = new BufferedInputStream(new FileInputStream(vectorFile));
-            org.xtreemfs.pbrpc.generatedinterfaces.OSD.Interval.Builder msg;
-            msg = org.xtreemfs.pbrpc.generatedinterfaces.OSD.Interval.newBuilder();
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder msg;
+            msg = org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.newBuilder();
 
             boolean eof = false;
             while (!eof) {
                 msg.clear();
 
                 if (msg.mergeDelimitedFrom(input)) {
-                    Interval interval = ECHelper.proto2interval(msg);
+                    ProtoInterval interval = new ProtoInterval(msg.build());
                     vector.insert(interval);
                 } else {
                     eof = true;

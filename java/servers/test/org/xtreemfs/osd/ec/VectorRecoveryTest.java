@@ -15,9 +15,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
+import org.xtreemfs.foundation.intervals.AttachmentInterval;
 import org.xtreemfs.foundation.intervals.Interval;
-import org.xtreemfs.foundation.intervals.Interval.IntervalWithAttachment;
 import org.xtreemfs.foundation.intervals.IntervalVector;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.test.TestHelper;
 
 public class VectorRecoveryTest {
@@ -30,38 +31,38 @@ public class VectorRecoveryTest {
         AVLTreeIntervalVector iv2 = new AVLTreeIntervalVector();
         AVLTreeIntervalVector iv3 = new AVLTreeIntervalVector();
 
-        Interval interval;
-        interval = new Interval(0, 12, 1, 1);
+        ObjectInterval interval;
+        interval = new ObjectInterval(0, 12, 1, 1);
         iv1.insert(interval);
         iv2.insert(interval);
         iv3.insert(interval);
 
-        interval = new Interval(3, 9, 2, 2);
+        interval = new ObjectInterval(3, 9, 2, 2);
         iv2.insert(interval);
         iv3.insert(interval);
 
-        interval = new Interval(2, 6, 3, 3);
+        interval = new ObjectInterval(2, 6, 3, 3);
         iv3.insert(interval);
 
-        interval = new Interval(0, 1, 2, 4);
+        interval = new ObjectInterval(0, 1, 2, 4);
         iv1.insert(interval);
 
         LinkedList<Interval> expected = new LinkedList<Interval>();
-        expected.add(new IntervalWithAttachment(0, 1, 2, 4, 1));
-        expected.add(new IntervalWithAttachment(1, 2, 1, 1, 3));
-        expected.add(new IntervalWithAttachment(2, 6, 3, 3, 1));
-        expected.add(new IntervalWithAttachment(6, 9, 2, 2, 2));
-        expected.add(new IntervalWithAttachment(9, 12, 1, 1, 3));
+        expected.add(new AttachmentInterval(0, 1, 2, 4, 1));
+        expected.add(new AttachmentInterval(1, 2, 1, 1, 3));
+        expected.add(new AttachmentInterval(2, 6, 3, 3, 1));
+        expected.add(new AttachmentInterval(6, 9, 2, 2, 2));
+        expected.add(new AttachmentInterval(9, 12, 1, 1, 3));
 
         IntervalVector[] curVectors = new IntervalVector[] { iv1, iv2, iv3 };
-        List<Interval> result = ECPolicy.recoverCurrentIntervalVector(curVectors, null);
+        List<AttachmentInterval> result = ECPolicy.recoverCurrentIntervalVector(curVectors, null);
 
         System.out.println(result);
 
         assertEquals(expected.size(), result.size());
         for (int i = 0; i < result.size(); i++) {
-            // Interval i1 = expected.get(i);
-            // Interval i2 = result.get(i);
+            // IntervalMsg i1 = expected.get(i);
+            // IntervalMsg i2 = result.get(i);
             assertEquals(result.get(i), expected.get(i));
             assertEquals(result.get(i).getAttachment(), expected.get(i).getAttachment());
         }
@@ -81,10 +82,10 @@ public class VectorRecoveryTest {
     //
 //    static class SweepEvent implements Comparable<SweepEvent> {
 //        long     position;
-//        Interval interval;
+//        IntervalMsg interval;
 //        int      i;
 //
-//        public SweepEvent(int i, long position, Interval interval) {
+//        public SweepEvent(int i, long position, IntervalMsg interval) {
 //            this.i = i;
 //            this.position = position;
 //            this.interval = interval;

@@ -20,9 +20,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
-import org.xtreemfs.foundation.intervals.ImmutableListIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
+import org.xtreemfs.foundation.intervals.ListIntervalVector;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.osd.OSDConfig;
@@ -60,8 +61,8 @@ public class VectorStorageTest {
         List<Interval> intervals = new LinkedList<Interval>();
 
         // Store and load a single interval
-        intervals.add(new Interval(0, 2048, 1, 0));
-        vecIn = new ImmutableListIntervalVector(intervals);
+        intervals.add(new ObjectInterval(0, 2048, 1, 0));
+        vecIn = new ListIntervalVector(intervals);
         layout.setECIntervalVector(fileId, vecIn, false, true);
 
         vecOut = new AVLTreeIntervalVector();
@@ -69,8 +70,8 @@ public class VectorStorageTest {
         assertEquals(vecIn, vecOut);
 
         // Store and load a second, non overlapping interval
-        intervals.add(new Interval(2048, 4096, 2, 0));
-        vecIn = new ImmutableListIntervalVector(intervals);
+        intervals.add(new ObjectInterval(2048, 4096, 2, 0));
+        vecIn = new ListIntervalVector(intervals);
         layout.setECIntervalVector(fileId, vecIn, false, true);
 
         vecOut = new AVLTreeIntervalVector();
@@ -78,8 +79,8 @@ public class VectorStorageTest {
         assertEquals(vecIn, vecOut);
 
         // Add an overlapping interval
-        vecOut.insert(new Interval(1024, 3096, 3, 0));
-        vecIn = new ImmutableListIntervalVector(vecOut);
+        vecOut.insert(new ObjectInterval(1024, 3096, 3, 0));
+        vecIn = new ListIntervalVector(vecOut);
         layout.setECIntervalVector(fileId, vecIn, false, true);
 
         vecOut = new AVLTreeIntervalVector();
@@ -88,8 +89,8 @@ public class VectorStorageTest {
 
         // Overwrite the interval
         intervals.clear();
-        intervals.add(new Interval(0, 512, 4, 0));
-        vecIn = new ImmutableListIntervalVector(intervals);
+        intervals.add(new ObjectInterval(0, 512, 4, 0));
+        vecIn = new ListIntervalVector(intervals);
         layout.setECIntervalVector(fileId, vecIn, false, false);
 
         vecOut = new AVLTreeIntervalVector();
@@ -108,8 +109,8 @@ public class VectorStorageTest {
         assertFalse(result);
         
         // Read from corrupted vector file
-        intervals.add(new Interval(0, 2048, 1, 0));
-        vecIn = new ImmutableListIntervalVector(intervals);
+        intervals.add(new ObjectInterval(0, 2048, 1, 0));
+        vecIn = new ListIntervalVector(intervals);
         layout.setECIntervalVector(fileId, vecIn, false, false);
 
         // Truncate 1 byte from the end

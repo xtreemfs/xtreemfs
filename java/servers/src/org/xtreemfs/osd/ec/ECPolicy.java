@@ -12,9 +12,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import org.xtreemfs.foundation.intervals.AttachmentInterval;
 import org.xtreemfs.foundation.intervals.Interval;
-import org.xtreemfs.foundation.intervals.Interval.IntervalWithAttachment;
 import org.xtreemfs.foundation.intervals.IntervalVector;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 
@@ -45,13 +46,13 @@ public class ECPolicy {
         @Override
         public int compareTo(SweepEvent o) {
             // The interval's end is the main criteria. Intervals which end first, will be handled first.
-            long cmp = this.interval.end - o.interval.end;
+            long cmp = this.interval.getEnd() - o.interval.getEnd();
 
             // If both events end at the same position, the event with the higher version is handled first.
             if (cmp == 0) {
                 // note: higher versions are considered first
                 // cmp = o.interval.id - this.interval.id;
-                cmp = o.interval.version - this.interval.version;
+                cmp = o.interval.getVersion() - this.interval.getVersion();
             }
 
             // TODO (jdillmann): Maybe check on id. This will be relevant for the nextVector where only the interval
@@ -67,7 +68,7 @@ public class ECPolicy {
     }
 
 
-    public static List<Interval> recoverCurrentIntervalVector(IntervalVector[] curVectors,
+    public static List<AttachmentInterval> recoverCurrentIntervalVector(IntervalVector[] curVectors,
             IntervalVector[] nextVectors) {
 
         PriorityQueue<SweepEvent> prioq = new PriorityQueue<SweepEvent>(curVectors.length);
@@ -85,7 +86,7 @@ public class ECPolicy {
             }
         }
 
-        LinkedList<Interval> result = new LinkedList<Interval>();
+        LinkedList<AttachmentInterval> result = new LinkedList<AttachmentInterval>();
         long lastEnd = 0;
 
         // As long as there are intervals left handle them according to their order
@@ -96,7 +97,7 @@ public class ECPolicy {
             
             // If this intervals end is less or equal to an already handled range, it can be ignored, because it is
             // guaranteed, that it has already been handled and counted.
-            if (interval.end > lastEnd) {
+            if (interval.getEnd() > lastEnd) {
                 int count = 1;
 
                 // if (last != null && interval.start < last.end) {
@@ -109,7 +110,7 @@ public class ECPolicy {
                     Interval otherInterval = otherEvent.interval;
 
                     // If the current interval's version is less then another's, the current interval can be ignored.
-                    if (interval.version < otherInterval.version) {
+                    if (interval.getVersion() < otherInterval.getVersion()) {
                         // System.out.println("drop: " + event);
                         count = -1;
                         break;
@@ -122,12 +123,18 @@ public class ECPolicy {
                 }
                 
                 // If the current interval's version has been greater or equal to the others, the count variable
-                // contains is positive and the current range can be added to the result.
+                // is positive and the current range can be added to the result.
                 if (count > 0) {
-                    IntervalWithAttachment resultInterval = new IntervalWithAttachment(lastEnd, interval.end,
-                            interval.version, interval.id, count);
-                    lastEnd = interval.end;
-                    result.add(resultInterval);
+                    Interval resultInterval = interval;
+                    if (interval.getStart() != lastEnd) {
+                        // If an overlap is detected slice the result interval
+                        resultInterval = new ObjectInterval(lastEnd, interval.getEnd(), interval.getVersion(),
+                                interval.getId());
+                    }
+
+                    AttachmentInterval resultAttachedInterval = new AttachmentInterval(resultInterval, count);
+                    lastEnd = interval.getEnd();
+                    result.add(resultAttachedInterval);
 
                     // System.out.println("res: " + interval + " => " + resultInterval);
                 }
@@ -147,6 +154,6 @@ public class ECPolicy {
 
         return result;
     }
-        
+
 
 }

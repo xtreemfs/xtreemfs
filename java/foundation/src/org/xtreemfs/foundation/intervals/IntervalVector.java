@@ -27,11 +27,11 @@ public abstract class IntervalVector {
     public abstract IntervalVector getSlice(long start, long end);
 
     /**
-     * Insert the Interval i into the current IntervalVector.<br>
+     * Insert the ObjectInterval i into the current IntervalVector.<br>
      * Note: This is an optional operation.
      * 
      * @param i
-     *            Interval to insert
+     *            ObjectInterval to insert
      * 
      * @throws UnsupportedOperationException
      *             if the operation is not supported
@@ -70,7 +70,7 @@ public abstract class IntervalVector {
      */
     public abstract List<Interval> serialize();
 
-    // gdw. alle Interval equal sind
+    // gdw. alle ObjectInterval equal sind
     @Override
     public boolean equals(Object obj) {
         if (obj == null)
@@ -100,14 +100,14 @@ public abstract class IntervalVector {
         Interval last = acc.peekLast();
 
         // Fill the gaps
-        if (last != null && interval.start > last.end) {
-            Interval gap = new Interval(last.end, interval.start);
+        if (last != null && interval.getStart() > last.getEnd()) {
+            ObjectInterval gap = new ObjectInterval(last.getEnd(), interval.getStart());
             acc.add(gap);
         }
 
-        if (last != null && interval.start <= last.end && interval.version == last.version && interval.id == last.id) {
+        if (last != null && interval.getStart() <= last.getEnd() && interval.getVersion() == last.getVersion() && interval.getId() == last.getId()) {
             // There is no gap between the last and current interval and their version and id match: Merge them!
-            Interval merged = new Interval(last.start, interval.end, last.version, last.id);
+            ObjectInterval merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(), last.getId());
             acc.removeLast();
             acc.add(merged);
         } else {
@@ -119,28 +119,28 @@ public abstract class IntervalVector {
     static void sliceIntervalList(LinkedList<Interval> intervals, long start, long end) {
         if (intervals.size() > 0) {
             Interval first = intervals.getFirst();
-            if (first.start > start) {
+            if (first.getStart() > start) {
                 // Pad from the beginning
-                Interval pad = new Interval(start, first.start);
+                ObjectInterval pad = new ObjectInterval(start, first.getStart());
                 intervals.addFirst(pad);
-            } else if (first.start < start) {
+            } else if (first.getStart() < start) {
                 intervals.removeFirst();
-                first = new Interval(start, first.end, first.version, first.id);
+                first = new ObjectInterval(start, first.getEnd(), first.getVersion(), first.getId());
                 intervals.addFirst(first);
             }
 
             Interval last = intervals.getLast();
-            if (last.end < end) {
+            if (last.getEnd() < end) {
                 // Pad from the end
-                Interval pad = new Interval(last.end, end);
+                ObjectInterval pad = new ObjectInterval(last.getEnd(), end);
                 intervals.addLast(pad);
-            } else if (last.end > end) {
+            } else if (last.getEnd() > end) {
                 intervals.removeLast();
-                last = new Interval(last.start, end, last.version, last.id);
+                last = new ObjectInterval(last.getStart(), end, last.getVersion(), last.getId());
                 intervals.addLast(last);
             }
         } else {
-            Interval empty = new Interval(start, end);
+            ObjectInterval empty = new ObjectInterval(start, end);
             intervals.add(empty);
         }
     }

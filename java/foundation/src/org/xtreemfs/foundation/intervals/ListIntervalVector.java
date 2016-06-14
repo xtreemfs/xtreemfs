@@ -13,13 +13,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-// FIXME (jdillmann): Rename
-public class ImmutableListIntervalVector extends IntervalVector {
+public class ListIntervalVector extends IntervalVector {
 
     final List<Interval> intervals;
     // TODO (jdillmann): Store/Cache maxversion
 
-    public ImmutableListIntervalVector(IntervalVector vector) {
+    public ListIntervalVector(IntervalVector vector) {
         this.intervals = vector.serialize();
     }
 
@@ -27,7 +26,7 @@ public class ImmutableListIntervalVector extends IntervalVector {
      * Initialize an empty ListIntervalVector, to which sorted, gapless and non overlapping intervals can be appended
      * with {@link #append(Interval)}.
      */
-    public ImmutableListIntervalVector() {
+    public ListIntervalVector() {
         this.intervals = new ArrayList<Interval>();
     }
 
@@ -37,7 +36,7 @@ public class ImmutableListIntervalVector extends IntervalVector {
      * 
      * @param intervals
      */
-    public ImmutableListIntervalVector(List<Interval> intervals) {
+    public ListIntervalVector(List<Interval> intervals) {
         this.intervals = intervals;
     }
 
@@ -46,12 +45,12 @@ public class ImmutableListIntervalVector extends IntervalVector {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
-            if (i.end > start && i.start <= end) {
+            if (i.getEnd() > start && i.getStart() <= end) {
                 addInterval(result, i);
             }
         }
 
-        return new ImmutableListIntervalVector(result);
+        return new ListIntervalVector(result);
     }
 
     @Override
@@ -59,13 +58,13 @@ public class ImmutableListIntervalVector extends IntervalVector {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
-            if (i.end > start && i.start <= end) {
+            if (i.getEnd() > start && i.getStart() <= end) {
                 addInterval(result, i);
             }
         }
 
         sliceIntervalList(result, start, end);
-        return new ImmutableListIntervalVector(result);
+        return new ListIntervalVector(result);
     };
 
     @Override
@@ -90,13 +89,13 @@ public class ImmutableListIntervalVector extends IntervalVector {
         }
 
         Interval last = intervals.get(n - 1);
-        if (last.end > interval.start) {
+        if (last.getEnd() > interval.getStart()) {
             throw new IllegalAccessError("Interval to append has to start after the last interval in this vector.");
         }
 
-        if (last.end < interval.start) {
+        if (last.getEnd() < interval.getStart()) {
             // add gap interval
-            Interval gap = new Interval(last.end, interval.start);
+            ObjectInterval gap = new ObjectInterval(last.getEnd(), interval.getStart());
             intervals.add(gap);
         }
 
@@ -107,8 +106,8 @@ public class ImmutableListIntervalVector extends IntervalVector {
     public long getMaxVersion() {
         long max = -1;
         for (Interval i : intervals) {
-            if (i.version > max) {
-                max = i.version;
+            if (i.getVersion() > max) {
+                max = i.getVersion();
             }
         }
         return max;
@@ -120,11 +119,11 @@ public class ImmutableListIntervalVector extends IntervalVector {
 
         boolean isGreater = false;
         for (Interval i : intervals) {
-            if (i.version > otherMax) {
+            if (i.getVersion() > otherMax) {
                 // Tests if the maxversion of any range of a version vector
                 // is greater then that of the passed version vector
                 isGreater = true;
-            } else if (i.version < otherMax) {
+            } else if (i.getVersion() < otherMax) {
                 // The maxversion of all ranges has to be at least greater or equal
                 return false;
             }
@@ -156,28 +155,28 @@ public class ImmutableListIntervalVector extends IntervalVector {
         }
 
         // If the vectors do not have the same start, the comparison is undefined.
-        if (!(thisIv != null && otherIv != null) || (thisIv.start != otherIv.start)) {
+        if (!(thisIv != null && otherIv != null) || (thisIv.getStart() != otherIv.getStart())) {
             throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
         }
 
         while (thisIv != null && otherIv != null) {
 
 
-            if (thisIv.version > otherIv.version) {
+            if (thisIv.getVersion() > otherIv.getVersion()) {
                 // This vector element version is greater than the other.
                 return false;
 
-            } else if (thisIv.version == otherIv.version
-                    && !(thisIv.start == otherIv.start && thisIv.end == otherIv.end && thisIv.id == otherIv.id)) {
+            } else if (thisIv.getVersion() == otherIv.getVersion()
+                    && !(thisIv.getStart() == otherIv.getStart() && thisIv.getEnd() == otherIv.getEnd() && thisIv.getId() == otherIv.getId())) {
                 // The vector element versions are the same, but the elements are not equal.
                 return false;
 
             }
 
-            if (thisIv.end > otherIv.end) {
+            if (thisIv.getEnd() > otherIv.getEnd()) {
                 // Advance other vector
                 otherIv = null;
-            } else if (thisIv.end < otherIv.end) {
+            } else if (thisIv.getEnd() < otherIv.getEnd()) {
                 // Advance this vector
                 thisIv = null;
             } else {

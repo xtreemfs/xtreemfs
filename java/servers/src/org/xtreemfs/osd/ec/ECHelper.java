@@ -6,21 +6,23 @@
  */
 package org.xtreemfs.osd.ec;
 
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Interval;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalOrBuilder;
+import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder;
 
 public class ECHelper {
-    public static Interval interval2proto(org.xtreemfs.foundation.intervals.Interval interval) {
-        return Interval.newBuilder()
-                .setStart(interval.start)
-                .setEnd(interval.end)
-                .setVersion(interval.version)
-                .setId(interval.id)
+    public static IntervalMsg interval2proto(Interval interval) {
+        return IntervalMsg.newBuilder()
+                .setStart(interval.getStart())
+                .setEnd(interval.getEnd())
+                .setVersion(interval.getVersion())
+                .setId(interval.getId())
                 .build();
     }
 
-    public static org.xtreemfs.foundation.intervals.Interval proto2interval(IntervalOrBuilder msg) {
-        return new org.xtreemfs.foundation.intervals.Interval(msg.getStart(), msg.getEnd(), msg.getVersion(),
+    public static ObjectInterval proto2interval(IntervalMsgOrBuilder msg) {
+        return new ObjectInterval(msg.getStart(), msg.getEnd(), msg.getVersion(),
                 msg.getId());
     }
 }

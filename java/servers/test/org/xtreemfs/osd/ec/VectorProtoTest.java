@@ -22,9 +22,10 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
-import org.xtreemfs.foundation.intervals.ImmutableListIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
+import org.xtreemfs.foundation.intervals.ListIntervalVector;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -145,9 +146,9 @@ public class VectorProtoTest {
         assertEquals(0, response.getNextIntervalsCount());
 
         // Test retrieving existing vectors with a gap
-        intervals.add(new Interval(0, 1024, 1, 0));
-        intervals.add(new Interval(2048, 4096, 2, 0));
-        vecIn = new ImmutableListIntervalVector(intervals);
+        intervals.add(new ObjectInterval(0, 1024, 1, 0));
+        intervals.add(new ObjectInterval(2048, 4096, 2, 0));
+        vecIn = new ListIntervalVector(intervals);
         layout.setECIntervalVector(fileId, vecIn, false, true);
         layout.setECIntervalVector(fileId, vecIn, true, true);
 
@@ -160,8 +161,8 @@ public class VectorProtoTest {
         }
 
         // FIXME (jdillmann): This should not be required (Immutable should fill gaps itself)
-        intervals.add(1, new Interval(1024, 2048, -1, -1));
-        expected = new ImmutableListIntervalVector(intervals);
+        intervals.add(1, new ObjectInterval(1024, 2048, -1, -1));
+        expected = new ListIntervalVector(intervals);
 
         curVector = new AVLTreeIntervalVector();
         for (int i = 0; i < response.getCurIntervalsCount(); i++) {

@@ -7,55 +7,40 @@
  */
 package org.xtreemfs.foundation.intervals;
 
-/**
- * Interval Objects containing the start, end and version of an interval. <br>
- * Note: this class has a natural ordering that is inconsistent with equals.
- */
-public class Interval {
-    public final static Interval COMPLETE = new Interval(-1, -1);
-
-    public final long            start;
-    public final long            end;
-    public final long            version;
-    public final long            id;
+public abstract class Interval {
 
     /**
-     * Create an interval from start to end.
-     * 
-     * @param start
-     *            inclusive
-     * @param end
-     *            exclusive
+     * @return start of the interval.
      */
-    // Used for testing / internal
-    Interval(long start, long end) {
-        this(start, end, -1, -1);
-    }
+    public abstract long getStart();
 
-    // Used for testing / internal
-    Interval(long start, long end, long version) {
-        this(start, end, version, -1);
+    /**
+     * @return end of the interval.
+     */
+    public abstract long getEnd();
+
+    /**
+     * @return version of the interval.
+     */
+    public abstract long getVersion();
+
+    /**
+     * @return id of the related operation.
+     */
+    public abstract long getId();
+
+    /**
+     * @return start of the related operation or {@link #getStart()} if no explicit operation range is defined.
+     */
+    public long getOpStart() {
+        return getStart();
     }
 
     /**
-     * Create an interval from start to end.
-     * 
-     * @param start
-     *            inclusive
-     * @param end
-     *            exclusive
-     * @param version
-     * @param id
+     * @return end of the related operation or {@link #getEnd()} if no explicit operation range is defined.
      */
-    public Interval(long start, long end, long version, long id) {
-        if (end <= start && start >= 0) {
-            throw new IllegalArgumentException("Intervals must be at least of length 1");
-        }
-
-        this.start = start;
-        this.end = end;
-        this.version = version;
-        this.id = id;
+    public long getOpEnd() {
+        return getEnd();
     }
 
     /**
@@ -73,21 +58,21 @@ public class Interval {
             return true;
         if (obj == null)
             return false;
-
+    
         // if (getClass() != obj.getClass())
         // return false;
-
+    
         if (!(obj instanceof Interval))
             return false;
-
+    
         Interval other = (Interval) obj;
-        if (end != other.end)
+        if (getStart() != other.getStart())
             return false;
-        if (id != other.id)
+        if (getEnd() != other.getEnd())
             return false;
-        if (start != other.start)
+        if (getVersion() != other.getVersion())
             return false;
-        if (version != other.version)
+        if (getId() != other.getId())
             return false;
         return true;
     }
@@ -96,46 +81,11 @@ public class Interval {
         if (o == null) {
             return false;
         }
-        return (version == o.version && id == o.id);
+        return (getVersion() == o.getVersion() && getId() == o.getId());
     }
 
     @Override
     public String toString() {
-        return String.format("([%d:%d], %d, %d)", start, end, version, id);
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (int) (end ^ (end >>> 32));
-        result = prime * result + (int) (id ^ (id >>> 32));
-        result = prime * result + (int) (start ^ (start >>> 32));
-        result = prime * result + (int) (version ^ (version >>> 32));
-        return result;
-    }
-
-    /**
-     * Interval implementation that allows to add an attachment.<br>
-     * Attachments are ignored when checking on equality or generating hashCodes.<br>
-     * TODO (jdillmann): Maybe merge to Interval
-     */
-    public static class IntervalWithAttachment extends Interval {
-        final Object attachment;
-
-        public IntervalWithAttachment(long start, long end, long version, long id, Object attachment) {
-            super(start, end, version, id);
-            this.attachment = attachment;
-        }
-
-        @Override
-        public Object getAttachment() {
-            return attachment;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return super.equals(obj);
-        }
+        return String.format("([%d:%d], %d, %d)", getStart(), getEnd(), getVersion(), getId());
     }
 }
