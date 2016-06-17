@@ -44,12 +44,26 @@ public abstract class Interval {
     }
 
     /**
+     * @return true if this intervals range and its operation range are the same.
+     */
+    public boolean isOpComplete() {
+        return (getOpStart() == getStart() && getOpEnd() == getEnd());
+    }
+
+    /**
      * Special Interval subclasses could have an attachment.
      * 
      * @return the attachment if existent or null
      */
     public Object getAttachment() {
         return null;
+    }
+
+    /**
+     * @return true if this interval is empty / a gap without a version.
+     */
+    public boolean isEmpty() {
+        return getVersion() < 0;
     }
 
     @Override
@@ -82,6 +96,21 @@ public abstract class Interval {
             return false;
         }
         return (getVersion() == o.getVersion() && getId() == o.getId());
+    }
+
+    public int compareVersionId(Interval o) {
+        if (getVersion() < o.getVersion())
+            return -1;
+        if (getVersion() > o.getVersion())
+            return 1;
+
+        if (getId() == o.getId()) {
+            return 0;
+        } else if (getId() > o.getId()) {
+            return 1;
+        } else { // getId() < o.getId()
+            return -1;
+        }
     }
 
     @Override

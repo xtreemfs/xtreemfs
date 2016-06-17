@@ -7,9 +7,14 @@
 package org.xtreemfs.osd.ec;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -19,6 +24,7 @@ import org.xtreemfs.foundation.intervals.AttachmentInterval;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
+import org.xtreemfs.osd.ec.ECPolicy.MutableInterval;
 import org.xtreemfs.test.TestHelper;
 
 public class VectorRecoveryTest {
@@ -26,117 +32,372 @@ public class VectorRecoveryTest {
     public final TestRule testLog = TestHelper.testLog;
 
     @Test
-    public void testCurVectorRecovery() throws Exception {
+    public void testSimpleRecovery() {
+        LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
+        IntervalVector[] curVectors;
+        List<? extends Interval> result;
+        Iterator curVectorPerms;
+
         AVLTreeIntervalVector iv1 = new AVLTreeIntervalVector();
         AVLTreeIntervalVector iv2 = new AVLTreeIntervalVector();
         AVLTreeIntervalVector iv3 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv4 = new AVLTreeIntervalVector();
 
         ObjectInterval interval;
         interval = new ObjectInterval(0, 12, 1, 1);
         iv1.insert(interval);
         iv2.insert(interval);
         iv3.insert(interval);
+        iv4.insert(interval);
 
-        interval = new ObjectInterval(3, 9, 2, 2);
+        // Test prefix overwrite
+        interval = new ObjectInterval(0, 2, 2, 2);
+        iv2.insert(interval);
+        iv4.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 2, 2, 2, 1));
+        expected.add(new AttachmentInterval(2, 12, 1, 1, 2));
+
+        curVectors = new IntervalVector[] { iv1, iv2 };
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
+
+        // Test suffix overwrite
+        interval = new ObjectInterval(10, 12, 2, 3);
+        iv3.insert(interval);
+        iv4.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 10, 1, 1, 2));
+        expected.add(new AttachmentInterval(10, 12, 2, 3, 1));
+        curVectors = new IntervalVector[] { iv1, iv3 };
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
+
+        // Test suffix and prefix overwrite from different vectors
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 2, 2, 2, 1));
+        expected.add(new AttachmentInterval(2, 10, 1, 1, 3));
+        expected.add(new AttachmentInterval(10, 12, 2, 3, 1));
+        curVectors = new IntervalVector[] { iv1, iv2, iv3 };
+
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
+
+        // Test overlapping overwrite of every other interval
+        interval = new ObjectInterval(1, 11, 3, 4);
+        iv4.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 1, 2, 2, 2));
+        expected.add(new AttachmentInterval(1, 11, 3, 4, 1));
+        expected.add(new AttachmentInterval(11, 12, 2, 3, 2));
+        curVectors = new IntervalVector[] { iv1, iv2, iv3, iv4 };
+
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
+        
+        // Test complete overwrite (needs to merge some results)
+        interval = new ObjectInterval(0, 12, 4, 5);
+        iv4.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 12, 4, 5, 1));
+        curVectors = new IntervalVector[] { iv1, iv2, iv3, iv4 };
+
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
+    }
+
+    static ArrayList<MutableInterval> cloneResultList(ArrayList<MutableInterval> result) {
+        ArrayList<MutableInterval> clone = new ArrayList<MutableInterval>(result.size());
+        for (MutableInterval i : result)
+            clone.add(i.clone());
+        return clone;
+    }
+
+
+    @Test
+    public void testSimpleRecoveryWithExisting() {
+        LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
+        LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
+        IntervalVector[] curVectors;
+        ArrayList<MutableInterval> exResult;
+        List<? extends Interval> result;
+        Iterator curVectorPerms;
+
+        AVLTreeIntervalVector iv1 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv2 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv3 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv4 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv5 = new AVLTreeIntervalVector();
+
+        ObjectInterval interval;
+        interval = new ObjectInterval(0, 12, 1, 1);
+        iv1.insert(interval);
         iv2.insert(interval);
         iv3.insert(interval);
+        iv4.insert(interval);
 
-        interval = new ObjectInterval(2, 6, 3, 3);
+        // prefix overwrite
+        interval = new ObjectInterval(0, 2, 2, 2);
+        iv2.insert(interval);
+        iv4.insert(interval);
+
+        // suffix overwrite
+        interval = new ObjectInterval(10, 12, 2, 3);
         iv3.insert(interval);
+        iv4.insert(interval);
 
-        interval = new ObjectInterval(0, 1, 2, 4);
-        iv1.insert(interval);
+        // middle overwrite
+        interval = new ObjectInterval(4, 6, 2, 4);
+        iv4.insert(interval);
 
-        LinkedList<Interval> expected = new LinkedList<Interval>();
-        expected.add(new AttachmentInterval(0, 1, 2, 4, 1));
-        expected.add(new AttachmentInterval(1, 2, 1, 1, 3));
-        expected.add(new AttachmentInterval(2, 6, 3, 3, 1));
-        expected.add(new AttachmentInterval(6, 9, 2, 2, 2));
-        expected.add(new AttachmentInterval(9, 12, 1, 1, 3));
+        exExpected.clear();
+        exExpected.add(new AttachmentInterval(0, 2, 2, 2, 2));
+        exExpected.add(new AttachmentInterval(2, 4, 1, 1, 4));
+        exExpected.add(new AttachmentInterval(4, 6, 2, 4, 1));
+        exExpected.add(new AttachmentInterval(6, 10, 1, 1, 4));
+        exExpected.add(new AttachmentInterval(10, 12, 2, 3, 2));
 
-        IntervalVector[] curVectors = new IntervalVector[] { iv1, iv2, iv3 };
-        List<AttachmentInterval> result = ECPolicy.recoverCurrentIntervalVector(curVectors, null);
+        ArrayList<MutableInterval> exResultBase = ECPolicy.recoverVector(
+                new IntervalVector[] { iv1, iv2, iv3, iv4, iv5 }, null);
+        assertEqualsWithAttachment(exExpected, exResultBase);
+        // System.out.println(exResultBase);
 
-        System.out.println(result);
+        AVLTreeIntervalVector niv1 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv2 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv3 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv4 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv5 = new AVLTreeIntervalVector();
 
-        assertEquals(expected.size(), result.size());
-        for (int i = 0; i < result.size(); i++) {
-            // IntervalMsg i1 = expected.get(i);
-            // IntervalMsg i2 = result.get(i);
-            assertEquals(result.get(i), expected.get(i));
-            assertEquals(result.get(i).getAttachment(), expected.get(i).getAttachment());
+        // Since they are non overlapping, add every interval to the next vector
+        interval = new ObjectInterval(0, 2, 2, 2);
+        niv1.insert(interval);
+        interval = new ObjectInterval(10, 12, 2, 3);
+        niv1.insert(interval);
+        interval = new ObjectInterval(4, 6, 2, 4);
+        niv1.insert(interval);
+
+        // Add the first (overlapping and in the result splitted) interval to next 5
+        interval = new ObjectInterval(0, 12, 1, 1);
+        niv5.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 12, -1, -1, -1));
+
+        exExpected.clear();
+        exExpected.add(new AttachmentInterval(0, 2, 2, 2, 3));
+        exExpected.add(new AttachmentInterval(2, 4, 1, 1, 5));
+        exExpected.add(new AttachmentInterval(4, 6, 2, 4, 2));
+        exExpected.add(new AttachmentInterval(6, 10, 1, 1, 5));
+        exExpected.add(new AttachmentInterval(10, 12, 2, 3, 3));
+
+        curVectors = new IntervalVector[] { niv1, niv5 };
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            exResult = cloneResultList(exResultBase);
+            result = ECPolicy.recoverVector(curVectorPerm, exResult);
+            // System.out.println(Arrays.deepToString(curVectorPerm));
+            // System.out.println(result);
+            // System.out.println(exResult);
+            assertEqualsWithAttachment(expected, result);
+            assertEqualsWithAttachment(exExpected, exResult);
+        }
+
+        // Add the first (overlapping and in the result splitted) interval to next 5
+        interval = new ObjectInterval(0, 12, 1, 1);
+        niv5.insert(interval);
+
+        // Test overlapping overwrite of every other interval
+        niv5.insert(new ObjectInterval(0, 12));
+        interval = new ObjectInterval(1, 11, 3, 4);
+        niv5.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 1, -1, -1, -1));
+        expected.add(new AttachmentInterval(1, 11, 3, 4, 1));
+        expected.add(new AttachmentInterval(11, 12, -1, -1, -1));
+
+        exExpected.clear();
+        exExpected.add(new AttachmentInterval(0, 2, 2, 2, 3));
+        exExpected.add(new AttachmentInterval(2, 4, 1, 1, 4));
+        exExpected.add(new AttachmentInterval(4, 6, 2, 4, 2));
+        exExpected.add(new AttachmentInterval(6, 10, 1, 1, 4));
+        exExpected.add(new AttachmentInterval(10, 12, 2, 3, 3));
+
+        // System.out.println(niv5.serialize());
+
+        curVectors = new IntervalVector[] { niv1, niv5 };
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            exResult = cloneResultList(exResultBase);
+            result = ECPolicy.recoverVector(curVectorPerm, exResult);
+            // System.out.println(Arrays.deepToString(curVectorPerm));
+            // System.out.println(result);
+            // System.out.println(exResult);
+            assertEqualsWithAttachment(expected, result);
+            assertEqualsWithAttachment(exExpected, exResult);
         }
 
     }
 
-    // static void clonePrint(PriorityQueue<SweepEvent> prioq) {
-    // PriorityQueue<SweepEvent> prioq2 = new PriorityQueue<SweepEvent>();
-    //
-    // for (SweepEvent e : prioq.toArray(new SweepEvent[0])) {
-    // prioq2.add(e);
-    // }
-    // for (SweepEvent e = prioq2.poll(); e != null; e = prioq2.poll()) {
-    // System.out.println(e);
-    // }
-    // }
-    //
-//    static class SweepEvent implements Comparable<SweepEvent> {
-//        long     position;
-//        IntervalMsg interval;
-//        int      i;
-//
-//        public SweepEvent(int i, long position, IntervalMsg interval) {
-//            this.i = i;
-//            this.position = position;
-//            this.interval = interval;
-//        }
-//
-//        boolean isStart() {
-//            return position == interval.start;
-//        }
-//
-//        boolean isEnd() {
-//            return position == interval.end;
-//        }
-//
-//        @Override
-//        public int compareTo(SweepEvent o) {
-//            // if (o == null) ?
-//
-//            long cmp;
-//            // The event position is the main criteria
-//            cmp = this.position - o.position;
-//
-//            // If both events happen at the same position, that event which ends first will be handled first.
-//            // This implies, that end events are handled before start events.
-//            if (cmp == 0) {
-//                cmp = this.interval.end - o.interval.end;
-//            }
-//
-//            // If both events end at the same position, the event with the higher version is handled first.
-//            if (cmp == 0) {
-//                // note: higher versions are considered first
-//                // cmp = o.interval.id - this.interval.id;
-//                cmp = o.interval.version - this.interval.version;
-//            }
-//
-//            // If both events end at the same point and have the same version, the event which starts second will be
-//            // handled first.
-//            // If an event A with the same version and end position as event B, starts after B's start, there has to be
-//            // a third event C which ends just at A's start and which has been missed in the sequence B is resulting
-//            // from.
-//            if (cmp == 0) {
-//                cmp = o.interval.start - this.interval.start;
-//            }
-//
-//            return Long.signum(cmp);
-//        }
-//
-//        @Override
-//        public String toString() {
-//            return position + ": " + (isStart() ? "<" : " ") + interval + (isEnd() ? ">" : "");
-//        }
-//    }
+    @Test
+    public void testIncompleteOp() {
+        class OpObjectInterval extends ObjectInterval {
+            final long opStart;
+            final long opEnd;
 
+            public OpObjectInterval(long start, long end, long version, long id, long opStart, long opEnd) {
+                super(start, end, version, id);
+                this.opStart = opStart;
+                this.opEnd = opEnd;
+            }
+
+            @Override
+            public long getOpStart() {
+                return opStart;
+            }
+
+            @Override
+            public long getOpEnd() {
+                return opEnd;
+            }
+        }
+
+        OpObjectInterval interval = new OpObjectInterval(0, 6, 1, 1, 0, 12);
+        assertFalse(interval.isOpComplete());
+        //
+        // LinkedList<Interval> expected = new LinkedList<Interval>();
+        // IntervalVector[] curVectors = createCurTestData(expected);
+        //
+        // List<AttachmentInterval> curResult = ECPolicy.recoverCurrentIntervalVector(curVectors, null);
+        //
+        // List<AttachmentInterval> curResultDummy = new LinkedList<AttachmentInterval>();
+        // List<AttachmentInterval> nextResult = ECPolicy.recoverNextIntervalVector(curResultDummy, curVectors);
+        //
+        // assertEqualsWithAttachment(expected, curResult);
+        // assertEqualsWithAttachment(expected, nextResult);
+        // assertEqualsWithAttachment(curResult, nextResult);
+    }
+
+
+
+    void assertEqualsWithAttachment(List<? extends Interval> expected, List<? extends Interval> actual) {
+        int i = -1;
+        try {
+            assertEquals(expected.size(), actual.size());
+            for (i = 0; i < actual.size(); i++) {
+                // IntervalMsg i1 = expected.get(i);
+                // IntervalMsg i2 = result.get(i);
+                assertEquals(expected.get(i), actual.get(i));
+                assertEquals(expected.get(i).getAttachment(), actual.get(i).getAttachment());
+            }
+        } catch (AssertionError ex) {
+            System.out.println(expected);
+            System.out.println(actual);
+            throw new AssertionError("Results first differ at element [" + i + "]", ex);
+        }
+    }
+
+
+    /*
+     * Found at http://stackoverflow.com/a/2920349 Originally from:
+     * http://cs.fit.edu/~ryan/java/programs/combinations/Permute-java.html
+     */
+    static class Permute implements Iterator {
+
+       private final int size;
+       private final Object [] elements;  // copy of original 0 .. size-1
+       private final Object ar;           // array for output,  0 .. size-1
+       private final int [] permutation;  // perm of nums 1..size, perm[0]=0
+
+       private boolean next = true;
+
+       // int[], double[] array won't work :-(
+       public Permute (Object [] e) {
+          size = e.length;
+          elements = new Object [size];    // not suitable for primitives
+          System.arraycopy (e, 0, elements, 0, size);
+          ar = Array.newInstance (e.getClass().getComponentType(), size);
+          System.arraycopy (e, 0, ar, 0, size);
+          permutation = new int [size+1];
+          for (int i=0; i<size+1; i++) {
+             permutation [i]=i;
+          }
+       }
+
+       private void formNextPermutation () {
+          for (int i=0; i<size; i++) {
+             // i+1 because perm[0] always = 0
+             // perm[]-1 because the numbers 1..size are being permuted
+             Array.set (ar, i, elements[permutation[i+1]-1]);
+          }
+       }
+
+       public boolean hasNext() {
+          return next;
+       }
+
+       public void remove() throws UnsupportedOperationException {
+          throw new UnsupportedOperationException();
+       }
+
+       private void swap (final int i, final int j) {
+          final int x = permutation[i];
+          permutation[i] = permutation [j];
+          permutation[j] = x;
+       }
+
+       // does not throw NoSuchElement; it wraps around!
+       public Object next() throws NoSuchElementException {
+
+          formNextPermutation ();  // copy original elements
+
+          int i = size-1;
+          while (permutation[i]>permutation[i+1]) i--;
+
+          if (i==0) {
+             next = false;
+             for (int j=0; j<size+1; j++) {
+                permutation [j]=j;
+             }
+             return ar;
+          }
+
+          int j = size;
+
+          while (permutation[i]>permutation[j]) j--;
+          swap (i,j);
+          int r = size;
+          int s = i+1;
+          while (r>s) { swap(r,s); r--; s++; }
+
+          return ar;
+       }
+    }
 
 }

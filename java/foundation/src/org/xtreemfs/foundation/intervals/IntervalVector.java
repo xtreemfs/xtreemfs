@@ -62,7 +62,7 @@ public abstract class IntervalVector {
     public abstract boolean compareLEQThen(IntervalVector o);
 
     /**
-     * Sorted, zusammenhängend
+     * Sorted, zusammenhängend, von 0 startend
      * 
      * Note: The returned List will be immutable, but not necessarily thread safe.
      * 

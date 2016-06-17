@@ -24,7 +24,7 @@ public class ObjectInterval extends Interval {
      * @param end
      *            exclusive
      */
-    ObjectInterval(long start, long end) {
+    public ObjectInterval(long start, long end) {
         this(start, end, -1, -1);
     }
 

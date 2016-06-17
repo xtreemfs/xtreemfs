@@ -15,7 +15,11 @@ public class AttachmentInterval extends Interval {
     private final Object   attachment;
 
     public AttachmentInterval(Interval interval, Object attachment) {
-        this.interval = interval;
+        if (interval instanceof AttachmentInterval) {
+            this.interval = ((AttachmentInterval) interval).getInterval();
+        } else {
+            this.interval = interval;
+        }
         this.attachment = attachment;
     }
 
@@ -56,6 +60,12 @@ public class AttachmentInterval extends Interval {
     @Override
     public boolean equals(Object obj) {
         return super.equals(obj);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("([%d:%d], %d, %d, '%s')", getStart(), getEnd(), getVersion(), getId(),
+                getAttachment().toString());
     }
 
     // TODO (jdillmann): hashCode ?

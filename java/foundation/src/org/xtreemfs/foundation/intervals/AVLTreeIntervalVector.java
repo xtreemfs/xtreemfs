@@ -10,7 +10,6 @@ package org.xtreemfs.foundation.intervals;
 import java.util.LinkedList;
 import java.util.List;
 
-
 public class AVLTreeIntervalVector extends IntervalVector {
 
     IntervalNode root;
@@ -27,7 +26,6 @@ public class AVLTreeIntervalVector extends IntervalVector {
         this.end = 0;
         this.maxVersion = -1;
     }
-
 
     @Override
     public void insert(Interval interval) {
@@ -57,27 +55,34 @@ public class AVLTreeIntervalVector extends IntervalVector {
             node.left = insert(interval, node.left);
 
         } else if (start <= node.interval.getStart() && end < node.interval.getEnd()) {
-            // new interval overlaps with a left portion of the current interval...relinquish overlapping part pass new interval to the left
+            // new interval overlaps with a left portion of the current interval...relinquish overlapping part pass new
+            // interval to the left
             node.left = insert(interval, node.left);
-            node.interval = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(), node.interval.getId());
+            node.interval = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(),
+                    node.interval.getId());
 
-        // Special case to merge two intervals, if they are from the same operation 
-        // FIXME (jdillmann): Problem if vector is [-2-][-1-][-2-] and should become [----2----], then it would either become [-2-][--2--] or [--2--][-2-]
-        // } else if (start == node.interval.end && interval.equalsVersionId(node.interval)) {
+            // Special case to merge two intervals, if they are from the same operation
+            // FIXME (jdillmann): Problem if vector is [-2-][-1-][-2-] and should become [----2----], then it would
+            // either become [-2-][--2--] or [--2--][-2-]
+            // } else if (start == node.interval.end && interval.equalsVersionId(node.interval)) {
 
         } else if (start >= node.interval.getEnd()) {
             // new interval is left of current
             node.right = insert(interval, node.right);
 
         } else if (start > node.interval.getStart() && end >= node.interval.getEnd()) {
-            // new interval overlaps with a right portion of the current interval...relinquish overlapping part pass new interval to the right
+            // new interval overlaps with a right portion of the current interval...relinquish overlapping part pass new
+            // interval to the right
             node.right = insert(interval, node.right);
-            node.interval = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(), node.interval.getId());
+            node.interval = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(),
+                    node.interval.getId());
 
         } else if (start > node.interval.getStart() && end < node.interval.getEnd()) {
             // new interval fits into current interval
-            ObjectInterval leftTail = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(), node.interval.getId());
-            ObjectInterval rightTail = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(), node.interval.getId());
+            ObjectInterval leftTail = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(),
+                    node.interval.getId());
+            ObjectInterval rightTail = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(),
+                    node.interval.getId());
 
             IntervalNode newNode = new IntervalNode(interval);
             newNode.left = insert(leftTail, node.left);
@@ -174,7 +179,8 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // The max is within the current interval.
             // Adjust it and drop its right subtree and return it.
             overwrites = overwrites + maxIntervals(node.right);
-            ObjectInterval truncated = new ObjectInterval(node.interval.getStart(), max, node.interval.getVersion(), node.interval.getId());
+            ObjectInterval truncated = new ObjectInterval(node.interval.getStart(), max, node.interval.getVersion(),
+                    node.interval.getId());
             node.interval = truncated;
             node.right = null;
             return rotate(node);
@@ -203,7 +209,8 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // The min is within the current interval.
             // Adjust it and drop its left subtree and return it.
             overwrites = overwrites + maxIntervals(node.left);
-            ObjectInterval truncated = new ObjectInterval(min, node.interval.getEnd(), node.interval.getVersion(), node.interval.getId());
+            ObjectInterval truncated = new ObjectInterval(min, node.interval.getEnd(), node.interval.getVersion(),
+                    node.interval.getId());
             node.interval = truncated;
             node.left = null;
             return rotate(node);
@@ -215,14 +222,15 @@ public class AVLTreeIntervalVector extends IntervalVector {
         LinkedList<Interval> intervals = new LinkedList<Interval>();
         serialize(root, intervals);
 
-        //        // Fill gap at the beginning of the vector.
-        //        if (intervals.size() > 0) {
-        //            ObjectInterval first = intervals.getFirst();
-        //            if (first.start > 0) {
-        //                ObjectInterval gap = new ObjectInterval(0, first.start);
-        //                intervals.addFirst(gap);
-        //            }
-        //        }
+        // Fill gap at the beginning of the vector.
+        if (intervals.size() > 0) {
+            Interval first = intervals.getFirst();
+            if (first.getStart() > 0) {
+                ObjectInterval gap = new ObjectInterval(0, first.getStart());
+                intervals.addFirst(gap);
+            }
+        }
+
 
         return intervals;
     }
@@ -250,7 +258,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
     public IntervalVector getOverlapping(long start, long end) {
         LinkedList<Interval> versions = new LinkedList<Interval>();
         getOverlapping(start, end, this.root, versions);
-        
+
         if (versions.size() > 0) {
             Interval first = versions.getFirst();
             if (first.getStart() > start) {
@@ -266,20 +274,19 @@ public class AVLTreeIntervalVector extends IntervalVector {
     void getOverlapping(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {
         if (node == null) {
             return;
-        } 
-        
-        // Descend left if the lookup starts left of the current node 
+        }
+
+        // Descend left if the lookup starts left of the current node
         if (begin < node.interval.getStart()) {
             getOverlapping(begin, end, node.left, acc);
         }
-        
+
         // Add the current node if it overlaps with the lookup
         if (begin < node.interval.getEnd() && node.interval.getStart() < end) {
             addInterval(acc, node.interval);
         }
-        
-        
-        // Descend right if the lookup end right of the current node 
+
+        // Descend right if the lookup end right of the current node
         if (end > node.interval.getEnd()) {
             getOverlapping(begin, end, node.right, acc);
         }
@@ -352,13 +359,12 @@ public class AVLTreeIntervalVector extends IntervalVector {
         }
 
         toString(node.left, sb);
-        
+
         sb.append(node.interval.toString());
         sb.append(" ");
 
         toString(node.right, sb);
     }
-
 
     // Helper methods
 
@@ -372,7 +378,6 @@ public class AVLTreeIntervalVector extends IntervalVector {
         return (int) (1 + (Math.pow(2, node.height) - 1) + (Math.pow(2, (node.height - Math.abs(node.balance))) - 1));
     }
 
-
     /*
      * A node contains the left and the right branch, the middle index of this node and a lists of intervals.
      * The list contains all intervals intersecting with the index.
@@ -381,8 +386,8 @@ public class AVLTreeIntervalVector extends IntervalVector {
         Interval     interval;
         IntervalNode left;
         IntervalNode right;
-        int balance;
-        int height;
+        int          balance;
+        int          height;
 
         public IntervalNode(Interval interval) {
             this.interval = interval;
