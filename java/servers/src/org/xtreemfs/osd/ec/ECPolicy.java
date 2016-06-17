@@ -46,6 +46,11 @@ public class ECPolicy {
                 if (curInterval == null) {
                     curInterval = curIt.next();
                     curIntervalEx = false;
+
+                    // Just ignore incomplete intervals by replacing them with empty ones
+                    if (!curInterval.isOpComplete()) {
+                        curInterval = new ObjectInterval(curInterval.getStart(), curInterval.getEnd());
+                    }
                 }
 
                 // Get the currently active interval in the result vector.

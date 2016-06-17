@@ -288,20 +288,56 @@ public class VectorRecoveryTest {
             }
         }
 
-        OpObjectInterval interval = new OpObjectInterval(0, 6, 1, 1, 0, 12);
+        LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
+        LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
+        IntervalVector[] curVectors;
+        ArrayList<MutableInterval> exResult;
+        List<? extends Interval> result;
+        Iterator curVectorPerms;
+        ObjectInterval interval;
+
+        interval = new OpObjectInterval(0, 6, 1, 1, 0, 12);
         assertFalse(interval.isOpComplete());
-        //
-        // LinkedList<Interval> expected = new LinkedList<Interval>();
-        // IntervalVector[] curVectors = createCurTestData(expected);
-        //
-        // List<AttachmentInterval> curResult = ECPolicy.recoverCurrentIntervalVector(curVectors, null);
-        //
-        // List<AttachmentInterval> curResultDummy = new LinkedList<AttachmentInterval>();
-        // List<AttachmentInterval> nextResult = ECPolicy.recoverNextIntervalVector(curResultDummy, curVectors);
-        //
-        // assertEqualsWithAttachment(expected, curResult);
-        // assertEqualsWithAttachment(expected, nextResult);
-        // assertEqualsWithAttachment(curResult, nextResult);
+
+
+
+        AVLTreeIntervalVector iv1 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector iv2 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv1 = new AVLTreeIntervalVector();
+        AVLTreeIntervalVector niv2 = new AVLTreeIntervalVector();
+
+        interval = new ObjectInterval(0, 6, 1, 1);
+        iv1.insert(interval);
+        iv2.insert(interval);
+
+        interval = new ObjectInterval(6, 12, 1, 2);
+        iv1.insert(interval);
+        iv2.insert(interval);
+
+        interval = new OpObjectInterval(0, 6, 2, 3, 0, 12);
+        niv1.insert(interval);
+
+
+        exExpected.clear();
+        exExpected.add(new AttachmentInterval(0, 6, 1, 1, 2));
+        exExpected.add(new AttachmentInterval(6, 12, 1, 2, 2));
+
+        ArrayList<MutableInterval> exResultBase = ECPolicy
+                .recoverVector(new IntervalVector[] { iv1, iv2 }, null);
+        assertEqualsWithAttachment(exExpected, exResultBase);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 6, -1, -1, -1));
+
+        curVectors = new IntervalVector[] { niv1, niv2 };
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            exResult = cloneResultList(exResultBase);
+            result = ECPolicy.recoverVector(curVectorPerm, exResult);
+            assertEqualsWithAttachment(expected, result);
+            assertEqualsWithAttachment(exExpected, exResult);
+        }
     }
 
 
