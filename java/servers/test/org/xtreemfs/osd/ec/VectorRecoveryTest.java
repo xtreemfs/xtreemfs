@@ -130,7 +130,7 @@ public class VectorRecoveryTest {
         }
     }
 
-    static ArrayList<MutableInterval> cloneResultList(ArrayList<MutableInterval> result) {
+    static List<MutableInterval> cloneResultList(List<MutableInterval> result) {
         ArrayList<MutableInterval> clone = new ArrayList<MutableInterval>(result.size());
         for (MutableInterval i : result)
             clone.add(i.clone());
@@ -143,7 +143,7 @@ public class VectorRecoveryTest {
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
         LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
         IntervalVector[] curVectors;
-        ArrayList<MutableInterval> exResult;
+        List<MutableInterval> exResult;
         List<? extends Interval> result;
         Iterator curVectorPerms;
 
@@ -181,7 +181,7 @@ public class VectorRecoveryTest {
         exExpected.add(new AttachmentInterval(6, 10, 1, 1, 4));
         exExpected.add(new AttachmentInterval(10, 12, 2, 3, 2));
 
-        ArrayList<MutableInterval> exResultBase = ECPolicy.recoverVector(
+        List<MutableInterval> exResultBase = ECPolicy.recoverVector(
                 new IntervalVector[] { iv1, iv2, iv3, iv4, iv5 }, null);
         assertEqualsWithAttachment(exExpected, exResultBase);
         // System.out.println(exResultBase);
@@ -291,7 +291,7 @@ public class VectorRecoveryTest {
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
         LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
         IntervalVector[] curVectors;
-        ArrayList<MutableInterval> exResult;
+        List<MutableInterval> exResult;
         List<? extends Interval> result;
         Iterator curVectorPerms;
         ObjectInterval interval;
@@ -322,7 +322,7 @@ public class VectorRecoveryTest {
         exExpected.add(new AttachmentInterval(0, 6, 1, 1, 2));
         exExpected.add(new AttachmentInterval(6, 12, 1, 2, 2));
 
-        ArrayList<MutableInterval> exResultBase = ECPolicy
+        List<MutableInterval> exResultBase = ECPolicy
                 .recoverVector(new IntervalVector[] { iv1, iv2 }, null);
         assertEqualsWithAttachment(exExpected, exResultBase);
 
@@ -355,7 +355,7 @@ public class VectorRecoveryTest {
         } catch (AssertionError ex) {
             System.out.println(expected);
             System.out.println(actual);
-            throw new AssertionError("Results first differ at element [" + i + "]", ex);
+            throw new AssertionError("Results first differ at element [" + i + "].\n" + ex.toString());
         }
     }
 

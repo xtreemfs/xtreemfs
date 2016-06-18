@@ -6,9 +6,10 @@
  */
 package org.xtreemfs.osd.ec;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
@@ -16,29 +17,34 @@ import org.xtreemfs.foundation.intervals.ObjectInterval;
 
 public class ECPolicy {
 
-    public static ArrayList<MutableInterval> recoverVector(IntervalVector[] vectors,
-            ArrayList<MutableInterval> existingResult) {
-        ArrayList<MutableInterval> result = new ArrayList<MutableInterval>();
+    public static List<MutableInterval> recoverVector(IntervalVector[] vectors, List<MutableInterval> existingResult) {
+        LinkedList<MutableInterval> result = new LinkedList<MutableInterval>();
 
         // Compare every vector with the current result and adapt it if necessary.
         for (int i = 0; i < vectors.length; i++) {
-            // The index of the active interval in the result vector.
-            int resPos = 0;
+            // Iterator over the intervals from the result vector.
+            ListIterator<MutableInterval> resIterator = result.listIterator();
+            // The active interval in the result vector.
+            // If null, the next interval from the result vector will be processed.
+            MutableInterval resInterval = null;
 
-            // The index of the active interval in the previous result vector.
-            int exResPos = (existingResult != null) ? 0 : -1;
-
-            // The position of the last event and also the end of the last interval in the result vector.
-            long lastEnd = 0;
 
             // Iterator over the intervals from the currently processed vector.
             List<Interval> curIntervals = vectors[i].serialize();
             Iterator<Interval> curIt = curIntervals.iterator();
-            boolean curIntervalEx = false;
-
             // The active interval in the currently processed vector.
             // If null, the next interval from the current vector will be processed.
             Interval curInterval = null;
+
+            // Iterator over the active interval in the existing/previous result vector.
+            Iterator<MutableInterval> exResIt = (existingResult != null) ? existingResult.iterator() : null;
+            MutableInterval exResInterval = (existingResult != null && exResIt.hasNext()) ? exResIt.next() : null;
+
+            // The position of the last event and also the end of the last interval in the result vector.
+            long lastEnd = 0;
+
+            // Marks the curInterval if it has been found and counted in the existing result vector.
+            boolean curIntervalEx = false;
 
             // Loop as long as there are intervals from the current vector left.
             while (curInterval != null || curIt.hasNext()) {
@@ -54,15 +60,8 @@ public class ECPolicy {
                 }
 
                 // Get the currently active interval in the result vector.
-                MutableInterval resInterval = null;
-                if (resPos >= 0 && resPos < result.size()) {
-                    resInterval = result.get(resPos);
-                }
-
-                // Get the currently active interval in the existing result vector.
-                MutableInterval exResInterval = null;
-                if (exResPos >= 0 && exResPos < existingResult.size()) {
-                    exResInterval = existingResult.get(exResPos);
+                if (resInterval == null && resIterator.hasNext()) {
+                    resInterval = resIterator.next();
                 }
 
                 // The position of the current event. Can be from the result or the current vector.
@@ -81,7 +80,8 @@ public class ECPolicy {
                     }
 
                     // Move to the next existing result
-                    exResPos++;
+                    // Get the currently active interval in the existing result vector.
+                    exResInterval = exResIt.hasNext() ? exResIt.next() : null;
                     continue;
                 }
 
@@ -108,10 +108,7 @@ public class ECPolicy {
                     }
                     
                     result.add(newInterval);
-
-                    // Increment resPos to stay at the end of the result interval
-                    assert (result.size() - 1 == resPos);
-                    resPos++;
+                    resIterator = result.listIterator(result.size());
                 }
 
                 else if (cmp == 0) { // both are equal
@@ -121,24 +118,26 @@ public class ECPolicy {
                     // Split the active result at the current position and increase the counter for the active segment.
                     int newCount = resInterval.count >= 0 ? resInterval.count + 1 : -1;
 
+                    // Add a new element at the current position
+                    MutableInterval newInterval = new MutableInterval(resInterval.getStart(), eventEnd,
+                            curInterval.getVersion(), curInterval.getId(), newCount);
 
-                    // Split the result, if it ends right to the current event.
                     if (resInterval.end > eventEnd) {
-                        MutableInterval newInterval = new MutableInterval(eventEnd, resInterval.end,
-                                resInterval.getVersion(), resInterval.getId(), resInterval.count);
+                        // If the active result ends right of the event, it has to be shrinked but kept.
+                        resInterval.start = eventEnd;
 
-                        // FIXME (jdillmann): This is a really expensive operation, use a custom LinkedList with an intelligent iterator
-                        int nextPos = resPos + 1;
-                        if (nextPos < result.size()) {
-                            result.add(nextPos, newInterval);
-                        } else {
-                            result.add(newInterval);
-                        }
+                        // Add the new interval before the currently active result.
+                        resIterator.previous();
+                        resIterator.add(newInterval);
+                        resIterator.next();
+
+                    } else {
+                        // Otherwise the intervals have to match and the current results count can be overwritten
+                        assert (resInterval.end == eventEnd);
+                        assert (resInterval.start == lastEnd);
+                        resInterval.count = newCount;
                     }
 
-                    // Adapt the active result interval
-                    resInterval.count = newCount;
-                    resInterval.end = eventEnd; 
                 }
 
                 else if (cmp > 0) { // current is greater
@@ -173,17 +172,17 @@ public class ECPolicy {
                             // If the active result ends right of the event, it has to be shrinked but kept.
                             resInterval.start = eventEnd;
 
-                            // FIXME (jdillmann): This is a really expensive operation, use a custom LinkedList with an intelligent iterator
-                            result.add(resPos, newInterval);
+                            // Add the new interval before the currently active result.
+                            resIterator.previous();
+                            resIterator.add(newInterval);
+                            resIterator.next();
 
                         } else {
                             // Otherwise the intervals have to match and the current result can be overwritten
                             assert (resInterval.end == eventEnd);
                             assert (resInterval.start == lastEnd);
-                            result.set(resPos, newInterval);
+                            resIterator.set(newInterval);
                         }
-
-                        resInterval = newInterval;
                     }
                     
                     // TODO (jdillmann): Mark every j < i as outdated / missing
@@ -202,7 +201,7 @@ public class ECPolicy {
                 // If the active result interval ends on this events position,
                 // advance to the the next result interval.
                 if (resInterval != null && resInterval.getEnd() == eventEnd) {
-                    resPos++;
+                    resInterval = null;
                 }
 
                 // Set the marker of the processed range to the position of this event.
@@ -212,18 +211,19 @@ public class ECPolicy {
         }
 
         // Merge subsequent intervals that equal in version, id and count.
-        ArrayList<MutableInterval> merged = new ArrayList<MutableInterval>(result.size());
+        ListIterator<MutableInterval> resultIt = result.listIterator();
         MutableInterval prev = null;
-        for (MutableInterval current: result) {
+        while (resultIt.hasNext()) {
+            MutableInterval current = resultIt.next();
             if (prev != null && prev.equalsVersionId(current) && prev.count == current.count) {
                 prev.end = current.end;
+                resultIt.remove();
             } else {
-                merged.add(current);
                 prev = current;
             }
         }
 
-        return merged;
+        return result;
     }
 
     /**
