@@ -270,8 +270,8 @@ public final class NativeHelper {
         String ssl_pem_trusted_certs_path = "";
 
         // Get the Path to the required server certificates
-        String ssl_pkcs12_path = o.getServerCredentialFilePath();
-        String ssl_pkcs12_pass = o.getServerCredentialFilePassphrase();
+        String ssl_pkcs12_path = o.getServerCredentialFilePath() != null ? o.getServerCredentialFilePath() : "";
+        String ssl_pkcs12_pass = o.getServerCredentialFilePassphrase() != null ? o.getServerCredentialFilePassphrase() : "";
 
         // PKCS#12 certificates are converted to pem in the C++ client.
         SSLContext.file_format format = SSLContext.file_format.pem;
@@ -280,7 +280,7 @@ public final class NativeHelper {
         boolean use_grid_ssl = o.isFakeSSLMode();
 
         // Get the SSL protocol string that has been used for initialization
-        String ssl_method_string = o.getSSLProtocolString();
+        String ssl_method_string = o.getSSLProtocolString() != null ? o.getSSLProtocolString() : "";
 
         // Verifying certificates is not enabled in Java
         // TODO: Ask Robert if this is true
