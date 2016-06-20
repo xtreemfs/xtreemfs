@@ -20,7 +20,6 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.IntervalVersionTree.Interval;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -31,9 +30,15 @@ import org.xtreemfs.foundation.flease.FleaseStatusListener;
 import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
+import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
+import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -42,11 +47,16 @@ import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
+import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResult;
+import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResultListener;
 import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.stages.StorageStage.GetECVersionsCallback;
+import org.xtreemfs.osd.stages.StorageStage.GetECVectorsCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+
+import com.google.protobuf.Message;
 
 public class ECMasterStage extends Stage {
     private static final int               MAX_EXTERNAL_REQUESTS_IN_Q = 250;
@@ -173,7 +183,7 @@ public class ECMasterStage extends Stage {
     }
 
     private static enum STAGE_OP {
-        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED;
+        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, LOCAL_VECTORS_AVAILABLE, REMOTE_VECTORS_AVAILABLE;
 
         private static STAGE_OP[] values_ = values();
 
@@ -202,6 +212,12 @@ public class ECMasterStage extends Stage {
         // Internal requests
         case LEASE_STATE_CHANGED:
             processLeaseChanged(method);
+            break;
+        case LOCAL_VECTORS_AVAILABLE:
+            processLocalVectorsAvailable(method);
+            break;
+        case REMOTE_VECTORS_AVAILABLE:
+            processRemoteVectorsAvailable(method);
             break;
 
         // default : throw new IllegalArgumentException("No such stageop");
@@ -295,6 +311,10 @@ public class ECMasterStage extends Stage {
 
     void doPrimary(final ECFileState file) {
         file.setState(FileState.PRIMARY);
+
+        while (file.hasPendingRequests()) {
+            enqueuePrioritized(file.removePendingRequest());
+        }
     }
 
     /**
@@ -314,9 +334,8 @@ public class ECMasterStage extends Stage {
      */
     void doVersionReset(final ECFileState file) {
         file.setState(FileState.VERSION_RESET);
-        fetchVersions(file);
+        fetchLocalVectors(file);
     }
-
 
     /**
      * This will be called every time the flease cell changed.
@@ -396,6 +415,7 @@ public class ECMasterStage extends Stage {
 
     public static interface PrepareCallback extends FallibleCallback {
         public void success(final List<Interval> curVersions, final List<Interval> nextVersions);
+
         public void redirect(String redirectTo);
     }
 
@@ -436,16 +456,15 @@ public class ECMasterStage extends Stage {
             return;
 
         case BACKUP:
-            assert(!file.isLocalIsPrimary());
+            assert (!file.isLocalIsPrimary());
             // if (!isInternal)
-            
+
             Flease lease = file.getLease();
             if (lease.isEmptyLease()) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
-                        "Unknown lease state for %s: %s", file.getCellId(), lease);
+                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "Unknown lease state for %s: %s",
+                        file.getCellId(), lease);
                 ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                        POSIXErrno.POSIX_ERROR_EAGAIN,
-                        "Unknown lease state for cell " + file.getCellId()
+                        POSIXErrno.POSIX_ERROR_EAGAIN, "Unknown lease state for cell " + file.getCellId()
                                 + ", can't redirect to master. Please retry.");
                 // FIXME (jdillmann): abort all requests?
                 callback.failed(error);
@@ -454,13 +473,12 @@ public class ECMasterStage extends Stage {
 
             callback.redirect(lease.getLeaseHolder().toString());
             return;
-            
+
         case PRIMARY:
             assert (file.isLocalIsPrimary());
             // FIXME (jdillmann): Return real version vectors
             callback.success(null, null);
             return;
-
 
         // case INVALIDATED:
         // break;
@@ -471,42 +489,351 @@ public class ECMasterStage extends Stage {
         // break;
 
         }
+
     }
 
     /**
-     * This will request the local and remote VersionTrees.
-     * On success eventVersionResetComplete is called
+     * This will request the local and remote VersionTrees. On success eventVersionResetComplete is called
+     * 
      * @param file
      */
     // TODO (jdillmann): Think about moving this to a separate class or OSD Event Method
-    void fetchVersions(final ECFileState file) {
-        StripingPolicyImpl sp = file.getLocations().getLocalReplica().getStripingPolicy();
-        master.getStorageStage().getECVersions(file.getFileId(), sp, Interval.COMPLETE, null,
-                new GetECVersionsCallback() {
-                    @Override
-                    public void getECVersionsComplete(List<Interval> curVersions, List<Interval> nextVersions,
-                            ErrorResponse error) {
-                        if (error == null) {
-                            fetchRemoteVersions(file, curVersions, nextVersions);
-                        } else {
-                            failed(file, error);
-                        }
-                    }
-                });
+    void fetchLocalVectors(final ECFileState file) {
+        final String fileId = file.getFileId();
+        master.getStorageStage().getECVectors(fileId, null, new GetECVectorsCallback() {
+            @Override
+            public void getECVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
+                eventLocalVectorsAvailable(fileId, curVector, nextVector, error);
+            }
+        });
+    }
+
+    void eventLocalVectorsAvailable(String fileId, IntervalVector curVector, IntervalVector nextVector,
+            ErrorResponse error) {
+        this.enqueueOperation(STAGE_OP.LOCAL_VECTORS_AVAILABLE, new Object[] { fileId, curVector, nextVector, error },
+                null, null, null);
+    }
+
+    void processLocalVectorsAvailable(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        final IntervalVector curVector = (IntervalVector) method.getArgs()[1];
+        final IntervalVector nextVector = (IntervalVector) method.getArgs()[2];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
+
+        final ECFileState file = fileStates.get(fileId);
+
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "Received LocalIntervalVectorAvailable event for non opened file (%s)", fileId);
+            return;
+        }
+
+        if (error != null) {
+            failed(file, error);
+            return;
+        }
+
+        assert (file.state == FileState.VERSION_RESET);
+        fetchRemoteVersions(file, curVector, nextVector);
     }
 
     /**
      * This will be called after the local VersionTree has been fetched.
-     * Attention: This will be executed in the context of the StorageStage.
+     * 
      * @param file
-     * @param localCurVer
-     * @param nextCurVer
+     * @param localCurVector
+     * @param nextCurVector
      */
     // TODO (jdillmann): Think about moving this to a separate class or OSD Event Method
-    void fetchRemoteVersions(final ECFileState file, final List<Interval> localCurVer,
-            final List<Interval> nextCurVer) {
+    void fetchRemoteVersions(final ECFileState file, final IntervalVector localCurVector,
+            final IntervalVector localNextVector) {
+
+        // TODO (jdillmann): Or only an if
+        assert (file.state == FileState.VERSION_RESET);
+
+        final String fileId = file.getFileId();
         
-        
-        
+        List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
+        int numRemotes = remoteUUIDs.size();
+
+        ResponseResultListener<xtreemfs_ec_get_interval_vectorsResponse, Integer> listener;
+        listener = new ResponseResultListener<xtreemfs_ec_get_interval_vectorsResponse, Integer>() {
+
+            @Override
+            public void success(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
+                eventRemoteVectorsAvailable(fileId, localCurVector, localNextVector, results, null);
+            }
+
+            @Override
+            public void failed(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
+                // TODO (jdillmann): Add numberOfFailures as a parameter?
+                String errorMsg = String.format("(EC: %s) VectorReset failed due to too many unreachable remote OSDs.",
+                        localUUID);
+                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMsg);
+                eventRemoteVectorsAvailable(fileId, null, null, null, error);
+            }
+        };
+
+        ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer> manager;
+        manager = new ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, listener);
+
+        try {
+            for (int i = 0; i < numRemotes; i++) {
+                ServiceUUID uuid = remoteUUIDs.get(i);
+
+                RPCResponse<xtreemfs_ec_get_interval_vectorsResponse> response;
+                response = osdClient.xtreemfs_ec_get_interval_vectors(uuid.getAddress(), RPCAuthentication.authNone,
+                        RPCAuthentication.userService, file.getCredentials(), fileId);
+                manager.add(response, i);
+            }
+        } catch (IOException ex) {
+            failed(file, ErrorUtils.getInternalServerError(ex));
+        }
     }
+
+    void eventRemoteVectorsAvailable(String fileId, IntervalVector localCurVector, IntervalVector localNextVector,
+            ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results, ErrorResponse error) {
+        this.enqueueOperation(STAGE_OP.REMOTE_VECTORS_AVAILABLE,
+                new Object[] { fileId, localCurVector, localNextVector, results, error }, null, null, null);
+    }
+
+    void processRemoteVectorsAvailable(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        final IntervalVector localCurVector = (IntervalVector) method.getArgs()[1];
+        final IntervalVector localNextVector = (IntervalVector) method.getArgs()[2];
+        @SuppressWarnings("unchecked")
+        final ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results = 
+            (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method.getArgs()[3];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[4];
+
+        final ECFileState file = fileStates.get(fileId);
+
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "Received LocalIntervalVectorAvailable event for non opened file (%s)", fileId);
+            return;
+        }
+
+        if (error != null) {
+            failed(file, error);
+            return;
+        }
+
+        assert (file.state == FileState.VERSION_RESET);
+        
+        IntervalVector[] curVectors = new IntervalVector[results.length + 1];
+        IntervalVector[] nextVectors = new IntervalVector[results.length + 1];
+        
+        // Store local vectors at the end
+        curVectors[results.length] = localCurVector;
+        nextVectors[results.length] = localNextVector;
+
+        int responseCount = 0;
+
+        // Transform protobuf messages to IntervalVectors
+        for (int r = 0; r < results.length; r++) {
+            xtreemfs_ec_get_interval_vectorsResponse response = results[r].getResult();
+            
+            if (response != null) {
+                responseCount++;
+
+                curVectors[r] = new AVLTreeIntervalVector();
+                for (int i = 0; i < response.getCurIntervalsCount(); i++) {
+                    curVectors[r].insert(new ProtoInterval(response.getCurIntervals(i)));
+                }
+
+                nextVectors[r] = new AVLTreeIntervalVector();
+                for (int i = 0; i < response.getNextIntervalsCount(); i++) {
+                    nextVectors[r].insert(new ProtoInterval(response.getNextIntervals(i)));
+                }
+            } else {
+                curVectors[r] = null;
+                nextVectors[r] = null;
+            }
+        }
+
+        // Recover the latest interval vectors from the available vectors.
+        final AVLTreeIntervalVector resultVector = new AVLTreeIntervalVector();
+        boolean needsCommit;
+        try {
+            needsCommit = file.getPolicy().recoverVector(responseCount, curVectors, nextVectors, resultVector);
+        } catch (Exception e) {
+            // FIXME (jdillmann): Do something
+            Logging.logError(Logging.LEVEL_WARN, this, e);
+            failed(file, null);
+            return;
+        }
+
+        if (needsCommit) {
+            // Well well... and we have to do another round!
+            // FIXME (jdillmann): Not implemented yet
+            throw new RuntimeException("Not implemented yet");
+
+        } else {
+            // FIXME (jdillmann): Maybe send async commit
+            file.setCurVector(resultVector);
+            doPrimary(file);
+        }
+    }
+
+
+    static class ResponseResultManager<M extends Message, O> implements RPCResponseAvailableListener<M> {
+        final AtomicInteger                count;
+        final RPCResponse<M>[]             responses;
+        final ResponseResult<M, O>[]       results;
+
+        final int                          numAcksRequired;
+        final ResponseResultListener<M, O> listener;
+
+        final AtomicInteger                numQuickFail;
+        final AtomicInteger                numResponses;
+        final AtomicInteger                numErrors;
+
+        public ResponseResultManager(int capacity, ResponseResultListener<M, O> listener) {
+            this(capacity, capacity, listener);
+        }
+
+        @SuppressWarnings("unchecked")
+        public ResponseResultManager(int capacity, int numAcksRequired, ResponseResultListener<M, O> listener) {
+            count = new AtomicInteger(0);
+            numQuickFail = new AtomicInteger(0);
+            numResponses = new AtomicInteger(0);
+            numErrors = new AtomicInteger(0);
+
+            responses = new RPCResponse[capacity];
+            results = new ResponseResult[capacity];
+
+            this.numAcksRequired = numAcksRequired;
+            this.listener = listener;
+        }
+
+        public void add(RPCResponse<M> response, O object) {
+            add(response, object, false);
+        }
+
+        public void add(RPCResponse<M> response, O object, boolean quickFail) {
+            int i = count.getAndIncrement();
+            if (i >= responses.length) {
+                throw new IndexOutOfBoundsException();
+            }
+
+            if (quickFail) {
+                numQuickFail.incrementAndGet();
+            }
+
+            responses[i] = response;
+            results[i] = new ResponseResult<M, O>(object, quickFail);
+
+            response.registerListener(this);
+        }
+
+        @SuppressWarnings("rawtypes")
+        static int indexOf(RPCResponse[] responses, RPCResponse response) {
+            for (int i = 0; i < responses.length; ++i) {
+                if (responses[i].equals(response)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public void responseAvailable(RPCResponse<M> r) {
+            int i = indexOf(responses, r);
+            if (i < 0) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "received unknown response");
+                r.freeBuffers();
+                return;
+            }
+
+            ResponseResult<M, O> responseResult = results[i];
+
+            int curNumResponses, curNumErrors, curNumQuickFail;
+
+            // Decrement the number of outstanding requests that may fail quick.
+            if (responseResult.mayQuickFail()) {
+                curNumQuickFail = numQuickFail.decrementAndGet();
+            } else {
+                curNumQuickFail = numQuickFail.get();
+            }
+
+            try {
+                // Try to get and add the result.
+                M result = r.get();
+                responseResult.setResult(result);
+                curNumResponses = numResponses.incrementAndGet();
+                curNumErrors = numErrors.get();
+
+            } catch (Exception ec) {
+                // Try to
+                responseResult.setFailed();
+                curNumErrors = numErrors.incrementAndGet();
+                curNumResponses = numResponses.get();
+
+            } finally {
+                r.freeBuffers();
+            }
+
+            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
+            if (curNumResponses + curNumErrors + curNumQuickFail == responses.length) {
+                if (curNumResponses >= numAcksRequired) {
+                    listener.success(results);
+                } else {
+                    listener.failed(results);
+                }
+            }
+        }
+
+        public static class ResponseResult<M extends Message, O> {
+            private final O       object;
+            private final boolean quickFail;
+            private boolean       failed;
+            private M             result;
+
+            ResponseResult(O object, boolean quickFail) {
+                this.failed = false;
+                this.result = null;
+                this.object = object;
+                this.quickFail = quickFail;
+            }
+
+            synchronized void setFailed() {
+                this.failed = true;
+                this.result = null;
+            }
+
+            synchronized public boolean hasFailed() {
+                return failed;
+            }
+
+            synchronized public boolean hasFinished() {
+                return (result != null || failed);
+            }
+
+            synchronized void setResult(M result) {
+                this.failed = false;
+                this.result = result;
+            }
+
+            synchronized public M getResult() {
+                return result;
+            }
+
+            public O getMappedObject() {
+                return object;
+            }
+
+            public boolean mayQuickFail() {
+                return quickFail;
+            }
+        }
+
+        public static interface ResponseResultListener<M extends Message, O> {
+            void success(ResponseResult<M, O>[] results);
+
+            void failed(ResponseResult<M, O>[] results);
+        }
+
+    }
+
 }

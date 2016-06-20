@@ -14,10 +14,12 @@ import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
+import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
@@ -26,8 +28,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 public class ECFileState {
     public enum FileState {
         INITIALIZING, 
-        // OPENING,
-        // RECOVERING,
         WAITING_FOR_LEASE,
         VERSION_RESET,
         
@@ -42,6 +42,10 @@ public class ECFileState {
     FileCredentials          credentials;
     final List<ServiceUUID>  remoteOSDs;
     final List<StageRequest> pendingRequests;
+    final ECPolicy           policy;
+
+    AVLTreeIntervalVector    curVector;
+    AVLTreeIntervalVector    nextVector;
 
     FileState                state;
     long                     masterEpoch;
@@ -56,14 +60,27 @@ public class ECFileState {
         this.locations = locations;
         this.credentials = credentials;
 
-        remoteOSDs = new ArrayList<ServiceUUID>(locations.getNumReplicas() - 1);
-        for (Replica r : locations.getReplicas()) {
-            final ServiceUUID headOSD = r.getHeadOsd();
-            if (!headOSD.equals(localUUID)) {
-                remoteOSDs.add(headOSD);
+        assert (locations.getNumReplicas() == 1);
+        Replica r = locations.getReplica(0);
+
+        StripingPolicyImpl sp = r.getStripingPolicy();
+        int n = sp.getWidth() + sp.getParityWidth();
+        int m = sp.getParityWidth();
+        int k = sp.getWidth();
+
+        // FIXME (jdillmann): Make somehow configurable
+        int qw = n;
+        int qr = k;
+        policy = new ECPolicy(n, k, qw, qr);
+
+        remoteOSDs = new ArrayList<ServiceUUID>(n - 1);
+        for (ServiceUUID osdUUID : r.getOSDs()) {
+            if (!osdUUID.equals(localUUID)) {
+                remoteOSDs.add(osdUUID);
             }
         }
-
+        assert ((n - 1) == remoteOSDs.size());
+        
         pendingRequests = new LinkedList<StageRequest>();
         resetDefaults();
     }
@@ -74,6 +91,12 @@ public class ECFileState {
         localIsPrimary = false;
         lease = Flease.EMPTY_LEASE;
         cellOpen = false;
+
+        // FIXME (jdillmann): Check if this is needed.
+        // curVector = new AVLTreeIntervalVector();
+        // nextVector = new AVLTreeIntervalVector();
+        curVector = null;
+        nextVector = null;
     }
 
     String getFileId() {
@@ -181,4 +204,23 @@ public class ECFileState {
         this.cellOpen = cellOpen;
     }
 
+    AVLTreeIntervalVector getCurVector() {
+        return curVector;
+    }
+
+    void setCurVector(AVLTreeIntervalVector curVector) {
+        this.curVector = curVector;
+    }
+
+    AVLTreeIntervalVector getNextVector() {
+        return nextVector;
+    }
+
+    void setNextVector(AVLTreeIntervalVector nextVector) {
+        this.nextVector = nextVector;
+    }
+
+    public ECPolicy getPolicy() {
+        return this.policy;
+    }
 }

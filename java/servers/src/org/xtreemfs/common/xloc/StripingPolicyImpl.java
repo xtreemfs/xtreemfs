@@ -56,6 +56,15 @@ public abstract class StripingPolicyImpl {
         return policy.getWidth();
     }
 
+    /**
+     * This is only relevant for erasure coded files.
+     * 
+     * @return the width (number of OSDs) used for parity blocks.
+     */
+    public int getParityWidth() {
+        return policy.getParityWidth();
+    }
+
     public int getPolicyId() {
         return policy.getType().getNumber();
     }

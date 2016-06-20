@@ -16,12 +16,75 @@ import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 
 public class ECPolicy {
+    final int n;
+    final int k;
+    final int qw;
+    final int qr;
 
-    public static List<MutableInterval> recoverVector(IntervalVector[] vectors, List<MutableInterval> existingResult) {
+    public ECPolicy(int n, int k, int qw, int qr) {
+        this.n = n;
+        this.k = k;
+        this.qw = qw;
+        this.qr = qr;
+    }
+
+    public boolean recoverVector(int responseCount, IntervalVector[] curVectors, IntervalVector[] nextVectors, IntervalVector result)
+            throws Exception {
+        List<MutableInterval> curResult = recoverVector(curVectors, null);
+        List<MutableInterval> nextResult = recoverVector(nextVectors, curResult);
+
+        // FIXME(jdillmann): Throw more specific Exceptions.
+        
+        for (MutableInterval interval : curResult) {
+            if (interval.count < k) {
+                throw new Exception("There are not enough servers available to recover the data at interval "
+                        + interval.toString() + ". Need: " + k + " Is: " + interval.count);
+            }
+
+            // FIXME(jdillmann): Transform to ObjectInterval?
+            result.insert(interval);
+        }
+
+        boolean needsCommit = false;
+        for (MutableInterval interval : nextResult) {
+            // Partial Write
+            if (interval.count < k) {
+                // Ignore
+                continue;
+            }
+            // Partial Write
+            if (interval.count >= k && (interval.count + (n - responseCount)) < qw) {
+                // Ignore
+                continue;
+            }
+
+            // Complete | Degraded Write
+            if (interval.count >= k && interval.count >= qw) {
+                // FIXME(jdillmann): Transform to ObjectInterval?
+                result.insert(interval);
+            }
+            // Degraded | Partial Write
+            else if (interval.count >= k && (interval.count + (n - responseCount)) >= qw) {
+                needsCommit = true;
+                // FIXME(jdillmann): Transform to ObjectInterval?
+                result.insert(interval);
+            }
+        }
+
+        return needsCommit;
+    }
+
+    private List<MutableInterval> recoverVector(IntervalVector[] vectors,
+            List<MutableInterval> existingResult) {
         LinkedList<MutableInterval> result = new LinkedList<MutableInterval>();
 
         // Compare every vector with the current result and adapt it if necessary.
         for (int i = 0; i < vectors.length; i++) {
+            // Skip missing result vectors.
+            if (vectors[i] == null) {
+                continue;
+            }
+
             // Iterator over the intervals from the result vector.
             ListIterator<MutableInterval> resIterator = result.listIterator();
             // The active interval in the result vector.
@@ -229,7 +292,7 @@ public class ECPolicy {
     /**
      * The MutableInterval allows the modification of the intervals members. It is used solely for the vector recovery
      */
-    static class MutableInterval extends Interval {
+    private static class MutableInterval extends Interval {
         long start;
         long end;
         long version;
