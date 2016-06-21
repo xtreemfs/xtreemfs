@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2012 by Lukas Kairies,
+ *               2015-2016 by Robert Schmidtke,
+ *               Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
 package org.xtreemfs.common.clients.hadoop;
 
 import java.io.IOException;
