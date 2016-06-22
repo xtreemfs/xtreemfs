@@ -32,7 +32,7 @@ public class XLocations {
         this.xloc = xloc;
         replicas = new ArrayList<Replica>(xloc.getReplicasCount());
         for (org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica r : xloc.getReplicasList()) {
-            replicas.add(new Replica(r,null));
+            replicas.add(new Replica(r, localOSD));
         }
         if (localOSD != null) {
             for (Replica r : replicas) {

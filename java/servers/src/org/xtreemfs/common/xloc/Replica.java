@@ -35,7 +35,7 @@ public class Replica {
 
     public StripingPolicyImpl getStripingPolicy() {
         if (stripingPolicy == null) {
-            int relOsdPosition = (localOSD == null) ? -1 : osds.indexOf(localOSD);
+            int relOsdPosition = (localOSD == null) ? -1 : getOSDs().indexOf(localOSD);
             stripingPolicy = StripingPolicyImpl.getPolicy(replica,relOsdPosition);
         }
         return stripingPolicy;
