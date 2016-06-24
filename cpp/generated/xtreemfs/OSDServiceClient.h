@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Jun 02 16:52:25 CEST 2016
+//automatically generated from OSD.proto at Fri Jun 24 14:15:36 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -9,11 +9,9 @@
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
-#include "xtreemfs/OSD.pb.h"
-#include "xtreemfs/MRC.pb.h"
 #include "include/Common.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/DIR.pb.h"
+#include "xtreemfs/OSD.pb.h"
 
 
 namespace xtreemfs {
@@ -895,6 +893,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>();
                 client_->sendRequest(address, 30001, 84,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_ec_commit_vector(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_ec_commit_vectorRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 85,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse>* xtreemfs_ec_commit_vector_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_ec_commit_vectorRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse>();
+                client_->sendRequest(address, 30001, 85,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_commit_vectorResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }

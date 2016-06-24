@@ -416,6 +416,19 @@ message xtreemfs_ec_get_interval_vectorsResponse {
 }
 
 
+message xtreemfs_ec_commit_vectorRequest {
+  // FIXME (jdillmann): Maybe merge with ec_truncate
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  repeated IntervalMsg intervals = 3;
+}
+
+
+message xtreemfs_ec_commit_vectorResponse {
+  required bool complete = 1;
+}
+
+
 // Redundant as this will just be repeated Intervals
 // Requires more space then just repeating Intervals in other messages
 // message IntervalVector {
@@ -652,5 +665,11 @@ service OSDService {
   rpc xtreemfs_ec_get_interval_vectors(xtreemfs_ec_get_interval_vectorsRequest)
       returns (xtreemfs_ec_get_interval_vectorsResponse) {
     option(proc_id)=84;
+  };
+
+  // TODO (jdillmann): DOC
+  rpc xtreemfs_ec_commit_vector(xtreemfs_ec_commit_vectorRequest)
+      returns (xtreemfs_ec_commit_vectorResponse) {
+    option(proc_id)=85;
   };
 }

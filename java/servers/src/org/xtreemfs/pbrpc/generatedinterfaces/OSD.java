@@ -34925,7 +34925,7 @@ public final class OSD {
    * Protobuf type {@code xtreemfs.pbrpc.IntervalMsg}
    *
    * <pre>
-   * Named IntervalMsg to distinguish from Java ObjectInterval interface
+   * Named IntervalMsg to distinguish from Java Interval interface
    * </pre>
    */
   public static final class IntervalMsg extends
@@ -35311,7 +35311,7 @@ public final class OSD {
      * Protobuf type {@code xtreemfs.pbrpc.IntervalMsg}
      *
      * <pre>
-     * Named IntervalMsg to distinguish from Java ObjectInterval interface
+     * Named IntervalMsg to distinguish from Java Interval interface
      * </pre>
      */
     public static final class Builder extends
@@ -37558,6 +37558,1531 @@ public final class OSD {
     // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_interval_vectorsResponse)
   }
 
+  public interface xtreemfs_ec_commit_vectorRequestOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    boolean hasFileCredentials();
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials();
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder();
+
+    // required string file_id = 2;
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    boolean hasFileId();
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    java.lang.String getFileId();
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getFileIdBytes();
+
+    // repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> 
+        getIntervalsList();
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg getIntervals(int index);
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    int getIntervalsCount();
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder> 
+        getIntervalsOrBuilderList();
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder getIntervalsOrBuilder(
+        int index);
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_ec_commit_vectorRequest}
+   */
+  public static final class xtreemfs_ec_commit_vectorRequest extends
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_ec_commit_vectorRequestOrBuilder {
+    // Use xtreemfs_ec_commit_vectorRequest.newBuilder() to construct.
+    private xtreemfs_ec_commit_vectorRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private xtreemfs_ec_commit_vectorRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final xtreemfs_ec_commit_vectorRequest defaultInstance;
+    public static xtreemfs_ec_commit_vectorRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public xtreemfs_ec_commit_vectorRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private xtreemfs_ec_commit_vectorRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000001) == 0x00000001)) {
+                subBuilder = fileCredentials_.toBuilder();
+              }
+              fileCredentials_ = input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(fileCredentials_);
+                fileCredentials_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000001;
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              fileId_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              if (!((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+                intervals_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg>();
+                mutable_bitField0_ |= 0x00000004;
+              }
+              intervals_.add(input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.PARSER, extensionRegistry));
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000004) == 0x00000004)) {
+          intervals_ = java.util.Collections.unmodifiableList(intervals_);
+        }
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.class, org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<xtreemfs_ec_commit_vectorRequest> PARSER =
+        new com.google.protobuf.AbstractParser<xtreemfs_ec_commit_vectorRequest>() {
+      public xtreemfs_ec_commit_vectorRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new xtreemfs_ec_commit_vectorRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<xtreemfs_ec_commit_vectorRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+    public static final int FILE_CREDENTIALS_FIELD_NUMBER = 1;
+    private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_;
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    public boolean hasFileCredentials() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+      return fileCredentials_;
+    }
+    /**
+     * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+     *
+     * <pre>
+     * FIXME (jdillmann): Maybe merge with ec_truncate
+     * </pre>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+      return fileCredentials_;
+    }
+
+    // required string file_id = 2;
+    public static final int FILE_ID_FIELD_NUMBER = 2;
+    private java.lang.Object fileId_;
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    public boolean hasFileId() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    public java.lang.String getFileId() {
+      java.lang.Object ref = fileId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          fileId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string file_id = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getFileIdBytes() {
+      java.lang.Object ref = fileId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        fileId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;
+    public static final int INTERVALS_FIELD_NUMBER = 3;
+    private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> intervals_;
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> getIntervalsList() {
+      return intervals_;
+    }
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder> 
+        getIntervalsOrBuilderList() {
+      return intervals_;
+    }
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    public int getIntervalsCount() {
+      return intervals_.size();
+    }
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg getIntervals(int index) {
+      return intervals_.get(index);
+    }
+    /**
+     * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+     */
+    public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder getIntervalsOrBuilder(
+        int index) {
+      return intervals_.get(index);
+    }
+
+    private void initFields() {
+      fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      fileId_ = "";
+      intervals_ = java.util.Collections.emptyList();
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasFileCredentials()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasFileId()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!getFileCredentials().isInitialized()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      for (int i = 0; i < getIntervalsCount(); i++) {
+        if (!getIntervals(i).isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeMessage(1, fileCredentials_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getFileIdBytes());
+      }
+      for (int i = 0; i < intervals_.size(); i++) {
+        output.writeMessage(3, intervals_.get(i));
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, fileCredentials_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getFileIdBytes());
+      }
+      for (int i = 0; i < intervals_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, intervals_.get(i));
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_ec_commit_vectorRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.class, org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.Builder.class);
+      }
+
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+          getFileCredentialsFieldBuilder();
+          getIntervalsFieldBuilder();
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        fileId_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        if (intervalsBuilder_ == null) {
+          intervals_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+        } else {
+          intervalsBuilder_.clear();
+        }
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest getDefaultInstanceForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.getDefaultInstance();
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest build() {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest buildPartial() {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        if (fileCredentialsBuilder_ == null) {
+          result.fileCredentials_ = fileCredentials_;
+        } else {
+          result.fileCredentials_ = fileCredentialsBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.fileId_ = fileId_;
+        if (intervalsBuilder_ == null) {
+          if (((bitField0_ & 0x00000004) == 0x00000004)) {
+            intervals_ = java.util.Collections.unmodifiableList(intervals_);
+            bitField0_ = (bitField0_ & ~0x00000004);
+          }
+          result.intervals_ = intervals_;
+        } else {
+          result.intervals_ = intervalsBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest) {
+          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest other) {
+        if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest.getDefaultInstance()) return this;
+        if (other.hasFileCredentials()) {
+          mergeFileCredentials(other.getFileCredentials());
+        }
+        if (other.hasFileId()) {
+          bitField0_ |= 0x00000002;
+          fileId_ = other.fileId_;
+          onChanged();
+        }
+        if (intervalsBuilder_ == null) {
+          if (!other.intervals_.isEmpty()) {
+            if (intervals_.isEmpty()) {
+              intervals_ = other.intervals_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+            } else {
+              ensureIntervalsIsMutable();
+              intervals_.addAll(other.intervals_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.intervals_.isEmpty()) {
+            if (intervalsBuilder_.isEmpty()) {
+              intervalsBuilder_.dispose();
+              intervalsBuilder_ = null;
+              intervals_ = other.intervals_;
+              bitField0_ = (bitField0_ & ~0x00000004);
+              intervalsBuilder_ = 
+                com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders ?
+                   getIntervalsFieldBuilder() : null;
+            } else {
+              intervalsBuilder_.addAllMessages(other.intervals_);
+            }
+          }
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasFileCredentials()) {
+          
+          return false;
+        }
+        if (!hasFileId()) {
+          
+          return false;
+        }
+        if (!getFileCredentials().isInitialized()) {
+          
+          return false;
+        }
+        for (int i = 0; i < getIntervalsCount(); i++) {
+          if (!getIntervals(i).isInitialized()) {
+            
+            return false;
+          }
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+      private org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> fileCredentialsBuilder_;
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public boolean hasFileCredentials() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials getFileCredentials() {
+        if (fileCredentialsBuilder_ == null) {
+          return fileCredentials_;
+        } else {
+          return fileCredentialsBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public Builder setFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
+        if (fileCredentialsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          fileCredentials_ = value;
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public Builder setFileCredentials(
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder builderForValue) {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = builderForValue.build();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public Builder mergeFileCredentials(org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials value) {
+        if (fileCredentialsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) == 0x00000001) &&
+              fileCredentials_ != org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance()) {
+            fileCredentials_ =
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.newBuilder(fileCredentials_).mergeFrom(value).buildPartial();
+          } else {
+            fileCredentials_ = value;
+          }
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000001;
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public Builder clearFileCredentials() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
+          onChanged();
+        } else {
+          fileCredentialsBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder getFileCredentialsBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return getFileCredentialsFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder getFileCredentialsOrBuilder() {
+        if (fileCredentialsBuilder_ != null) {
+          return fileCredentialsBuilder_.getMessageOrBuilder();
+        } else {
+          return fileCredentials_;
+        }
+      }
+      /**
+       * <code>required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;</code>
+       *
+       * <pre>
+       * FIXME (jdillmann): Maybe merge with ec_truncate
+       * </pre>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder> 
+          getFileCredentialsFieldBuilder() {
+        if (fileCredentialsBuilder_ == null) {
+          fileCredentialsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.Builder, org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentialsOrBuilder>(
+                  fileCredentials_,
+                  getParentForChildren(),
+                  isClean());
+          fileCredentials_ = null;
+        }
+        return fileCredentialsBuilder_;
+      }
+
+      // required string file_id = 2;
+      private java.lang.Object fileId_ = "";
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public boolean hasFileId() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public java.lang.String getFileId() {
+        java.lang.Object ref = fileId_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          fileId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getFileIdBytes() {
+        java.lang.Object ref = fileId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          fileId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public Builder setFileId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public Builder clearFileId() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        fileId_ = getDefaultInstance().getFileId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string file_id = 2;</code>
+       */
+      public Builder setFileIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        fileId_ = value;
+        onChanged();
+        return this;
+      }
+
+      // repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;
+      private java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> intervals_ =
+        java.util.Collections.emptyList();
+      private void ensureIntervalsIsMutable() {
+        if (!((bitField0_ & 0x00000004) == 0x00000004)) {
+          intervals_ = new java.util.ArrayList<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg>(intervals_);
+          bitField0_ |= 0x00000004;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder> intervalsBuilder_;
+
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> getIntervalsList() {
+        if (intervalsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(intervals_);
+        } else {
+          return intervalsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public int getIntervalsCount() {
+        if (intervalsBuilder_ == null) {
+          return intervals_.size();
+        } else {
+          return intervalsBuilder_.getCount();
+        }
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg getIntervals(int index) {
+        if (intervalsBuilder_ == null) {
+          return intervals_.get(index);
+        } else {
+          return intervalsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder setIntervals(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg value) {
+        if (intervalsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureIntervalsIsMutable();
+          intervals_.set(index, value);
+          onChanged();
+        } else {
+          intervalsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder setIntervals(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder builderForValue) {
+        if (intervalsBuilder_ == null) {
+          ensureIntervalsIsMutable();
+          intervals_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          intervalsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder addIntervals(org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg value) {
+        if (intervalsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureIntervalsIsMutable();
+          intervals_.add(value);
+          onChanged();
+        } else {
+          intervalsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder addIntervals(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg value) {
+        if (intervalsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureIntervalsIsMutable();
+          intervals_.add(index, value);
+          onChanged();
+        } else {
+          intervalsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder addIntervals(
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder builderForValue) {
+        if (intervalsBuilder_ == null) {
+          ensureIntervalsIsMutable();
+          intervals_.add(builderForValue.build());
+          onChanged();
+        } else {
+          intervalsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder addIntervals(
+          int index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder builderForValue) {
+        if (intervalsBuilder_ == null) {
+          ensureIntervalsIsMutable();
+          intervals_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          intervalsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder addAllIntervals(
+          java.lang.Iterable<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg> values) {
+        if (intervalsBuilder_ == null) {
+          ensureIntervalsIsMutable();
+          super.addAll(values, intervals_);
+          onChanged();
+        } else {
+          intervalsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder clearIntervals() {
+        if (intervalsBuilder_ == null) {
+          intervals_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000004);
+          onChanged();
+        } else {
+          intervalsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public Builder removeIntervals(int index) {
+        if (intervalsBuilder_ == null) {
+          ensureIntervalsIsMutable();
+          intervals_.remove(index);
+          onChanged();
+        } else {
+          intervalsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder getIntervalsBuilder(
+          int index) {
+        return getIntervalsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder getIntervalsOrBuilder(
+          int index) {
+        if (intervalsBuilder_ == null) {
+          return intervals_.get(index);  } else {
+          return intervalsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public java.util.List<? extends org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder> 
+           getIntervalsOrBuilderList() {
+        if (intervalsBuilder_ != null) {
+          return intervalsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(intervals_);
+        }
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder addIntervalsBuilder() {
+        return getIntervalsFieldBuilder().addBuilder(
+            org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder addIntervalsBuilder(
+          int index) {
+        return getIntervalsFieldBuilder().addBuilder(
+            index, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.getDefaultInstance());
+      }
+      /**
+       * <code>repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;</code>
+       */
+      public java.util.List<org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder> 
+           getIntervalsBuilderList() {
+        return getIntervalsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilder<
+          org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder> 
+          getIntervalsFieldBuilder() {
+        if (intervalsBuilder_ == null) {
+          intervalsBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.Builder, org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder>(
+                  intervals_,
+                  ((bitField0_ & 0x00000004) == 0x00000004),
+                  getParentForChildren(),
+                  isClean());
+          intervals_ = null;
+        }
+        return intervalsBuilder_;
+      }
+
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorRequest)
+    }
+
+    static {
+      defaultInstance = new xtreemfs_ec_commit_vectorRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorRequest)
+  }
+
+  public interface xtreemfs_ec_commit_vectorResponseOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // required bool complete = 1;
+    /**
+     * <code>required bool complete = 1;</code>
+     */
+    boolean hasComplete();
+    /**
+     * <code>required bool complete = 1;</code>
+     */
+    boolean getComplete();
+  }
+  /**
+   * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse}
+   */
+  public static final class xtreemfs_ec_commit_vectorResponse extends
+      com.google.protobuf.GeneratedMessage
+      implements xtreemfs_ec_commit_vectorResponseOrBuilder {
+    // Use xtreemfs_ec_commit_vectorResponse.newBuilder() to construct.
+    private xtreemfs_ec_commit_vectorResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private xtreemfs_ec_commit_vectorResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final xtreemfs_ec_commit_vectorResponse defaultInstance;
+    public static xtreemfs_ec_commit_vectorResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public xtreemfs_ec_commit_vectorResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private xtreemfs_ec_commit_vectorResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              complete_ = input.readBool();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.class, org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<xtreemfs_ec_commit_vectorResponse> PARSER =
+        new com.google.protobuf.AbstractParser<xtreemfs_ec_commit_vectorResponse>() {
+      public xtreemfs_ec_commit_vectorResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new xtreemfs_ec_commit_vectorResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<xtreemfs_ec_commit_vectorResponse> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // required bool complete = 1;
+    public static final int COMPLETE_FIELD_NUMBER = 1;
+    private boolean complete_;
+    /**
+     * <code>required bool complete = 1;</code>
+     */
+    public boolean hasComplete() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required bool complete = 1;</code>
+     */
+    public boolean getComplete() {
+      return complete_;
+    }
+
+    private void initFields() {
+      complete_ = false;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      if (!hasComplete()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBool(1, complete_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, complete_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.class, org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.Builder.class);
+      }
+
+      // Construct using org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        complete_ = false;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse getDefaultInstanceForType() {
+        return org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.getDefaultInstance();
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse build() {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse buildPartial() {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse result = new org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.complete_ = complete_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse) {
+          return mergeFrom((org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse other) {
+        if (other == org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse.getDefaultInstance()) return this;
+        if (other.hasComplete()) {
+          setComplete(other.getComplete());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasComplete()) {
+          
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // required bool complete = 1;
+      private boolean complete_ ;
+      /**
+       * <code>required bool complete = 1;</code>
+       */
+      public boolean hasComplete() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required bool complete = 1;</code>
+       */
+      public boolean getComplete() {
+        return complete_;
+      }
+      /**
+       * <code>required bool complete = 1;</code>
+       */
+      public Builder setComplete(boolean value) {
+        bitField0_ |= 0x00000001;
+        complete_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool complete = 1;</code>
+       */
+      public Builder clearComplete() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        complete_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse)
+    }
+
+    static {
+      defaultInstance = new xtreemfs_ec_commit_vectorResponse(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse)
+  }
+
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_xtreemfs_pbrpc_InternalGmax_descriptor;
   private static
@@ -37793,6 +39318,16 @@ public final class OSD {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_xtreemfs_pbrpc_xtreemfs_ec_get_interval_vectorsResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -37949,120 +39484,129 @@ public final class OSD {
       "al_vectorsResponse\0222\n\rcur_intervals\030\001 \003(" +
       "\0132\033.xtreemfs.pbrpc.IntervalMsg\0223\n\016next_i" +
       "ntervals\030\002 \003(\0132\033.xtreemfs.pbrpc.Interval" +
-      "Msg*\215\001\n\017OSDHealthResult\022\034\n\030OSD_HEALTH_RE" +
-      "SULT_PASSED\020\000\022\035\n\031OSD_HEALTH_RESULT_WARNI" +
-      "NG\020\001\022\034\n\030OSD_HEALTH_RESULT_FAILED\020\002\022\037\n\033OS",
-      "D_HEALTH_RESULT_NOT_AVAIL\020\0032\211\"\n\nOSDServi" +
-      "ce\022L\n\004read\022\033.xtreemfs.pbrpc.readRequest\032" +
-      "\032.xtreemfs.pbrpc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001" +
-      "\022V\n\010truncate\022\037.xtreemfs.pbrpc.truncateRe" +
-      "quest\032 .xtreemfs.pbrpc.OSDWriteResponse\"" +
-      "\007\215\265\030\013\000\000\000\022T\n\006unlink\022\".xtreemfs.pbrpc.unli" +
-      "nk_osd_Request\032\035.xtreemfs.pbrpc.emptyRes" +
-      "ponse\"\007\215\265\030\014\000\000\000\022T\n\005write\022\034.xtreemfs.pbrpc" +
-      ".writeRequest\032 .xtreemfs.pbrpc.OSDWriteR" +
-      "esponse\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027xtreemfs_broadca",
-      "st_gmax\022..xtreemfs.pbrpc.xtreemfs_broadc" +
-      "ast_gmaxRequest\032\035.xtreemfs.pbrpc.emptyRe" +
-      "sponse\"\007\215\265\030\024\000\000\000\022j\n\025xtreemfs_check_object" +
-      "\022,.xtreemfs.pbrpc.xtreemfs_check_objectR" +
-      "equest\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030\025" +
-      "\000\000\000\022{\n\034xtreemfs_cleanup_get_results\022\034.xt" +
-      "reemfs.pbrpc.emptyRequest\0324.xtreemfs.pbr" +
-      "pc.xtreemfs_cleanup_get_resultsResponse\"" +
-      "\007\215\265\030\036\000\000\000\022y\n\033xtreemfs_cleanup_is_running\022" +
-      "\034.xtreemfs.pbrpc.emptyRequest\0323.xtreemfs",
-      ".pbrpc.xtreemfs_cleanup_is_runningRespon" +
-      "se\"\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_cleanup_start\022-." +
-      "xtreemfs.pbrpc.xtreemfs_cleanup_startReq" +
-      "uest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030" +
-      " \000\000\000\022q\n\027xtreemfs_cleanup_status\022\034.xtreem" +
-      "fs.pbrpc.emptyRequest\032/.xtreemfs.pbrpc.x" +
-      "treemfs_cleanup_statusResponse\"\007\215\265\030!\000\000\000\022" +
-      "]\n\025xtreemfs_cleanup_stop\022\034.xtreemfs.pbrp" +
-      "c.emptyRequest\032\035.xtreemfs.pbrpc.emptyRes" +
-      "ponse\"\007\215\265\030\"\000\000\000\022g\n\037xtreemfs_cleanup_versi",
-      "ons_start\022\034.xtreemfs.pbrpc.emptyRequest\032" +
-      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030#\000\000\000\022" +
-      "\205\001\n\032xtreemfs_finalize_vouchers\0221.xtreemf" +
-      "s.pbrpc.xtreemfs_finalize_vouchersReques" +
-      "t\032+.xtreemfs.pbrpc.OSDFinalizeVouchersRe" +
-      "sponse\"\007\215\265\030\026\000\000\000\022o\n\026xtreemfs_repair_objec" +
-      "t\022-.xtreemfs.pbrpc.xtreemfs_repair_objec" +
-      "tRequest\032\035.xtreemfs.pbrpc.emptyResponse\"" +
-      "\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr_fetch\022).xtreemf" +
-      "s.pbrpc.xtreemfs_rwr_fetchRequest\032\032.xtre",
-      "emfs.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u\n\027xtreem" +
-      "fs_rwr_flease_msg\022..xtreemfs.pbrpc.xtree" +
-      "mfs_rwr_flease_msgRequest\032\035.xtreemfs.pbr" +
-      "pc.emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemf" +
-      "s_rwr_notify\022\037.xtreemfs.pbrpc.FileCreden" +
-      "tials\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265" +
-      "\030K\000\000\000\022|\n\036xtreemfs_rwr_set_primary_epoch\022" +
-      "5.xtreemfs.pbrpc.xtreemfs_rwr_set_primar" +
-      "y_epochRequest\032\032.xtreemfs.pbrpc.ObjectDa" +
-      "ta\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_status\022*.xtr",
-      "eemfs.pbrpc.xtreemfs_rwr_statusRequest\032\035" +
-      ".xtreemfs.pbrpc.ReplicaStatus\"\007\215\265\030L\000\000\000\022m" +
-      "\n\025xtreemfs_rwr_truncate\022,.xtreemfs.pbrpc" +
-      ".xtreemfs_rwr_truncateRequest\032\035.xtreemfs" +
-      ".pbrpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n\023xtreemf" +
-      "s_rwr_update\022*.xtreemfs.pbrpc.xtreemfs_r" +
-      "wr_updateRequest\032\035.xtreemfs.pbrpc.emptyR" +
-      "esponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs_rwr_aut" +
-      "h_state\022..xtreemfs.pbrpc.xtreemfs_rwr_au" +
-      "th_stateRequest\032\035.xtreemfs.pbrpc.emptyRe",
-      "sponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_reset_co" +
-      "mplete\0222.xtreemfs.pbrpc.xtreemfs_rwr_res" +
-      "et_completeRequest\032\035.xtreemfs.pbrpc.empt" +
-      "yResponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_internal_" +
-      "get_gmax\0221.xtreemfs.pbrpc.xtreemfs_inter" +
-      "nal_get_gmaxRequest\032\034.xtreemfs.pbrpc.Int" +
-      "ernalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_internal_" +
-      "truncate\022\037.xtreemfs.pbrpc.truncateReques" +
-      "t\032 .xtreemfs.pbrpc.OSDWriteResponse\"\007\215\265\030" +
-      ")\000\000\000\022\233\001\n\037xtreemfs_internal_get_file_size",
-      "\0226.xtreemfs.pbrpc.xtreemfs_internal_get_" +
-      "file_sizeRequest\0327.xtreemfs.pbrpc.xtreem" +
-      "fs_internal_get_file_sizeResponse\"\007\215\265\030*\000" +
-      "\000\000\022\207\001\n\034xtreemfs_internal_read_local\0223.xt" +
-      "reemfs.pbrpc.xtreemfs_internal_read_loca" +
-      "lRequest\032).xtreemfs.pbrpc.InternalReadLo" +
-      "calResponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemfs_intern" +
-      "al_get_object_set\0227.xtreemfs.pbrpc.xtree" +
-      "mfs_internal_get_object_setRequest\032\032.xtr" +
-      "eemfs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022\205\001\n!xtre",
-      "emfs_internal_get_fileid_list\022\034.xtreemfs" +
-      ".pbrpc.emptyRequest\0329.xtreemfs.pbrpc.xtr" +
-      "eemfs_internal_get_fileid_listResponse\"\007" +
-      "\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_acquire\022\033.xtree" +
-      "mfs.pbrpc.lockRequest\032\024.xtreemfs.pbrpc.L" +
-      "ock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_check\022\033.xt" +
-      "reemfs.pbrpc.lockRequest\032\024.xtreemfs.pbrp" +
-      "c.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock_release" +
-      "\022\033.xtreemfs.pbrpc.lockRequest\032\035.xtreemfs" +
-      ".pbrpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n\rxtreemf",
-      "s_ping\022%.xtreemfs.pbrpc.xtreemfs_pingMes" +
-      "ssage\032%.xtreemfs.pbrpc.xtreemfs_pingMess" +
-      "sage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdown\022\034.xtr" +
-      "eemfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrp" +
-      "c.emptyResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtreemfs_xl" +
-      "oc_set_invalidate\0223.xtreemfs.pbrpc.xtree" +
-      "mfs_xloc_set_invalidateRequest\0324.xtreemf" +
-      "s.pbrpc.xtreemfs_xloc_set_invalidateResp" +
-      "onse\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreemfs_rwr_auth_stat" +
-      "e_invalidated\022..xtreemfs.pbrpc.xtreemfs_",
-      "rwr_auth_stateRequest\0321.xtreemfs.pbrpc.x" +
-      "treemfs_rwr_reset_statusResponse\"\007\215\265\030R\000\000" +
-      "\000\022\211\001\n\031xtreemfs_rwr_reset_status\0220.xtreem" +
-      "fs.pbrpc.xtreemfs_rwr_reset_statusReques" +
-      "t\0321.xtreemfs.pbrpc.xtreemfs_rwr_reset_st" +
-      "atusResponse\"\007\215\265\030S\000\000\000\022\236\001\n xtreemfs_ec_ge" +
-      "t_interval_vectors\0227.xtreemfs.pbrpc.xtre" +
-      "emfs_ec_get_interval_vectorsRequest\0328.xt" +
-      "reemfs.pbrpc.xtreemfs_ec_get_interval_ve" +
-      "ctorsResponse\"\007\215\265\030T\000\000\000\032\007\225\265\0301u\000\000B(\n&org.x",
-      "treemfs.pbrpc.generatedinterfaces"
+      "Msg\"\236\001\n xtreemfs_ec_commit_vectorRequest" +
+      "\0229\n\020file_credentials\030\001 \002(\0132\037.xtreemfs.pb" +
+      "rpc.FileCredentials\022\017\n\007file_id\030\002 \002(\t\022.\n\t",
+      "intervals\030\003 \003(\0132\033.xtreemfs.pbrpc.Interva" +
+      "lMsg\"5\n!xtreemfs_ec_commit_vectorRespons" +
+      "e\022\020\n\010complete\030\001 \002(\010*\215\001\n\017OSDHealthResult\022" +
+      "\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022\035\n\031OSD_HEA" +
+      "LTH_RESULT_WARNING\020\001\022\034\n\030OSD_HEALTH_RESUL" +
+      "T_FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT_NOT_AVAI" +
+      "L\020\0032\225#\n\nOSDService\022L\n\004read\022\033.xtreemfs.pb" +
+      "rpc.readRequest\032\032.xtreemfs.pbrpc.ObjectD" +
+      "ata\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.xtreemfs." +
+      "pbrpc.truncateRequest\032 .xtreemfs.pbrpc.O",
+      "SDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unlink\022\".xtr" +
+      "eemfs.pbrpc.unlink_osd_Request\032\035.xtreemf" +
+      "s.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022T\n\005write\022" +
+      "\034.xtreemfs.pbrpc.writeRequest\032 .xtreemfs" +
+      ".pbrpc.OSDWriteResponse\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027" +
+      "xtreemfs_broadcast_gmax\022..xtreemfs.pbrpc" +
+      ".xtreemfs_broadcast_gmaxRequest\032\035.xtreem" +
+      "fs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000\022j\n\025xtree" +
+      "mfs_check_object\022,.xtreemfs.pbrpc.xtreem" +
+      "fs_check_objectRequest\032\032.xtreemfs.pbrpc.",
+      "ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_cleanup_" +
+      "get_results\022\034.xtreemfs.pbrpc.emptyReques" +
+      "t\0324.xtreemfs.pbrpc.xtreemfs_cleanup_get_" +
+      "resultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtreemfs_cle" +
+      "anup_is_running\022\034.xtreemfs.pbrpc.emptyRe" +
+      "quest\0323.xtreemfs.pbrpc.xtreemfs_cleanup_" +
+      "is_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_" +
+      "cleanup_start\022-.xtreemfs.pbrpc.xtreemfs_" +
+      "cleanup_startRequest\032\035.xtreemfs.pbrpc.em" +
+      "ptyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs_cleanup",
+      "_status\022\034.xtreemfs.pbrpc.emptyRequest\032/." +
+      "xtreemfs.pbrpc.xtreemfs_cleanup_statusRe" +
+      "sponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cleanup_stop" +
+      "\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtreemf" +
+      "s.pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022g\n\037xtreem" +
+      "fs_cleanup_versions_start\022\034.xtreemfs.pbr" +
+      "pc.emptyRequest\032\035.xtreemfs.pbrpc.emptyRe" +
+      "sponse\"\007\215\265\030#\000\000\000\022\205\001\n\032xtreemfs_finalize_vo" +
+      "uchers\0221.xtreemfs.pbrpc.xtreemfs_finaliz" +
+      "e_vouchersRequest\032+.xtreemfs.pbrpc.OSDFi",
+      "nalizeVouchersResponse\"\007\215\265\030\026\000\000\000\022o\n\026xtree" +
+      "mfs_repair_object\022-.xtreemfs.pbrpc.xtree" +
+      "mfs_repair_objectRequest\032\035.xtreemfs.pbrp" +
+      "c.emptyResponse\"\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr" +
+      "_fetch\022).xtreemfs.pbrpc.xtreemfs_rwr_fet" +
+      "chRequest\032\032.xtreemfs.pbrpc.ObjectData\"\007\215" +
+      "\265\030I\000\000\000\022u\n\027xtreemfs_rwr_flease_msg\022..xtre" +
+      "emfs.pbrpc.xtreemfs_rwr_flease_msgReques" +
+      "t\032\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030G\000\000" +
+      "\000\240\265\030\001\022^\n\023xtreemfs_rwr_notify\022\037.xtreemfs.",
+      "pbrpc.FileCredentials\032\035.xtreemfs.pbrpc.e" +
+      "mptyResponse\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_se" +
+      "t_primary_epoch\0225.xtreemfs.pbrpc.xtreemf" +
+      "s_rwr_set_primary_epochRequest\032\032.xtreemf" +
+      "s.pbrpc.ObjectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_" +
+      "rwr_status\022*.xtreemfs.pbrpc.xtreemfs_rwr" +
+      "_statusRequest\032\035.xtreemfs.pbrpc.ReplicaS" +
+      "tatus\"\007\215\265\030L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022" +
+      ",.xtreemfs.pbrpc.xtreemfs_rwr_truncateRe" +
+      "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265",
+      "\030J\000\000\000\022m\n\023xtreemfs_rwr_update\022*.xtreemfs." +
+      "pbrpc.xtreemfs_rwr_updateRequest\032\035.xtree" +
+      "mfs.pbrpc.emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027" +
+      "xtreemfs_rwr_auth_state\022..xtreemfs.pbrpc" +
+      ".xtreemfs_rwr_auth_stateRequest\032\035.xtreem" +
+      "fs.pbrpc.emptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtree" +
+      "mfs_rwr_reset_complete\0222.xtreemfs.pbrpc." +
+      "xtreemfs_rwr_reset_completeRequest\032\035.xtr" +
+      "eemfs.pbrpc.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xt" +
+      "reemfs_internal_get_gmax\0221.xtreemfs.pbrp",
+      "c.xtreemfs_internal_get_gmaxRequest\032\034.xt" +
+      "reemfs.pbrpc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xt" +
+      "reemfs_internal_truncate\022\037.xtreemfs.pbrp" +
+      "c.truncateRequest\032 .xtreemfs.pbrpc.OSDWr" +
+      "iteResponse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_intern" +
+      "al_get_file_size\0226.xtreemfs.pbrpc.xtreem" +
+      "fs_internal_get_file_sizeRequest\0327.xtree" +
+      "mfs.pbrpc.xtreemfs_internal_get_file_siz" +
+      "eResponse\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal" +
+      "_read_local\0223.xtreemfs.pbrpc.xtreemfs_in",
+      "ternal_read_localRequest\032).xtreemfs.pbrp" +
+      "c.InternalReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n" +
+      " xtreemfs_internal_get_object_set\0227.xtre" +
+      "emfs.pbrpc.xtreemfs_internal_get_object_" +
+      "setRequest\032\032.xtreemfs.pbrpc.ObjectList\"\007" +
+      "\215\265\030,\000\000\000\022\205\001\n!xtreemfs_internal_get_fileid" +
+      "_list\022\034.xtreemfs.pbrpc.emptyRequest\0329.xt" +
+      "reemfs.pbrpc.xtreemfs_internal_get_filei" +
+      "d_listResponse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock" +
+      "_acquire\022\033.xtreemfs.pbrpc.lockRequest\032\024.",
+      "xtreemfs.pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs" +
+      "_lock_check\022\033.xtreemfs.pbrpc.lockRequest" +
+      "\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtree" +
+      "mfs_lock_release\022\033.xtreemfs.pbrpc.lockRe" +
+      "quest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265" +
+      "\0304\000\000\000\022f\n\rxtreemfs_ping\022%.xtreemfs.pbrpc." +
+      "xtreemfs_pingMesssage\032%.xtreemfs.pbrpc.x" +
+      "treemfs_pingMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemf" +
+      "s_shutdown\022\034.xtreemfs.pbrpc.emptyRequest" +
+      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000",
+      "\022\222\001\n\034xtreemfs_xloc_set_invalidate\0223.xtre" +
+      "emfs.pbrpc.xtreemfs_xloc_set_invalidateR" +
+      "equest\0324.xtreemfs.pbrpc.xtreemfs_xloc_se" +
+      "t_invalidateResponse\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreem" +
+      "fs_rwr_auth_state_invalidated\022..xtreemfs" +
+      ".pbrpc.xtreemfs_rwr_auth_stateRequest\0321." +
+      "xtreemfs.pbrpc.xtreemfs_rwr_reset_status" +
+      "Response\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs_rwr_reset" +
+      "_status\0220.xtreemfs.pbrpc.xtreemfs_rwr_re" +
+      "set_statusRequest\0321.xtreemfs.pbrpc.xtree",
+      "mfs_rwr_reset_statusResponse\"\007\215\265\030S\000\000\000\022\236\001" +
+      "\n xtreemfs_ec_get_interval_vectors\0227.xtr" +
+      "eemfs.pbrpc.xtreemfs_ec_get_interval_vec" +
+      "torsRequest\0328.xtreemfs.pbrpc.xtreemfs_ec" +
+      "_get_interval_vectorsResponse\"\007\215\265\030T\000\000\000\022\211" +
+      "\001\n\031xtreemfs_ec_commit_vector\0220.xtreemfs." +
+      "pbrpc.xtreemfs_ec_commit_vectorRequest\0321" +
+      ".xtreemfs.pbrpc.xtreemfs_ec_commit_vecto" +
+      "rResponse\"\007\215\265\030U\000\000\000\032\007\225\265\0301u\000\000B(\n&org.xtree" +
+      "mfs.pbrpc.generatedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -38351,6 +39895,18 @@ public final class OSD {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_ec_get_interval_vectorsResponse_descriptor,
               new java.lang.String[] { "CurIntervals", "NextIntervals", });
+          internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor =
+            getDescriptor().getMessageTypes().get(47);
+          internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorRequest_descriptor,
+              new java.lang.String[] { "FileCredentials", "FileId", "Intervals", });
+          internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor =
+            getDescriptor().getMessageTypes().get(48);
+          internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_xtreemfs_pbrpc_xtreemfs_ec_commit_vectorResponse_descriptor,
+              new java.lang.String[] { "Complete", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
@@ -38378,6 +39934,7 @@ public final class OSD {
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.dataIn);
+          registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

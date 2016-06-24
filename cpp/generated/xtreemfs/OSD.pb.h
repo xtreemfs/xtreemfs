@@ -85,6 +85,8 @@ class xtreemfs_rwr_reset_statusResponse;
 class IntervalMsg;
 class xtreemfs_ec_get_interval_vectorsRequest;
 class xtreemfs_ec_get_interval_vectorsResponse;
+class xtreemfs_ec_commit_vectorRequest;
+class xtreemfs_ec_commit_vectorResponse;
 
 enum OSDHealthResult {
   OSD_HEALTH_RESULT_PASSED = 0,
@@ -5174,6 +5176,200 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
 
   void InitAsDefaultInstance();
   static xtreemfs_ec_get_interval_vectorsResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_ec_commit_vectorRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_ec_commit_vectorRequest();
+  virtual ~xtreemfs_ec_commit_vectorRequest();
+
+  xtreemfs_ec_commit_vectorRequest(const xtreemfs_ec_commit_vectorRequest& from);
+
+  inline xtreemfs_ec_commit_vectorRequest& operator=(const xtreemfs_ec_commit_vectorRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_ec_commit_vectorRequest& default_instance();
+
+  void Swap(xtreemfs_ec_commit_vectorRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_ec_commit_vectorRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_ec_commit_vectorRequest& from);
+  void MergeFrom(const xtreemfs_ec_commit_vectorRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  inline ::xtreemfs::pbrpc::FileCredentials* release_file_credentials();
+  inline void set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials);
+
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;
+  inline int intervals_size() const;
+  inline void clear_intervals();
+  static const int kIntervalsFieldNumber = 3;
+  inline const ::xtreemfs::pbrpc::IntervalMsg& intervals(int index) const;
+  inline ::xtreemfs::pbrpc::IntervalMsg* mutable_intervals(int index);
+  inline ::xtreemfs::pbrpc::IntervalMsg* add_intervals();
+  inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
+      intervals() const;
+  inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
+      mutable_intervals();
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorRequest)
+ private:
+  inline void set_has_file_credentials();
+  inline void clear_has_file_credentials();
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+  ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg > intervals_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_ec_commit_vectorRequest* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_ec_commit_vectorResponse : public ::google::protobuf::Message {
+ public:
+  xtreemfs_ec_commit_vectorResponse();
+  virtual ~xtreemfs_ec_commit_vectorResponse();
+
+  xtreemfs_ec_commit_vectorResponse(const xtreemfs_ec_commit_vectorResponse& from);
+
+  inline xtreemfs_ec_commit_vectorResponse& operator=(const xtreemfs_ec_commit_vectorResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_ec_commit_vectorResponse& default_instance();
+
+  void Swap(xtreemfs_ec_commit_vectorResponse* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_ec_commit_vectorResponse* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_ec_commit_vectorResponse& from);
+  void MergeFrom(const xtreemfs_ec_commit_vectorResponse& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required bool complete = 1;
+  inline bool has_complete() const;
+  inline void clear_complete();
+  static const int kCompleteFieldNumber = 1;
+  inline bool complete() const;
+  inline void set_complete(bool value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse)
+ private:
+  inline void set_has_complete();
+  inline void clear_has_complete();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  bool complete_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_ec_commit_vectorResponse* default_instance_;
 };
 // ===================================================================
 
@@ -10357,6 +10553,169 @@ xtreemfs_ec_get_interval_vectorsResponse::next_intervals() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
 xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals() {
   return &next_intervals_;
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_ec_commit_vectorRequest
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool xtreemfs_ec_commit_vectorRequest::has_file_credentials() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_has_file_credentials() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_ec_commit_vectorRequest::clear_has_file_credentials() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_ec_commit_vectorRequest::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  clear_has_file_credentials();
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_commit_vectorRequest::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_commit_vectorRequest::mutable_file_credentials() {
+  set_has_file_credentials();
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_commit_vectorRequest::release_file_credentials() {
+  clear_has_file_credentials();
+  ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
+  file_credentials_ = NULL;
+  return temp;
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+  delete file_credentials_;
+  file_credentials_ = file_credentials;
+  if (file_credentials) {
+    set_has_file_credentials();
+  } else {
+    clear_has_file_credentials();
+  }
+}
+
+// required string file_id = 2;
+inline bool xtreemfs_ec_commit_vectorRequest::has_file_id() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_has_file_id() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_ec_commit_vectorRequest::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_ec_commit_vectorRequest::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_ec_commit_vectorRequest::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_ec_commit_vectorRequest::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_ec_commit_vectorRequest::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_ec_commit_vectorRequest::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// repeated .xtreemfs.pbrpc.IntervalMsg intervals = 3;
+inline int xtreemfs_ec_commit_vectorRequest::intervals_size() const {
+  return intervals_.size();
+}
+inline void xtreemfs_ec_commit_vectorRequest::clear_intervals() {
+  intervals_.Clear();
+}
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_commit_vectorRequest::intervals(int index) const {
+  return intervals_.Get(index);
+}
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_commit_vectorRequest::mutable_intervals(int index) {
+  return intervals_.Mutable(index);
+}
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_commit_vectorRequest::add_intervals() {
+  return intervals_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
+xtreemfs_ec_commit_vectorRequest::intervals() const {
+  return intervals_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
+xtreemfs_ec_commit_vectorRequest::mutable_intervals() {
+  return &intervals_;
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_ec_commit_vectorResponse
+
+// required bool complete = 1;
+inline bool xtreemfs_ec_commit_vectorResponse::has_complete() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_ec_commit_vectorResponse::set_has_complete() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_ec_commit_vectorResponse::clear_has_complete() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_ec_commit_vectorResponse::clear_complete() {
+  complete_ = false;
+  clear_has_complete();
+}
+inline bool xtreemfs_ec_commit_vectorResponse::complete() const {
+  return complete_;
+}
+inline void xtreemfs_ec_commit_vectorResponse::set_complete(bool value) {
+  set_has_complete();
+  complete_ = value;
 }
 
 
