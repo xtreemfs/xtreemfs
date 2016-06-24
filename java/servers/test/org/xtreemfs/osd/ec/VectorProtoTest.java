@@ -7,7 +7,11 @@
 package org.xtreemfs.osd.ec;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,6 +25,8 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
@@ -31,6 +37,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
@@ -49,7 +56,7 @@ import org.xtreemfs.test.TestHelper;
 
 public class VectorProtoTest {
     @Rule
-    public final TestRule          testLog = TestHelper.testLog;
+    public final TestRule testLog = TestHelper.testLog;
 
     ServiceUUID           osdUUID;
 
@@ -90,26 +97,33 @@ public class VectorProtoTest {
 
         fileId = "ABCDEF:1";
 
-        // TODO (jdillmann): Check if this Cap is correct
-        // String fileId, int accessMode, int validity, long expires, String clientIdentity,
-        // int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret)
-        cap = new Capability(fileId,
-                Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR), 60,
-                System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
-                osdConfig.getCapabilitySecret());
-
-        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(1, 0, 128))
-                .addOsdUuids(osdUUID.toString()).build();
-        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0)
-                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_EC).addReplicas(r).setVersion(1).build();
-
-        fileCredentials = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
+        fileCredentials = getCreds(fileId, 1, 0, 128);
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
     }
 
     public static StripingPolicy getECStripingPolicy(int width, int parity, int stripeSize) {
         return StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_ERASURECODE).setWidth(width)
                 .setParityWidth(parity).setStripeSize(stripeSize).build();
+    }
+
+    Capability getCap(String fileId) {
+        // TODO (jdillmann): Check if this Cap is correct
+        return new Capability(fileId,
+                Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR), 60,
+                System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
+                osdConfig.getCapabilitySecret());
+    }
+
+    FileCredentials getCreds(String fileId, int width, int parity, int stripeSize) {
+        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(1, 0, 128))
+                .addOsdUuids(osdUUID.toString()).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_EC).addReplicas(r).setVersion(1).build();
+        return FileCredentials.newBuilder().setXcap(getCap(fileId).getXCap()).setXlocs(xloc).build();
+    }
+
+    StripingPolicyImpl getStripingPolicyImplementation(FileCredentials fileCredentials) {
+        return StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas(0), 0);
     }
 
     @After
@@ -120,7 +134,7 @@ public class VectorProtoTest {
     @Test
     public void testGetVectors() throws Exception {
         AVLTreeIntervalVector curVector, nextVector;
-        IntervalVector vecIn, expected;
+        IntervalVector expected;
         List<Interval> intervals = new LinkedList<Interval>();
         HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache());
 
@@ -148,9 +162,8 @@ public class VectorProtoTest {
         // Test retrieving existing vectors with a gap
         intervals.add(new ObjectInterval(0, 1024, 1, 0));
         intervals.add(new ObjectInterval(2048, 4096, 2, 0));
-        vecIn = new ListIntervalVector(intervals);
-        layout.setECIntervalVector(fileId, vecIn, false, true);
-        layout.setECIntervalVector(fileId, vecIn, true, true);
+        layout.setECIntervalVector(fileId, intervals, false, true);
+        layout.setECIntervalVector(fileId, intervals, true, true);
 
         rpcResponse = osdClient.xtreemfs_ec_get_interval_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request);
@@ -160,19 +173,18 @@ public class VectorProtoTest {
             rpcResponse.freeBuffers();
         }
 
-        // FIXME (jdillmann): This should not be required (Immutable should fill gaps itself)
         intervals.add(1, new ObjectInterval(1024, 2048, -1, -1));
         expected = new ListIntervalVector(intervals);
 
         curVector = new AVLTreeIntervalVector();
         for (int i = 0; i < response.getCurIntervalsCount(); i++) {
-            curVector.insert(ECHelper.proto2interval(response.getCurIntervals(i)));
+            curVector.insert(new ProtoInterval(response.getCurIntervals(i)));
         }
         assertEquals(expected, curVector);
 
         nextVector = new AVLTreeIntervalVector();
         for (int i = 0; i < response.getNextIntervalsCount(); i++) {
-            nextVector.insert(ECHelper.proto2interval(response.getNextIntervals(i)));
+            nextVector.insert(new ProtoInterval(response.getNextIntervals(i)));
         }
         assertEquals(expected, nextVector);
     }

@@ -22,7 +22,6 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
-import org.xtreemfs.foundation.intervals.ListIntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.util.FSUtils;
@@ -57,50 +56,46 @@ public class VectorStorageTest {
 
     @Test
     public void testStoreLoadVector() throws Exception {
-        IntervalVector vecIn, vecOut;
+        IntervalVector vecOut;
         List<Interval> intervals = new LinkedList<Interval>();
 
         // Store and load a single interval
         intervals.add(new ObjectInterval(0, 2048, 1, 0));
-        vecIn = new ListIntervalVector(intervals);
-        layout.setECIntervalVector(fileId, vecIn, false, true);
+        layout.setECIntervalVector(fileId, intervals, false, true);
 
         vecOut = new AVLTreeIntervalVector();
         layout.getECIntervalVector(fileId, false, vecOut);
-        assertEquals(vecIn, vecOut);
+        assertEquals(intervals, vecOut.serialize());
 
         // Store and load a second, non overlapping interval
         intervals.add(new ObjectInterval(2048, 4096, 2, 0));
-        vecIn = new ListIntervalVector(intervals);
-        layout.setECIntervalVector(fileId, vecIn, false, true);
+        layout.setECIntervalVector(fileId, intervals, false, true);
 
         vecOut = new AVLTreeIntervalVector();
         layout.getECIntervalVector(fileId, false, vecOut);
-        assertEquals(vecIn, vecOut);
+        assertEquals(intervals, vecOut.serialize());
 
         // Add an overlapping interval
         vecOut.insert(new ObjectInterval(1024, 3096, 3, 0));
-        vecIn = new ListIntervalVector(vecOut);
-        layout.setECIntervalVector(fileId, vecIn, false, true);
+        layout.setECIntervalVector(fileId, intervals, false, true);
 
         vecOut = new AVLTreeIntervalVector();
         layout.getECIntervalVector(fileId, false, vecOut);
-        assertEquals(vecIn, vecOut);
+        assertEquals(intervals, vecOut.serialize());
 
         // Overwrite the interval
         intervals.clear();
         intervals.add(new ObjectInterval(0, 512, 4, 0));
-        vecIn = new ListIntervalVector(intervals);
-        layout.setECIntervalVector(fileId, vecIn, false, false);
+        layout.setECIntervalVector(fileId, intervals, false, false);
 
         vecOut = new AVLTreeIntervalVector();
         layout.getECIntervalVector(fileId, false, vecOut);
-        assertEquals(vecIn, vecOut);
+        assertEquals(intervals, vecOut.serialize());
     }
 
     @Test(expected = InvalidProtocolBufferException.class)
     public void testErrors() throws Exception {
-        IntervalVector vecIn, vecOut;
+        IntervalVector vecOut;
         List<Interval> intervals = new LinkedList<Interval>();
 
         // Read from an inexistent file
@@ -110,8 +105,7 @@ public class VectorStorageTest {
         
         // Read from corrupted vector file
         intervals.add(new ObjectInterval(0, 2048, 1, 0));
-        vecIn = new ListIntervalVector(intervals);
-        layout.setECIntervalVector(fileId, vecIn, false, false);
+        layout.setECIntervalVector(fileId, intervals, false, false);
 
         // Truncate 1 byte from the end
         File fileDir = new File(layout.generateAbsoluteFilePath(fileId));

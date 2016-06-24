@@ -74,7 +74,7 @@ public class ECPolicy {
         return needsCommit;
     }
 
-    private List<MutableInterval> recoverVector(IntervalVector[] vectors,
+    static List<MutableInterval> recoverVector(IntervalVector[] vectors,
             List<MutableInterval> existingResult) {
         LinkedList<MutableInterval> result = new LinkedList<MutableInterval>();
 
@@ -292,7 +292,7 @@ public class ECPolicy {
     /**
      * The MutableInterval allows the modification of the intervals members. It is used solely for the vector recovery
      */
-    private static class MutableInterval extends Interval {
+    static class MutableInterval extends Interval {
         long start;
         long end;
         long version;

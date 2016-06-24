@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 
 /**
  * 
@@ -44,6 +45,9 @@ public class FileMetadata {
 
     private long                       mdFileLength;
     
+    private AVLTreeIntervalVector      ecCurVector;
+    private AVLTreeIntervalVector      ecNextVector;
+
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
         stripingPolicy = sp;
@@ -178,6 +182,22 @@ public class FileMetadata {
         return stripingPolicy;
     }
     
+    public void setECCurVector(AVLTreeIntervalVector curVector) {
+        this.ecCurVector = curVector;
+    }
+
+    public AVLTreeIntervalVector getECCurVector() {
+        return ecCurVector;
+    }
+
+    public void setECNextVector(AVLTreeIntervalVector nextVector) {
+        this.ecNextVector = nextVector;
+    }
+
+    public AVLTreeIntervalVector getECNextVector() {
+        return ecNextVector;
+    }
+
     /**
      * @return the handles
      */

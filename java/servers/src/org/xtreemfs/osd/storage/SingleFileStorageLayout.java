@@ -15,6 +15,7 @@ import java.nio.channels.FileChannel;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -26,6 +27,7 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.checksums.ChecksumAlgorithm;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -541,7 +543,7 @@ public class SingleFileStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+    public void setECIntervalVector(String fileId, List<Interval> intervals, boolean next, boolean append)
             throws IOException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

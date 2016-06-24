@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -39,15 +40,16 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.checksums.ChecksumAlgorithm;
 import org.xtreemfs.foundation.checksums.ChecksumFactory;
+import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
-import org.xtreemfs.osd.ec.ECHelper;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.TruncateLog;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.XLocSetVersionState;
 
@@ -806,7 +808,6 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
 
         FileMetadata info = new FileMetadata(sp);
-
         File fileDir = new File(generateAbsoluteFilePath(fileId));
 
         // file exists already ...
@@ -906,6 +907,24 @@ public class HashStorageLayout extends StorageLayout {
 
             info.initObjectChecksums(objChecksums);
 
+            // Load the VersionTrees required for Erasure Coding
+            if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                // filesize could be restored from versionvector, but to stay consistent with the
+                // other policies store only the local filesize to FileMetadat
+
+                AVLTreeIntervalVector curVector = new AVLTreeIntervalVector();
+                getECIntervalVector(fileId, false, curVector);
+                info.setECCurVector(curVector);
+
+                AVLTreeIntervalVector nextVector = new AVLTreeIntervalVector();
+                getECIntervalVector(fileId, true, nextVector);
+                info.setECNextVector(nextVector);
+
+            } else {
+                info.setECCurVector(new AVLTreeIntervalVector());
+                info.setECNextVector(new AVLTreeIntervalVector());
+            }
+
             if (lastObjNum > -1) {
                 // determine filesize from lastObjectNumber
                 File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
@@ -960,6 +979,8 @@ public class HashStorageLayout extends StorageLayout {
             info.initLargestObjectVersions(new HashMap<Long, Long>());
             info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
             info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
+            info.setECCurVector(new AVLTreeIntervalVector());
+            info.setECNextVector(new AVLTreeIntervalVector());
         }
 
         info.setGlobalLastObjectNumber(-1);
@@ -1535,7 +1556,7 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+    public void setECIntervalVector(String fileId, List<Interval> intervals, boolean next, boolean append)
             throws IOException {
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         fileDir.mkdirs();
@@ -1550,8 +1571,8 @@ public class HashStorageLayout extends StorageLayout {
         BufferedOutputStream output = null;
         try {
             output = new BufferedOutputStream(new FileOutputStream(vectorFile, append));
-            for (Interval interval : vector.serialize()) {
-                Message msg = ECHelper.interval2proto(interval);
+            for (Interval interval : intervals) {
+                Message msg = ProtoInterval.toProto(interval);
                 msg.writeDelimitedTo(output);
             }
         } finally {

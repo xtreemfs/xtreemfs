@@ -14,6 +14,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -21,6 +22,7 @@ import java.util.Stack;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDConfig;
@@ -498,7 +500,7 @@ public abstract class StorageLayout {
             throws IOException;
 
     // FIXME (jdillmann): Doc
-    public abstract void setECIntervalVector(String fileId, IntervalVector vector, boolean next, boolean append)
+    public abstract void setECIntervalVector(String fileId, List<Interval> intervals, boolean next, boolean append)
             throws IOException;
 
     // FIXME (jdillmann): Doc
