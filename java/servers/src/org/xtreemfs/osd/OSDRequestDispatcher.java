@@ -63,6 +63,7 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.pbrpc.server.RPCUDPSocketServer;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.util.FSUtils;
+import org.xtreemfs.osd.ec.ECMasterStage;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
 import org.xtreemfs.osd.operations.CleanupGetResultsOperation;
 import org.xtreemfs.osd.operations.CleanupGetStatusOperation;
@@ -209,6 +210,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final FleaseMasterEpochThread             masterEpochThread;
 
     protected final FleaseStage                         fleaseStage;
+
+    protected final ECMasterStage                       ecMasterStage;
 
 
     /**
@@ -385,6 +388,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         tracingStage = new TracingStage(this, config.getMaxRequestsQueueLength());
         tracingStage.setLifeCycleListener(this);
+
+        ecMasterStage = new ECMasterStage(this, serverSSLopts, config.getMaxRequestsQueueLength(), fleaseStage,
+                fleaseHandler);
+        ecMasterStage.setLifeCycleListener(this);
 
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
@@ -602,6 +609,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             tracingStage.start();
             masterEpochThread.start();
             fleaseStage.start();
+            ecMasterStage.start();
 
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -614,6 +622,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             tracingStage.waitForStartup();
             masterEpochThread.waitForStartup();
             fleaseStage.waitForStartup();
+            ecMasterStage.waitForStartup();
 
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -667,6 +676,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.shutdown();
             masterEpochThread.shutdown();
             fleaseStage.shutdown();
+            ecMasterStage.shutdown();
 
             serviceAvailability.shutdown();
 
@@ -682,6 +692,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.waitForShutdown();
             masterEpochThread.waitForShutdown();
             fleaseStage.waitForShutdown();
+            ecMasterStage.waitForShutdown();
 
             if (statusServer != null) {
                 statusServer.shutdown();
@@ -723,6 +734,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             cvThread.shutdown();
             masterEpochThread.shutdown();
             fleaseStage.shutdown();
+            ecMasterStage.shutdown();
 
             serviceAvailability.shutdown();
 
@@ -1191,4 +1203,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         return fleaseHandler;
     }
 
+    public ECMasterStage getECMasterStage() {
+        return ecMasterStage;
+    }
 }

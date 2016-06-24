@@ -34,6 +34,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECStorage;
 import org.xtreemfs.osd.quota.OSDVoucherManager;
 import org.xtreemfs.osd.quota.VoucherErrorException;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -64,44 +65,49 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 public class StorageThread extends Stage {
     
-    public static final int      STAGEOP_READ_OBJECT           = 1;
-    
-    public static final int      STAGEOP_WRITE_OBJECT          = 2;
-    
-    public static final int      STAGEOP_TRUNCATE              = 3;
-    
-    public static final int      STAGEOP_FLUSH_CACHES          = 4;
-    
-    public static final int      STAGEOP_GMAX_RECEIVED         = 5;
-    
-    public static final int      STAGEOP_GET_GMAX              = 6;
-    
-    public static final int      STAGEOP_GET_FILE_SIZE         = 7;
-    
-    public static final int      STAGEOP_GET_OBJECT_SET        = 8;
-    
-    public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
-    
-    public static final int      STAGEOP_GET_MAX_OBJNO         = 10;
-    
-    public static final int      STAGEOP_CREATE_FILE_VERSION   = 11;
-    
-    public static final int      STAGEOP_GET_REPLICA_STATE     = 12;
-    
-    public static final int      STAGEOP_GET_FILEID_LIST       = 13;
-    
-    public static final int      STAGEOP_DELETE_OBJECTS        = 14;
+    public static final int            STAGEOP_READ_OBJECT           = 1;
+
+    public static final int            STAGEOP_WRITE_OBJECT          = 2;
+
+    public static final int            STAGEOP_TRUNCATE              = 3;
+
+    public static final int            STAGEOP_FLUSH_CACHES          = 4;
+
+    public static final int            STAGEOP_GMAX_RECEIVED         = 5;
+
+    public static final int            STAGEOP_GET_GMAX              = 6;
+
+    public static final int            STAGEOP_GET_FILE_SIZE         = 7;
+
+    public static final int            STAGEOP_GET_OBJECT_SET        = 8;
+
+    public static final int            STAGEOP_INSERT_PADDING_OBJECT = 9;
+
+    public static final int            STAGEOP_GET_MAX_OBJNO         = 10;
+
+    public static final int            STAGEOP_CREATE_FILE_VERSION   = 11;
+
+    public static final int            STAGEOP_GET_REPLICA_STATE     = 12;
+
+    public static final int            STAGEOP_GET_FILEID_LIST       = 13;
+
+    public static final int            STAGEOP_DELETE_OBJECTS        = 14;
 
     public static final int            STAGEOP_FINALIZE_VOUCHERS     = 15;
+
+    public static final int            STAGEOP_EC_GET_VECTORS        = 16;
+
 
     private final MetadataCache        cache;
 
     private final StorageLayout        layout;
-    
+
     private final OSDRequestDispatcher master;
+
+    private final boolean              checksumsEnabled;
     
-    private final boolean        checksumsEnabled;
-    
+    private final ECStorage            ecStorage;
+
     public StorageThread(int id, OSDRequestDispatcher dispatcher, MetadataCache cache, StorageLayout layout,
         int maxQueueLength) {
         
@@ -111,6 +117,8 @@ public class StorageThread extends Stage {
         this.layout = layout;
         this.master = dispatcher;
         this.checksumsEnabled = master.getConfig().isUseChecksums();
+
+        ecStorage = new ECStorage(master, cache, layout, checksumsEnabled);
     }
     
     @Override
@@ -163,6 +171,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_FINALIZE_VOUCHERS:
                 processFinalizeVouchers(method);
+                break;
+            case STAGEOP_EC_GET_VECTORS:
+                ecStorage.processGetVectors(method);
                 break;
             }
             
@@ -815,6 +826,180 @@ public class StorageThread extends Stage {
         
     }
 
+    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
+            int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+        // first find out which is the new "last object"
+        final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
+        final long oldLastObject = fi.getLastObjectNumber();
+        assert (newLastObject <= oldLastObject) : "new= " + newLastObject + " old=" + oldLastObject;
+
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "truncate shrink to: %d old last: %d   new last: %d", fileSize, fi.getLastObjectNumber(),
+                    newLastObject);
+
+        // if copy-on-write enabled ...
+        if (cow.cowEnabled()) {
+
+            // only remove objects that are no longer bound to former file
+            // versions
+            final long oldRow = sp.getRow(oldLastObject);
+            final long lastRow = sp.getRow(newLastObject);
+
+            for (long r = oldRow; r >= lastRow; r--) {
+
+                final long rowObj = r * sp.getWidth() + relOsdId;
+
+                if (rowObj == newLastObject) {
+                    // currently examined object is new last object and local:
+                    // shrink it
+                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
+
+                } else if (rowObj > newLastObject) {
+
+                    // currently examined object is larger than new last object
+                    // and not contained in any previous version of the file:
+                    // delete it
+                    final long v = fi.getLatestObjectVersion(rowObj);
+                    if (!fi.getVersionTable().isContained(rowObj, v))
+                        layout.deleteObject(fileId, fi, rowObj, v);
+
+                    fi.discardObject(rowObj, v);
+                }
+            }
+
+        }
+
+        // otherwise ...
+        else {
+
+            // remove all unnecessary objects
+            final long oldRow = sp.getRow(oldLastObject);
+            final long lastRow = sp.getRow(newLastObject);
+
+            for (long r = oldRow; r >= lastRow; r--) {
+                final long rowObj = r * sp.getWidth() + relOsdId;
+
+                if (rowObj == newLastObject) {
+                    // currently examined object is new last object and local:
+                    // shrink it
+                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
+
+                } else if (rowObj > newLastObject) {
+
+                    // currently examined object is larger than new last object:
+                    // delete it
+                    final long v = fi.getLatestObjectVersion(rowObj);
+                    layout.deleteObject(fileId, fi, rowObj, v);
+
+                    fi.discardObject(rowObj, v);
+                }
+            }
+
+        }
+
+        // make sure that new last object exists
+        for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
+            if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
+                long v = fi.getLatestObjectVersion(obj);
+                if (v == 0) {
+                    // does not exist
+                    createPaddingObject(fileId, obj, sp, fi.getLargestObjectVersion(obj) + 1,
+                            sp.getStripeSizeForObject(obj), fi);
+                }
+            }
+        }
+
+        return newLastObject;
+    }
+
+    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
+            int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
+        // first find out which is the new "last object"
+        final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
+        final long oldLastObject = fi.getLastObjectNumber();
+        assert (newLastObject >= oldLastObject);
+
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "truncate extend to: %d old last: %d   new last: %d", fileSize, oldLastObject, newLastObject);
+
+        // if no objects need to be added and the last object is stored locally
+        // ...
+        if ((sp.getOSDforObject(newLastObject) == relOsdId) && newLastObject == oldLastObject) {
+            // ... simply extend the old one
+            truncateObject(fileId, newLastObject, sp, (int) (fileSize - sp.getObjectStartOffset(newLastObject)),
+                    relOsdId, cow, newObjVer);
+        }
+
+        // otherwise ...
+        else {
+
+            // extend the old last object to full object size
+            if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
+                truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId, cow,
+                        newObjVer);
+            }
+
+            // if the new last object is a local object, create a padding
+            // object to ensure that it exists
+            if (sp.isLocalObject(newLastObject, relOsdId)) {
+
+                long version = newObjVer != null ? newObjVer
+                        : (cow.isCOW((int) newLastObject) ? fi.getLargestObjectVersion(newLastObject) + 1
+                                : Math.max(1, fi.getLargestObjectVersion(newLastObject)));
+                int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
+
+                createPaddingObject(fileId, newLastObject, sp, version, objSize, fi);
+            }
+
+            // make sure that new last objects also exist on all other OSDs
+            for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
+                if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
+                    long v = fi.getLatestObjectVersion(obj);
+                    if (v == 0) {
+                        // does not exist
+                        final boolean isCow = cow.isCOW((int) obj);
+                        final long newVersion = newObjVer != null ? newObjVer
+                                : (isCow ? fi.getLargestObjectVersion(obj) + 1
+                                        : Math.max(1, fi.getLargestObjectVersion(obj)));
+                        createPaddingObject(fileId, obj, sp, newVersion, sp.getStripeSizeForObject(obj), fi);
+                    }
+                }
+            }
+
+        }
+
+        return newLastObject;
+    }
+
+    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId,
+            CowPolicy cow, Long newObjVer) throws IOException {
+
+        assert (newSize > 0) : "new size is " + newSize + " but should be > 0";
+        assert (newSize <= sp.getStripeSizeForObject(objNo));
+        assert (objNo >= 0) : "objNo is " + objNo;
+        assert (sp.getOSDforObject(objNo) == relOsdId);
+
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
+
+        final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+        final boolean isCow = cow.isCOW((int) objNo);
+        final long newVersion = newObjVer != null ? newObjVer
+                : (isCow ? fi.getLargestObjectVersion(objNo) + 1 : Math.max(1, fi.getLatestObjectVersion(objNo)));
+
+        layout.truncateObject(fileId, fi, objNo, newSize, newVersion, isCow);
+
+    }
+
+    private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version, int size,
+            FileMetadata fi) throws IOException {
+        layout.createPaddingObject(fileId, fi, objNo, version, size);
+    }
+
     /**
      * @param method
      */
@@ -922,7 +1107,6 @@ public class StorageThread extends Stage {
         final GetFileIDListCallback cback = (GetFileIDListCallback) rq.getCallback();
         ArrayList<String> fileIDList = null;
         try {
-            
             if (layout != null) {
                 fileIDList = layout.getFileIDList();
             }
@@ -933,181 +1117,6 @@ public class StorageThread extends Stage {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             cback.createGetFileIDListComplete(null, ErrorUtils.getErrorResponse(ErrorType.ERRNO,
                 POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
-            
         }
-    }
-    
-    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
-        FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
-        // first find out which is the new "last object"
-        final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
-        final long oldLastObject = fi.getLastObjectNumber();
-        assert (newLastObject <= oldLastObject) : "new= " + newLastObject + " old=" + oldLastObject;
-        
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                "truncate shrink to: %d old last: %d   new last: %d", fileSize, fi.getLastObjectNumber(),
-                newLastObject);
-        
-        // if copy-on-write enabled ...
-        if (cow.cowEnabled()) {
-            
-            // only remove objects that are no longer bound to former file
-            // versions
-            final long oldRow = sp.getRow(oldLastObject);
-            final long lastRow = sp.getRow(newLastObject);
-            
-            for (long r = oldRow; r >= lastRow; r--) {
-                
-                final long rowObj = r * sp.getWidth() + relOsdId;
-                
-                if (rowObj == newLastObject) {
-                    // currently examined object is new last object and local:
-                    // shrink it
-                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
-                    
-                } else if (rowObj > newLastObject) {
-                    
-                    // currently examined object is larger than new last object
-                    // and not contained in any previous version of the file:
-                    // delete it
-                    final long v = fi.getLatestObjectVersion(rowObj);
-                    if (!fi.getVersionTable().isContained(rowObj, v))
-                        layout.deleteObject(fileId, fi, rowObj, v);
-                    
-                    fi.discardObject(rowObj, v);
-                }
-            }
-            
-        }
-
-        // otherwise ...
-        else {
-            
-            // remove all unnecessary objects
-            final long oldRow = sp.getRow(oldLastObject);
-            final long lastRow = sp.getRow(newLastObject);
-            
-            for (long r = oldRow; r >= lastRow; r--) {
-                final long rowObj = r * sp.getWidth() + relOsdId;
-                
-                if (rowObj == newLastObject) {
-                    // currently examined object is new last object and local:
-                    // shrink it
-                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow, newObjVer);
-                    
-                } else if (rowObj > newLastObject) {
-                    
-                    // currently examined object is larger than new last object:
-                    // delete it
-                    final long v = fi.getLatestObjectVersion(rowObj);
-                    layout.deleteObject(fileId, fi, rowObj, v);
-                    
-                    fi.discardObject(rowObj, v);
-                }
-            }
-            
-        }
-        
-        // make sure that new last object exists
-        for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
-            if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                long v = fi.getLatestObjectVersion(obj);
-                if (v == 0) {
-                    // does not exist
-                    createPaddingObject(fileId, obj, sp, fi.getLargestObjectVersion(obj) + 1, sp
-                            .getStripeSizeForObject(obj), fi);
-                }
-            }
-        }
-        
-        return newLastObject;
-    }
-    
-    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
-        FileMetadata fi, int relOsdId, CowPolicy cow, Long newObjVer) throws IOException {
-        // first find out which is the new "last object"
-        final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
-        final long oldLastObject = fi.getLastObjectNumber();
-        assert (newLastObject >= oldLastObject);
-        
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                "truncate extend to: %d old last: %d   new last: %d", fileSize, oldLastObject, newLastObject);
-        
-        // if no objects need to be added and the last object is stored locally
-        // ...
-        if ((sp.getOSDforObject(newLastObject) == relOsdId) && newLastObject == oldLastObject) {
-            // ... simply extend the old one
-            truncateObject(fileId, newLastObject, sp, (int) (fileSize - sp
-                    .getObjectStartOffset(newLastObject)), relOsdId, cow, newObjVer);
-        }
-
-        // otherwise ...
-        else {
-            
-            // extend the old last object to full object size
-            if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
-                truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId,
-                    cow, newObjVer);
-            }
-            
-            // if the new last object is a local object, create a padding
-            // object to ensure that it exists
-            if (sp.isLocalObject(newLastObject, relOsdId)) {
-                
-                long version = newObjVer != null ? newObjVer : (cow.isCOW((int) newLastObject) ? fi
-                        .getLargestObjectVersion(newLastObject) + 1 : Math.max(1, fi
-                        .getLargestObjectVersion(newLastObject)));
-                int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                
-                createPaddingObject(fileId, newLastObject, sp, version, objSize, fi);
-            }
-            
-            // make sure that new last objects also exist on all other OSDs
-            for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
-                if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                    long v = fi.getLatestObjectVersion(obj);
-                    if (v == 0) {
-                        // does not exist
-                        final boolean isCow = cow.isCOW((int) obj);
-                        final long newVersion = newObjVer != null ? newObjVer : (isCow ? fi
-                                .getLargestObjectVersion(obj) + 1 : Math.max(1, fi
-                                .getLargestObjectVersion(obj)));
-                        createPaddingObject(fileId, obj, sp, newVersion, sp.getStripeSizeForObject(obj), fi);
-                    }
-                }
-            }
-            
-        }
-        
-        return newLastObject;
-    }
-    
-    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId,
-        CowPolicy cow, Long newObjVer) throws IOException {
-        
-        assert (newSize > 0) : "new size is " + newSize + " but should be > 0";
-        assert (newSize <= sp.getStripeSizeForObject(objNo));
-        assert (objNo >= 0) : "objNo is " + objNo;
-        assert (sp.getOSDforObject(objNo) == relOsdId);
-        
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
-        
-        final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-        final boolean isCow = cow.isCOW((int) objNo);
-        final long newVersion = newObjVer != null ? newObjVer
-            : (isCow ? fi.getLargestObjectVersion(objNo) + 1 : Math.max(1, fi.getLatestObjectVersion(objNo)));
-        
-        layout.truncateObject(fileId, fi, objNo, newSize, newVersion, isCow);
-        
-    }
-    
-    private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version,
-        int size, FileMetadata fi) throws IOException {
-        layout.createPaddingObject(fileId, fi, objNo, version, size);
     }
 }

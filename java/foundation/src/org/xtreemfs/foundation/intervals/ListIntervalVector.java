@@ -31,6 +31,14 @@ public class ListIntervalVector extends IntervalVector {
     }
 
     /**
+     * Initialize an empty ListIntervalVector, to which sorted, gapless and non overlapping intervals can be appended
+     * with {@link #append(Interval)}.
+     */
+    public ListIntervalVector(int initialCapacity) {
+        this.intervals = new ArrayList<Interval>(initialCapacity);
+    }
+
+    /**
      * Initialize a ListIntervalVector from the interval list. <br>
      * Note: The interval list has to be sorted and may not contain any gaps or overlaps.
      * 
@@ -156,11 +164,11 @@ public class ListIntervalVector extends IntervalVector {
 
         // If the vectors do not have the same start, the comparison is undefined.
         if (!(thisIv != null && otherIv != null) || (thisIv.getStart() != otherIv.getStart())) {
+            // FIXME (jdillmann): Serialize does now always start from 0, so this case can not happen
             throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
         }
 
         while (thisIv != null && otherIv != null) {
-
 
             if (thisIv.getVersion() > otherIv.getVersion()) {
                 // This vector element version is greater than the other.
@@ -170,7 +178,6 @@ public class ListIntervalVector extends IntervalVector {
                     && !(thisIv.getStart() == otherIv.getStart() && thisIv.getEnd() == otherIv.getEnd() && thisIv.getId() == otherIv.getId())) {
                 // The vector element versions are the same, but the elements are not equal.
                 return false;
-
             }
 
             if (thisIv.getEnd() > otherIv.getEnd()) {

@@ -18,6 +18,7 @@ import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -29,6 +30,8 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECMasterStage.PrepareCallback;
+import org.xtreemfs.osd.ec.ECMasterStage.ReadCallback;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
@@ -87,6 +90,50 @@ public final class ReadOperation extends OSDOperation {
 
         if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedRead(rq, args);
+        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
+            // FIXME (jdillmann): do!
+
+            master.getECMasterStage().prepare(args.getFileCredentials(), rq.getLocationList(), new PrepareCallback() {
+                @Override
+                public void success() {
+                    // Get the absolute range of the operation
+                    long firstObjNo = args.getObjectNumber();
+                    int reqOffset = args.getOffset();
+                    int reqSize = args.getLength();
+
+                    long start = sp.getObjectStartOffset(firstObjNo) + reqOffset;
+                    long end = start + reqSize;
+
+                    final ReusableBuffer data = BufferPool.allocate(reqSize);
+
+                    master.getECMasterStage().read(args.getFileCredentials(), rq.getLocationList(), start, end, data,
+                            new ReadCallback() {
+                                @Override
+                                public void success(ObjectInformation result) {
+                                    // FIXME (jdillmann): Get valid eof flag
+                                    boolean isLastObjectOrEOF = true;
+                                    readFinish(rq, args, result, isLastObjectOrEOF);
+                                }
+
+                                @Override
+                                public void failed(ErrorResponse ex) {
+                                    BufferPool.free(data);
+                                    rq.sendError(ex);
+                                }
+                            }, rq);
+                }
+
+                @Override
+                public void redirect(String redirectTo) {
+                    rq.getRPCRequest().sendRedirect(redirectTo);
+                }
+
+                @Override
+                public void failed(ErrorResponse ex) {
+                    rq.sendError(ex);
+                }
+            }, rq);
+
         } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
                 || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
             final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP
@@ -100,8 +147,6 @@ public final class ReadOperation extends OSDOperation {
                             postRead(rq, args, result, error);
                         }
                     });
-        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
-            // FIXME (jdillmann): do!
         } else {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);

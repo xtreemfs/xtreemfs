@@ -18,8 +18,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.ec.ECHelper;
-import org.xtreemfs.osd.stages.StorageStage.GetECVectorsCallback;
+import org.xtreemfs.osd.ec.ProtoInterval;
+import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
@@ -47,9 +47,10 @@ public class ECGetIntervalVectors extends OSDOperation {
         final xtreemfs_ec_get_interval_vectorsRequest args;
         args = (xtreemfs_ec_get_interval_vectorsRequest) rq.getRequestArgs();
 
-        master.getStorageStage().getECVectors(rq.getFileId(), rq, new GetECVectorsCallback() {
+        // FIXME (jdillmann): Use EC Stage with caching instead reading it directly?
+        master.getStorageStage().ecGetVectors(rq.getFileId(), rq, new ECGetVectorsCallback() {
             @Override
-            public void getECVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
+            public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
                 if (error == null) {
                     sendResult(rq, curVector, nextVector);
                 } else {
@@ -64,11 +65,11 @@ public class ECGetIntervalVectors extends OSDOperation {
                 .newBuilder();
 
         for (Interval interval : curVector.serialize()) {
-            respBuilder.addCurIntervals(ECHelper.interval2proto(interval));
+            respBuilder.addCurIntervals(ProtoInterval.toProto(interval));
         }
 
         for (Interval interval : nextVector.serialize()) {
-            respBuilder.addNextIntervals(ECHelper.interval2proto(interval));
+            respBuilder.addNextIntervals(ProtoInterval.toProto(interval));
         }
 
         rq.sendSuccess(respBuilder.build(), null);

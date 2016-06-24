@@ -17,6 +17,7 @@ import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -219,6 +220,26 @@ public class StorageStage extends Stage {
         public void createGetFileIDListComplete(ArrayList<String> fileIDList, ErrorResponse Error);
     }
     
+    public void ecGetVectors(String fileId, OSDRequest request, ECGetVectorsCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_GET_VECTORS, new Object[] { fileId }, request, callback);
+    }
+
+    public static interface ECGetVectorsCallback {
+        public void ecGetVectorsComplete(final IntervalVector curVector, final IntervalVector nextVector,
+                final ErrorResponse error);
+    }
+
+    public void ecCommitVector(String fileId, StripingPolicyImpl sp, IntervalVector commitVector, OSDRequest request,
+            ECCommitVectorCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_COMMIT_VECTOR, new Object[] { fileId, sp, commitVector },
+                request, callback);
+    }
+
+    public static interface ECCommitVectorCallback {
+        public void ecCommitVectorComplete(final IntervalVector curVector, final IntervalVector nextVector,
+                final ErrorResponse error);
+    }
+
     @Override
     public void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
         notifyCrashed(new Exception(

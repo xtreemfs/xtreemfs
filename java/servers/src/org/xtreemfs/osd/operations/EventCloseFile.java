@@ -61,8 +61,9 @@ public class EventCloseFile extends OSDOperation {
 
         });
 
-        // Asynchronously report close operation to read-write replication stage.
+        // Asynchronously report close operation to read-write replication and ec stage.
         master.getRWReplicationStage().fileClosed(fileId);
+        master.getECMasterStage().closeFile(fileId);
     }
 
     public void createVersionIfNecessary(final String fileId, final boolean deleteOnClose, final boolean cowEnabled,

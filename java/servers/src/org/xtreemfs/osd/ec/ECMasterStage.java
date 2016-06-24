@@ -31,7 +31,6 @@ import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
-import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -50,7 +49,9 @@ import org.xtreemfs.osd.ec.ECFileState.FileState;
 import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResult;
 import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResultListener;
 import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.stages.StorageStage.GetECVectorsCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
+import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
@@ -152,10 +153,10 @@ public class ECMasterStage extends Stage {
     void enqueueExternalOperation(final STAGE_OP stageOp, final Object[] args, final OSDRequest request,
             final ReusableBuffer createdViewBuffer, final Object callback) {
         if (externalRequestsInQueue.get() >= MAX_EXTERNAL_REQUESTS_IN_Q) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "EC stage is overloaded, request %d for %s dropped",
+            Logging.logMessage(Logging.LEVEL_WARN, this, "EC master stage is overloaded, request %d for %s dropped",
                     request.getRequestId(), request.getFileId());
             request.sendInternalServerError(
-                    new IllegalStateException("EC replication stage is overloaded, request dropped"));
+                    new IllegalStateException("EC master stage is overloaded, request dropped"));
 
             // Make sure that the data buffer is returned to the pool if
             // necessary, as some operations create view buffers on the
@@ -183,7 +184,7 @@ public class ECMasterStage extends Stage {
     }
 
     private static enum STAGE_OP {
-        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, LOCAL_VECTORS_AVAILABLE, REMOTE_VECTORS_AVAILABLE;
+        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, CLOSE, LOCAL_VECTORS_AVAILABLE, REMOTE_VECTORS_AVAILABLE;
 
         private static STAGE_OP[] values_ = values();
 
@@ -202,6 +203,7 @@ public class ECMasterStage extends Stage {
             break;
         case READ:
             externalRequestsInQueue.decrementAndGet();
+            processRead(method);
             break;
         case WRITE:
             externalRequestsInQueue.decrementAndGet();
@@ -218,6 +220,9 @@ public class ECMasterStage extends Stage {
             break;
         case REMOTE_VECTORS_AVAILABLE:
             processRemoteVectorsAvailable(method);
+            break;
+        case CLOSE:
+            processCloseFile(method);
             break;
 
         // default : throw new IllegalArgumentException("No such stageop");
@@ -407,14 +412,38 @@ public class ECMasterStage extends Stage {
         }
     }
 
-    public void prepare(FileCredentials credentials, XLocations xloc, Interval interval, PrepareCallback callback,
-            OSDRequest request) {
-        this.enqueueExternalOperation(STAGE_OP.PREPARE, new Object[] { credentials, xloc, interval }, request, null,
+    public void closeFile(String fileId) {
+        this.enqueueOperation(STAGE_OP.CLOSE, new Object[] { fileId }, null, null, null);
+    }
+
+    private void processCloseFile(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        // Files are closed due to a timer in the openFileTable or if they are unlinked.
+        // Since the openFileTable is pinged on most operations and an unlinked file is no longer available the
+        // fileState can be closed.
+        // TODO: Correct errno would be probably EBADF (9)
+        ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                "file has been closed");
+
+        ECFileState state = fileStates.remove(fileId);
+        if (state != null) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "closing file %s", fileId);
+            }
+
+            abortPendingRequests(state, error);
+            fstage.closeCell(state.getCellId(), false);
+        }
+    }
+
+
+    public void prepare(FileCredentials credentials, XLocations xloc, PrepareCallback callback, OSDRequest request) {
+        this.enqueueExternalOperation(STAGE_OP.PREPARE, new Object[] { credentials, xloc, }, request, null,
                 callback);
     }
 
     public static interface PrepareCallback extends FallibleCallback {
-        public void success(final List<Interval> curVersions, final List<Interval> nextVersions);
+        public void success();
 
         public void redirect(String redirectTo);
     }
@@ -423,7 +452,6 @@ public class ECMasterStage extends Stage {
         final PrepareCallback callback = (PrepareCallback) method.getCallback();
         final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
         final XLocations loc = (XLocations) method.getArgs()[1];
-        final Interval interval = (Interval) method.getArgs()[2];
 
         final String fileId = credentials.getXcap().getFileId();
         StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
@@ -476,8 +504,7 @@ public class ECMasterStage extends Stage {
 
         case PRIMARY:
             assert (file.isLocalIsPrimary());
-            // FIXME (jdillmann): Return real version vectors
-            callback.success(null, null);
+            callback.success();
             return;
 
         // case INVALIDATED:
@@ -500,9 +527,9 @@ public class ECMasterStage extends Stage {
     // TODO (jdillmann): Think about moving this to a separate class or OSD Event Method
     void fetchLocalVectors(final ECFileState file) {
         final String fileId = file.getFileId();
-        master.getStorageStage().getECVectors(fileId, null, new GetECVectorsCallback() {
+        master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
             @Override
-            public void getECVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
+            public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
                 eventLocalVectorsAvailable(fileId, curVector, nextVector, error);
             }
         });
@@ -647,6 +674,7 @@ public class ECMasterStage extends Stage {
                     nextVectors[r].insert(new ProtoInterval(response.getNextIntervals(i)));
                 }
             } else {
+                // FIXME (jdillmann): Mark the OSD as failed and allow for fastfail until a timeout is reached
                 curVectors[r] = null;
                 nextVectors[r] = null;
             }
@@ -674,6 +702,42 @@ public class ECMasterStage extends Stage {
             file.setCurVector(resultVector);
             doPrimary(file);
         }
+    }
+
+
+    public void read(FileCredentials credentials, XLocations xloc, long start, long end, ReusableBuffer data,
+            ReadCallback callback, OSDRequest request) {
+        this.enqueueExternalOperation(STAGE_OP.READ, new Object[] { credentials, xloc, start, end, data }, request,
+                data, callback);
+    }
+
+    public static interface ReadCallback extends FallibleCallback {
+        public void success(ObjectInformation result);
+    }
+
+    void processRead(StageRequest method) {
+        final ReadCallback callback = (ReadCallback) method.getCallback();
+        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
+        final XLocations loc = (XLocations) method.getArgs()[1];
+        final long start = (Long) method.getArgs()[2];
+        final long end = (Long) method.getArgs()[3];
+        final ReusableBuffer data = (ReusableBuffer) method.getArgs()[4];
+
+        final String fileId = credentials.getXcap().getFileId();
+        StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
+        assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!"));
+            return;
+        }
+        file.setCredentials(credentials);
+
+        ObjectInformation result = new ObjectInformation(ObjectStatus.EXISTS, data, 0);
+        callback.success(result);
+
     }
 
 
