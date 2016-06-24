@@ -97,6 +97,7 @@ public class StorageThread extends Stage {
 
     public static final int            STAGEOP_EC_GET_VECTORS        = 16;
 
+    public static final int            STAGEOP_EC_COMMIT_VECTOR      = 17;
 
     private final MetadataCache        cache;
 
@@ -174,6 +175,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_EC_GET_VECTORS:
                 ecStorage.processGetVectors(method);
+                break;
+            case STAGEOP_EC_COMMIT_VECTOR:
+                ecStorage.processCommitVector(method);
                 break;
             }
             
