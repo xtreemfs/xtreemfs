@@ -19,6 +19,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECInternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
@@ -28,6 +29,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
 public class ECCommitVector extends OSDOperation {
+    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_COMMIT_VECTOR;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String      sharedSecret;
@@ -41,7 +43,7 @@ public class ECCommitVector extends OSDOperation {
 
     @Override
     public int getProcedureId() {
-        return OSDServiceConstants.PROC_ID_XTREEMFS_EC_COMMIT_VECTOR;
+        return PROC_ID;
     }
 
     @Override
@@ -66,18 +68,42 @@ public class ECCommitVector extends OSDOperation {
                     rq.sendError(error);
                 } else {
                     boolean complete = curVector.equals(commitVector);
-                    sendResult(rq, complete);
+                    rq.sendSuccess(buildResponse(complete), null);
                     // FIXME (jdillmann): Trigger reconstruction if not complete.
                 }
             }
         });
     }
 
-    void sendResult(final OSDRequest rq, boolean complete) {
+
+    @Override
+    public void startInternalEvent(Object[] args) {
+        final String fileId = (String) args[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
+        final IntervalVector commitVector = (IntervalVector) args[2];
+        final ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback 
+            = (ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>) args[3];
+
+        master.getStorageStage().ecCommitVector(fileId, sp, commitVector, null, new ECCommitVectorCallback() {
+            @Override
+            public void ecCommitVectorComplete(IntervalVector curVector, IntervalVector nextVector,
+                    ErrorResponse error) {
+                if (error != null) {
+                    callback.error(error);
+                } else {
+                    boolean complete = curVector.equals(commitVector);
+                    callback.success(buildResponse(complete));
+                    // FIXME (jdillmann): Trigger reconstruction if not complete.
+                }
+            }
+        });
+    }
+
+    xtreemfs_ec_commit_vectorResponse buildResponse(boolean complete) {
         xtreemfs_ec_commit_vectorResponse response = xtreemfs_ec_commit_vectorResponse.newBuilder()
                 .setComplete(complete)
                 .build();
-        rq.sendSuccess(response, null);
+        return response;
     }
 
     @Override
@@ -105,10 +131,5 @@ public class ECCommitVector extends OSDOperation {
     public boolean bypassViewValidation() {
         // FIXME (jdillmann): What about views?
         return false;
-    }
-
-    @Override
-    public void startInternalEvent(Object[] args) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

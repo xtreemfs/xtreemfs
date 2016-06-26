@@ -11,19 +11,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 
 public class ECPolicy {
+    final StripingPolicyImpl sp;
     final int n;
     final int k;
     final int qw;
     final int qr;
 
-    public ECPolicy(int n, int k, int qw, int qr) {
-        this.n = n;
-        this.k = k;
+    public ECPolicy(StripingPolicyImpl sp, int qw, int qr) {
+        this.sp = sp;
+        this.n = sp.getWidth() + sp.getParityWidth();
+        this.k = sp.getWidth();
         this.qw = qw;
         this.qr = qr;
     }

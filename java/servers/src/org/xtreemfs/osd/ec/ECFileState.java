@@ -65,13 +65,12 @@ public class ECFileState {
 
         StripingPolicyImpl sp = r.getStripingPolicy();
         int n = sp.getWidth() + sp.getParityWidth();
-        int m = sp.getParityWidth();
         int k = sp.getWidth();
 
         // FIXME (jdillmann): Make somehow configurable
         int qw = n;
         int qr = k;
-        policy = new ECPolicy(n, k, qw, qr);
+        policy = new ECPolicy(r.getStripingPolicy(), qw, qr);
 
         remoteOSDs = new ArrayList<ServiceUUID>(n - 1);
         for (ServiceUUID osdUUID : r.getOSDs()) {

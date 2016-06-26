@@ -18,6 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECInternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
@@ -26,6 +27,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
 public class ECGetIntervalVectors extends OSDOperation {
+    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_GET_INTERVAL_VECTORS;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String      sharedSecret;
@@ -39,7 +41,7 @@ public class ECGetIntervalVectors extends OSDOperation {
 
     @Override
     public int getProcedureId() {
-        return OSDServiceConstants.PROC_ID_XTREEMFS_EC_GET_INTERVAL_VECTORS;
+        return PROC_ID;
     }
 
     @Override
@@ -52,7 +54,7 @@ public class ECGetIntervalVectors extends OSDOperation {
             @Override
             public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
                 if (error == null) {
-                    sendResult(rq, curVector, nextVector);
+                    rq.sendSuccess(buildResponse(curVector, nextVector), null);
                 } else {
                     rq.sendError(error);
                 }
@@ -60,7 +62,25 @@ public class ECGetIntervalVectors extends OSDOperation {
         });
     }
 
-    void sendResult(final OSDRequest rq, IntervalVector curVector, IntervalVector nextVector) {
+    @Override
+    public void startInternalEvent(Object[] args) {
+        final String fileId = (String) args[0];
+        final ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback = 
+                (ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>) args[1];
+
+        master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
+            @Override
+            public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
+                if (error == null) {
+                    callback.success(buildResponse(curVector, nextVector));
+                } else {
+                    callback.error(error);
+                }
+            }
+        });
+    }
+
+    xtreemfs_ec_get_interval_vectorsResponse buildResponse(IntervalVector curVector, IntervalVector nextVector) {
         xtreemfs_ec_get_interval_vectorsResponse.Builder respBuilder = xtreemfs_ec_get_interval_vectorsResponse
                 .newBuilder();
 
@@ -72,7 +92,7 @@ public class ECGetIntervalVectors extends OSDOperation {
             respBuilder.addNextIntervals(ProtoInterval.toProto(interval));
         }
 
-        rq.sendSuccess(respBuilder.build(), null);
+        return respBuilder.build();
     }
 
     @Override
@@ -101,10 +121,5 @@ public class ECGetIntervalVectors extends OSDOperation {
     public boolean bypassViewValidation() {
         // FIXME (jdillmann): What about views?
         return false;
-    }
-
-    @Override
-    public void startInternalEvent(Object[] args) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
