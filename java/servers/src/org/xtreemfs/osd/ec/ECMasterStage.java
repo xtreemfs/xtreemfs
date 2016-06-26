@@ -31,6 +31,7 @@ import org.xtreemfs.foundation.flease.FleaseViewChangeListenerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
+import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -48,12 +49,16 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
 import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResult;
 import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResultListener;
+import org.xtreemfs.osd.operations.ECCommitVector;
+import org.xtreemfs.osd.operations.ECGetIntervalVectors;
+import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.stages.Stage;
-import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -184,7 +189,8 @@ public class ECMasterStage extends Stage {
     }
 
     private static enum STAGE_OP {
-        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, CLOSE, LOCAL_VECTORS_AVAILABLE, REMOTE_VECTORS_AVAILABLE;
+        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, CLOSE, 
+        VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE;
 
         private static STAGE_OP[] values_ = values();
 
@@ -213,13 +219,13 @@ public class ECMasterStage extends Stage {
             break;
         // Internal requests
         case LEASE_STATE_CHANGED:
-            processLeaseChanged(method);
+            processLeaseStateChanged(method);
             break;
-        case LOCAL_VECTORS_AVAILABLE:
-            processLocalVectorsAvailable(method);
+        case VECTORS_AVAILABLE:
+            processVectorsAvailable(method);
             break;
-        case REMOTE_VECTORS_AVAILABLE:
-            processRemoteVectorsAvailable(method);
+        case COMMIT_VECTOR_COMPLETE:
+            processCommitVectorComplete(method);
             break;
         case CLOSE:
             processCloseFile(method);
@@ -339,7 +345,7 @@ public class ECMasterStage extends Stage {
      */
     void doVersionReset(final ECFileState file) {
         file.setState(FileState.VERSION_RESET);
-        fetchLocalVectors(file);
+        fetchVectors(file);
     }
 
     /**
@@ -349,7 +355,7 @@ public class ECMasterStage extends Stage {
         this.enqueueOperation(STAGE_OP.LEASE_STATE_CHANGED, new Object[] { cellId, lease, error }, null, null, null);
     }
 
-    void processLeaseChanged(StageRequest method) {
+    void processLeaseStateChanged(StageRequest method) {
         final ASCIIString cellId = (ASCIIString) method.getArgs()[0];
         final Flease lease = (Flease) method.getArgs()[1];
         final FleaseException error = (FleaseException) method.getArgs()[2];
@@ -520,66 +526,15 @@ public class ECMasterStage extends Stage {
     }
 
     /**
-     * This will request the local and remote VersionTrees. On success eventVersionResetComplete is called
+     * This will request the local and remote VersionTrees.
      * 
      * @param file
      */
     // TODO (jdillmann): Think about moving this to a separate class or OSD Event Method
-    void fetchLocalVectors(final ECFileState file) {
-        final String fileId = file.getFileId();
-        master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
-            @Override
-            public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
-                eventLocalVectorsAvailable(fileId, curVector, nextVector, error);
-            }
-        });
-    }
-
-    void eventLocalVectorsAvailable(String fileId, IntervalVector curVector, IntervalVector nextVector,
-            ErrorResponse error) {
-        this.enqueueOperation(STAGE_OP.LOCAL_VECTORS_AVAILABLE, new Object[] { fileId, curVector, nextVector, error },
-                null, null, null);
-    }
-
-    void processLocalVectorsAvailable(StageRequest method) {
-        final String fileId = (String) method.getArgs()[0];
-        final IntervalVector curVector = (IntervalVector) method.getArgs()[1];
-        final IntervalVector nextVector = (IntervalVector) method.getArgs()[2];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[3];
-
-        final ECFileState file = fileStates.get(fileId);
-
-        if (file == null) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                    "Received LocalIntervalVectorAvailable event for non opened file (%s)", fileId);
-            return;
-        }
-
-        if (error != null) {
-            failed(file, error);
-            return;
-        }
-
+    void fetchVectors(final ECFileState file) {
         assert (file.state == FileState.VERSION_RESET);
-        fetchRemoteVersions(file, curVector, nextVector);
-    }
-
-    /**
-     * This will be called after the local VersionTree has been fetched.
-     * 
-     * @param file
-     * @param localCurVector
-     * @param nextCurVector
-     */
-    // TODO (jdillmann): Think about moving this to a separate class or OSD Event Method
-    void fetchRemoteVersions(final ECFileState file, final IntervalVector localCurVector,
-            final IntervalVector localNextVector) {
-
-        // TODO (jdillmann): Or only an if
-        assert (file.state == FileState.VERSION_RESET);
-
         final String fileId = file.getFileId();
-        
+
         List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
         int numRemotes = remoteUUIDs.size();
 
@@ -588,7 +543,7 @@ public class ECMasterStage extends Stage {
 
             @Override
             public void success(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
-                eventRemoteVectorsAvailable(fileId, localCurVector, localNextVector, results, null);
+                eventVectorsAvailable(fileId, results, null);
             }
 
             @Override
@@ -596,13 +551,18 @@ public class ECMasterStage extends Stage {
                 // TODO (jdillmann): Add numberOfFailures as a parameter?
                 String errorMsg = String.format("(EC: %s) VectorReset failed due to too many unreachable remote OSDs.",
                         localUUID);
-                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO, errorMsg);
-                eventRemoteVectorsAvailable(fileId, null, null, null, error);
+                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                        errorMsg);
+                eventVectorsAvailable(fileId, null, error);
             }
         };
 
-        ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer> manager;
-        manager = new ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, listener);
+        // Try to get a result from every node
+        int numReqAck = numRemotes + 1;
+
+        final ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer> manager;
+        manager = new ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, numReqAck,
+                true, listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
@@ -616,22 +576,45 @@ public class ECMasterStage extends Stage {
         } catch (IOException ex) {
             failed(file, ErrorUtils.getInternalServerError(ex));
         }
+
+        // Add the local with some invalid id
+        manager.addLocal(-1);
+
+        // Register the listeners and wait for results
+        manager.registerListeners();
+
+        // Wait for the local result
+        OSDOperation getVectorOp = master.getOperation(ECGetIntervalVectors.PROC_ID);
+        getVectorOp.startInternalEvent(
+                new Object[] { fileId, new ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>() {
+
+                    @Override
+                    public void success(xtreemfs_ec_get_interval_vectorsResponse result) {
+                        manager.localResultAvailable(result);
+                    }
+
+                    @Override
+                    public void error(ErrorResponse error) {
+                        Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                                "Retrieving the local vector failed for file (%s)", fileId);
+                        manager.localResultFailed();
+                    }
+                } });
+
     }
 
-    void eventRemoteVectorsAvailable(String fileId, IntervalVector localCurVector, IntervalVector localNextVector,
+
+    void eventVectorsAvailable(String fileId,
             ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results, ErrorResponse error) {
-        this.enqueueOperation(STAGE_OP.REMOTE_VECTORS_AVAILABLE,
-                new Object[] { fileId, localCurVector, localNextVector, results, error }, null, null, null);
+        this.enqueueOperation(STAGE_OP.VECTORS_AVAILABLE, new Object[] { fileId, results, error }, null, null, null);
     }
 
-    void processRemoteVectorsAvailable(StageRequest method) {
+    void processVectorsAvailable(StageRequest method) {
         final String fileId = (String) method.getArgs()[0];
-        final IntervalVector localCurVector = (IntervalVector) method.getArgs()[1];
-        final IntervalVector localNextVector = (IntervalVector) method.getArgs()[2];
         @SuppressWarnings("unchecked")
         final ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results = 
-            (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method.getArgs()[3];
-        final ErrorResponse error = (ErrorResponse) method.getArgs()[4];
+                (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
         final ECFileState file = fileStates.get(fileId);
 
@@ -651,9 +634,6 @@ public class ECMasterStage extends Stage {
         IntervalVector[] curVectors = new IntervalVector[results.length + 1];
         IntervalVector[] nextVectors = new IntervalVector[results.length + 1];
         
-        // Store local vectors at the end
-        curVectors[results.length] = localCurVector;
-        nextVectors[results.length] = localNextVector;
 
         int responseCount = 0;
 
@@ -692,25 +672,153 @@ public class ECMasterStage extends Stage {
             return;
         }
 
+        file.setCurVector(resultVector);
         if (needsCommit) {
             // Well well... and we have to do another round!
-            // FIXME (jdillmann): Not implemented yet
-            throw new RuntimeException("Not implemented yet");
+            commitVector(file, resultVector);
 
         } else {
             // FIXME (jdillmann): Maybe send async commit
-            file.setCurVector(resultVector);
             doPrimary(file);
         }
     }
+    
+    void commitVector(final ECFileState file, final IntervalVector resultVector) {
+        // TODO (jdillmann): Or only an if
+        assert (file.state == FileState.VERSION_RESET);
 
+        final String fileId = file.getFileId();
+
+        List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
+        int numRemotes = remoteUUIDs.size();
+
+        xtreemfs_ec_commit_vectorRequest.Builder reqBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder();
+        reqBuilder.setFileId(fileId).setFileCredentials(file.getCredentials());
+        for (Interval interval : resultVector.serialize()) {
+            reqBuilder.addIntervals(ProtoInterval.toProto(interval));
+        }
+        xtreemfs_ec_commit_vectorRequest request = reqBuilder.build();
+
+        ResponseResultListener<xtreemfs_ec_commit_vectorResponse, Integer> listener;
+        listener = new ResponseResultListener<xtreemfs_ec_commit_vectorResponse, Integer>() {
+
+            @Override
+            public void success(ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results) {
+                eventCommitVectorComplete(fileId, results, null);
+            }
+
+            @Override
+            public void failed(ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results) {
+                // TODO (jdillmann): Add numberOfFailures as a parameter?
+                String errorMsg = String.format("(EC: %s) VectorReset failed due to too many unreachable remote OSDs.",
+                        localUUID);
+                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                        errorMsg);
+                eventCommitVectorComplete(fileId, null, error);
+            }
+        };
+
+        final ResponseResultManager<xtreemfs_ec_commit_vectorResponse, Integer> manager;
+        manager = new ResponseResultManager<xtreemfs_ec_commit_vectorResponse, Integer>(numRemotes, file.getPolicy().k,
+                true, listener);
+
+        try {
+            for (int i = 0; i < numRemotes; i++) {
+                ServiceUUID uuid = remoteUUIDs.get(i);
+
+                RPCResponse<xtreemfs_ec_commit_vectorResponse> response;
+                response = osdClient.xtreemfs_ec_commit_vector(uuid.getAddress(), RPCAuthentication.authNone,
+                        RPCAuthentication.userService, request);
+                manager.add(response, i);
+            }
+        } catch (IOException ex) {
+            failed(file, ErrorUtils.getInternalServerError(ex));
+        }
+
+        // Add the local with some invalid id
+        manager.addLocal(-1);
+
+        // Register the listeners and wait for results
+        manager.registerListeners();
+
+        // Wait for the local result
+        OSDOperation getVectorOp = master.getOperation(ECCommitVector.PROC_ID);
+        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultVector,
+                new ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
+
+                    @Override
+                    public void success(xtreemfs_ec_commit_vectorResponse result) {
+                        manager.localResultAvailable(result);
+                    }
+
+                    @Override
+                    public void error(ErrorResponse error) {
+                        Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                                "Committing the local vector failed for file (%s)", fileId);
+                        manager.localResultFailed();
+                    }
+                } });
+
+    }
+
+    void eventCommitVectorComplete(String fileId,
+            ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results, ErrorResponse error) {
+        this.enqueueOperation(STAGE_OP.COMMIT_VECTOR_COMPLETE, new Object[] { fileId, results, error }, null, null,
+                null);
+    }
+
+    void processCommitVectorComplete(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        @SuppressWarnings("unchecked")
+        final ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results = 
+                (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[]) method.getArgs()[1];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
+
+        final ECFileState file = fileStates.get(fileId);
+
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "Received eventCommitVectorComplete event for non opened file (%s)", fileId);
+            return;
+        }
+        
+        if (file.state != FileState.VERSION_RESET) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "Ignore eventCommitVectorComplete event for file (%s) in state %s", fileId, file.state);
+            return;
+        }
+        
+
+        if (error != null) {
+            failed(file, error);
+            return;
+        }
+
+
+        int numComplete = 0;
+        for (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer> result : results) {
+            if (result.hasFinished() && !result.hasFailed() && result.getResult().getComplete()) {
+                numComplete++;
+            }
+        }
+
+        if (numComplete < file.getPolicy().k) {
+            doPrimary(file);
+        } else {
+            String errorMsg = String.format(
+                    "(EC: %s) CommitVector failed because less then k nodes could complete the commit.", localUUID);
+            ErrorResponse error2 = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    errorMsg);
+            failed(file, error2);
+        }
+    }
 
     public void read(FileCredentials credentials, XLocations xloc, long start, long end, ReusableBuffer data,
             ReadCallback callback, OSDRequest request) {
         this.enqueueExternalOperation(STAGE_OP.READ, new Object[] { credentials, xloc, start, end, data }, request,
                 data, callback);
     }
-
+    
     public static interface ReadCallback extends FallibleCallback {
         public void success(ObjectInformation result);
     }
@@ -753,19 +861,18 @@ public class ECMasterStage extends Stage {
         final AtomicInteger                numResponses;
         final AtomicInteger                numErrors;
 
-        public ResponseResultManager(int capacity, ResponseResultListener<M, O> listener) {
-            this(capacity, capacity, listener);
-        }
 
         @SuppressWarnings("unchecked")
-        public ResponseResultManager(int capacity, int numAcksRequired, ResponseResultListener<M, O> listener) {
+        public ResponseResultManager(int capacity, int numAcksRequired, boolean hasLocal,
+                ResponseResultListener<M, O> listener) {
             count = new AtomicInteger(0);
             numQuickFail = new AtomicInteger(0);
             numResponses = new AtomicInteger(0);
             numErrors = new AtomicInteger(0);
 
+            int resultCapacity = hasLocal ? capacity + 1 : capacity;
+            results = new ResponseResult[resultCapacity];
             responses = new RPCResponse[capacity];
-            results = new ResponseResult[capacity];
 
             this.numAcksRequired = numAcksRequired;
             this.listener = listener;
@@ -787,8 +894,17 @@ public class ECMasterStage extends Stage {
 
             responses[i] = response;
             results[i] = new ResponseResult<M, O>(object, quickFail);
+        }
 
-            response.registerListener(this);
+        public void addLocal(O object) {
+            assert (results.length == responses.length + 1);
+            results[results.length - 1] = new ResponseResult<M, O>(object, false);
+        }
+
+        public void registerListeners() {
+            for (RPCResponse<M> response : responses) {
+                response.registerListener(this);
+            }
         }
 
         @SuppressWarnings("rawtypes")
@@ -839,7 +955,47 @@ public class ECMasterStage extends Stage {
             }
 
             // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
-            if (curNumResponses + curNumErrors + curNumQuickFail == responses.length) {
+            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
+                if (curNumResponses >= numAcksRequired) {
+                    listener.success(results);
+                } else {
+                    listener.failed(results);
+                }
+            }
+        }
+
+        public void localResultAvailable(M result) {
+            ResponseResult<M, O> responseResult = results[results.length - 1];
+
+            int curNumResponses, curNumErrors, curNumQuickFail;
+
+            responseResult.setResult(result);
+            curNumResponses = numResponses.incrementAndGet();
+            curNumErrors = numErrors.get();
+            curNumQuickFail = numQuickFail.get();
+
+            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
+            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
+                if (curNumResponses >= numAcksRequired) {
+                    listener.success(results);
+                } else {
+                    listener.failed(results);
+                }
+            }
+        }
+
+        public void localResultFailed() {
+            ResponseResult<M, O> responseResult = results[results.length - 1];
+
+            int curNumResponses, curNumErrors, curNumQuickFail;
+
+            responseResult.setFailed();
+            curNumErrors = numErrors.incrementAndGet();
+            curNumResponses = numResponses.get();
+            curNumQuickFail = numQuickFail.get();
+
+            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
+            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
                 if (curNumResponses >= numAcksRequired) {
                     listener.success(results);
                 } else {
@@ -853,6 +1009,7 @@ public class ECMasterStage extends Stage {
             private final boolean quickFail;
             private boolean       failed;
             private M             result;
+            private boolean       local;
 
             ResponseResult(O object, boolean quickFail) {
                 this.failed = false;
