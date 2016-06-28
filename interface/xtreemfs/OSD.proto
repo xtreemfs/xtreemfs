@@ -32,6 +32,7 @@
 
 option java_package="org.xtreemfs.pbrpc.generatedinterfaces";
 package xtreemfs.pbrpc;
+import "pbrpc/RPC.proto";
 import "include/PBRPC.proto";
 import "include/Common.proto";
 import "xtreemfs/GlobalTypes.proto";
@@ -394,6 +395,12 @@ enum OSDHealthResult {
 
 // Erasure Coding related messages --------------------------------------------
 
+// Redundant as this will just be repeated Intervals
+// Requires more space then just repeating Intervals in other messages
+// message IntervalVector {
+//   repeated IntervalMsg interval = 1;
+// }
+
 // Named IntervalMsg to distinguish from Java Interval interface
 message IntervalMsg {
   required uint64 start = 1;
@@ -415,7 +422,6 @@ message xtreemfs_ec_get_interval_vectorsResponse {
   repeated IntervalMsg next_intervals = 2;
 }
 
-
 message xtreemfs_ec_commit_vectorRequest {
   // FIXME (jdillmann): Maybe merge with ec_truncate
   required FileCredentials file_credentials = 1;
@@ -423,17 +429,37 @@ message xtreemfs_ec_commit_vectorRequest {
   repeated IntervalMsg intervals = 3;
 }
 
-
 message xtreemfs_ec_commit_vectorResponse {
   required bool complete = 1;
 }
 
+message xtreemfs_ec_write_dataRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
 
-// Redundant as this will just be repeated Intervals
-// Requires more space then just repeating Intervals in other messages
-// message IntervalVector {
-//   repeated IntervalMsg interval = 1;
-// }
+  required uint64 op_id = 3;
+
+  // Object number starting at 0.
+  required uint64 object_number = 4;
+  // Offset within the object.
+  required uint32 offset = 5;
+
+  //required uint32 stripe_number = 5;
+
+  // Interval of the stripe to be written.
+  // May not cross stripe boundaries, but may have a larger op range.
+  required IntervalMsg stripe_interval = 6;
+  // Intervals this operation is based on.
+  // Have to be committed to execute the operation.
+  repeated IntervalMsg commit_intervals = 7;
+}
+
+message xtreemfs_ec_write_dataResponse {
+  required uint64 op_id = 1;
+  required uint64 object_number = 2;
+  optional RPCHeader.ErrorResponse error = 3;
+}
+
 
 
 
@@ -671,5 +697,12 @@ service OSDService {
   rpc xtreemfs_ec_commit_vector(xtreemfs_ec_commit_vectorRequest)
       returns (xtreemfs_ec_commit_vectorResponse) {
     option(proc_id)=85;
+  };
+
+  // TODO (jdillmann): DOC
+  rpc xtreemfs_ec_write_data(xtreemfs_ec_write_dataRequest)
+      returns (xtreemfs_ec_write_dataResponse) {
+    option(proc_id)=86;
+    option(data_in)=true;
   };
 }

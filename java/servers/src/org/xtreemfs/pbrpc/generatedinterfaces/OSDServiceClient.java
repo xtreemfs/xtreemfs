@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Jun 24 14:15:37 CEST 2016
+//automatically generated from OSD.proto at Tue Jun 28 17:02:59 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -529,6 +529,19 @@ public class OSDServiceClient {
     public RPCResponse<OSD.xtreemfs_ec_commit_vectorResponse> xtreemfs_ec_commit_vector(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, List<OSD.IntervalMsg> intervals) throws IOException {
          final OSD.xtreemfs_ec_commit_vectorRequest msg = OSD.xtreemfs_ec_commit_vectorRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).addAllIntervals(intervals).build();
          return xtreemfs_ec_commit_vector(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse<OSD.xtreemfs_ec_write_dataResponse> xtreemfs_ec_write_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_write_dataRequest input, ReusableBuffer data) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse<OSD.xtreemfs_ec_write_dataResponse> response = new RPCResponse<OSD.xtreemfs_ec_write_dataResponse>(OSD.xtreemfs_ec_write_dataResponse.getDefaultInstance());
+         client.sendRequest(server, authHeader, userCreds, 30001, 86, input, data, response, false);
+         return response;
+    }
+
+    public RPCResponse<OSD.xtreemfs_ec_write_dataResponse> xtreemfs_ec_write_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, long object_number, int offset, OSD.IntervalMsg stripe_interval, List<OSD.IntervalMsg> commit_intervals, ReusableBuffer data) throws IOException {
+         final OSD.xtreemfs_ec_write_dataRequest msg = OSD.xtreemfs_ec_write_dataRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setObjectNumber(object_number).setOffset(offset).setStripeInterval(stripe_interval).addAllCommitIntervals(commit_intervals).build();
+         return xtreemfs_ec_write_data(server, authHeader, userCreds,msg, data);
     }
 
     public boolean clientIsAlive() {

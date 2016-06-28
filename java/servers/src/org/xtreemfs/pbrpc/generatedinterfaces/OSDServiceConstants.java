@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Fri Jun 24 14:15:37 CEST 2016
+//automatically generated from OSD.proto at Tue Jun 28 17:02:59 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -47,6 +47,7 @@ public class OSDServiceConstants {
     public static final int PROC_ID_XTREEMFS_RWR_RESET_STATUS = 83;
     public static final int PROC_ID_XTREEMFS_EC_GET_INTERVAL_VECTORS = 84;
     public static final int PROC_ID_XTREEMFS_EC_COMMIT_VECTOR = 85;
+    public static final int PROC_ID_XTREEMFS_EC_WRITE_DATA = 86;
 
     public static Message getRequestMessage(int procId) {
         switch (procId) {
@@ -89,6 +90,7 @@ public class OSDServiceConstants {
            case 83: return OSD.xtreemfs_rwr_reset_statusRequest.getDefaultInstance();
            case 84: return OSD.xtreemfs_ec_get_interval_vectorsRequest.getDefaultInstance();
            case 85: return OSD.xtreemfs_ec_commit_vectorRequest.getDefaultInstance();
+           case 86: return OSD.xtreemfs_ec_write_dataRequest.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
@@ -135,6 +137,7 @@ public class OSDServiceConstants {
            case 83: return OSD.xtreemfs_rwr_reset_statusResponse.getDefaultInstance();
            case 84: return OSD.xtreemfs_ec_get_interval_vectorsResponse.getDefaultInstance();
            case 85: return OSD.xtreemfs_ec_commit_vectorResponse.getDefaultInstance();
+           case 86: return OSD.xtreemfs_ec_write_dataResponse.getDefaultInstance();
            default: throw new RuntimeException("unknown procedure id");
         }
     }
