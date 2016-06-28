@@ -283,7 +283,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
         }
 
         // Add the current node if it overlaps with the lookup
-        if (begin < node.interval.getEnd() && node.interval.getStart() < end) {
+        if (node.interval.overlaps(begin, end)) { // begin < node.interval.getEnd() && node.interval.getStart() < end
             addInterval(acc, node.interval);
         }
 

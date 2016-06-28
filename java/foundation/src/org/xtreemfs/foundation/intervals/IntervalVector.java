@@ -223,7 +223,7 @@ public abstract class IntervalVector {
                         last.getOpEnd());
                 intervals.addLast(last);
             }
-        } else {
+        } else if ((end - start) > 0) {
             ObjectInterval empty = ObjectInterval.empty(start, end);
             intervals.add(empty);
         }

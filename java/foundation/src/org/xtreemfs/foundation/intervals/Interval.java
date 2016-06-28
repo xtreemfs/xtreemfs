@@ -114,7 +114,11 @@ public abstract class Interval {
     }
 
     public boolean overlaps(Interval o) {
-        return (getEnd() > o.getStart() && getStart() <= o.getEnd());
+        return overlaps(o.getStart(), o.getEnd());
+    }
+
+    public boolean overlaps(long start, long end) {
+        return (getEnd() > start && getStart() < end);
     }
 
     @Override

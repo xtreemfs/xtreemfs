@@ -52,7 +52,7 @@ public class ListIntervalVector extends IntervalVector {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
-            if (i.getEnd() > start && i.getStart() <= end) {
+            if (i.overlaps(start, end)) {
                 addInterval(result, i);
             }
         }
@@ -65,7 +65,7 @@ public class ListIntervalVector extends IntervalVector {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
-            if (i.getEnd() > start && i.getStart() <= end) {
+            if (i.overlaps(start, end)) {
                 addInterval(result, i);
             }
         }
