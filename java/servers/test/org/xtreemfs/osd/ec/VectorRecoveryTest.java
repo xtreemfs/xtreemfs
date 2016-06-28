@@ -232,7 +232,7 @@ public class VectorRecoveryTest {
         niv5.insert(interval);
 
         // Test overlapping overwrite of every other interval
-        niv5.insert(new ObjectInterval(0, 12));
+        niv5.insert(ObjectInterval.empty(0, 12));
         interval = new ObjectInterval(1, 11, 3, 4);
         niv5.insert(interval);
 
@@ -267,27 +267,6 @@ public class VectorRecoveryTest {
 
     @Test
     public void testIncompleteOp() {
-        class OpObjectInterval extends ObjectInterval {
-            final long opStart;
-            final long opEnd;
-
-            public OpObjectInterval(long start, long end, long version, long id, long opStart, long opEnd) {
-                super(start, end, version, id);
-                this.opStart = opStart;
-                this.opEnd = opEnd;
-            }
-
-            @Override
-            public long getOpStart() {
-                return opStart;
-            }
-
-            @Override
-            public long getOpEnd() {
-                return opEnd;
-            }
-        }
-
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
         LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
         List<Interval>[] curVectors;
@@ -296,7 +275,7 @@ public class VectorRecoveryTest {
         Iterator curVectorPerms;
         ObjectInterval interval;
 
-        interval = new OpObjectInterval(0, 6, 1, 1, 0, 12);
+        interval = new ObjectInterval(0, 6, 1, 1, 0, 12);
         assertFalse(interval.isOpComplete());
 
 
@@ -314,7 +293,7 @@ public class VectorRecoveryTest {
         iv1.insert(interval);
         iv2.insert(interval);
 
-        interval = new OpObjectInterval(0, 6, 2, 3, 0, 12);
+        interval = new ObjectInterval(0, 6, 2, 3, 0, 12);
         niv1.insert(interval);
 
 

@@ -152,7 +152,7 @@ public class ECStorage {
         
         long commitStart = !commitIntervals.isEmpty() ? commitIntervals.get(0).getOpStart() : 0;
         long commitEnd = !commitIntervals.isEmpty() ? commitIntervals.get(commitIntervals.size() - 1).getOpEnd() : 0;
-        Interval emptyInterval = new ObjectInterval(commitStart, commitEnd);
+        Interval emptyInterval = ObjectInterval.empty(commitStart, commitEnd);
 
         Iterator<Interval> curIt = curVecIntervals.iterator();
         Iterator<Interval> nextIt = nextVecIntervals.iterator();
@@ -282,7 +282,7 @@ public class ECStorage {
             layout.setECIntervalVector(fileId, intervals, false, true);
 
             // Remove the interval by overwriting it with an empty interval
-            Interval empty = new ObjectInterval(interval.getStart(), interval.getEnd());
+            Interval empty = ObjectInterval.empty(interval);
             intervals.set(0, empty);
             fi.getECNextVector().insert(empty);
             layout.setECIntervalVector(fileId, intervals, true, true);
@@ -325,7 +325,7 @@ public class ECStorage {
 
             // Remove the interval by overwriting it with an empty interval
             ArrayList<Interval> intervals = new ArrayList<Interval>(1);
-            Interval empty = new ObjectInterval(interval.getStart(), interval.getEnd());
+            Interval empty = ObjectInterval.empty(interval);
             intervals.add(0, empty);
 
             fi.getECNextVector().insert(empty);

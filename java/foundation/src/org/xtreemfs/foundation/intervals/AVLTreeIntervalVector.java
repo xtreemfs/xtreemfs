@@ -227,7 +227,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
         if (intervals.size() > 0) {
             Interval first = intervals.getFirst();
             if (first.getStart() > 0) {
-                ObjectInterval gap = new ObjectInterval(0, first.getStart());
+                ObjectInterval gap = ObjectInterval.empty(0, first.getStart());
                 intervals.addFirst(gap);
             }
         }
@@ -264,7 +264,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
             Interval first = versions.getFirst();
             if (first.getStart() > start) {
                 // Pad from the beginning
-                ObjectInterval pad = new ObjectInterval(0, first.getStart());
+                ObjectInterval pad = ObjectInterval.empty(0, first.getStart());
                 versions.addFirst(pad);
             }
         }

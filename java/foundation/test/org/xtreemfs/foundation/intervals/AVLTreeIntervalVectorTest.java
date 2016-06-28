@@ -24,8 +24,8 @@ public class AVLTreeIntervalVectorTest {
         List<Interval> versions;
 
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
-        tree.insert(new ObjectInterval(0, 1024));
-        expected.add(new ObjectInterval(0, 1024));
+        tree.insert(new ObjectInterval(0, 1024, 1));
+        expected.add(new ObjectInterval(0, 1024, 1));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -246,9 +246,9 @@ public class AVLTreeIntervalVectorTest {
         //     5      1       5 
         // 3 _/
         tree = new AVLTreeIntervalVector();
-        tree.insert(new ObjectInterval(1, 2));
-        tree.insert(new ObjectInterval(5, 6));
-        tree.insert(new ObjectInterval(3, 4));
+        tree.insert(new ObjectInterval(1, 2, 1));
+        tree.insert(new ObjectInterval(5, 6, 1));
+        tree.insert(new ObjectInterval(3, 4, 1));
         assertEquals(0, tree.root.balance);
         
         //     5          3
@@ -256,9 +256,9 @@ public class AVLTreeIntervalVectorTest {
         // 1          1       5 
         //  \_3
         tree = new AVLTreeIntervalVector();
-        tree.insert(new ObjectInterval(5, 6));
-        tree.insert(new ObjectInterval(1, 2));
-        tree.insert(new ObjectInterval(3, 4));
+        tree.insert(new ObjectInterval(5, 6, 1));
+        tree.insert(new ObjectInterval(1, 2, 1));
+        tree.insert(new ObjectInterval(3, 4, 1));
         assertEquals(0, tree.root.balance);
         
 
@@ -412,11 +412,11 @@ public class AVLTreeIntervalVectorTest {
         assertEquals(7, tree.getOverwrites());
 
         tree = createFullTestTree();
-        tree.insert(new ObjectInterval(500, 4000));
+        tree.insert(new ObjectInterval(500, 4000, 7));
         assertEquals(5, tree.getOverwrites());
 
         tree = createFullTestTree();
-        tree.insert(new ObjectInterval(500, 4000));
+        tree.insert(new ObjectInterval(500, 4000, 7));
         assertEquals(5, tree.getOverwrites());
 
         // TODO(jdillmann): Test on unbalanced trees

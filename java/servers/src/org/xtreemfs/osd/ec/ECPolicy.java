@@ -120,7 +120,7 @@ public class ECPolicy {
 
                     // Just ignore incomplete intervals by replacing them with empty ones
                     if (!curInterval.isOpComplete()) {
-                        curInterval = new ObjectInterval(curInterval.getStart(), curInterval.getEnd());
+                        curInterval = ObjectInterval.empty(curInterval);
                     }
                 }
 
@@ -165,7 +165,7 @@ public class ECPolicy {
                     MutableInterval newInterval;
                     if (curIntervalEx || (exResInterval != null && curInterval.compareVersionId(exResInterval) <= 0)) {
                         // If the current interval is already in the existing result, add only an empty interval
-                        Interval empty = new ObjectInterval(lastEnd, eventEnd);
+                        Interval empty = ObjectInterval.empty(lastEnd, eventEnd);
                         newInterval = new MutableInterval(empty, -1);
                     } else {
                         newInterval = new MutableInterval(lastEnd, eventEnd, curInterval.getVersion(),

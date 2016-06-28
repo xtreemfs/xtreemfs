@@ -264,10 +264,10 @@ public class VectorProtoTest {
         commitIntervals.clear();
         interval = new ObjectInterval(0, 12, 2, 2);
         curIntervals.add(interval);
-        interval = new OpObjectInterval(0, 12, 3, 3, 0, 12);
+        interval = new ObjectInterval(0, 12, 3, 3, 0, 12);
         commitIntervals.add(interval);
         // Add only half of the new interval to next.
-        interval = new OpObjectInterval(0, 6, 3, 3, 0, 12);
+        interval = new ObjectInterval(0, 6, 3, 3, 0, 12);
         nextIntervals.add(interval);
 
         // write to next
@@ -418,27 +418,4 @@ public class VectorProtoTest {
         }
         assertEquals(nextExpected, nextExpected);
     }
-
-
-    class OpObjectInterval extends ObjectInterval {
-        final long opStart;
-        final long opEnd;
-
-        public OpObjectInterval(long start, long end, long version, long id, long opStart, long opEnd) {
-            super(start, end, version, id);
-            this.opStart = opStart;
-            this.opEnd = opEnd;
-        }
-
-        @Override
-        public long getOpStart() {
-            return opStart;
-        }
-
-        @Override
-        public long getOpEnd() {
-            return opEnd;
-        }
-    }
-    
 }

@@ -102,7 +102,7 @@ public class ListIntervalVector extends IntervalVector {
 
         if (last.getEnd() < interval.getStart()) {
             // add gap interval
-            ObjectInterval gap = new ObjectInterval(last.getEnd(), interval.getStart());
+            ObjectInterval gap = ObjectInterval.empty(last.getEnd(), interval.getStart());
             intervals.add(gap);
         }
 

@@ -181,13 +181,15 @@ public abstract class IntervalVector {
 
         // Fill the gaps
         if (last != null && interval.getStart() > last.getEnd()) {
-            ObjectInterval gap = new ObjectInterval(last.getEnd(), interval.getStart());
+            ObjectInterval gap = ObjectInterval.empty(last.getEnd(), interval.getStart());
             acc.add(gap);
         }
 
         if (last != null && interval.getStart() <= last.getEnd() && interval.getVersion() == last.getVersion() && interval.getId() == last.getId()) {
             // There is no gap between the last and current interval and their version and id match: Merge them!
-            ObjectInterval merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(), last.getId());
+            assert (last.getOpStart() == interval.getOpStart() && last.getOpEnd() == interval.getOpEnd());
+            ObjectInterval merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(),
+                    last.getId(), last.getOpStart(), last.getOpEnd());
             acc.removeLast();
             acc.add(merged);
         } else {
@@ -201,26 +203,28 @@ public abstract class IntervalVector {
             Interval first = intervals.getFirst();
             if (first.getStart() > start) {
                 // Pad from the beginning
-                ObjectInterval pad = new ObjectInterval(start, first.getStart());
+                ObjectInterval pad = ObjectInterval.empty(start, first.getStart());
                 intervals.addFirst(pad);
             } else if (first.getStart() < start) {
                 intervals.removeFirst();
-                first = new ObjectInterval(start, first.getEnd(), first.getVersion(), first.getId());
+                first = new ObjectInterval(start, first.getEnd(), first.getVersion(), first.getId(), first.getOpStart(),
+                        first.getOpEnd());
                 intervals.addFirst(first);
             }
 
             Interval last = intervals.getLast();
             if (last.getEnd() < end) {
                 // Pad from the end
-                ObjectInterval pad = new ObjectInterval(last.getEnd(), end);
+                ObjectInterval pad = ObjectInterval.empty(last.getEnd(), end);
                 intervals.addLast(pad);
             } else if (last.getEnd() > end) {
                 intervals.removeLast();
-                last = new ObjectInterval(last.getStart(), end, last.getVersion(), last.getId());
+                last = new ObjectInterval(last.getStart(), end, last.getVersion(), last.getId(), last.getOpStart(),
+                        last.getOpEnd());
                 intervals.addLast(last);
             }
         } else {
-            ObjectInterval empty = new ObjectInterval(start, end);
+            ObjectInterval empty = ObjectInterval.empty(start, end);
             intervals.add(empty);
         }
     }
