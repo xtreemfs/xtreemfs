@@ -22,7 +22,6 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.AttachmentInterval;
 import org.xtreemfs.foundation.intervals.Interval;
-import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.osd.ec.ECPolicy.MutableInterval;
 import org.xtreemfs.test.TestHelper;
@@ -34,7 +33,7 @@ public class VectorRecoveryTest {
     @Test
     public void testSimpleRecovery() {
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
-        IntervalVector[] curVectors;
+        List<Interval>[] curVectors;
         List<? extends Interval> result;
         Iterator curVectorPerms;
 
@@ -59,10 +58,10 @@ public class VectorRecoveryTest {
         expected.add(new AttachmentInterval(0, 2, 2, 2, 1));
         expected.add(new AttachmentInterval(2, 12, 1, 1, 2));
 
-        curVectors = new IntervalVector[] { iv1, iv2 };
+        curVectors = new List[] { iv1.serialize(), iv2.serialize() };
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
@@ -75,10 +74,10 @@ public class VectorRecoveryTest {
         expected.clear();
         expected.add(new AttachmentInterval(0, 10, 1, 1, 2));
         expected.add(new AttachmentInterval(10, 12, 2, 3, 1));
-        curVectors = new IntervalVector[] { iv1, iv3 };
+        curVectors = new List[] { iv1.serialize(), iv3.serialize() };
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
@@ -88,11 +87,11 @@ public class VectorRecoveryTest {
         expected.add(new AttachmentInterval(0, 2, 2, 2, 1));
         expected.add(new AttachmentInterval(2, 10, 1, 1, 3));
         expected.add(new AttachmentInterval(10, 12, 2, 3, 1));
-        curVectors = new IntervalVector[] { iv1, iv2, iv3 };
+        curVectors = new List[] { iv1.serialize(), iv2.serialize(), iv3.serialize() };
 
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
@@ -105,11 +104,11 @@ public class VectorRecoveryTest {
         expected.add(new AttachmentInterval(0, 1, 2, 2, 2));
         expected.add(new AttachmentInterval(1, 11, 3, 4, 1));
         expected.add(new AttachmentInterval(11, 12, 2, 3, 2));
-        curVectors = new IntervalVector[] { iv1, iv2, iv3, iv4 };
+        curVectors = new List[] { iv1.serialize(), iv2.serialize(), iv3.serialize(), iv4.serialize() };
 
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
@@ -120,11 +119,11 @@ public class VectorRecoveryTest {
 
         expected.clear();
         expected.add(new AttachmentInterval(0, 12, 4, 5, 1));
-        curVectors = new IntervalVector[] { iv1, iv2, iv3, iv4 };
+        curVectors = new List[] { iv1.serialize(), iv2.serialize(), iv3.serialize(), iv4.serialize() };
 
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
@@ -142,7 +141,7 @@ public class VectorRecoveryTest {
     public void testSimpleRecoveryWithExisting() {
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
         LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
-        IntervalVector[] curVectors;
+        List<Interval>[] curVectors;
         List<MutableInterval> exResult;
         List<? extends Interval> result;
         Iterator curVectorPerms;
@@ -182,7 +181,8 @@ public class VectorRecoveryTest {
         exExpected.add(new AttachmentInterval(10, 12, 2, 3, 2));
 
         List<MutableInterval> exResultBase = ECPolicy.recoverVector(
-                new IntervalVector[] { iv1, iv2, iv3, iv4, iv5 }, null);
+                new List[] { iv1.serialize(), iv2.serialize(), iv3.serialize(), iv4.serialize(), iv5.serialize() },
+                null);
         assertEqualsWithAttachment(exExpected, exResultBase);
         // System.out.println(exResultBase);
 
@@ -214,10 +214,10 @@ public class VectorRecoveryTest {
         exExpected.add(new AttachmentInterval(6, 10, 1, 1, 5));
         exExpected.add(new AttachmentInterval(10, 12, 2, 3, 3));
 
-        curVectors = new IntervalVector[] { niv1, niv5 };
+        curVectors = new List[] { niv1.serialize(), niv5.serialize() };
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             exResult = cloneResultList(exResultBase);
             result = ECPolicy.recoverVector(curVectorPerm, exResult);
             // System.out.println(Arrays.deepToString(curVectorPerm));
@@ -250,10 +250,10 @@ public class VectorRecoveryTest {
 
         // System.out.println(niv5.serialize());
 
-        curVectors = new IntervalVector[] { niv1, niv5 };
+        curVectors = new List[] { niv1.serialize(), niv5.serialize() };
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             exResult = cloneResultList(exResultBase);
             result = ECPolicy.recoverVector(curVectorPerm, exResult);
             // System.out.println(Arrays.deepToString(curVectorPerm));
@@ -290,7 +290,7 @@ public class VectorRecoveryTest {
 
         LinkedList<AttachmentInterval> expected = new LinkedList<AttachmentInterval>();
         LinkedList<AttachmentInterval> exExpected = new LinkedList<AttachmentInterval>();
-        IntervalVector[] curVectors;
+        List<Interval>[] curVectors;
         List<MutableInterval> exResult;
         List<? extends Interval> result;
         Iterator curVectorPerms;
@@ -322,17 +322,18 @@ public class VectorRecoveryTest {
         exExpected.add(new AttachmentInterval(0, 6, 1, 1, 2));
         exExpected.add(new AttachmentInterval(6, 12, 1, 2, 2));
 
-        List<MutableInterval> exResultBase = ECPolicy
-                .recoverVector(new IntervalVector[] { iv1, iv2 }, null);
+        List<MutableInterval> exResultBase = ECPolicy.recoverVector(
+                new List[] { iv1.serialize(), iv2.serialize() },
+                null);
         assertEqualsWithAttachment(exExpected, exResultBase);
 
         expected.clear();
         expected.add(new AttachmentInterval(0, 6, -1, -1, -1));
 
-        curVectors = new IntervalVector[] { niv1, niv2 };
+        curVectors = new List[] { niv1.serialize(), niv2.serialize() };
         curVectorPerms = new Permute(curVectors);
         while (curVectorPerms.hasNext()) {
-            IntervalVector[] curVectorPerm = (IntervalVector[]) curVectorPerms.next();
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
             exResult = cloneResultList(exResultBase);
             result = ECPolicy.recoverVector(curVectorPerm, exResult);
             assertEqualsWithAttachment(expected, result);

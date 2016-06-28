@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.foundation.intervals;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -246,16 +247,16 @@ public class AVLTreeIntervalVector extends IntervalVector {
     }
 
     @Override
-    public IntervalVector getSlice(long start, long end) {
+    public List<Interval> getSlice(long start, long end) {
         LinkedList<Interval> versions = new LinkedList<Interval>();
         getOverlapping(start, end, this.root, versions);
 
         sliceIntervalList(versions, start, end);
-        return new ListIntervalVector(versions);
+        return Collections.unmodifiableList(versions);
     }
 
     @Override
-    public IntervalVector getOverlapping(long start, long end) {
+    public List<Interval> getOverlapping(long start, long end) {
         LinkedList<Interval> versions = new LinkedList<Interval>();
         getOverlapping(start, end, this.root, versions);
 
@@ -268,7 +269,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
             }
         }
 
-        return new ListIntervalVector(versions);
+        return Collections.unmodifiableList(versions);
     }
 
     void getOverlapping(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {
@@ -329,18 +330,6 @@ public class AVLTreeIntervalVector extends IntervalVector {
     @Override
     public long getMaxVersion() {
         return maxVersion;
-    }
-
-    @Override
-    public boolean isMaxVersionGreaterThen(IntervalVector v) {
-        // FIXME (jdillmann): Implement here
-        return (new ListIntervalVector(this)).isMaxVersionGreaterThen(v);
-    }
-
-    @Override
-    public boolean compareLEQThen(IntervalVector o) {
-        // FIXME (jdillmann): Implement here
-        return (new ListIntervalVector(this)).compareLEQThen(o);
     }
 
     @Override

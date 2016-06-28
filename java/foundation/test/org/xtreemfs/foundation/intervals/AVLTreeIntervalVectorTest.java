@@ -21,41 +21,41 @@ public class AVLTreeIntervalVectorTest {
     @Test
     public final void testBasicNonOverlappingIntervals() {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
-        IntervalVector versions;
+        List<Interval> versions;
 
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 1024));
         expected.add(new ObjectInterval(0, 1024));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(1024, 2048, 1));
         expected.add(new ObjectInterval(1024, 2048, 1));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(2048, 4096, 2));
         expected.add(new ObjectInterval(2048, 4096, 2));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(0, 1024, 3));
         expected.set(0, new ObjectInterval(0, 1024, 3));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
     public final void testInsertOfOverlappingIntervals() {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
-        IntervalVector versions;
+        List<Interval> versions;
 
         tree.insert(new ObjectInterval(1024, 4096, 1));
         expected.add(new ObjectInterval(0, 1024, -1));
         expected.add(new ObjectInterval(1024, 4096, 1));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(0, 512, 1));
         expected.clear();
@@ -63,14 +63,14 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(512, 1024, -1));
         expected.add(new ObjectInterval(1024, 4096, 1));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
     public final void testInsertOfIntervalInsideOfExisting() {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
-        IntervalVector versions;
+        List<Interval> versions;
 
         tree.insert(new ObjectInterval(0, 2048, 0));
         tree.insert(new ObjectInterval(512, 1536, 1));
@@ -78,7 +78,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(1536, 2048, 0));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -86,7 +86,7 @@ public class AVLTreeIntervalVectorTest {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 2048, 0));
-        IntervalVector versions;
+        List<Interval> versions;
 
         tree.insert(new ObjectInterval(512, 1536, 1));
         tree.insert(new ObjectInterval(500, 1800, 2));
@@ -94,7 +94,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(500, 1800, 2));
         expected.add(new ObjectInterval(1800, 2048, 0));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         
         expected = new LinkedList<ObjectInterval>();
@@ -110,7 +110,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(500, 1800, 2));
         expected.add(new ObjectInterval(1800, 2048, 0));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         
         tree = new AVLTreeIntervalVector();
@@ -120,7 +120,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 2048, 1));
         tree.insert(new ObjectInterval(0, 2048, 1));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Test with full tree of height 2, where the first and the last leaf are shrinked
         tree = createFullTestTree();
@@ -130,7 +130,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(4000, 4096, 6));
         tree.insert(new ObjectInterval(500, 4000, 7));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Test with tree of height 1, where the whole range is overwritten
         tree = new AVLTreeIntervalVector();
@@ -140,7 +140,7 @@ public class AVLTreeIntervalVectorTest {
         expected.clear();
         expected.add(new ObjectInterval(0, 2048, 3));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class AVLTreeIntervalVectorTest {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 2048, 0));
-        IntervalVector versions;
+        List<Interval> versions;
 
         tree.insert(new ObjectInterval(512, 1536, 1));
 
@@ -157,25 +157,25 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(1536, 2048, 0));
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve only the root
         expected.clear();
         expected.add(new ObjectInterval(512, 1536, 1));
         versions = tree.getOverlapping(512, 1536);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve from right tree, but not the root
         expected.clear();
         expected.add(new ObjectInterval(1536, 2048, 0));
         versions = tree.getOverlapping(1536, 2048);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve from left tree, but not the root
         expected.clear();
         expected.add(new ObjectInterval(0, 512, 0));
         versions = tree.getOverlapping(0, 512);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -183,26 +183,26 @@ public class AVLTreeIntervalVectorTest {
         LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 2048, 0));
-        IntervalVector versions;
+        List<Interval> versions;
 
         tree.insert(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(0, 512, 0));
         expected.add(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(1536, 2000, 0));
         versions = tree.getSlice(0, 2000);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve from right tree, but not the root
         expected.clear();
         expected.add(new ObjectInterval(1550, 2048, 0));
         versions = tree.getSlice(1550, 2048);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve from left tree, but not the root
         expected.clear();
         expected.add(new ObjectInterval(0, 500, 0));
         versions = tree.getSlice(0, 500);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // Retrieve surrounding
         tree = new AVLTreeIntervalVector();
@@ -212,7 +212,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(1024, 2048, 1));
         expected.add(new ObjectInterval(2048, 3072, -1));
         versions = tree.getSlice(0, 3072);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
     }
 
     @Test
@@ -295,7 +295,7 @@ public class AVLTreeIntervalVectorTest {
     @Test
     public void testTruncate() {
         List<Interval> expected = new LinkedList<Interval>();
-        IntervalVector versions;
+        List<Interval> versions;
 
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 10, 0));
@@ -305,12 +305,12 @@ public class AVLTreeIntervalVectorTest {
         tree.truncate(20);
         assertEquals(10, tree.end);
         versions = tree.getOverlapping(0, 20);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         tree.truncate(10);
         assertEquals(10, tree.end);
         versions = tree.getOverlapping(0, 20);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // truncate to less then 0 should throw an exception
         try {
@@ -326,7 +326,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 5, 0));
         assertEquals(5, tree.end);
         versions = tree.getOverlapping(0, 20);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // simple truncate on a single interval to the begin
         tree.truncate(1);
@@ -334,59 +334,59 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 1, 0));
         assertEquals(1, tree.end);
         versions = tree.getOverlapping(0, 20);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
 
         // test dropping the right tree
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 2048).serialize();
+        expected = tree.getSlice(0, 2048);
         tree.truncate(2048);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on rightmost node
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 4000).serialize();
+        expected = tree.getSlice(0, 4000);
         tree.truncate(4000);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(2, tree.root.height);
         assertEquals(0, tree.root.balance);
 
         // test truncating on leftmost right node (drops parent and its right tree)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 2500).serialize();
+        expected = tree.getSlice(0, 2500);
         tree.truncate(2500);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(2, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on the leftmost node (drops root and every other node)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 500).serialize();
+        expected = tree.getSlice(0, 500);
         tree.truncate(500);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(0, tree.root.height);
         assertEquals(0, tree.root.balance);
 
         // test truncating on the left root node (drops root and nodes right tree)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 1000).serialize();
+        expected = tree.getSlice(0, 1000);
         tree.truncate(1000);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(1, tree.root.height);
         assertEquals(1, Math.abs(tree.root.balance));
 
         // test truncating on the rightmost left node
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 1500).serialize();
+        expected = tree.getSlice(0, 1500);
         tree.truncate(1500);
         versions = tree.getOverlapping(0, 8192);
-        assertEquals(expected, versions.serialize());
+        assertEquals(expected, versions);
         assertEquals(1, tree.root.height);
         assertEquals(0, tree.root.balance);
     }

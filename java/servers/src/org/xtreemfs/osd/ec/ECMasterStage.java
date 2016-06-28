@@ -632,9 +632,8 @@ public class ECMasterStage extends Stage {
 
         assert (file.state == FileState.VERSION_RESET);
         
-        IntervalVector[] curVectors = new IntervalVector[results.length + 1];
-        IntervalVector[] nextVectors = new IntervalVector[results.length + 1];
-        
+        List<Interval>[] curVectors = new List[results.length + 1];
+        List<Interval>[] nextVectors = new List[results.length + 1];
 
         int responseCount = 0;
 
@@ -645,19 +644,19 @@ public class ECMasterStage extends Stage {
             if (response != null) {
                 responseCount++;
 
-                curVectors[r] = new AVLTreeIntervalVector();
+                curVectors[r] = new ArrayList<Interval>(response.getCurIntervalsCount());
                 for (int i = 0; i < response.getCurIntervalsCount(); i++) {
-                    curVectors[r].insert(new ProtoInterval(response.getCurIntervals(i)));
+                    curVectors[r].add(new ProtoInterval(response.getCurIntervals(i)));
                 }
 
-                nextVectors[r] = new AVLTreeIntervalVector();
+                nextVectors[r] = new ArrayList<Interval>(response.getNextIntervalsCount());
                 for (int i = 0; i < response.getNextIntervalsCount(); i++) {
-                    nextVectors[r].insert(new ProtoInterval(response.getNextIntervals(i)));
+                    nextVectors[r].add(new ProtoInterval(response.getNextIntervals(i)));
                 }
             } else {
                 // FIXME (jdillmann): Mark the OSD as failed and allow for fastfail until a timeout is reached
                 curVectors[r] = null;
-                nextVectors[r] = null;
+                curVectors[r] = null;
             }
         }
 
@@ -693,9 +692,11 @@ public class ECMasterStage extends Stage {
         List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
         int numRemotes = remoteUUIDs.size();
 
+        List<Interval> resultIntervals = resultVector.serialize();
+
         xtreemfs_ec_commit_vectorRequest.Builder reqBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder();
         reqBuilder.setFileId(fileId).setFileCredentials(file.getCredentials());
-        for (Interval interval : resultVector.serialize()) {
+        for (Interval interval : resultIntervals) {
             reqBuilder.addIntervals(ProtoInterval.toProto(interval));
         }
         xtreemfs_ec_commit_vectorRequest request = reqBuilder.build();
@@ -744,7 +745,7 @@ public class ECMasterStage extends Stage {
 
         // Wait for the local result
         OSDOperation getVectorOp = master.getOperation(ECCommitVector.PROC_ID);
-        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultVector,
+        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultIntervals,
                 new ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
 
                     @Override

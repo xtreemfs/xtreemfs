@@ -31,8 +31,8 @@ public class ECPolicy {
         this.qr = qr;
     }
 
-    public boolean recoverVector(int responseCount, IntervalVector[] curVectors, IntervalVector[] nextVectors, IntervalVector result)
-            throws Exception {
+    public boolean recoverVector(int responseCount, List<Interval>[] curVectors, List<Interval>[] nextVectors,
+            IntervalVector result) throws Exception {
         List<MutableInterval> curResult = recoverVector(curVectors, null);
         List<MutableInterval> nextResult = recoverVector(nextVectors, curResult);
 
@@ -77,8 +77,7 @@ public class ECPolicy {
         return needsCommit;
     }
 
-    static List<MutableInterval> recoverVector(IntervalVector[] vectors,
-            List<MutableInterval> existingResult) {
+    static List<MutableInterval> recoverVector(List<Interval>[] vectors, List<MutableInterval> existingResult) {
         LinkedList<MutableInterval> result = new LinkedList<MutableInterval>();
 
         // Compare every vector with the current result and adapt it if necessary.
@@ -96,7 +95,7 @@ public class ECPolicy {
 
 
             // Iterator over the intervals from the currently processed vector.
-            List<Interval> curIntervals = vectors[i].serialize();
+            List<Interval> curIntervals = vectors[i];
             Iterator<Interval> curIt = curIntervals.iterator();
             // The active interval in the currently processed vector.
             // If null, the next interval from the current vector will be processed.

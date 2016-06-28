@@ -7,6 +7,7 @@
  */
 package org.xtreemfs.foundation.intervals;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,9 +23,9 @@ public abstract class IntervalVector {
      *            exclusive
      * @return IntervalVector of overlapping Intervals
      */
-    public abstract IntervalVector getOverlapping(long start, long end);
+    public abstract List<Interval> getOverlapping(long start, long end);
 
-    public abstract IntervalVector getSlice(long start, long end);
+    public abstract List<Interval> getSlice(long start, long end);
 
     /**
      * Insert the ObjectInterval i into the current IntervalVector.<br>
@@ -50,16 +51,95 @@ public abstract class IntervalVector {
      * and if the max version of all intervals of this vector is at least greater or equal then that
      * of the passed vector v.
      * 
-     * @param v
+     * @param o
      *            IntervalVector to compare with
      * @return result of test
      */
-    public abstract boolean isMaxVersionGreaterThen(IntervalVector v);
+    public boolean isMaxVersionGreaterThen(IntervalVector o) {
+        long otherMax = o.getMaxVersion();
+
+        boolean isGreater = false;
+        for (Interval i : o.serialize()) {
+            if (i.getVersion() > otherMax) {
+                // Tests if the maxversion of any range of a version vector
+                // is greater then that of the passed version vector
+                isGreater = true;
+            } else if (i.getVersion() < otherMax) {
+                // The maxversion of all ranges has to be at least greater or equal
+                return false;
+            }
+        }
+
+        return isGreater;
+    }
 
     /**
      * Nur definiert auf gleichen längen!
      */
-    public abstract boolean compareLEQThen(IntervalVector o);
+    public boolean compareLEQThen(IntervalVector o) {
+        Iterator<Interval> thisIt = serialize().iterator();
+        Iterator<Interval> otherIt = o.serialize().iterator();
+        Interval thisIv = null;
+        Interval otherIv = null;
+
+        if (thisIt.hasNext()) {
+            thisIv = thisIt.next();
+        }
+
+        if (otherIt.hasNext()) {
+            otherIv = otherIt.next();
+        }
+
+        // If both vectors are empty, they are by definition the same.
+        if (otherIv == null && thisIv == null) {
+            return true;
+        }
+
+        // If the vectors do not have the same start, the comparison is undefined.
+        if (!(thisIv != null && otherIv != null) || (thisIv.getStart() != otherIv.getStart())) {
+            // FIXME (jdillmann): Serialize does now always start from 0, so this case can not happen
+            throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
+        }
+
+        while (thisIv != null && otherIv != null) {
+
+            if (thisIv.getVersion() > otherIv.getVersion()) {
+                // This vector element version is greater than the other.
+                return false;
+
+            } else if (thisIv.getVersion() == otherIv.getVersion() && !(thisIv.getStart() == otherIv.getStart()
+                    && thisIv.getEnd() == otherIv.getEnd() && thisIv.getId() == otherIv.getId())) {
+                // The vector element versions are the same, but the elements are not equal.
+                return false;
+            }
+
+            if (thisIv.getEnd() > otherIv.getEnd()) {
+                // Advance other vector
+                otherIv = null;
+            } else if (thisIv.getEnd() < otherIv.getEnd()) {
+                // Advance this vector
+                thisIv = null;
+            } else {
+                // Advance both vectors
+                thisIv = null;
+                otherIv = null;
+            }
+
+            if (thisIv == null && thisIt.hasNext()) {
+                thisIv = thisIt.next();
+            }
+
+            if (otherIv == null && otherIt.hasNext()) {
+                otherIv = otherIt.next();
+            }
+        }
+
+        if (!(thisIv == null && otherIv == null)) {
+            throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
+        }
+
+        return true;
+    }
 
     /**
      * Sorted, zusammenhängend, von 0 startend

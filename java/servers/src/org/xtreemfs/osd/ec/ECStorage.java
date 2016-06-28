@@ -85,7 +85,7 @@ public class ECStorage {
         final ECCommitVectorCallback cback = (ECCommitVectorCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-        final IntervalVector commitVector = (IntervalVector) rq.getArgs()[2];
+        final List<Interval> commitIntervals = (List<Interval>) rq.getArgs()[2];
 
         try {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
@@ -93,7 +93,7 @@ public class ECStorage {
             List<Interval> toCommit = new LinkedList<Interval>();
             List<Interval> toAbort = new LinkedList<Interval>();
 
-            boolean failed = calculateIntervalsToCommitAbort(commitVector.serialize(), fi.getECCurVector().serialize(),
+            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, fi.getECCurVector().serialize(),
                     fi.getECNextVector().serialize(), toCommit, toAbort);
 
             if (failed) {

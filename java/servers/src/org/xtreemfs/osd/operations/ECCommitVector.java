@@ -6,13 +6,15 @@
  */
 package org.xtreemfs.osd.operations;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.intervals.IntervalVector;
-import org.xtreemfs.foundation.intervals.ListIntervalVector;
+import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -55,12 +57,12 @@ public class ECCommitVector extends OSDOperation {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
         // Create the IntervalVector from the message
-        final ListIntervalVector commitVector = new ListIntervalVector(args.getIntervalsCount());
+        final List<Interval> commitIntervals = new ArrayList<Interval>(args.getIntervalsCount());
         for (IntervalMsg msg : args.getIntervalsList()) {
-            commitVector.append(new ProtoInterval(msg));
+            commitIntervals.add(new ProtoInterval(msg));
         }
 
-        master.getStorageStage().ecCommitVector(fileId, sp, commitVector, rq, new ECCommitVectorCallback() {
+        master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, rq, new ECCommitVectorCallback() {
             @Override
             public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
@@ -80,11 +82,11 @@ public class ECCommitVector extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         final String fileId = (String) args[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
-        final IntervalVector commitVector = (IntervalVector) args[2];
+        final List<Interval> commitIntervals = (List<Interval>) args[2];
         final ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback 
             = (ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>) args[3];
 
-        master.getStorageStage().ecCommitVector(fileId, sp, commitVector, null, new ECCommitVectorCallback() {
+        master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
             public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {

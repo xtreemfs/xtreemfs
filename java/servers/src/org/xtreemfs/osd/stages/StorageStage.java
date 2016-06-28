@@ -10,6 +10,7 @@ package org.xtreemfs.osd.stages;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,6 +18,7 @@ import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequest;
@@ -228,10 +230,10 @@ public class StorageStage extends Stage {
         public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error);
     }
 
-    public void ecCommitVector(String fileId, StripingPolicyImpl sp, IntervalVector commitVector, OSDRequest request,
+    public void ecCommitVector(String fileId, StripingPolicyImpl sp, List<Interval> commitIntervals, OSDRequest request,
             ECCommitVectorCallback callback) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_COMMIT_VECTOR, new Object[] { fileId, sp, commitVector },
-                request, callback);
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_COMMIT_VECTOR,
+                new Object[] { fileId, sp, commitIntervals }, request, callback);
     }
 
     public static interface ECCommitVectorCallback {

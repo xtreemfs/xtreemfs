@@ -9,7 +9,6 @@ package org.xtreemfs.foundation.intervals;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -49,7 +48,7 @@ public class ListIntervalVector extends IntervalVector {
     }
 
     @Override
-    public IntervalVector getOverlapping(long start, long end) {
+    public List<Interval> getOverlapping(long start, long end) {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
@@ -58,11 +57,11 @@ public class ListIntervalVector extends IntervalVector {
             }
         }
 
-        return new ListIntervalVector(result);
+        return Collections.unmodifiableList(result);
     }
 
     @Override
-    public IntervalVector getSlice(long start, long end) {
+    public List<Interval> getSlice(long start, long end) {
         LinkedList<Interval> result = new LinkedList<Interval>();
 
         for (Interval i : intervals) {
@@ -72,7 +71,7 @@ public class ListIntervalVector extends IntervalVector {
         }
 
         sliceIntervalList(result, start, end);
-        return new ListIntervalVector(result);
+        return Collections.unmodifiableList(result);
     };
 
     @Override
@@ -119,93 +118,6 @@ public class ListIntervalVector extends IntervalVector {
             }
         }
         return max;
-    }
-
-    @Override
-    public boolean isMaxVersionGreaterThen(IntervalVector o) {
-        long otherMax = o.getMaxVersion();
-
-        boolean isGreater = false;
-        for (Interval i : intervals) {
-            if (i.getVersion() > otherMax) {
-                // Tests if the maxversion of any range of a version vector
-                // is greater then that of the passed version vector
-                isGreater = true;
-            } else if (i.getVersion() < otherMax) {
-                // The maxversion of all ranges has to be at least greater or equal
-                return false;
-            }
-        }
-
-        return isGreater;
-    }
-
-    @Override
-    public boolean compareLEQThen(IntervalVector otherVector) {
-        List<Interval> other = otherVector.serialize();
-
-        Iterator<Interval> thisIt = intervals.iterator();
-        Iterator<Interval> otherIt = other.iterator();
-        Interval thisIv = null;
-        Interval otherIv = null;
-        
-        if (thisIt.hasNext()) {
-            thisIv = thisIt.next();
-        }
-
-        if (otherIt.hasNext()) {
-            otherIv = otherIt.next();
-        }
-
-        // If both vectors are empty, they are by definition the same.
-        if (otherIv == null && thisIv == null) {
-            return true;
-        }
-
-        // If the vectors do not have the same start, the comparison is undefined.
-        if (!(thisIv != null && otherIv != null) || (thisIv.getStart() != otherIv.getStart())) {
-            // FIXME (jdillmann): Serialize does now always start from 0, so this case can not happen
-            throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
-        }
-
-        while (thisIv != null && otherIv != null) {
-
-            if (thisIv.getVersion() > otherIv.getVersion()) {
-                // This vector element version is greater than the other.
-                return false;
-
-            } else if (thisIv.getVersion() == otherIv.getVersion()
-                    && !(thisIv.getStart() == otherIv.getStart() && thisIv.getEnd() == otherIv.getEnd() && thisIv.getId() == otherIv.getId())) {
-                // The vector element versions are the same, but the elements are not equal.
-                return false;
-            }
-
-            if (thisIv.getEnd() > otherIv.getEnd()) {
-                // Advance other vector
-                otherIv = null;
-            } else if (thisIv.getEnd() < otherIv.getEnd()) {
-                // Advance this vector
-                thisIv = null;
-            } else {
-                // Advance both vectors
-                thisIv = null;
-                otherIv = null;
-            }
-
-            if (thisIv == null && thisIt.hasNext()) {
-                thisIv = thisIt.next();
-            }
-
-            if (otherIv == null && otherIt.hasNext()) {
-                otherIv = otherIt.next();
-            }
-        }
-
-        if (!(thisIv == null && otherIv == null)) {
-            throw new IllegalArgumentException("IntervalVectors to compare have to be aligend.");
-        }
-
-        return true;
     }
 
     @Override
