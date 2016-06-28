@@ -1,28 +1,27 @@
 package org.xtreemfs.pbrpcgen;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC;
+
 import com.google.protobuf.DescriptorProtos.DescriptorProto;
 import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
-import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.ExtensionRegistry;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
 
 public class RPCCPPSourceGenerator {
 
@@ -37,6 +36,8 @@ public class RPCCPPSourceGenerator {
         ttt.put(Type.TYPE_DOUBLE,"double");
         ttt.put(Type.TYPE_FIXED32,"uint32_t");
         ttt.put(Type.TYPE_FIXED64,"uint64_t");
+        ttt.put(Type.TYPE_UINT32,"uint32_t");
+        ttt.put(Type.TYPE_UINT64,"uint64_t");
         ttt.put(Type.TYPE_FLOAT,"float");
         ttt.put(Type.TYPE_STRING,"std::string");
 
@@ -46,6 +47,8 @@ public class RPCCPPSourceGenerator {
         tttr.put(Type.TYPE_DOUBLE,"List<Double>");
         tttr.put(Type.TYPE_FIXED32,"List<Integer>");
         tttr.put(Type.TYPE_FIXED64,"List<Long>");
+        tttr.put(Type.TYPE_UINT32,"List<Integer>");
+        tttr.put(Type.TYPE_UINT64,"List<Long>");
         tttr.put(Type.TYPE_FLOAT,"List<Float>");
         tttr.put(Type.TYPE_STRING,"List<String>");
     }

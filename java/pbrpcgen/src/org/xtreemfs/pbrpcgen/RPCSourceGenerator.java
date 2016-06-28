@@ -34,6 +34,8 @@ public class RPCSourceGenerator {
         ttt.put(Type.TYPE_DOUBLE,"double");
         ttt.put(Type.TYPE_FIXED32,"int");
         ttt.put(Type.TYPE_FIXED64,"long");
+        ttt.put(Type.TYPE_UINT32,"int");
+        ttt.put(Type.TYPE_UINT64,"long");
         ttt.put(Type.TYPE_FLOAT,"float");
         ttt.put(Type.TYPE_STRING,"String");
 
@@ -43,6 +45,8 @@ public class RPCSourceGenerator {
         tttr.put(Type.TYPE_DOUBLE,"List<Double>");
         tttr.put(Type.TYPE_FIXED32,"List<Integer>");
         tttr.put(Type.TYPE_FIXED64,"List<Long>");
+        tttr.put(Type.TYPE_UINT32,"List<Integer>");
+        tttr.put(Type.TYPE_UINT64,"List<Long>");
         tttr.put(Type.TYPE_FLOAT,"List<Float>");
         tttr.put(Type.TYPE_STRING,"List<String>");
     }
