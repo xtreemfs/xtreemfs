@@ -35,6 +35,7 @@ import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -943,8 +944,13 @@ public class ECMasterStage extends Stage {
                 responseResult.setResult(result);
                 curNumResponses = numResponses.incrementAndGet();
                 curNumErrors = numErrors.get();
+            } catch (PBRPCException ex) {
+                // FIXME (jdillmann): Which errors should mark OSDs as quickfail?
+                responseResult.setFailed();
+                curNumErrors = numErrors.incrementAndGet();
+                curNumResponses = numResponses.get();
 
-            } catch (Exception ec) {
+            } catch (Exception ex) {
                 // Try to
                 responseResult.setFailed();
                 curNumErrors = numErrors.incrementAndGet();

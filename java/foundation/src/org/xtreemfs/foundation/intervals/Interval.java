@@ -113,6 +113,10 @@ public abstract class Interval {
         }
     }
 
+    public boolean overlaps(Interval o) {
+        return (getEnd() > o.getStart() && getStart() <= o.getEnd());
+    }
+
     @Override
     public String toString() {
         return String.format("([%d:%d], %d, %d)", getStart(), getEnd(), getVersion(), getId());

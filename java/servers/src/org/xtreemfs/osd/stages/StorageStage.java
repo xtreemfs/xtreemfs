@@ -225,8 +225,7 @@ public class StorageStage extends Stage {
     }
 
     public static interface ECGetVectorsCallback {
-        public void ecGetVectorsComplete(final IntervalVector curVector, final IntervalVector nextVector,
-                final ErrorResponse error);
+        public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error);
     }
 
     public void ecCommitVector(String fileId, StripingPolicyImpl sp, IntervalVector commitVector, OSDRequest request,
@@ -236,8 +235,7 @@ public class StorageStage extends Stage {
     }
 
     public static interface ECCommitVectorCallback {
-        public void ecCommitVectorComplete(final IntervalVector curVector, final IntervalVector nextVector,
-                final ErrorResponse error);
+        public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error);
     }
 
     @Override

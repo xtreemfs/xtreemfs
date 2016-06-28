@@ -62,14 +62,14 @@ public class ECCommitVector extends OSDOperation {
 
         master.getStorageStage().ecCommitVector(fileId, sp, commitVector, rq, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(IntervalVector curVector, IntervalVector nextVector,
-                    ErrorResponse error) {
+            public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
                     rq.sendError(error);
+                } else if (needsReconstruct) {
+                    // FIXME (jdillmann): Trigger reconstruction.
+                    rq.sendSuccess(buildResponse(false), null);
                 } else {
-                    boolean complete = curVector.equals(commitVector);
-                    rq.sendSuccess(buildResponse(complete), null);
-                    // FIXME (jdillmann): Trigger reconstruction if not complete.
+                    rq.sendSuccess(buildResponse(true), null);
                 }
             }
         });
@@ -86,14 +86,14 @@ public class ECCommitVector extends OSDOperation {
 
         master.getStorageStage().ecCommitVector(fileId, sp, commitVector, null, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(IntervalVector curVector, IntervalVector nextVector,
-                    ErrorResponse error) {
+            public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
                     callback.error(error);
+                } else if (needsReconstruct) {
+                    // FIXME (jdillmann): Trigger reconstruction.
+                    callback.success(buildResponse(false));
                 } else {
-                    boolean complete = curVector.equals(commitVector);
-                    callback.success(buildResponse(complete));
-                    // FIXME (jdillmann): Trigger reconstruction if not complete.
+                    callback.success(buildResponse(true));
                 }
             }
         });
