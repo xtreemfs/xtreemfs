@@ -99,6 +99,8 @@ public class StorageThread extends Stage {
 
     public static final int            STAGEOP_EC_COMMIT_VECTOR      = 17;
 
+    public static final int            STAGEOP_EC_WRITE_DATA         = 18;
+
     private final MetadataCache        cache;
 
     private final StorageLayout        layout;
@@ -178,6 +180,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_EC_COMMIT_VECTOR:
                 ecStorage.processCommitVector(method);
+                break;
+            case STAGEOP_EC_WRITE_DATA:
+                ecStorage.processWriteData(method);
                 break;
             }
             

@@ -7,7 +7,7 @@
 package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +29,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECWriteDataCallback;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -58,7 +59,7 @@ public class ECStorage {
     }
 
     public void processGetVectors(final StageRequest rq) {
-        final ECGetVectorsCallback cback = (ECGetVectorsCallback) rq.getCallback();
+        final ECGetVectorsCallback callback = (ECGetVectorsCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
 
         FileMetadata fi = cache.getFileInfo(fileId);
@@ -70,19 +71,19 @@ public class ECStorage {
                 IntervalVector nextVector = new AVLTreeIntervalVector();
                 layout.getECIntervalVector(fileId, true, nextVector);
 
-                cback.ecGetVectorsComplete(curVector, nextVector, null);
+                callback.ecGetVectorsComplete(curVector, nextVector, null);
 
             } catch (Exception ex) {
-                cback.ecGetVectorsComplete(null, null,
+                callback.ecGetVectorsComplete(null, null,
                         ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
             }
         } else {
-            cback.ecGetVectorsComplete(fi.getECCurVector(), fi.getECNextVector(), null);
+            callback.ecGetVectorsComplete(fi.getECCurVector(), fi.getECNextVector(), null);
         }
     }
 
     public void processCommitVector(final StageRequest rq) {
-        final ECCommitVectorCallback cback = (ECCommitVectorCallback) rq.getCallback();
+        final ECCommitVectorCallback callback = (ECCommitVectorCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
         final List<Interval> commitIntervals = (List<Interval>) rq.getArgs()[2];
@@ -97,7 +98,7 @@ public class ECStorage {
                     fi.getECNextVector().serialize(), toCommit, toAbort);
 
             if (failed) {
-                cback.ecCommitVectorComplete(true, null);
+                callback.ecCommitVectorComplete(true, null);
                 return;
             }
 
@@ -113,17 +114,125 @@ public class ECStorage {
 
             // FIXME (jdillmann): truncate cur?
 
-            cback.ecCommitVectorComplete(false, null);
+            callback.ecCommitVectorComplete(false, null);
 
         } catch (IOException ex) {
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
-            cback.ecCommitVectorComplete(false, error);
+            callback.ecCommitVectorComplete(false, error);
             return;
         }
 
     }
 
+    public void processWriteData(final StageRequest rq) {
+        final ECWriteDataCallback callback = (ECWriteDataCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+        final long objectNo = (Long) rq.getArgs()[2];
+        final int offset = (Integer) rq.getArgs()[3];
+        final Interval reqInterval = (Interval) rq.getArgs()[4];
+        final List<Interval> commitIntervals = (List<Interval>) rq.getArgs()[5];
+        final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[6];
+
+        boolean consistent = true;
+        try {
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            IntervalVector curVector = fi.getECCurVector();
+            IntervalVector nextVector = fi.getECCurVector();
+
+            long opStart = reqInterval.getOpStart();
+            long opEnd = reqInterval.getOpEnd();
+
+            // FIXME(jdillmann): A single write may never cross stripe boundaries
+
+            // Get this nodes interval vectors and check if the vector this operation is based on can be fully committed
+            long commitStart = !commitIntervals.isEmpty() ? commitIntervals.get(0).getOpStart() : 0;
+            long commitEnd = !commitIntervals.isEmpty() ? commitIntervals.get(commitIntervals.size() - 1).getOpEnd() : 0;
+            // FIXME (jdillmann): Check if this is correct
+            List<Interval> curVecIntervals = curVector.getOverlapping(commitStart, commitEnd);
+            List<Interval> nextVecIntervals = nextVector.getOverlapping(commitStart, commitEnd);
+
+            LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
+            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
+            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, curVecIntervals, nextVecIntervals,
+                    toCommitAcc, toAbortAcc);
+
+            // Signal to go to reconstruct if the vector can not be fully committed.
+            if (failed) {
+                callback.ecWriteDataComplete(null, true, null);
+                return;
+            }
+
+            // Commit or abort intervals from the next vector.
+            for (Interval interval : toCommitAcc) {
+                commitECData(fileId, fi, interval);
+            }
+            for (Interval interval : toAbortAcc) {
+                abortECData(fileId, fi, interval);
+            }
+
+            // Check operation boundaries.
+            long dataStart = sp.getObjectStartOffset(objectNo) + offset;
+            long dataEnd = dataStart + data.capacity();
+            // The data range has to be within the request interval and may not cross chunk boundaries
+            assert (dataStart >= reqInterval.getStart() && dataEnd <= reqInterval.getEnd());
+            assert (dataEnd - dataStart <= sp.getStripeSizeForObject(objectNo));
+
+            // Write the data
+            String fileIdNext = fileId + ".next";
+            long version = 1;
+            // FIXME (jdillmann): Decide if/when sync should be used
+            boolean sync = false;
+            layout.writeObject(fileIdNext, fi, data.createViewBuffer(), objectNo, offset, version, sync, false);
+            consistent = false;
+
+            // Store the vector
+            layout.setECIntervalVector(fileId, Arrays.asList(reqInterval), true, true);
+            fi.getECNextVector().insert(reqInterval);
+            consistent = true;
+
+            // Generate diff between the current data and the newly written data.
+            byte[] diff = new byte[data.capacity()];
+            ObjectInformation objInfo = layout.readObject(fileId, fi, objectNo, offset, data.capacity(), version);
+            if (objInfo.getStatus() == ObjectStatus.PADDING_OBJECT
+                    || objInfo.getStatus() == ObjectStatus.DOES_NOT_EXIST 
+                    || objInfo.getData() == null) {
+                // There is no current data: the new data is the diff.
+                data.position(0);
+                data.get(diff);
+            } else {
+                ReusableBuffer curData = objInfo.getData();
+                assert (curData.capacity() == data.capacity());
+
+                // byte-wise diff between cur and next data
+                // TODO (jdillmann): Benchmark if getting the buffers as byte[] would be faster
+                data.position(0);
+                curData.position(0);
+                for (int i = 0; i < data.capacity(); i++) {
+                    diff[i] = (byte) (data.get() ^ curData.get());
+                }
+                
+                BufferPool.free(curData);
+            }
+
+            // Return the diff buffer to the caller
+            ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
+            callback.ecWriteDataComplete(diffBuffer, false, null);
+
+        } catch (IOException ex) {
+            if (!consistent) {
+                // FIXME (jdillmann): Inform in detail about critical error
+                Logging.logError(Logging.LEVEL_CRIT, this, ex);
+            }
+
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    ex.toString(), ex);
+            callback.ecWriteDataComplete(null, false, error);
+        } finally {
+            BufferPool.free(data);
+        }
+    }
 
     /**
      * Checks for each interval in commitIntervals if it is present in the curVecIntervals or the nextVecIntervals.<br>
@@ -152,6 +261,13 @@ public class ECStorage {
         
         long commitStart = !commitIntervals.isEmpty() ? commitIntervals.get(0).getOpStart() : 0;
         long commitEnd = !commitIntervals.isEmpty() ? commitIntervals.get(commitIntervals.size() - 1).getOpEnd() : 0;
+
+        // If there is nothing to commit, abort every interval in next and return
+        if (commitEnd + commitStart == 0) {
+            toAbortAcc.addAll(nextVecIntervals);
+            return false;
+        }
+
         Interval emptyInterval = ObjectInterval.empty(commitStart, commitEnd);
 
         Iterator<Interval> curIt = curVecIntervals.iterator();
@@ -252,40 +368,32 @@ public class ECStorage {
                 // FIXME (jdillmann): Decide if/when sync should be used
                 boolean sync = false;
 
-                ReusableBuffer buf = null;
-                try {
-                    // TODO (jdillmann): Allow to copy data directly between files (bypass Buffer).
-                    ObjectInformation obj = layout.readObject(fileIdNext, fi, objNo, offset, length, objVer);
 
-                    if (obj.getStatus() == ObjectStatus.EXISTS) {
-                        buf = obj.getData();
-                    } else {
-                        byte[] zeros = new byte[length];
-                        buf = ReusableBuffer.wrap(zeros);
-                    }
+                // TODO (jdillmann): Allow to copy data directly between files (bypass Buffer).
+                ObjectInformation obj = layout.readObject(fileIdNext, fi, objNo, offset, length, objVer);
 
-                    // FIXME (jdillmann): Handle padding objects etc.
-                    layout.writeObject(fileId, fi, buf, objNo, offset, objVer, sync, false);
-                    consistent = false;
-
-                } finally {
-                    if (buf != null) {
-                        BufferPool.free(buf);
-                    }
+                ReusableBuffer buf; // will be freed by writeObject
+                if (obj.getStatus() == ObjectStatus.EXISTS) {
+                    buf = obj.getData();
+                } else {
+                    byte[] zeros = new byte[length];
+                    buf = ReusableBuffer.wrap(zeros);
                 }
+
+                // FIXME (jdillmann): Handle padding objects etc.
+                layout.writeObject(fileId, fi, buf, objNo, offset, objVer, sync, false);
+                consistent = false;
+
             }
 
             // Finally append the interval to the cur vector and "remove" it from the next vector
-            ArrayList<Interval> intervals = new ArrayList<Interval>(1);
-            intervals.add(interval);
             fi.getECCurVector().insert(interval);
-            layout.setECIntervalVector(fileId, intervals, false, true);
+            layout.setECIntervalVector(fileId, Arrays.asList(interval), false, true);
 
             // Remove the interval by overwriting it with an empty interval
             Interval empty = ObjectInterval.empty(interval);
-            intervals.set(0, empty);
+            layout.setECIntervalVector(fileId, Arrays.asList(empty), true, true);
             fi.getECNextVector().insert(empty);
-            layout.setECIntervalVector(fileId, intervals, true, true);
             consistent = true;
 
         } catch (IOException ex) {
@@ -324,12 +432,9 @@ public class ECStorage {
             }
 
             // Remove the interval by overwriting it with an empty interval
-            ArrayList<Interval> intervals = new ArrayList<Interval>(1);
             Interval empty = ObjectInterval.empty(interval);
-            intervals.add(0, empty);
-
+            layout.setECIntervalVector(fileId, Arrays.asList(interval), true, true);
             fi.getECNextVector().insert(empty);
-            layout.setECIntervalVector(fileId, intervals, true, true);
             // FIXME (jdillmann): Truncate the next vector if the interval start = 0 and end >= lastEnd
             // layout.setECIntervalVector(fileId, Collections.<Interval> emptyList(), true, false);
             consistent = true;

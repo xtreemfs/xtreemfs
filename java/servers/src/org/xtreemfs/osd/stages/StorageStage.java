@@ -88,7 +88,7 @@ public class StorageStage extends Stage {
     }
     
     public void writeObject(String fileId, long objNo, StripingPolicyImpl sp, int offset,
-        ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
+            ReusableBuffer data, CowPolicy cow, XLocations xloc, boolean sync, Long newVersion,
         OSDRequest request, ReusableBuffer createdViewBuffer, WriteObjectCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[] { fileId, objNo, sp,
             offset, data, cow, xloc, false, sync, newVersion }, request, createdViewBuffer, listener);
@@ -240,6 +240,17 @@ public class StorageStage extends Stage {
         public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error);
     }
 
+    public void ecWritedata(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
+            List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request, ECWriteDataCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_DATA, 
+                new Object[] {fileId, sp, objNo, offset, reqInterval, commitIntervals, data}, 
+                request, data, callback);
+    }
+
+    public static interface ECWriteDataCallback {
+        public void ecWriteDataComplete(ReusableBuffer diff, boolean needsReconstruct, ErrorResponse error);
+    }
+    
     @Override
     public void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
         notifyCrashed(new Exception(

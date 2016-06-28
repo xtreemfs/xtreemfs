@@ -6,10 +6,7 @@
  */
 package org.xtreemfs.osd.ec;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -40,6 +37,8 @@ import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
@@ -51,6 +50,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorReque
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -378,6 +379,68 @@ public class VectorProtoTest {
 
         layout.setECIntervalVector(fileId, curIntervals, false, false);
 
+    }
+
+    @Test
+    public void testWriteData() throws Exception {
+        IntervalVector expected;
+        List<Interval> commitIntervals = new LinkedList<Interval>();
+        Interval interval;
+        ReusableBuffer dataIn;
+        long objNo;
+        long opId;
+        FileMetadata fi;
+        ObjectInformation objInf;
+        
+        String fileIdNext = fileId + ".next";
+        HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache());
+        StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
+        int chunkSize = sp.getPolicy().getStripeSize() * 1024;
+        byte[] byteOut = new byte[chunkSize];
+
+        xtreemfs_ec_write_dataRequest request;
+        
+        xtreemfs_ec_write_dataRequest.Builder requestB = xtreemfs_ec_write_dataRequest.newBuilder()
+                .setFileId(fileId)
+                .setFileCredentials(fileCredentials);
+
+        RPCResponse<xtreemfs_ec_write_dataResponse> rpcResponse;
+        xtreemfs_ec_write_dataResponse response;
+
+        // Test writing to non-existent file
+        dataIn = SetupUtils.generateData(chunkSize, (byte) 1);
+        objNo = 0;
+        opId = 1;
+        interval = new ObjectInterval(0, chunkSize, 1, opId);
+        requestB.setObjectNumber(objNo)
+                .setOpId(opId)
+                .setOffset(0)
+                .setStripeInterval(ProtoInterval.toProto(interval));
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, dataIn);
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+        assertEquals(opId, response.getOpId());
+        assertEquals(objNo, response.getObjectNumber());
+        assertFalse(response.hasError());
+        
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        objInf = layout.readObject(fileIdNext, fi, objNo, 0, chunkSize, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataIn.array(), byteOut);
+
+    }
+
+    void intervalList2WritDataRequest(List<Interval> intervals, xtreemfs_ec_write_dataRequest.Builder builder) {
+        builder.clearCommitIntervals();
+        for (Interval interval : intervals) {
+            builder.addCommitIntervals(ProtoInterval.toProto(interval));
+        }
     }
 
     xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
