@@ -1,0 +1,40 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.xtreemfs</groupId>
+  <artifactId>xtreemfs-parent</artifactId>
+  <version>1.5.1-SNAPSHOT</version>
+
+  <name>xtreemfs</name>
+  <packaging>pom</packaging>
+  <url>http://xtreemfs.org</url>
+  <inceptionYear>2006</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>The New BSD License</name>
+      <url>https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/xtreemfs/xtreemfs</url>
+    <connection>git@github.com:xtreemfs/xtreemfs.git</connection>
+    <developerConnection>scm:git:https://github.com/xtreemfs/xtreemfs.git</developerConnection>
+  </scm>
+
+  <modules>
+    <module>xtreemfs-foundation</module>
+    <module>xtreemfs-flease</module>
+    <module>xtreemfs-pbrpcgen</module>
+    <module>xtreemfs-servers</module>
+  </modules>
+
+  <properties>
+    <commons-codec.version>1.3</commons-codec.version>
+    <protobuf-java.version>2.5.0</protobuf-java.version>
+    <junit.version>4.12</junit.version>
+  </properties>
+</project>
