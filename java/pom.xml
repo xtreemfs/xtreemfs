@@ -36,5 +36,51 @@
     <commons-codec.version>1.3</commons-codec.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <junit.version>4.12</junit.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+    <site-maven-plugin.version>0.12</site-maven-plugin.version>
+    <github.global.server>github</github.global.server>
   </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>xtreemfs-repository</id>
+      <url>file://${project.build.directory}/xtreemfs-repository</url>
+    </repository>
+  </distributionManagement>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <altDeploymentRepository>xtreemfs-repository::default::file://${project.build.directory}/xtreemfs-repository/maven</altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>${site-maven-plugin.version}</version>
+        <configuration>
+          <message>Maven artifacts for ${project.name}/${project.version}</message>
+          <noJekyll>true</noJekyll>
+          <outputDirectory>${project.build.directory}/xtreemfs-repository</outputDirectory>
+          <repositoryName>xtreemfs</repositoryName>
+          <repositoryOwner>xtreemfs</repositoryOwner>
+          <merge>true</merge>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
