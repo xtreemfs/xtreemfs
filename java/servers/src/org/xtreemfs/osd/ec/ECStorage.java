@@ -139,7 +139,7 @@ public class ECStorage {
         try {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             IntervalVector curVector = fi.getECCurVector();
-            IntervalVector nextVector = fi.getECCurVector();
+            IntervalVector nextVector = fi.getECNextVector();
 
             long opStart = reqInterval.getOpStart();
             long opEnd = reqInterval.getOpEnd();
@@ -173,6 +173,7 @@ public class ECStorage {
             }
 
             // Check operation boundaries.
+            // FIXME (jdillmann): Check for exclusive ends
             long dataStart = sp.getObjectStartOffset(objectNo) + offset;
             long dataEnd = dataStart + data.capacity();
             // The data range has to be within the request interval and may not cross chunk boundaries
@@ -349,8 +350,11 @@ public class ECStorage {
     void commitECData(String fileId, FileMetadata fi, Interval interval) throws IOException {
         StripingPolicyImpl sp = fi.getStripingPolicy();
         assert (interval.isOpComplete());
-        long startObjNo = sp.getObjectNoForOffset(interval.getStart());
-        long endObjNo = sp.getObjectNoForOffset(interval.getEnd());
+        long intervalStartOffset = interval.getStart();
+        long intervalEndOffset = interval.getEnd() - 1; // end is exclusive
+
+        long startObjNo = sp.getObjectNoForOffset(intervalStartOffset);
+        long endObjNo = sp.getObjectNoForOffset(intervalEndOffset);
 
         boolean consistent = true;
         try {
@@ -358,12 +362,12 @@ public class ECStorage {
             while (objNoIt.hasNext()) {
                 Long objNo = objNoIt.next();
 
-                long startOff = Math.max(sp.getObjectStartOffset(objNo), interval.getStart());
-                long endOff = Math.min(sp.getObjectEndOffset(objNo), interval.getEnd());
+                long startOff = Math.max(sp.getObjectStartOffset(objNo), intervalStartOffset);
+                long endOff = Math.min(sp.getObjectEndOffset(objNo), intervalEndOffset);
 
                 String fileIdNext = fileId + ".next";
                 int offset = (int) (startOff - sp.getObjectStartOffset(objNo));
-                int length = (int) (endOff - startOff);
+                int length = (int) (endOff - startOff) + 1; // The byte from the end offset has to be included.
                 int objVer = 1;
                 // FIXME (jdillmann): Decide if/when sync should be used
                 boolean sync = false;
@@ -410,8 +414,10 @@ public class ECStorage {
     void abortECData(String fileId, FileMetadata fi, Interval interval) throws IOException {
         StripingPolicyImpl sp = fi.getStripingPolicy();
         assert (interval.isOpComplete());
-        long startObjNo = sp.getObjectNoForOffset(interval.getStart());
-        long endObjNo = sp.getObjectNoForOffset(interval.getEnd());
+        long intervalStartOffset = interval.getStart();
+        long intervalEndOffset = interval.getEnd() - 1; // end is exclusive
+        long startObjNo = sp.getObjectNoForOffset(intervalStartOffset);
+        long endObjNo = sp.getObjectNoForOffset(intervalEndOffset);
         int objVer = 1;
 
         boolean consistent = true;
@@ -421,8 +427,7 @@ public class ECStorage {
                 Long objNo = objNoIt.next();
 
                 // Delete the completely aborted objects
-                if (interval.getStart() <= sp.getObjectStartOffset(objNo)
-                        && interval.getEnd() >= sp.getObjectEndOffset(objNo)) {
+                if (intervalStartOffset <= sp.getObjectStartOffset(objNo) && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
                     layout.deleteObject(fileId, fi, objNo, objVer);
                     consistent = false;
                 }

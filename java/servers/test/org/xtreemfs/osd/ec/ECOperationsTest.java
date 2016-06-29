@@ -8,6 +8,7 @@ package org.xtreemfs.osd.ec;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,7 @@ import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ListIntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -57,7 +59,7 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
 
-public class VectorProtoTest {
+public class ECOperationsTest {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
 
@@ -79,7 +81,25 @@ public class VectorProtoTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+        // Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+        Category[] DEBUG_CATEGORIES = new Category[] { 
+                // Category.all,
+                Category.buffer,
+                // Category.lifecycle,
+                // Category.net,
+                Category.auth,
+                // Category.stage,
+                // Category.proc,
+                Category.misc,
+                Category.storage,
+                Category.replication,
+                Category.tool,
+                Category.test,
+                Category.flease,
+                // Category.babudb,
+                Category.ec
+        };
+        Logging.start(Logging.LEVEL_DEBUG, DEBUG_CATEGORIES);
     }
 
     @Before
@@ -334,6 +354,15 @@ public class VectorProtoTest {
         assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
     }
 
+    xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
+            xtreemfs_ec_commit_vectorRequest.Builder builder) {
+        builder.clearIntervals();
+        for (Interval interval : intervals) {
+            builder.addIntervals(ProtoInterval.toProto(interval));
+        }
+        return builder.build();
+    }
+
     @Test
     public void testCommitVectorMultipleStripes() throws Exception {
         // FIXME (jdillmann): Implement
@@ -383,17 +412,16 @@ public class VectorProtoTest {
 
     @Test
     public void testWriteData() throws Exception {
-        IntervalVector expected;
         List<Interval> commitIntervals = new LinkedList<Interval>();
         Interval interval;
-        ReusableBuffer dataIn;
         long objNo;
         long opId;
+        int offset;
         FileMetadata fi;
         ObjectInformation objInf;
         
         String fileIdNext = fileId + ".next";
-        HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache());
+        HashStorageLayout layout;
         StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
         int chunkSize = sp.getPolicy().getStripeSize() * 1024;
         byte[] byteOut = new byte[chunkSize];
@@ -407,18 +435,21 @@ public class VectorProtoTest {
         RPCResponse<xtreemfs_ec_write_dataResponse> rpcResponse;
         xtreemfs_ec_write_dataResponse response;
 
+
         // Test writing to non-existent file
-        dataIn = SetupUtils.generateData(chunkSize, (byte) 1);
+        // ***********************************
+        final ReusableBuffer dataInF1 = SetupUtils.generateData(chunkSize, (byte) 1);
         objNo = 0;
         opId = 1;
-        interval = new ObjectInterval(0, chunkSize, 1, opId);
+        offset = 0;
+        interval = new ObjectInterval(offset, chunkSize, 1, opId);
         requestB.setObjectNumber(objNo)
                 .setOpId(opId)
-                .setOffset(0)
+                .setOffset(offset)
                 .setStripeInterval(ProtoInterval.toProto(interval));
         request = requestB.build();
         rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
-                userCredentials, request, dataIn);
+                userCredentials, request, dataInF1);
         try {
             response = rpcResponse.get();
         } finally {
@@ -428,12 +459,110 @@ public class VectorProtoTest {
         assertEquals(objNo, response.getObjectNumber());
         assertFalse(response.hasError());
         
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
         fi = layout.getFileMetadataNoCaching(sp, fileId);
-        objInf = layout.readObject(fileIdNext, fi, objNo, 0, chunkSize, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
-        objInf.getData().get(byteOut);
-        assertArrayEquals(dataIn.array(), byteOut);
+        assertEquals(Collections.EMPTY_LIST, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().serialize());
 
+        objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataInF1.array(), byteOut);
+
+
+        // Test writing second half of the chunk: should commit the whole chunk
+        // ********************************************************************
+        ReusableBuffer dataInH2 = SetupUtils.generateData(chunkSize / 2, (byte) 2);
+        objNo = 0;
+        opId = 2;
+        offset = chunkSize / 2;
+
+        commitIntervals.clear();
+        interval = new ObjectInterval(0, chunkSize, 1, 1);
+        commitIntervals.add(interval);
+        intervalList2WritDataRequest(commitIntervals, requestB);
+
+        interval = new ObjectInterval(offset, chunkSize, 2, opId);
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(interval));
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, dataInH2);
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+        assertEquals(opId, response.getOpId());
+        assertEquals(objNo, response.getObjectNumber());
+        assertFalse(response.hasError());
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(offset, chunkSize));
+
+        objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataInF1.array(), byteOut);
+
+        objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize / 2, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        byteOut = new byte[chunkSize / 2];
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataInH2.array(), byteOut);
+
+        
+        // Test overwriting and aborting by using the same version but greater opid
+        // *************************************************************************
+        ReusableBuffer dataInF3 = SetupUtils.generateData(chunkSize, (byte) 3);
+        objNo = 0;
+        opId = 3;
+        offset = 0;
+
+        commitIntervals.clear();
+        interval = new ObjectInterval(0, chunkSize, 1, 1);
+        commitIntervals.add(interval);
+        intervalList2WritDataRequest(commitIntervals, requestB);
+
+        interval = new ObjectInterval(offset, chunkSize, 2, opId);
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(interval));
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, dataInF3);
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+        assertEquals(opId, response.getOpId());
+        assertEquals(objNo, response.getObjectNumber());
+        assertFalse(response.hasError());
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(offset, chunkSize));
+
+        byteOut = new byte[chunkSize];
+        objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataInF1.array(), byteOut);
+
+        objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
+        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(dataInF3.array(), byteOut);
     }
 
     void intervalList2WritDataRequest(List<Interval> intervals, xtreemfs_ec_write_dataRequest.Builder builder) {
@@ -441,15 +570,6 @@ public class VectorProtoTest {
         for (Interval interval : intervals) {
             builder.addCommitIntervals(ProtoInterval.toProto(interval));
         }
-    }
-
-    xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
-            xtreemfs_ec_commit_vectorRequest.Builder builder) {
-        builder.clearIntervals();
-        for (Interval interval : intervals) {
-            builder.addIntervals(ProtoInterval.toProto(interval));
-        }
-        return builder.build();
     }
 
     void assertGetVectorsEquals(FileCredentials fileCredentials, List<Interval> curExpected,

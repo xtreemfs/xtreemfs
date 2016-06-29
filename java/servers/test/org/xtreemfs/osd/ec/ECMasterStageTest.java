@@ -68,7 +68,7 @@ public class ECMasterStageTest {
 
         List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs());
 
-        StripingPolicy sp = VectorProtoTest.getECStripingPolicy(2, 1, 1);
+        StripingPolicy sp = ECOperationsTest.getECStripingPolicy(2, 1, 1);
         Replica r = Replica.newBuilder().setStripingPolicy(sp).setReplicationFlags(0).addAllOsdUuids(osdUUIDs).build();
         xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r).setReplicaUpdatePolicy("ec")
                 .build();
