@@ -6,7 +6,10 @@
  */
 package org.xtreemfs.osd.ec;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +34,6 @@ import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ListIntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -81,25 +83,25 @@ public class ECOperationsTest {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
-        // Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-        Category[] DEBUG_CATEGORIES = new Category[] { 
-                // Category.all,
-                Category.buffer,
-                // Category.lifecycle,
-                // Category.net,
-                Category.auth,
-                // Category.stage,
-                // Category.proc,
-                Category.misc,
-                Category.storage,
-                Category.replication,
-                Category.tool,
-                Category.test,
-                Category.flease,
-                // Category.babudb,
-                Category.ec
-        };
-        Logging.start(Logging.LEVEL_DEBUG, DEBUG_CATEGORIES);
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+//        Category[] DEBUG_CATEGORIES = new Category[] { 
+//                // Category.all,
+//                Category.buffer,
+//                // Category.lifecycle,
+//                // Category.net,
+//                Category.auth,
+//                // Category.stage,
+//                // Category.proc,
+//                Category.misc,
+//                Category.storage,
+//                Category.replication,
+//                Category.tool,
+//                Category.test,
+//                Category.flease,
+//                // Category.babudb,
+//                Category.ec
+//        };
+//        Logging.start(Logging.LEVEL_DEBUG, DEBUG_CATEGORIES);
     }
 
     @Before
@@ -138,7 +140,7 @@ public class ECOperationsTest {
     }
 
     FileCredentials getCreds(String fileId, int width, int parity, int stripeSize) {
-        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(1, 0, 128))
+        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(1, 0, stripeSize))
                 .addOsdUuids(osdUUID.toString()).build();
         XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0)
                 .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_EC).addReplicas(r).setVersion(1).build();
@@ -259,7 +261,7 @@ public class ECOperationsTest {
             rpcCommitResponse.freeBuffers();
         }
         assertTrue(commitResponse.getComplete());
-        assertGetVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
+        assertVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
 
 
         // Try to commit Interval 0:12 from empty next
@@ -275,7 +277,7 @@ public class ECOperationsTest {
             rpcCommitResponse.freeBuffers();
         }
         assertTrue(commitResponse.getComplete());
-        assertGetVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
+        assertVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
 
         
         // Ignore (op) incomplete intervals
@@ -304,7 +306,8 @@ public class ECOperationsTest {
             rpcCommitResponse.freeBuffers();
         }
         assertFalse(commitResponse.getComplete());
-        assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
+        // Note: if the vector can not be complete, the request is aborted. Thus there can be intervals in next.
+        // assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
       
 
         // Drop intervals with a older version or id
@@ -351,7 +354,8 @@ public class ECOperationsTest {
             rpcCommitResponse.freeBuffers();
         }
         assertFalse(commitResponse.getComplete());
-        assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
+        // Note: if the vector can not be complete, the request is aborted. Thus there can be intervals in next.
+        // assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
     }
 
     xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
@@ -367,47 +371,137 @@ public class ECOperationsTest {
     public void testCommitVectorMultipleStripes() throws Exception {
         // FIXME (jdillmann): Implement
         // This test should ensure every chunk from the OSD committing the vector is committed
-        fail();
 
-        HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache());
+        HashStorageLayout layout;
 
         List<Interval> curIntervals = new LinkedList<Interval>();
         List<Interval> nextIntervals = new LinkedList<Interval>();
         List<Interval> commitIntervals = new LinkedList<Interval>();
 
         Interval interval;
-
         FileCredentials fileCredentials;
-        String fileId;
+        StripingPolicyImpl sp;
+        String fileId, fileIdNext;
+        FileMetadata fi;
+        byte[] byteOut;
+        ObjectInformation objInf;
+        
         xtreemfs_ec_commit_vectorRequest commitRequest;
         xtreemfs_ec_commit_vectorRequest.Builder commitRequestBuilder;
 
         RPCResponse<xtreemfs_ec_commit_vectorResponse> rpcCommitResponse;
         xtreemfs_ec_commit_vectorResponse commitResponse;
 
-        // Use fake policy with width 2
+        // Test committing two chunks from two stripes
         // *****************************************
         fileId = "ABCDEF:1";
+        fileIdNext = "ABCDEF:1.next";
         fileCredentials = getCreds(fileId, 2, 0, 1);
+        sp = getStripingPolicyImplementation(fileCredentials);
         commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
                 .setFileCredentials(fileCredentials);
 
-        StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas(0), 0);
-        FileMetadata md = layout.getFileMetadataNoCaching(sp, fileId);
+        layout = new HashStorageLayout(osdConfig, new MetadataCache());
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
 
-        interval = new ObjectInterval(0, 32, 1, 1);
-        curIntervals.clear();
-        nextIntervals.clear();
+        // Write two chunks 0,2 from different stripes
+        // Both chunks belong to the same operation spanning both stripes
+        // FIXME (jdillmann): How should the opid work? per stripe or per whole range
+        ReusableBuffer c0 = SetupUtils.generateData(1024, (byte) 1);
+        layout.writeObject(fileIdNext, fi, c0.createViewBuffer(), 0, 0, 1, false, false);
+        interval = new ObjectInterval(0, 2048, 1, 1, 0, 4096);
+        layout.setECIntervalVector(fileId, Arrays.asList(interval), true, false);
+
+        ReusableBuffer c2 = SetupUtils.generateData(1024, (byte) 2);
+        layout.writeObject(fileIdNext, fi, c2.createViewBuffer(), 2, 0, 1, false, true);
+        interval = new ObjectInterval(2048, 4096, 1, 1, 0, 4096);
+        layout.setECIntervalVector(fileId, Arrays.asList(interval), true, true);
+
+
+        // commit the whole operation
+        commitIntervals.add(new ObjectInterval(0, 4096, 1, 1, 0, 4096));
+        commitRequest = intervalList2CommitRequest(commitIntervals, commitRequestBuilder);
+        rpcCommitResponse = osdClient.xtreemfs_ec_commit_vector(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, commitRequest);
+        try {
+            commitResponse = rpcCommitResponse.get();
+        } finally {
+            rpcCommitResponse.freeBuffers();
+        }
+        assertTrue(commitResponse.getComplete());
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Collections.<Interval> emptyList(), fi.getECNextVector().serialize());
+
+        byteOut = new byte[1024];
+        objInf = layout.readObject(fileId, fi, 0, 0, 1024, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(c0.array(), byteOut);
+
+        objInf = layout.readObject(fileId, fi, 2, 0, 1024, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(c2.array(), byteOut);
+
+
+        // Test committing one chunk and from a operation spanning two stripes
+        // *******************************************************************
+        fileId = "ABCDEF:2";
+        fileIdNext = "ABCDEF:2.next";
+        fileCredentials = getCreds(fileId, 2, 0, 1);
+        sp = getStripingPolicyImplementation(fileCredentials);
+        commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
+                .setFileCredentials(fileCredentials);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache());
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+
+        // Write chunk 2 to second stripe with an operation starting at the first stripe
+        layout.writeObject(fileIdNext, fi, c2.createViewBuffer(), 2, 0, 1, false, true);
+        interval = new ObjectInterval(1024, 2048, 1, 1, 1024, 3072);
+        layout.setECIntervalVector(fileId, Arrays.asList(interval), true, true);
+        interval = new ObjectInterval(2048, 3072, 1, 1, 1024, 3072);
+        layout.setECIntervalVector(fileId, Arrays.asList(interval), true, true);
+
+        // commit the operation
         commitIntervals.clear();
-        curIntervals.add(interval);
+        commitIntervals.add(new ObjectInterval(1024, 3072, 1, 1, 1024, 3072));
+        commitRequest = intervalList2CommitRequest(commitIntervals, commitRequestBuilder);
+        rpcCommitResponse = osdClient.xtreemfs_ec_commit_vector(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, commitRequest);
+        try {
+            commitResponse = rpcCommitResponse.get();
+        } finally {
+            rpcCommitResponse.freeBuffers();
+        }
+        assertTrue(commitResponse.getComplete());
 
-        ReusableBuffer buf1 = SetupUtils.generateData(8, (byte) 1);
-        // ReusableBuffer buf2 = SetupUtils.generateData(8, (byte) 1);
-        layout.writeObject(fileId, md, buf1, 0, 0, 1, false, false);
-        layout.writeObject(fileId, md, buf1, 0, 2, 1, false, false);
+        curIntervals.clear();
+        curIntervals.add(ObjectInterval.empty(0, 1024));
+        curIntervals.add(new ObjectInterval(1024, 3072, 1, 1, 1024, 3072));
 
-        layout.setECIntervalVector(fileId, curIntervals, false, false);
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(curIntervals, fi.getECCurVector().serialize());
+        assertEquals(Collections.<Interval> emptyList(), fi.getECNextVector().serialize());
 
+        byteOut = new byte[1024];
+        objInf = layout.readObject(fileId, fi, 0, 0, 1024, 1);
+        assertEquals(ObjectStatus.DOES_NOT_EXIST, objInf.getStatus());
+        // objInf.getData().position(0);
+        // objInf.getData().get(byteOut);
+        // assertArrayEquals(c0.array(), byteOut);
+
+        objInf = layout.readObject(fileId, fi, 2, 0, 1024, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        objInf.getData().position(0);
+        objInf.getData().get(byteOut);
+        assertArrayEquals(c2.array(), byteOut);
     }
 
     @Test
@@ -465,7 +559,7 @@ public class ECOperationsTest {
         assertEquals(Arrays.asList(interval), fi.getECNextVector().serialize());
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(dataInF1.array(), byteOut);
@@ -505,13 +599,13 @@ public class ECOperationsTest {
         assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(offset, chunkSize));
 
         objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(dataInF1.array(), byteOut);
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize / 2, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         byteOut = new byte[chunkSize / 2];
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
@@ -553,13 +647,13 @@ public class ECOperationsTest {
 
         byteOut = new byte[chunkSize];
         objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(dataInF1.array(), byteOut);
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
-        assert (objInf.getStatus() == ObjectStatus.EXISTS);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(dataInF3.array(), byteOut);
@@ -572,33 +666,15 @@ public class ECOperationsTest {
         }
     }
 
-    void assertGetVectorsEquals(FileCredentials fileCredentials, List<Interval> curExpected,
+    void assertVectorsEquals(FileCredentials fileCredentials, List<Interval> curExpected,
             List<Interval> nextExpected) throws Exception {
 
-        RPCResponse<xtreemfs_ec_get_interval_vectorsResponse> rpcGetResponse;
-        xtreemfs_ec_get_interval_vectorsRequest getRequest = xtreemfs_ec_get_interval_vectorsRequest.newBuilder()
-                .setFileId(fileCredentials.getXcap().getFileId()).setFileCredentials(fileCredentials).build();
-        xtreemfs_ec_get_interval_vectorsResponse getResponse;
+        String fileId = fileCredentials.getXcap().getFileId();
+        HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache()); // no cache
+        StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
 
-        // get_interval is used to check if the changes are reflected in the cached metadata info
-        rpcGetResponse = osdClient.xtreemfs_ec_get_interval_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
-                userCredentials, getRequest);
-        try {
-            getResponse = rpcGetResponse.get();
-        } finally {
-            rpcGetResponse.freeBuffers();
-        }
-
-        List<Interval> curIntervals = new LinkedList<Interval>();
-        for (int i = 0; i < getResponse.getCurIntervalsCount(); i++) {
-            curIntervals.add(new ProtoInterval(getResponse.getCurIntervals(i)));
-        }
-        assertEquals(curExpected, curIntervals);
-
-        List<Interval> nextIntervals = new LinkedList<Interval>();
-        for (int i = 0; i < getResponse.getNextIntervalsCount(); i++) {
-            nextIntervals.add(new ProtoInterval(getResponse.getNextIntervals(i)));
-        }
-        assertEquals(nextExpected, nextExpected);
+        FileMetadata fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(curExpected, fi.getECCurVector().serialize());
+        assertEquals(nextExpected, fi.getECNextVector().serialize());
     }
 }
