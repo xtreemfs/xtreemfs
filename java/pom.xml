@@ -20,9 +20,9 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/xtreemfs/xtreemfs</url>
-    <connection>git@github.com:xtreemfs/xtreemfs.git</connection>
-    <developerConnection>scm:git:https://github.com/xtreemfs/xtreemfs.git</developerConnection>
+    <url>https://github.com/${github.site.repositoryOwner}/xtreemfs</url>
+    <connection>git@github.com:${github.site.repositoryOwner}/xtreemfs.git</connection>
+    <developerConnection>scm:git:https://github.com/${github.site.repositoryOwner}/xtreemfs.git</developerConnection>
   </scm>
 
   <modules>
