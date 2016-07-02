@@ -5598,10 +5598,17 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 object_number() const;
   inline void set_object_number(::google::protobuf::uint64 value);
 
-  // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;
+  // required bool needs_reconstruction = 3;
+  inline bool has_needs_reconstruction() const;
+  inline void clear_needs_reconstruction();
+  static const int kNeedsReconstructionFieldNumber = 3;
+  inline bool needs_reconstruction() const;
+  inline void set_needs_reconstruction(bool value);
+
+  // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;
   inline bool has_error() const;
   inline void clear_error();
-  static const int kErrorFieldNumber = 3;
+  static const int kErrorFieldNumber = 4;
   inline const ::xtreemfs::pbrpc::RPCHeader_ErrorResponse& error() const;
   inline ::xtreemfs::pbrpc::RPCHeader_ErrorResponse* mutable_error();
   inline ::xtreemfs::pbrpc::RPCHeader_ErrorResponse* release_error();
@@ -5613,6 +5620,8 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
   inline void clear_has_op_id();
   inline void set_has_object_number();
   inline void clear_has_object_number();
+  inline void set_has_needs_reconstruction();
+  inline void clear_has_needs_reconstruction();
   inline void set_has_error();
   inline void clear_has_error();
 
@@ -5621,9 +5630,10 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
   ::google::protobuf::uint64 op_id_;
   ::google::protobuf::uint64 object_number_;
   ::xtreemfs::pbrpc::RPCHeader_ErrorResponse* error_;
+  bool needs_reconstruction_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -11268,15 +11278,37 @@ inline void xtreemfs_ec_write_dataResponse::set_object_number(::google::protobuf
   object_number_ = value;
 }
 
-// optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;
-inline bool xtreemfs_ec_write_dataResponse::has_error() const {
+// required bool needs_reconstruction = 3;
+inline bool xtreemfs_ec_write_dataResponse::has_needs_reconstruction() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void xtreemfs_ec_write_dataResponse::set_has_error() {
+inline void xtreemfs_ec_write_dataResponse::set_has_needs_reconstruction() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void xtreemfs_ec_write_dataResponse::clear_has_error() {
+inline void xtreemfs_ec_write_dataResponse::clear_has_needs_reconstruction() {
   _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_ec_write_dataResponse::clear_needs_reconstruction() {
+  needs_reconstruction_ = false;
+  clear_has_needs_reconstruction();
+}
+inline bool xtreemfs_ec_write_dataResponse::needs_reconstruction() const {
+  return needs_reconstruction_;
+}
+inline void xtreemfs_ec_write_dataResponse::set_needs_reconstruction(bool value) {
+  set_has_needs_reconstruction();
+  needs_reconstruction_ = value;
+}
+
+// optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;
+inline bool xtreemfs_ec_write_dataResponse::has_error() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void xtreemfs_ec_write_dataResponse::set_has_error() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void xtreemfs_ec_write_dataResponse::clear_has_error() {
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void xtreemfs_ec_write_dataResponse::clear_error() {
   if (error_ != NULL) error_->::xtreemfs::pbrpc::RPCHeader_ErrorResponse::Clear();

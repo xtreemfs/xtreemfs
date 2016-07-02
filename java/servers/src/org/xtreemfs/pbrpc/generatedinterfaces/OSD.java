@@ -40921,17 +40921,27 @@ public final class OSD {
      */
     long getObjectNumber();
 
-    // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;
+    // required bool needs_reconstruction = 3;
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>required bool needs_reconstruction = 3;</code>
+     */
+    boolean hasNeedsReconstruction();
+    /**
+     * <code>required bool needs_reconstruction = 3;</code>
+     */
+    boolean getNeedsReconstruction();
+
+    // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
      */
     boolean hasError();
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
      */
     org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getError();
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
      */
     org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorOrBuilder();
   }
@@ -40996,9 +41006,14 @@ public final class OSD {
               objectNumber_ = input.readUInt64();
               break;
             }
-            case 26: {
+            case 24: {
+              bitField0_ |= 0x00000004;
+              needsReconstruction_ = input.readBool();
+              break;
+            }
+            case 34: {
               org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder subBuilder = null;
-              if (((bitField0_ & 0x00000004) == 0x00000004)) {
+              if (((bitField0_ & 0x00000008) == 0x00000008)) {
                 subBuilder = error_.toBuilder();
               }
               error_ = input.readMessage(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.PARSER, extensionRegistry);
@@ -41006,7 +41021,7 @@ public final class OSD {
                 subBuilder.mergeFrom(error_);
                 error_ = subBuilder.buildPartial();
               }
-              bitField0_ |= 0x00000004;
+              bitField0_ |= 0x00000008;
               break;
             }
           }
@@ -41081,23 +41096,39 @@ public final class OSD {
       return objectNumber_;
     }
 
-    // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;
-    public static final int ERROR_FIELD_NUMBER = 3;
-    private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse error_;
+    // required bool needs_reconstruction = 3;
+    public static final int NEEDS_RECONSTRUCTION_FIELD_NUMBER = 3;
+    private boolean needsReconstruction_;
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>required bool needs_reconstruction = 3;</code>
      */
-    public boolean hasError() {
+    public boolean hasNeedsReconstruction() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>required bool needs_reconstruction = 3;</code>
+     */
+    public boolean getNeedsReconstruction() {
+      return needsReconstruction_;
+    }
+
+    // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;
+    public static final int ERROR_FIELD_NUMBER = 4;
+    private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse error_;
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
+     */
+    public boolean hasError() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
      */
     public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getError() {
       return error_;
     }
     /**
-     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+     * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
      */
     public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorOrBuilder() {
       return error_;
@@ -41106,6 +41137,7 @@ public final class OSD {
     private void initFields() {
       opId_ = 0L;
       objectNumber_ = 0L;
+      needsReconstruction_ = false;
       error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
@@ -41118,6 +41150,10 @@ public final class OSD {
         return false;
       }
       if (!hasObjectNumber()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasNeedsReconstruction()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -41141,7 +41177,10 @@ public final class OSD {
         output.writeUInt64(2, objectNumber_);
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeMessage(3, error_);
+        output.writeBool(3, needsReconstruction_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeMessage(4, error_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -41162,7 +41201,11 @@ public final class OSD {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, error_);
+          .computeBoolSize(3, needsReconstruction_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, error_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -41285,12 +41328,14 @@ public final class OSD {
         bitField0_ = (bitField0_ & ~0x00000001);
         objectNumber_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000002);
+        needsReconstruction_ = false;
+        bitField0_ = (bitField0_ & ~0x00000004);
         if (errorBuilder_ == null) {
           error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
         } else {
           errorBuilder_.clear();
         }
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -41330,6 +41375,10 @@ public final class OSD {
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
+        result.needsReconstruction_ = needsReconstruction_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
         if (errorBuilder_ == null) {
           result.error_ = error_;
         } else {
@@ -41357,6 +41406,9 @@ public final class OSD {
         if (other.hasObjectNumber()) {
           setObjectNumber(other.getObjectNumber());
         }
+        if (other.hasNeedsReconstruction()) {
+          setNeedsReconstruction(other.getNeedsReconstruction());
+        }
         if (other.hasError()) {
           mergeError(other.getError());
         }
@@ -41370,6 +41422,10 @@ public final class OSD {
           return false;
         }
         if (!hasObjectNumber()) {
+          
+          return false;
+        }
+        if (!hasNeedsReconstruction()) {
           
           return false;
         }
@@ -41467,18 +41523,51 @@ public final class OSD {
         return this;
       }
 
-      // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;
+      // required bool needs_reconstruction = 3;
+      private boolean needsReconstruction_ ;
+      /**
+       * <code>required bool needs_reconstruction = 3;</code>
+       */
+      public boolean hasNeedsReconstruction() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>required bool needs_reconstruction = 3;</code>
+       */
+      public boolean getNeedsReconstruction() {
+        return needsReconstruction_;
+      }
+      /**
+       * <code>required bool needs_reconstruction = 3;</code>
+       */
+      public Builder setNeedsReconstruction(boolean value) {
+        bitField0_ |= 0x00000004;
+        needsReconstruction_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required bool needs_reconstruction = 3;</code>
+       */
+      public Builder clearNeedsReconstruction() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        needsReconstruction_ = false;
+        onChanged();
+        return this;
+      }
+
+      // optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;
       private org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse error_ = org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance();
       private com.google.protobuf.SingleFieldBuilder<
           org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder> errorBuilder_;
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public boolean hasError() {
-        return ((bitField0_ & 0x00000004) == 0x00000004);
+        return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse getError() {
         if (errorBuilder_ == null) {
@@ -41488,7 +41577,7 @@ public final class OSD {
         }
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public Builder setError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
         if (errorBuilder_ == null) {
@@ -41500,11 +41589,11 @@ public final class OSD {
         } else {
           errorBuilder_.setMessage(value);
         }
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public Builder setError(
           org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder builderForValue) {
@@ -41514,15 +41603,15 @@ public final class OSD {
         } else {
           errorBuilder_.setMessage(builderForValue.build());
         }
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public Builder mergeError(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse value) {
         if (errorBuilder_ == null) {
-          if (((bitField0_ & 0x00000004) == 0x00000004) &&
+          if (((bitField0_ & 0x00000008) == 0x00000008) &&
               error_ != org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.getDefaultInstance()) {
             error_ =
               org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.newBuilder(error_).mergeFrom(value).buildPartial();
@@ -41533,11 +41622,11 @@ public final class OSD {
         } else {
           errorBuilder_.mergeFrom(value);
         }
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public Builder clearError() {
         if (errorBuilder_ == null) {
@@ -41546,19 +41635,19 @@ public final class OSD {
         } else {
           errorBuilder_.clear();
         }
-        bitField0_ = (bitField0_ & ~0x00000004);
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder getErrorBuilder() {
-        bitField0_ |= 0x00000004;
+        bitField0_ |= 0x00000008;
         onChanged();
         return getErrorFieldBuilder().getBuilder();
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       public org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder getErrorOrBuilder() {
         if (errorBuilder_ != null) {
@@ -41568,7 +41657,7 @@ public final class OSD {
         }
       }
       /**
-       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 3;</code>
+       * <code>optional .xtreemfs.pbrpc.RPCHeader.ErrorResponse error = 4;</code>
        */
       private com.google.protobuf.SingleFieldBuilder<
           org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse.Builder, org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponseOrBuilder> 
@@ -42018,131 +42107,132 @@ public final class OSD {
       "\004\022\025\n\robject_number\030\004 \002(\004\022\016\n\006offset\030\005 \002(\r" +
       "\0224\n\017stripe_interval\030\006 \002(\0132\033.xtreemfs.pbr" +
       "pc.IntervalMsg\0225\n\020commit_intervals\030\007 \003(\013" +
-      "2\033.xtreemfs.pbrpc.IntervalMsg\"~\n\036xtreemf",
-      "s_ec_write_dataResponse\022\r\n\005op_id\030\001 \002(\004\022\025" +
-      "\n\robject_number\030\002 \002(\004\0226\n\005error\030\003 \001(\0132\'.x" +
-      "treemfs.pbrpc.RPCHeader.ErrorResponse*\215\001" +
-      "\n\017OSDHealthResult\022\034\n\030OSD_HEALTH_RESULT_P" +
-      "ASSED\020\000\022\035\n\031OSD_HEALTH_RESULT_WARNING\020\001\022\034" +
-      "\n\030OSD_HEALTH_RESULT_FAILED\020\002\022\037\n\033OSD_HEAL" +
-      "TH_RESULT_NOT_AVAIL\020\0032\234$\n\nOSDService\022L\n\004" +
-      "read\022\033.xtreemfs.pbrpc.readRequest\032\032.xtre" +
-      "emfs.pbrpc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010tr" +
-      "uncate\022\037.xtreemfs.pbrpc.truncateRequest\032",
-      " .xtreemfs.pbrpc.OSDWriteResponse\"\007\215\265\030\013\000" +
-      "\000\000\022T\n\006unlink\022\".xtreemfs.pbrpc.unlink_osd" +
-      "_Request\032\035.xtreemfs.pbrpc.emptyResponse\"" +
-      "\007\215\265\030\014\000\000\000\022T\n\005write\022\034.xtreemfs.pbrpc.write" +
-      "Request\032 .xtreemfs.pbrpc.OSDWriteRespons" +
-      "e\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027xtreemfs_broadcast_gma" +
-      "x\022..xtreemfs.pbrpc.xtreemfs_broadcast_gm" +
-      "axRequest\032\035.xtreemfs.pbrpc.emptyResponse" +
-      "\"\007\215\265\030\024\000\000\000\022j\n\025xtreemfs_check_object\022,.xtr" +
-      "eemfs.pbrpc.xtreemfs_check_objectRequest",
-      "\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n" +
-      "\034xtreemfs_cleanup_get_results\022\034.xtreemfs" +
-      ".pbrpc.emptyRequest\0324.xtreemfs.pbrpc.xtr" +
-      "eemfs_cleanup_get_resultsResponse\"\007\215\265\030\036\000" +
-      "\000\000\022y\n\033xtreemfs_cleanup_is_running\022\034.xtre" +
-      "emfs.pbrpc.emptyRequest\0323.xtreemfs.pbrpc" +
-      ".xtreemfs_cleanup_is_runningResponse\"\007\215\265" +
-      "\030\037\000\000\000\022o\n\026xtreemfs_cleanup_start\022-.xtreem" +
-      "fs.pbrpc.xtreemfs_cleanup_startRequest\032\035" +
-      ".xtreemfs.pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022q",
-      "\n\027xtreemfs_cleanup_status\022\034.xtreemfs.pbr" +
-      "pc.emptyRequest\032/.xtreemfs.pbrpc.xtreemf" +
-      "s_cleanup_statusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtr" +
-      "eemfs_cleanup_stop\022\034.xtreemfs.pbrpc.empt" +
-      "yRequest\032\035.xtreemfs.pbrpc.emptyResponse\"" +
-      "\007\215\265\030\"\000\000\000\022g\n\037xtreemfs_cleanup_versions_st" +
-      "art\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtre" +
-      "emfs.pbrpc.emptyResponse\"\007\215\265\030#\000\000\000\022\205\001\n\032xt" +
-      "reemfs_finalize_vouchers\0221.xtreemfs.pbrp" +
-      "c.xtreemfs_finalize_vouchersRequest\032+.xt",
-      "reemfs.pbrpc.OSDFinalizeVouchersResponse" +
-      "\"\007\215\265\030\026\000\000\000\022o\n\026xtreemfs_repair_object\022-.xt" +
-      "reemfs.pbrpc.xtreemfs_repair_objectReque" +
-      "st\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030$\000" +
-      "\000\000\022d\n\022xtreemfs_rwr_fetch\022).xtreemfs.pbrp" +
-      "c.xtreemfs_rwr_fetchRequest\032\032.xtreemfs.p" +
-      "brpc.ObjectData\"\007\215\265\030I\000\000\000\022u\n\027xtreemfs_rwr" +
-      "_flease_msg\022..xtreemfs.pbrpc.xtreemfs_rw" +
-      "r_flease_msgRequest\032\035.xtreemfs.pbrpc.emp" +
-      "tyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemfs_rwr_",
-      "notify\022\037.xtreemfs.pbrpc.FileCredentials\032" +
-      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030K\000\000\000\022" +
-      "|\n\036xtreemfs_rwr_set_primary_epoch\0225.xtre" +
-      "emfs.pbrpc.xtreemfs_rwr_set_primary_epoc" +
-      "hRequest\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265" +
-      "\030N\000\000\000\022i\n\023xtreemfs_rwr_status\022*.xtreemfs." +
-      "pbrpc.xtreemfs_rwr_statusRequest\032\035.xtree" +
-      "mfs.pbrpc.ReplicaStatus\"\007\215\265\030L\000\000\000\022m\n\025xtre" +
-      "emfs_rwr_truncate\022,.xtreemfs.pbrpc.xtree" +
-      "mfs_rwr_truncateRequest\032\035.xtreemfs.pbrpc",
-      ".emptyResponse\"\007\215\265\030J\000\000\000\022m\n\023xtreemfs_rwr_" +
-      "update\022*.xtreemfs.pbrpc.xtreemfs_rwr_upd" +
-      "ateRequest\032\035.xtreemfs.pbrpc.emptyRespons" +
-      "e\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs_rwr_auth_stat" +
-      "e\022..xtreemfs.pbrpc.xtreemfs_rwr_auth_sta" +
-      "teRequest\032\035.xtreemfs.pbrpc.emptyResponse" +
-      "\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_reset_complete" +
-      "\0222.xtreemfs.pbrpc.xtreemfs_rwr_reset_com" +
-      "pleteRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
-      "nse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_internal_get_gm",
-      "ax\0221.xtreemfs.pbrpc.xtreemfs_internal_ge" +
-      "t_gmaxRequest\032\034.xtreemfs.pbrpc.InternalG" +
-      "max\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_internal_trunca" +
-      "te\022\037.xtreemfs.pbrpc.truncateRequest\032 .xt" +
-      "reemfs.pbrpc.OSDWriteResponse\"\007\215\265\030)\000\000\000\022\233" +
-      "\001\n\037xtreemfs_internal_get_file_size\0226.xtr" +
-      "eemfs.pbrpc.xtreemfs_internal_get_file_s" +
-      "izeRequest\0327.xtreemfs.pbrpc.xtreemfs_int" +
-      "ernal_get_file_sizeResponse\"\007\215\265\030*\000\000\000\022\207\001\n" +
-      "\034xtreemfs_internal_read_local\0223.xtreemfs",
-      ".pbrpc.xtreemfs_internal_read_localReque" +
-      "st\032).xtreemfs.pbrpc.InternalReadLocalRes" +
-      "ponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemfs_internal_get" +
-      "_object_set\0227.xtreemfs.pbrpc.xtreemfs_in" +
-      "ternal_get_object_setRequest\032\032.xtreemfs." +
-      "pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022\205\001\n!xtreemfs_i" +
-      "nternal_get_fileid_list\022\034.xtreemfs.pbrpc" +
-      ".emptyRequest\0329.xtreemfs.pbrpc.xtreemfs_" +
-      "internal_get_fileid_listResponse\"\007\215\265\030-\000\000" +
-      "\000\022S\n\025xtreemfs_lock_acquire\022\033.xtreemfs.pb",
-      "rpc.lockRequest\032\024.xtreemfs.pbrpc.Lock\"\007\215" +
-      "\265\0302\000\000\000\022Q\n\023xtreemfs_lock_check\022\033.xtreemfs" +
-      ".pbrpc.lockRequest\032\024.xtreemfs.pbrpc.Lock" +
-      "\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock_release\022\033.xtr" +
-      "eemfs.pbrpc.lockRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\0304\000\000\000\022f\n\rxtreemfs_ping" +
-      "\022%.xtreemfs.pbrpc.xtreemfs_pingMesssage\032" +
-      "%.xtreemfs.pbrpc.xtreemfs_pingMesssage\"\007" +
-      "\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdown\022\034.xtreemfs." +
-      "pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.empt",
-      "yResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtreemfs_xloc_set" +
-      "_invalidate\0223.xtreemfs.pbrpc.xtreemfs_xl" +
-      "oc_set_invalidateRequest\0324.xtreemfs.pbrp" +
-      "c.xtreemfs_xloc_set_invalidateResponse\"\007" +
-      "\215\265\030Q\000\000\000\022\221\001\n#xtreemfs_rwr_auth_state_inva" +
-      "lidated\022..xtreemfs.pbrpc.xtreemfs_rwr_au" +
-      "th_stateRequest\0321.xtreemfs.pbrpc.xtreemf" +
-      "s_rwr_reset_statusResponse\"\007\215\265\030R\000\000\000\022\211\001\n\031" +
-      "xtreemfs_rwr_reset_status\0220.xtreemfs.pbr" +
-      "pc.xtreemfs_rwr_reset_statusRequest\0321.xt",
-      "reemfs.pbrpc.xtreemfs_rwr_reset_statusRe" +
-      "sponse\"\007\215\265\030S\000\000\000\022\236\001\n xtreemfs_ec_get_inte" +
-      "rval_vectors\0227.xtreemfs.pbrpc.xtreemfs_e" +
-      "c_get_interval_vectorsRequest\0328.xtreemfs" +
-      ".pbrpc.xtreemfs_ec_get_interval_vectorsR" +
-      "esponse\"\007\215\265\030T\000\000\000\022\211\001\n\031xtreemfs_ec_commit_" +
-      "vector\0220.xtreemfs.pbrpc.xtreemfs_ec_comm" +
-      "it_vectorRequest\0321.xtreemfs.pbrpc.xtreem" +
-      "fs_ec_commit_vectorResponse\"\007\215\265\030U\000\000\000\022\204\001\n" +
-      "\026xtreemfs_ec_write_data\022-.xtreemfs.pbrpc",
-      ".xtreemfs_ec_write_dataRequest\032..xtreemf" +
-      "s.pbrpc.xtreemfs_ec_write_dataResponse\"\013" +
-      "\215\265\030V\000\000\000\240\265\030\001\032\007\225\265\0301u\000\000B(\n&org.xtreemfs.pbr" +
-      "pc.generatedinterfaces"
+      "2\033.xtreemfs.pbrpc.IntervalMsg\"\234\001\n\036xtreem",
+      "fs_ec_write_dataResponse\022\r\n\005op_id\030\001 \002(\004\022" +
+      "\025\n\robject_number\030\002 \002(\004\022\034\n\024needs_reconstr" +
+      "uction\030\003 \002(\010\0226\n\005error\030\004 \001(\0132\'.xtreemfs.p" +
+      "brpc.RPCHeader.ErrorResponse*\215\001\n\017OSDHeal" +
+      "thResult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022\035" +
+      "\n\031OSD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HEA" +
+      "LTH_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESULT" +
+      "_NOT_AVAIL\020\0032\234$\n\nOSDService\022L\n\004read\022\033.xt" +
+      "reemfs.pbrpc.readRequest\032\032.xtreemfs.pbrp" +
+      "c.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.",
+      "xtreemfs.pbrpc.truncateRequest\032 .xtreemf" +
+      "s.pbrpc.OSDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006unl" +
+      "ink\022\".xtreemfs.pbrpc.unlink_osd_Request\032" +
+      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000\022" +
+      "T\n\005write\022\034.xtreemfs.pbrpc.writeRequest\032 " +
+      ".xtreemfs.pbrpc.OSDWriteResponse\"\013\215\265\030\r\000\000" +
+      "\000\240\265\030\001\022q\n\027xtreemfs_broadcast_gmax\022..xtree" +
+      "mfs.pbrpc.xtreemfs_broadcast_gmaxRequest" +
+      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000\000" +
+      "\022j\n\025xtreemfs_check_object\022,.xtreemfs.pbr",
+      "pc.xtreemfs_check_objectRequest\032\032.xtreem" +
+      "fs.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs" +
+      "_cleanup_get_results\022\034.xtreemfs.pbrpc.em" +
+      "ptyRequest\0324.xtreemfs.pbrpc.xtreemfs_cle" +
+      "anup_get_resultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xtr" +
+      "eemfs_cleanup_is_running\022\034.xtreemfs.pbrp" +
+      "c.emptyRequest\0323.xtreemfs.pbrpc.xtreemfs" +
+      "_cleanup_is_runningResponse\"\007\215\265\030\037\000\000\000\022o\n\026" +
+      "xtreemfs_cleanup_start\022-.xtreemfs.pbrpc." +
+      "xtreemfs_cleanup_startRequest\032\035.xtreemfs",
+      ".pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreemf" +
+      "s_cleanup_status\022\034.xtreemfs.pbrpc.emptyR" +
+      "equest\032/.xtreemfs.pbrpc.xtreemfs_cleanup" +
+      "_statusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cle" +
+      "anup_stop\022\034.xtreemfs.pbrpc.emptyRequest\032" +
+      "\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000\022" +
+      "g\n\037xtreemfs_cleanup_versions_start\022\034.xtr" +
+      "eemfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrp" +
+      "c.emptyResponse\"\007\215\265\030#\000\000\000\022\205\001\n\032xtreemfs_fi" +
+      "nalize_vouchers\0221.xtreemfs.pbrpc.xtreemf",
+      "s_finalize_vouchersRequest\032+.xtreemfs.pb" +
+      "rpc.OSDFinalizeVouchersResponse\"\007\215\265\030\026\000\000\000" +
+      "\022o\n\026xtreemfs_repair_object\022-.xtreemfs.pb" +
+      "rpc.xtreemfs_repair_objectRequest\032\035.xtre" +
+      "emfs.pbrpc.emptyResponse\"\007\215\265\030$\000\000\000\022d\n\022xtr" +
+      "eemfs_rwr_fetch\022).xtreemfs.pbrpc.xtreemf" +
+      "s_rwr_fetchRequest\032\032.xtreemfs.pbrpc.Obje" +
+      "ctData\"\007\215\265\030I\000\000\000\022u\n\027xtreemfs_rwr_flease_m" +
+      "sg\022..xtreemfs.pbrpc.xtreemfs_rwr_flease_" +
+      "msgRequest\032\035.xtreemfs.pbrpc.emptyRespons",
+      "e\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemfs_rwr_notify\022\037." +
+      "xtreemfs.pbrpc.FileCredentials\032\035.xtreemf" +
+      "s.pbrpc.emptyResponse\"\007\215\265\030K\000\000\000\022|\n\036xtreem" +
+      "fs_rwr_set_primary_epoch\0225.xtreemfs.pbrp" +
+      "c.xtreemfs_rwr_set_primary_epochRequest\032" +
+      "\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030N\000\000\000\022i\n\023" +
+      "xtreemfs_rwr_status\022*.xtreemfs.pbrpc.xtr" +
+      "eemfs_rwr_statusRequest\032\035.xtreemfs.pbrpc" +
+      ".ReplicaStatus\"\007\215\265\030L\000\000\000\022m\n\025xtreemfs_rwr_" +
+      "truncate\022,.xtreemfs.pbrpc.xtreemfs_rwr_t",
+      "runcateRequest\032\035.xtreemfs.pbrpc.emptyRes" +
+      "ponse\"\007\215\265\030J\000\000\000\022m\n\023xtreemfs_rwr_update\022*." +
+      "xtreemfs.pbrpc.xtreemfs_rwr_updateReques" +
+      "t\032\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030H\000\000" +
+      "\000\240\265\030\001\022q\n\027xtreemfs_rwr_auth_state\022..xtree" +
+      "mfs.pbrpc.xtreemfs_rwr_auth_stateRequest" +
+      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030O\000\000\000" +
+      "\022y\n\033xtreemfs_rwr_reset_complete\0222.xtreem" +
+      "fs.pbrpc.xtreemfs_rwr_reset_completeRequ" +
+      "est\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030P",
+      "\000\000\000\022v\n\032xtreemfs_internal_get_gmax\0221.xtre" +
+      "emfs.pbrpc.xtreemfs_internal_get_gmaxReq" +
+      "uest\032\034.xtreemfs.pbrpc.InternalGmax\"\007\215\265\030(" +
+      "\000\000\000\022h\n\032xtreemfs_internal_truncate\022\037.xtre" +
+      "emfs.pbrpc.truncateRequest\032 .xtreemfs.pb" +
+      "rpc.OSDWriteResponse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreem" +
+      "fs_internal_get_file_size\0226.xtreemfs.pbr" +
+      "pc.xtreemfs_internal_get_file_sizeReques" +
+      "t\0327.xtreemfs.pbrpc.xtreemfs_internal_get" +
+      "_file_sizeResponse\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs",
+      "_internal_read_local\0223.xtreemfs.pbrpc.xt" +
+      "reemfs_internal_read_localRequest\032).xtre" +
+      "emfs.pbrpc.InternalReadLocalResponse\"\007\215\265" +
+      "\030+\000\000\000\022\200\001\n xtreemfs_internal_get_object_s" +
+      "et\0227.xtreemfs.pbrpc.xtreemfs_internal_ge" +
+      "t_object_setRequest\032\032.xtreemfs.pbrpc.Obj" +
+      "ectList\"\007\215\265\030,\000\000\000\022\205\001\n!xtreemfs_internal_g" +
+      "et_fileid_list\022\034.xtreemfs.pbrpc.emptyReq" +
+      "uest\0329.xtreemfs.pbrpc.xtreemfs_internal_" +
+      "get_fileid_listResponse\"\007\215\265\030-\000\000\000\022S\n\025xtre",
+      "emfs_lock_acquire\022\033.xtreemfs.pbrpc.lockR" +
+      "equest\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n" +
+      "\023xtreemfs_lock_check\022\033.xtreemfs.pbrpc.lo" +
+      "ckRequest\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0303\000\000\000" +
+      "\022\\\n\025xtreemfs_lock_release\022\033.xtreemfs.pbr" +
+      "pc.lockRequest\032\035.xtreemfs.pbrpc.emptyRes" +
+      "ponse\"\007\215\265\0304\000\000\000\022f\n\rxtreemfs_ping\022%.xtreem" +
+      "fs.pbrpc.xtreemfs_pingMesssage\032%.xtreemf" +
+      "s.pbrpc.xtreemfs_pingMesssage\"\007\215\265\030<\000\000\000\022Y" +
+      "\n\021xtreemfs_shutdown\022\034.xtreemfs.pbrpc.emp",
+      "tyRequest\032\035.xtreemfs.pbrpc.emptyResponse" +
+      "\"\007\215\265\030F\000\000\000\022\222\001\n\034xtreemfs_xloc_set_invalida" +
+      "te\0223.xtreemfs.pbrpc.xtreemfs_xloc_set_in" +
+      "validateRequest\0324.xtreemfs.pbrpc.xtreemf" +
+      "s_xloc_set_invalidateResponse\"\007\215\265\030Q\000\000\000\022\221" +
+      "\001\n#xtreemfs_rwr_auth_state_invalidated\022." +
+      ".xtreemfs.pbrpc.xtreemfs_rwr_auth_stateR" +
+      "equest\0321.xtreemfs.pbrpc.xtreemfs_rwr_res" +
+      "et_statusResponse\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs_" +
+      "rwr_reset_status\0220.xtreemfs.pbrpc.xtreem",
+      "fs_rwr_reset_statusRequest\0321.xtreemfs.pb" +
+      "rpc.xtreemfs_rwr_reset_statusResponse\"\007\215" +
+      "\265\030S\000\000\000\022\236\001\n xtreemfs_ec_get_interval_vect" +
+      "ors\0227.xtreemfs.pbrpc.xtreemfs_ec_get_int" +
+      "erval_vectorsRequest\0328.xtreemfs.pbrpc.xt" +
+      "reemfs_ec_get_interval_vectorsResponse\"\007" +
+      "\215\265\030T\000\000\000\022\211\001\n\031xtreemfs_ec_commit_vector\0220." +
+      "xtreemfs.pbrpc.xtreemfs_ec_commit_vector" +
+      "Request\0321.xtreemfs.pbrpc.xtreemfs_ec_com" +
+      "mit_vectorResponse\"\007\215\265\030U\000\000\000\022\204\001\n\026xtreemfs",
+      "_ec_write_data\022-.xtreemfs.pbrpc.xtreemfs" +
+      "_ec_write_dataRequest\032..xtreemfs.pbrpc.x" +
+      "treemfs_ec_write_dataResponse\"\013\215\265\030V\000\000\000\240\265" +
+      "\030\001\032\007\225\265\0301u\000\000B(\n&org.xtreemfs.pbrpc.genera" +
+      "tedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -42454,7 +42544,7 @@ public final class OSD {
           internal_static_xtreemfs_pbrpc_xtreemfs_ec_write_dataResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_ec_write_dataResponse_descriptor,
-              new java.lang.String[] { "OpId", "ObjectNumber", "Error", });
+              new java.lang.String[] { "OpId", "ObjectNumber", "NeedsReconstruction", "Error", });
           com.google.protobuf.ExtensionRegistry registry =
             com.google.protobuf.ExtensionRegistry.newInstance();
           registry.add(org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC.procId);

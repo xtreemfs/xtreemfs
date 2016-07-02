@@ -455,12 +455,10 @@ message xtreemfs_ec_write_dataRequest {
 }
 
 message xtreemfs_ec_write_dataResponse {
-  required uint64 op_id = 1;
-  required uint64 object_number = 2;
-  optional RPCHeader.ErrorResponse error = 3;
+  // required uint64 op_id = 1;
+  // required uint64 object_number = 2;
+  required bool needs_reconstruction = 3;
 }
-
-
 
 
 
