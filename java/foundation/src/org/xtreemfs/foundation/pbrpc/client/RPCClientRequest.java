@@ -8,7 +8,6 @@
 
 package org.xtreemfs.foundation.pbrpc.client;
 
-import com.google.protobuf.Message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -16,11 +15,14 @@ import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferOutputStream;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.utils.RecordMarker;
+import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferOutputStream;
+
+import com.google.protobuf.Message;
 
 
 /**
@@ -83,7 +85,8 @@ public class RPCClientRequest<ReturnType extends Message> {
 
     public ByteBuffer[] packBuffers(ByteBuffer recordMarker) {
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending record marker: %d/%d/%d", hdrLen,msgLen,dataLen);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending record marker: %d/%d/%d", hdrLen,
+                    msgLen, dataLen);
         }
         recordMarker.putInt(hdrLen);
         recordMarker.putInt(msgLen);
@@ -94,7 +97,7 @@ public class RPCClientRequest<ReturnType extends Message> {
         for (int i = 0; i < buffers.length; i++) {
             arr[i+1] = buffers[i].getBuffer();
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "send buffer #%d: %s", i+1,buffers[i]);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "send buffer #%d: %s", i + 1, buffers[i]);
             }
         }
         return arr;

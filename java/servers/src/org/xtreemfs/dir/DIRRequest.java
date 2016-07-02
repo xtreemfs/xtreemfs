@@ -8,8 +8,8 @@
 
 package org.xtreemfs.dir;
 
-import com.google.protobuf.Message;
 import java.io.IOException;
+
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -19,6 +19,8 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequest;
 import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.mrc.RequestDetails;
+
+import com.google.protobuf.Message;
 
 /**
  * 
@@ -44,7 +46,8 @@ public class DIRRequest {
                 ReusableBufferInputStream istream = new ReusableBufferInputStream(payload);
                 requestMessage = message.newBuilderForType().mergeFrom(istream).build();
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s",message.getClass().getSimpleName());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "parsed request: %s",
+                            message.getClass().getSimpleName());
                 }
             } else {
                 requestMessage = message.getDefaultInstanceForType();
@@ -52,7 +55,8 @@ public class DIRRequest {
         } else {
             requestMessage = null;
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: empty message (emptyRequest)");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                        "parsed request: empty message (emptyRequest)");
             }
         }
 
@@ -65,7 +69,8 @@ public class DIRRequest {
     public void sendSuccess(Message response) {
         try {
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "sending response: %s",response.getClass().getSimpleName());
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending response: %s",
+                        response.getClass().getSimpleName());
             }
             rpcRequest.sendResponse(response,null);
         } catch (IOException ex) {
