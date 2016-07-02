@@ -94,12 +94,6 @@ public class HashStorageLayout extends StorageLayout {
      */
     public static final String             EC_VERSIONS_CUR               = ".ec_versions_cur";
     public static final String             EC_VERSIONS_NEXT              = ".ec_versions_next";
-    // public static final String EC_DIR = ".ec";
-    // public static final String EC_NEXT_DIR = "next";
-    // public static final String EC_CODE_DIR = "code";
-    // public static final String EC_DELTA_DIR = "delta";
-    // public static final String EC_VERSIONS_CUR = "versions_cur";
-    // public static final String EC_VERSIONS_NEXT = "versions_next";
 
     /**
      * file that stores the invalid expire times for a file

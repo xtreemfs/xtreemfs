@@ -13,6 +13,18 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 public class ProtoInterval extends Interval {
     private final IntervalMsg intervalMsg;
 
+    public ProtoInterval(long start, long end, long version, long id, long opStart, long opEnd) {
+        IntervalMsg.Builder msg = IntervalMsg.newBuilder();
+        msg.setStart(start).setEnd(end).setVersion(version).setId(id);
+        if (opStart != start) {
+            msg.setOpStart(opStart);
+        }
+        if (opEnd != end) {
+            msg.setOpEnd(opEnd);
+        }
+        intervalMsg = msg.build();
+    }
+
     public ProtoInterval(IntervalMsg intervalMsg) {
         this.intervalMsg = intervalMsg;
     }
@@ -51,6 +63,10 @@ public class ProtoInterval extends Interval {
             return intervalMsg.getOpEnd();
         }
         return intervalMsg.getEnd();
+    }
+
+    public IntervalMsg getMsg() {
+        return intervalMsg;
     }
 
     public static IntervalMsg toProto(Interval interval) {

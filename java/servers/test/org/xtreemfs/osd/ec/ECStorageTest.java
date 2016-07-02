@@ -39,6 +39,7 @@ public class ECStorageTest {
         LinkedList<Interval> nextVecIntervals = new LinkedList<Interval>();
 
         Interval interval;
+        Interval reqInterval;
 
 
         // Commit to an empty cur vector
@@ -50,15 +51,15 @@ public class ECStorageTest {
         reqVecIntervals.add(interval);
         expectedCommit.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertFalse(failed);
         assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
         
 
-        // Abort failed op overlapping with two commited intervals
-        // *******************************************************
+        // Abort failed op overlapping with two committed intervals
+        // ********************************************************
         clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
         
@@ -72,8 +73,8 @@ public class ECStorageTest {
         nextVecIntervals.add(interval);
         expectedAbort.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertFalse(failed);
         assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
@@ -95,8 +96,8 @@ public class ECStorageTest {
         nextVecIntervals.add(interval);
         expectedAbort.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertFalse(failed);
         assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
@@ -123,8 +124,40 @@ public class ECStorageTest {
         interval = new ObjectInterval(9, 12, 2, 2);
         reqVecIntervals.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
+        assertFalse(failed);
+        assertEquals(expectedAbort, toAbortAcc);
+        assertEquals(expectedCommit, toCommitAcc);
+
+        
+        // Ignore fragments of the commit interval
+        // *****************************************
+        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+                nextVecIntervals);
+
+        interval = new ObjectInterval(0, 6, 2, 2, 0, 12);
+        nextVecIntervals.add(interval);
+
+        interval = ObjectInterval.empty(0, 12);
+        reqVecIntervals.add(interval);
+
+        reqInterval = new ObjectInterval(6, 12, 2, 2);
+
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, reqInterval, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
+        assertFalse(failed);
+        assertEquals(expectedAbort, toAbortAcc);
+        assertEquals(expectedCommit, toCommitAcc);
+
+        // Test if the actual commit loop is entered
+        interval = new ObjectInterval(0, 12, 1, 1, 0, 12);
+        curVecIntervals.add(interval);
+        reqVecIntervals.clear();
+        reqVecIntervals.add(interval);
+
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, reqInterval, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertFalse(failed);
         assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
@@ -138,8 +171,8 @@ public class ECStorageTest {
         interval = new ObjectInterval(0, 12, 1, 2);
         reqVecIntervals.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertTrue(failed);
 
 
@@ -158,8 +191,8 @@ public class ECStorageTest {
         interval = new ObjectInterval(6, 12, 1, 1);
         nextVecIntervals.add(interval);
 
-        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc);
+        failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc, toAbortAcc);
         assertTrue(failed);
 
 
@@ -175,8 +208,8 @@ public class ECStorageTest {
         curVecIntervals.add(interval);
 
         try {
-            failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, curVecIntervals, nextVecIntervals,
-                    toCommitAcc, toAbortAcc);
+            failed = ECStorage.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
+                    nextVecIntervals, toCommitAcc, toAbortAcc);
             fail();
         } catch (IOException ex) {
             // expected

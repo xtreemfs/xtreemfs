@@ -33,13 +33,12 @@ import org.xtreemfs.foundation.flease.proposer.FleaseException;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
-import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
-import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -48,8 +47,10 @@ import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
-import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResult;
-import org.xtreemfs.osd.ec.ECMasterStage.ResponseResultManager.ResponseResultListener;
+import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
+import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
+import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
+import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECCommitVector;
 import org.xtreemfs.osd.operations.ECGetIntervalVectors;
 import org.xtreemfs.osd.operations.OSDOperation;
@@ -57,15 +58,17 @@ import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
-import com.google.protobuf.Message;
-
-public class ECMasterStage extends Stage {
+public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
+    // FIXME (jdilmann): What would be sane queue limits?
     private static final int               MAX_EXTERNAL_REQUESTS_IN_Q = 250;
     private static final int               MAX_PENDING_PER_FILE       = 10;
 
@@ -85,6 +88,8 @@ public class ECMasterStage extends Stage {
     private final AtomicInteger            externalRequestsInQueue;
 
     private final Map<String, ECFileState> fileStates;
+
+    private long                           opIdCount;
 
     public ECMasterStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength,
             FleaseStage fstage, FleasePrefixHandler fleaseHandler) throws IOException {
@@ -125,6 +130,8 @@ public class ECMasterStage extends Stage {
             }
         });
 
+        // Initialize this masters operation_id
+        opIdCount = 0;
     }
 
     @Override
@@ -190,8 +197,10 @@ public class ECMasterStage extends Stage {
     }
 
     private static enum STAGE_OP {
-        PREPARE, READ, WRITE, TRUNCATE, LEASE_STATE_CHANGED, CLOSE, 
-        VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE;
+        READ, WRITE, TRUNCATE, 
+        LEASE_STATE_CHANGED, 
+        CLOSE, VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE,
+        WRITE_WORKER_SIGNAL, READ_WORKER_SIGNAL;
 
         private static STAGE_OP[] values_ = values();
 
@@ -204,16 +213,17 @@ public class ECMasterStage extends Stage {
     protected void processMethod(StageRequest method) {
         switch (STAGE_OP.valueOf(method.getStageMethod())) {
         // External requests
-        case PREPARE:
-            externalRequestsInQueue.decrementAndGet();
-            processPrepare(method);
-            break;
         case READ:
             externalRequestsInQueue.decrementAndGet();
             processRead(method);
             break;
         case WRITE:
+            // FIXME (jdillmann): The write is not finished after the process write method returned
             externalRequestsInQueue.decrementAndGet();
+            processWrite(method);
+            break;
+        case WRITE_WORKER_SIGNAL:
+            processWriteWorkerSignal(method);
             break;
         case TRUNCATE:
             externalRequestsInQueue.decrementAndGet();
@@ -234,6 +244,31 @@ public class ECMasterStage extends Stage {
 
         // default : throw new IllegalArgumentException("No such stageop");
         }
+    }
+
+    @Override
+    public void signal(ECWorker worker, Object event) {
+        STAGE_OP op;
+
+        switch (worker.getType()) {
+        case WRITE:
+            op = STAGE_OP.WRITE_WORKER_SIGNAL;
+            break;
+
+        case READ:
+            op = STAGE_OP.READ_WORKER_SIGNAL;
+            break;
+
+        default:
+            Logging.logMessage(Logging.LEVEL_INFO, this, "Unknown worker type %s ignores", worker.getType());
+            return;
+
+        }
+
+        // Re-Enque
+        Object callback = worker.getRequest().getCallback();
+        OSDRequest request = worker.getRequest().getRequest();
+        this.enqueueOperation(op, new Object[] { worker, event }, request, null, callback);
     }
 
     /**
@@ -270,9 +305,10 @@ public class ECMasterStage extends Stage {
         Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
                 "(R:%s) replica for file %s failed (in state: %s): %s", localID, file.getFileId(), file.getState(),
                 ErrorUtils.formatError(ex));
-        file.resetDefaults();
         fstage.closeCell(file.getCellId(), false);
         abortPendingRequests(file, ex);
+        // Finally reset the file state
+        file.resetDefaults();
     }
 
     /**
@@ -284,12 +320,37 @@ public class ECMasterStage extends Stage {
                     "Request had been aborted.");
         }
 
+        for (ECWorker worker : file.getActiveRequests()) {
+            Object callback = worker.getRequest().getCallback();
+            if (callback != null && callback instanceof FallibleCallback) {
+                ((FallibleCallback) callback).failed(error);
+            }
+        }
+        file.clearActiveRequests();
+
         while (file.hasPendingRequests()) {
             StageRequest request = file.removePendingRequest();
             Object callback = request.getCallback();
             if (callback != null && callback instanceof FallibleCallback) {
                 ((FallibleCallback) callback).failed(error);
             }
+        }
+    }
+
+    void addPendingRequest(final ECFileState file, StageRequest request) {
+        if (file.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                        "Rejecting request: too many requests (is: %d, max %d) in queue for file %s",
+                        file.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, file.getFileId());
+            }
+            Object callback = request.getCallback();
+            if (callback != null && callback instanceof FallibleCallback) {
+                ((FallibleCallback) callback).failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                        POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
+            }
+        } else {
+            file.addPendingRequest(request);
         }
     }
 
@@ -408,11 +469,18 @@ public class ECMasterStage extends Stage {
         if (state == FileState.PRIMARY || state == FileState.BACKUP || state == FileState.WAITING_FOR_LEASE) {
             if (localIsPrimary && state != FileState.PRIMARY) {
                 // The local OSD became primary and has been BACKUP or WAITING before
-                file.setMasterEpoch(lease.getMasterEpochNumber());
+                if (file.getMasterEpoch() != lease.getMasterEpochNumber()) {
+                    long masterEpoch = lease.getMasterEpochNumber();
+                    // use the lower 32 bit of the master epoch for the new opId
+                    opIdCount = (masterEpoch << 32);
+
+                    file.setMasterEpoch(lease.getMasterEpochNumber());
+                }
                 doVersionReset(file);
 
             } else if (!localIsPrimary && state != FileState.BACKUP) {
                 // The local OSD became backup and has been PRIMARY or WAITING before
+                opIdCount = 0;
                 file.setMasterEpoch(FleaseMessage.IGNORE_MASTER_EPOCH);
                 doBackup(file);
             }
@@ -443,24 +511,13 @@ public class ECMasterStage extends Stage {
         }
     }
 
-
-    public void prepare(FileCredentials credentials, XLocations xloc, PrepareCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGE_OP.PREPARE, new Object[] { credentials, xloc, }, request, null,
-                callback);
-    }
-
-    public static interface PrepareCallback extends FallibleCallback {
-        public void success();
-
+    public static interface RedirectCallback extends FallibleCallback {
         public void redirect(String redirectTo);
     }
 
-    void processPrepare(StageRequest method) {
-        final PrepareCallback callback = (PrepareCallback) method.getCallback();
-        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-        final XLocations loc = (XLocations) method.getArgs()[1];
-
-        final String fileId = credentials.getXcap().getFileId();
+    boolean preparePrimary(StageRequest method, RedirectCallback callback, FileCredentials credentials, XLocations loc,
+            ReusableBuffer viewData) {
+        // final String fileId = credentials.getXcap().getFileId();
         StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
         assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
 
@@ -477,22 +534,14 @@ public class ECMasterStage extends Stage {
         case INITIALIZING:
         case WAITING_FOR_LEASE:
         case VERSION_RESET:
-            if (file.sizeOfPendingRequests() > MAX_PENDING_PER_FILE) {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                            "Rejecting request: too many requests (is: %d, max %d) in queue for file %s",
-                            file.sizeOfPendingRequests(), MAX_PENDING_PER_FILE, fileId);
-                }
-                callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
-                        POSIXErrno.POSIX_ERROR_NONE, "too many requests in queue for file"));
-            } else {
-                file.addPendingRequest(method);
-            }
-            return;
+            addPendingRequest(file, method);
+            return false;
 
         case BACKUP:
             assert (!file.isLocalIsPrimary());
             // if (!isInternal)
+
+            BufferPool.free(viewData);
 
             Flease lease = file.getLease();
             if (lease.isEmptyLease()) {
@@ -503,28 +552,29 @@ public class ECMasterStage extends Stage {
                                 + ", can't redirect to master. Please retry.");
                 // FIXME (jdillmann): abort all requests?
                 callback.failed(error);
-                return;
+                return false;
             }
 
             callback.redirect(lease.getLeaseHolder().toString());
-            return;
+            return false;
 
+        // case BUSY:
+        // case READY:
         case PRIMARY:
             assert (file.isLocalIsPrimary());
-            callback.success();
-            return;
+            return true;
 
-        // case INVALIDATED:
-        // break;
-        // case OPENING:
-        // break;
-
-        // default:
-        // break;
-
+        case INVALIDATED:
+        default:
+            BufferPool.free(viewData);
+            // TODO (jdillmann): Handle INVALIDATED errors
+            return false;
         }
 
     }
+    
+
+    
 
     /**
      * This will request the local and remote VersionTrees.
@@ -539,8 +589,8 @@ public class ECMasterStage extends Stage {
         List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
         int numRemotes = remoteUUIDs.size();
 
-        ResponseResultListener<xtreemfs_ec_get_interval_vectorsResponse, Integer> listener;
-        listener = new ResponseResultListener<xtreemfs_ec_get_interval_vectorsResponse, Integer>() {
+        LocalRPCResponseQuorumListener<xtreemfs_ec_get_interval_vectorsResponse, Integer> listener;
+        listener = new LocalRPCResponseQuorumListener<xtreemfs_ec_get_interval_vectorsResponse, Integer>() {
 
             @Override
             public void success(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
@@ -561,9 +611,9 @@ public class ECMasterStage extends Stage {
         // Try to get a result from every node
         int numReqAck = numRemotes + 1;
 
-        final ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer> manager;
-        manager = new ResponseResultManager<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, numReqAck,
-                true, listener);
+        final LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer> handler;
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, numReqAck,
+                listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
@@ -572,38 +622,20 @@ public class ECMasterStage extends Stage {
                 RPCResponse<xtreemfs_ec_get_interval_vectorsResponse> response;
                 response = osdClient.xtreemfs_ec_get_interval_vectors(uuid.getAddress(), RPCAuthentication.authNone,
                         RPCAuthentication.userService, file.getCredentials(), fileId);
-                manager.add(response, i);
+                handler.addRemote(response, i);
             }
         } catch (IOException ex) {
+            // Note: Will never be thrown!
             failed(file, ErrorUtils.getInternalServerError(ex));
         }
 
         // Add the local with some invalid id
-        manager.addLocal(-1);
-
-        // Register the listeners and wait for results
-        manager.registerListeners();
+        handler.addLocal(-1);
 
         // Wait for the local result
         OSDOperation getVectorOp = master.getOperation(ECGetIntervalVectors.PROC_ID);
-        getVectorOp.startInternalEvent(
-                new Object[] { fileId, new ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>() {
-
-                    @Override
-                    public void success(xtreemfs_ec_get_interval_vectorsResponse result) {
-                        manager.localResultAvailable(result);
-                    }
-
-                    @Override
-                    public void error(ErrorResponse error) {
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
-                                "Retrieving the local vector failed for file (%s)", fileId);
-                        manager.localResultFailed();
-                    }
-                } });
-
+        getVectorOp.startInternalEvent(new Object[] { fileId, handler });
     }
-
 
     void eventVectorsAvailable(String fileId,
             ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results, ErrorResponse error) {
@@ -613,8 +645,8 @@ public class ECMasterStage extends Stage {
     void processVectorsAvailable(StageRequest method) {
         final String fileId = (String) method.getArgs()[0];
         @SuppressWarnings("unchecked")
-        final ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results = 
-                (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method.getArgs()[1];
+        final ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results = (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method
+                .getArgs()[1];
         final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
         final ECFileState file = fileStates.get(fileId);
@@ -631,7 +663,7 @@ public class ECMasterStage extends Stage {
         }
 
         assert (file.state == FileState.VERSION_RESET);
-        
+
         List<Interval>[] curVectors = new List[results.length + 1];
         List<Interval>[] nextVectors = new List[results.length + 1];
 
@@ -640,7 +672,7 @@ public class ECMasterStage extends Stage {
         // Transform protobuf messages to IntervalVectors
         for (int r = 0; r < results.length; r++) {
             xtreemfs_ec_get_interval_vectorsResponse response = results[r].getResult();
-            
+
             if (response != null) {
                 responseCount++;
 
@@ -682,7 +714,7 @@ public class ECMasterStage extends Stage {
             doPrimary(file);
         }
     }
-    
+
     void commitVector(final ECFileState file, final IntervalVector resultVector) {
         // TODO (jdillmann): Or only an if
         assert (file.state == FileState.VERSION_RESET);
@@ -701,8 +733,8 @@ public class ECMasterStage extends Stage {
         }
         xtreemfs_ec_commit_vectorRequest request = reqBuilder.build();
 
-        ResponseResultListener<xtreemfs_ec_commit_vectorResponse, Integer> listener;
-        listener = new ResponseResultListener<xtreemfs_ec_commit_vectorResponse, Integer>() {
+        LocalRPCResponseQuorumListener<xtreemfs_ec_commit_vectorResponse, Integer> listener;
+        listener = new LocalRPCResponseQuorumListener<xtreemfs_ec_commit_vectorResponse, Integer>() {
 
             @Override
             public void success(ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results) {
@@ -720,9 +752,9 @@ public class ECMasterStage extends Stage {
             }
         };
 
-        final ResponseResultManager<xtreemfs_ec_commit_vectorResponse, Integer> manager;
-        manager = new ResponseResultManager<xtreemfs_ec_commit_vectorResponse, Integer>(numRemotes, file.getPolicy().k,
-                true, listener);
+        final LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer> handler;
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer>(numRemotes,
+                file.getPolicy().k, listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
@@ -731,40 +763,24 @@ public class ECMasterStage extends Stage {
                 RPCResponse<xtreemfs_ec_commit_vectorResponse> response;
                 response = osdClient.xtreemfs_ec_commit_vector(uuid.getAddress(), RPCAuthentication.authNone,
                         RPCAuthentication.userService, request);
-                manager.add(response, i);
+                handler.addRemote(response, i);
             }
         } catch (IOException ex) {
+            // Note: Will never be thrown!
             failed(file, ErrorUtils.getInternalServerError(ex));
         }
 
         // Add the local with some invalid id
-        manager.addLocal(-1);
-
-        // Register the listeners and wait for results
-        manager.registerListeners();
+        handler.addLocal(-1);
 
         // Wait for the local result
         OSDOperation getVectorOp = master.getOperation(ECCommitVector.PROC_ID);
-        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultIntervals,
-                new ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
-
-                    @Override
-                    public void success(xtreemfs_ec_commit_vectorResponse result) {
-                        manager.localResultAvailable(result);
-                    }
-
-                    @Override
-                    public void error(ErrorResponse error) {
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
-                                "Committing the local vector failed for file (%s)", fileId);
-                        manager.localResultFailed();
-                    }
-                } });
+        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultIntervals, handler });
 
     }
 
-    void eventCommitVectorComplete(String fileId,
-            ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results, ErrorResponse error) {
+    void eventCommitVectorComplete(String fileId, ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results,
+            ErrorResponse error) {
         this.enqueueOperation(STAGE_OP.COMMIT_VECTOR_COMPLETE, new Object[] { fileId, results, error }, null, null,
                 null);
     }
@@ -772,8 +788,8 @@ public class ECMasterStage extends Stage {
     void processCommitVectorComplete(StageRequest method) {
         final String fileId = (String) method.getArgs()[0];
         @SuppressWarnings("unchecked")
-        final ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results = 
-                (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[]) method.getArgs()[1];
+        final ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[] results = (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer>[]) method
+                .getArgs()[1];
         final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
         final ECFileState file = fileStates.get(fileId);
@@ -783,19 +799,17 @@ public class ECMasterStage extends Stage {
                     "Received eventCommitVectorComplete event for non opened file (%s)", fileId);
             return;
         }
-        
+
         if (file.state != FileState.VERSION_RESET) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                     "Ignore eventCommitVectorComplete event for file (%s) in state %s", fileId, file.state);
             return;
         }
-        
 
         if (error != null) {
             failed(file, error);
             return;
         }
-
 
         int numComplete = 0;
         for (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer> result : results) {
@@ -815,27 +829,38 @@ public class ECMasterStage extends Stage {
         }
     }
 
-    public void read(FileCredentials credentials, XLocations xloc, long start, long end, ReusableBuffer data,
-            ReadCallback callback, OSDRequest request) {
-        this.enqueueExternalOperation(STAGE_OP.READ, new Object[] { credentials, xloc, start, end, data }, request,
-                data, callback);
+    public void read(OSDRequest request, ReadCallback callback) {
+        this.enqueueExternalOperation(STAGE_OP.READ, new Object[] {}, request, null, callback);
     }
-    
-    public static interface ReadCallback extends FallibleCallback {
+
+    public static interface ReadCallback extends RedirectCallback {
         public void success(ObjectInformation result);
     }
 
     void processRead(StageRequest method) {
         final ReadCallback callback = (ReadCallback) method.getCallback();
-        final FileCredentials credentials = (FileCredentials) method.getArgs()[0];
-        final XLocations loc = (XLocations) method.getArgs()[1];
-        final long start = (Long) method.getArgs()[2];
-        final long end = (Long) method.getArgs()[3];
-        final ReusableBuffer data = (ReusableBuffer) method.getArgs()[4];
 
-        final String fileId = credentials.getXcap().getFileId();
-        StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
+        final OSDRequest rq = method.getRequest();
+        final readRequest args = (readRequest) rq.getRequestArgs();
+
+        final String fileId = rq.getFileId();
+        final XLocations loc = rq.getLocationList();
+        final FileCredentials credentials = args.getFileCredentials();
+        final StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
+
+        long firstObjNo = args.getObjectNumber();
+        int reqOffset = args.getOffset();
+        int reqSize = args.getLength();
+
+        long start = sp.getObjectStartOffset(firstObjNo) + reqOffset;
+        long end = start + reqSize;
+
+
         assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
+
+        if (!preparePrimary(method, callback, credentials, loc, null)) {
+            return;
+        }
 
         final ECFileState file = fileStates.get(fileId);
         if (file == null) {
@@ -843,225 +868,123 @@ public class ECMasterStage extends Stage {
                     "file is not open!"));
             return;
         }
-        file.setCredentials(credentials);
+        assert (file.isLocalIsPrimary());
+
+
+        final ReusableBuffer data = BufferPool.allocate(reqSize);
+
+        // FIXME (jdillmann): start worker
 
         ObjectInformation result = new ObjectInformation(ObjectStatus.EXISTS, data, 0);
         callback.success(result);
-
     }
 
 
-    static class ResponseResultManager<M extends Message, O> implements RPCResponseAvailableListener<M> {
-        final AtomicInteger                count;
-        final RPCResponse<M>[]             responses;
-        final ResponseResult<M, O>[]       results;
+    public void write(OSDRequest request, ReusableBuffer data, WriteCallback callback) {
+        this.enqueueExternalOperation(STAGE_OP.WRITE, new Object[] { data }, request, data, callback);
+    }
 
-        final int                          numAcksRequired;
-        final ResponseResultListener<M, O> listener;
+    public static interface WriteCallback extends RedirectCallback {
+        public void success(OSDWriteResponse response);
+    }
 
-        final AtomicInteger                numQuickFail;
-        final AtomicInteger                numResponses;
-        final AtomicInteger                numErrors;
+    void processWrite(StageRequest method) {
+        final WriteCallback callback = (WriteCallback) method.getCallback();
 
+        final OSDRequest rq = method.getRequest();
+        final writeRequest args = (writeRequest) rq.getRequestArgs();
 
-        @SuppressWarnings("unchecked")
-        public ResponseResultManager(int capacity, int numAcksRequired, boolean hasLocal,
-                ResponseResultListener<M, O> listener) {
-            count = new AtomicInteger(0);
-            numQuickFail = new AtomicInteger(0);
-            numResponses = new AtomicInteger(0);
-            numErrors = new AtomicInteger(0);
+        final String fileId = rq.getFileId();
+        final XLocations loc = rq.getLocationList();
+        final FileCredentials credentials = args.getFileCredentials();
+        final StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
 
-            int resultCapacity = hasLocal ? capacity + 1 : capacity;
-            results = new ResponseResult[resultCapacity];
-            responses = new RPCResponse[capacity];
+        // FIXME (jdillmann): Who is responsible for freeing?
+        final ReusableBuffer data = (ReusableBuffer) method.getArgs()[0];
 
-            this.numAcksRequired = numAcksRequired;
-            this.listener = listener;
+        assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
+
+        if (!preparePrimary(method, callback, credentials, loc, data)) {
+            return;
         }
 
-        public void add(RPCResponse<M> response, O object) {
-            add(response, object, false);
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!"));
+            return;
+        }
+        assert (file.isLocalIsPrimary());
+
+        // send requests
+        file.setCredentials(credentials);
+
+        long firstObjNo = args.getObjectNumber();
+        // relative offset to the firstObjNo
+        int reqOffset = args.getOffset();
+        int reqSize = data.capacity();
+        // args.getObjectVersion() // currently ignored
+
+        // absolute start and end to the whole file range
+        long opStart = sp.getObjectStartOffset(firstObjNo) + reqOffset;
+        long opEnd = opStart + reqSize;
+
+        AVLTreeIntervalVector curVector = file.getCurVector();
+
+        // FIXME (jdillmann): get max counter from range or from the whole vector?
+        long maxVersion = curVector.getMaxVersion();
+        // increment the opIdCounter and assign it to the current request
+        long opId = ++opIdCount;
+        long version = maxVersion + 1;
+
+        Interval reqInterval = new ObjectInterval(opStart, opEnd, version, opId);
+
+        // Prevent concurrent writes
+        if (file.overlapsActiveWriteRequest(reqInterval)) {
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "The file is currently written at an overlapping range by another process.");
+            callback.failed(error);
+            return;
+
         }
 
-        public void add(RPCResponse<M> response, O object, boolean quickFail) {
-            int i = count.getAndIncrement();
-            if (i >= responses.length) {
-                throw new IndexOutOfBoundsException();
-            }
+        List<Interval> commitIntervals = curVector.getOverlapping(opStart, opEnd);
+        ECWriteWorker worker = new ECWriteWorker(master, osdClient, file.getCredentials(), fileId, opId, sp,
+                file.getPolicy().qw, reqInterval, commitIntervals, file.getRemoteOSDs(), data, method, this);
 
-            if (quickFail) {
-                numQuickFail.incrementAndGet();
-            }
+        file.addActiveRequest(worker);
+        worker.start();
+    }
 
-            responses[i] = response;
-            results[i] = new ResponseResult<M, O>(object, quickFail);
+    void processWriteWorkerSignal(StageRequest method) {
+        final WriteCallback callback = (WriteCallback) method.getCallback();
+
+        final OSDRequest rq = method.getRequest();
+        final String fileId = rq.getFileId();
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!"));
+            return;
         }
 
-        public void addLocal(O object) {
-            assert (results.length == responses.length + 1);
-            results[results.length - 1] = new ResponseResult<M, O>(object, false);
-        }
+        final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
+        final ECWriteWorker.WriteEvent event = (WriteEvent) method.getArgs()[1];
 
-        public void registerListeners() {
-            for (RPCResponse<M> response : responses) {
-                response.registerListener(this);
-            }
-        }
+        worker.processEvent(event);
 
-        @SuppressWarnings("rawtypes")
-        static int indexOf(RPCResponse[] responses, RPCResponse response) {
-            for (int i = 0; i < responses.length; ++i) {
-                if (responses[i].equals(response)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
+        if (worker.hasFinished()) {
+            file.removeActiveRequest(worker);
+            file.getCurVector().insert(worker.getRequestInterval());
 
-        @Override
-        public void responseAvailable(RPCResponse<M> r) {
-            int i = indexOf(responses, r);
-            if (i < 0) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "received unknown response");
-                r.freeBuffers();
-                return;
-            }
-
-            ResponseResult<M, O> responseResult = results[i];
-
-            int curNumResponses, curNumErrors, curNumQuickFail;
-
-            // Decrement the number of outstanding requests that may fail quick.
-            if (responseResult.mayQuickFail()) {
-                curNumQuickFail = numQuickFail.decrementAndGet();
+            if (worker.hasFailed()) {
+                callback.failed(worker.getError());
             } else {
-                curNumQuickFail = numQuickFail.get();
-            }
-
-            try {
-                // Try to get and add the result.
-                M result = r.get();
-                responseResult.setResult(result);
-                curNumResponses = numResponses.incrementAndGet();
-                curNumErrors = numErrors.get();
-            } catch (PBRPCException ex) {
-                // FIXME (jdillmann): Which errors should mark OSDs as quickfail?
-                responseResult.setFailed();
-                curNumErrors = numErrors.incrementAndGet();
-                curNumResponses = numResponses.get();
-
-            } catch (Exception ex) {
-                // Try to
-                responseResult.setFailed();
-                curNumErrors = numErrors.incrementAndGet();
-                curNumResponses = numResponses.get();
-
-            } finally {
-                r.freeBuffers();
-            }
-
-            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
-            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
-                if (curNumResponses >= numAcksRequired) {
-                    listener.success(results);
-                } else {
-                    listener.failed(results);
-                }
+                // FIXME (jdillmann): Make a real response with the truncate epoch and stuff
+                callback.success(OSDWriteResponse.getDefaultInstance());
             }
         }
-
-        public void localResultAvailable(M result) {
-            ResponseResult<M, O> responseResult = results[results.length - 1];
-
-            int curNumResponses, curNumErrors, curNumQuickFail;
-
-            responseResult.setResult(result);
-            curNumResponses = numResponses.incrementAndGet();
-            curNumErrors = numErrors.get();
-            curNumQuickFail = numQuickFail.get();
-
-            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
-            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
-                if (curNumResponses >= numAcksRequired) {
-                    listener.success(results);
-                } else {
-                    listener.failed(results);
-                }
-            }
-        }
-
-        public void localResultFailed() {
-            ResponseResult<M, O> responseResult = results[results.length - 1];
-
-            int curNumResponses, curNumErrors, curNumQuickFail;
-
-            responseResult.setFailed();
-            curNumErrors = numErrors.incrementAndGet();
-            curNumResponses = numResponses.get();
-            curNumQuickFail = numQuickFail.get();
-
-            // TODO(jdillmann): Think about waiting for quickFail timeouts if numAcksReq is not fullfilled otherwise.
-            if (curNumResponses + curNumErrors + curNumQuickFail == results.length) {
-                if (curNumResponses >= numAcksRequired) {
-                    listener.success(results);
-                } else {
-                    listener.failed(results);
-                }
-            }
-        }
-
-        public static class ResponseResult<M extends Message, O> {
-            private final O       object;
-            private final boolean quickFail;
-            private boolean       failed;
-            private M             result;
-            private boolean       local;
-
-            ResponseResult(O object, boolean quickFail) {
-                this.failed = false;
-                this.result = null;
-                this.object = object;
-                this.quickFail = quickFail;
-            }
-
-            synchronized void setFailed() {
-                this.failed = true;
-                this.result = null;
-            }
-
-            synchronized public boolean hasFailed() {
-                return failed;
-            }
-
-            synchronized public boolean hasFinished() {
-                return (result != null || failed);
-            }
-
-            synchronized void setResult(M result) {
-                this.failed = false;
-                this.result = result;
-            }
-
-            synchronized public M getResult() {
-                return result;
-            }
-
-            public O getMappedObject() {
-                return object;
-            }
-
-            public boolean mayQuickFail() {
-                return quickFail;
-            }
-        }
-
-        public static interface ResponseResultListener<M extends Message, O> {
-            void success(ResponseResult<M, O>[] results);
-
-            void failed(ResponseResult<M, O>[] results);
-        }
-
     }
 
 }

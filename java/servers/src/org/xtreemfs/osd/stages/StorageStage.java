@@ -240,6 +240,19 @@ public class StorageStage extends Stage {
         public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error);
     }
 
+    /**
+     * 
+     * @param fileId
+     * @param sp
+     * @param objNo
+     * @param offset
+     * @param reqInterval
+     * @param commitIntervals
+     * @param data
+     *            Will be freed by this method
+     * @param request
+     * @param callback
+     */
     public void ecWritedata(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
             List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request, ECWriteDataCallback callback) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_DATA, 

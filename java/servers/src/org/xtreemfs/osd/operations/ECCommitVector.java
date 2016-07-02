@@ -21,7 +21,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.ec.ECInternalOperationCallback;
+import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
@@ -83,19 +83,19 @@ public class ECCommitVector extends OSDOperation {
         final String fileId = (String) args[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
         final List<Interval> commitIntervals = (List<Interval>) args[2];
-        final ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback 
-            = (ECInternalOperationCallback<xtreemfs_ec_commit_vectorResponse>) args[3];
+        final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback 
+            = (InternalOperationCallback<xtreemfs_ec_commit_vectorResponse>) args[3];
 
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
             public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
-                    callback.error(error);
+                    callback.localRequestFailed(error);
                 } else if (needsReconstruct) {
                     // FIXME (jdillmann): Trigger reconstruction.
-                    callback.success(buildResponse(false));
+                    callback.localResultAvailable(buildResponse(false));
                 } else {
-                    callback.success(buildResponse(true));
+                    callback.localResultAvailable(buildResponse(true));
                 }
             }
         });

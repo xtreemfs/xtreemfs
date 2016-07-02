@@ -94,20 +94,22 @@ public class ECStorage {
             List<Interval> toCommit = new LinkedList<Interval>();
             List<Interval> toAbort = new LinkedList<Interval>();
 
-            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, fi.getECCurVector().serialize(),
-                    fi.getECNextVector().serialize(), toCommit, toAbort);
+            if (!commitIntervals.isEmpty()) {
+                boolean failed = calculateIntervalsToCommitAbort(commitIntervals, null, fi.getECCurVector().serialize(),
+                        fi.getECNextVector().serialize(), toCommit, toAbort);
 
-            if (failed) {
-                callback.ecCommitVectorComplete(true, null);
-                return;
+                if (failed) {
+                    callback.ecCommitVectorComplete(true, null);
+                    return;
+                }
+
+                for (Interval interval : toCommit) {
+                    commitECData(fileId, fi, interval);
+                }
             }
 
-
-            for (Interval interval : toCommit) {
-                commitECData(fileId, fi, interval);
-            }
-
-            // FIXME (jdillmann): Also delete the EC data
+            // Abort everything in the next vector
+            // FIXME (jdillmann): Also delete the EC data?
             AVLTreeIntervalVector emptyNextVector = new AVLTreeIntervalVector();
             layout.setECIntervalVector(fileId, emptyNextVector.serialize(), true, false);
             fi.setECNextVector(emptyNextVector);
@@ -155,8 +157,10 @@ public class ECStorage {
 
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
             LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
-            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, curVecIntervals, nextVecIntervals,
-                    toCommitAcc, toAbortAcc);
+
+            // FIXME( jdillmann): Ignore "fragments" from current operation which would be commited otherwise
+            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals,
+                    nextVecIntervals, toCommitAcc, toAbortAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
@@ -172,54 +176,62 @@ public class ECStorage {
                 abortECData(fileId, fi, interval);
             }
 
-            // Check operation boundaries.
-            // FIXME (jdillmann): Check for exclusive ends
-            long dataStart = sp.getObjectStartOffset(objectNo) + offset;
-            long dataEnd = dataStart + data.capacity();
-            // The data range has to be within the request interval and may not cross chunk boundaries
-            assert (dataStart >= reqInterval.getStart() && dataEnd <= reqInterval.getEnd());
-            assert (dataEnd - dataStart <= sp.getStripeSizeForObject(objectNo));
+            if (data != null) {
+                // Check operation boundaries.
+                // FIXME (jdillmann): Check for exclusive ends
+                long dataStart = sp.getObjectStartOffset(objectNo) + offset;
+                long dataEnd = dataStart + data.capacity();
+                // The data range has to be within the request interval and may not cross chunk boundaries
+                assert (dataStart >= reqInterval.getStart() && dataEnd <= reqInterval.getEnd());
+                assert (dataEnd - dataStart <= sp.getStripeSizeForObject(objectNo));
 
-            // Write the data
-            String fileIdNext = fileId + ".next";
-            long version = 1;
-            // FIXME (jdillmann): Decide if/when sync should be used
-            boolean sync = false;
-            layout.writeObject(fileIdNext, fi, data.createViewBuffer(), objectNo, offset, version, sync, false);
-            consistent = false;
+                // Write the data
+                String fileIdNext = fileId + ".next";
+                long version = 1;
+                // FIXME (jdillmann): Decide if/when sync should be used
+                boolean sync = false;
+                layout.writeObject(fileIdNext, fi, data.createViewBuffer(), objectNo, offset, version, sync, false);
+                consistent = false;
 
-            // Store the vector
-            layout.setECIntervalVector(fileId, Arrays.asList(reqInterval), true, true);
-            fi.getECNextVector().insert(reqInterval);
-            consistent = true;
+                // Store the vector
+                layout.setECIntervalVector(fileId, Arrays.asList(reqInterval), true, true);
+                fi.getECNextVector().insert(reqInterval);
+                consistent = true;
 
-            // Generate diff between the current data and the newly written data.
-            byte[] diff = new byte[data.capacity()];
-            ObjectInformation objInfo = layout.readObject(fileId, fi, objectNo, offset, data.capacity(), version);
-            if (objInfo.getStatus() == ObjectStatus.PADDING_OBJECT
-                    || objInfo.getStatus() == ObjectStatus.DOES_NOT_EXIST 
-                    || objInfo.getData() == null) {
-                // There is no current data: the new data is the diff.
-                data.position(0);
-                data.get(diff);
-            } else {
-                ReusableBuffer curData = objInfo.getData();
-                assert (curData.capacity() == data.capacity());
+                // Generate diff between the current data and the newly written data.
+                byte[] diff = new byte[data.capacity()];
+                ObjectInformation objInfo = layout.readObject(fileId, fi, objectNo, offset, data.capacity(), version);
+                if (objInfo.getStatus() == ObjectStatus.PADDING_OBJECT
+                        || objInfo.getStatus() == ObjectStatus.DOES_NOT_EXIST || objInfo.getData() == null) {
+                    // There is no current data: the new data is the diff.
+                    data.position(0);
+                    data.get(diff);
+                } else {
+                    ReusableBuffer curData = objInfo.getData();
+                    assert (curData.capacity() == data.capacity());
 
-                // byte-wise diff between cur and next data
-                // TODO (jdillmann): Benchmark if getting the buffers as byte[] would be faster
-                data.position(0);
-                curData.position(0);
-                for (int i = 0; i < data.capacity(); i++) {
-                    diff[i] = (byte) (data.get() ^ curData.get());
+                    // byte-wise diff between cur and next data
+                    // TODO (jdillmann): Benchmark if getting the buffers as byte[] would be faster
+                    data.position(0);
+                    curData.position(0);
+                    for (int i = 0; i < data.capacity(); i++) {
+                        diff[i] = (byte) (data.get() ^ curData.get());
+                    }
+
+                    BufferPool.free(curData);
                 }
-                
-                BufferPool.free(curData);
-            }
 
-            // Return the diff buffer to the caller
-            ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
-            callback.ecWriteDataComplete(diffBuffer, false, null);
+                // Return the diff buffer to the caller
+                ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
+                callback.ecWriteDataComplete(diffBuffer, false, null);
+
+            } else {
+                // Store the vector
+                layout.setECIntervalVector(fileId, Arrays.asList(reqInterval), true, true);
+                fi.getECNextVector().insert(reqInterval);
+
+                callback.ecWriteDataComplete(null, false, null);
+            }
 
         } catch (IOException ex) {
             if (!consistent) {
@@ -243,7 +255,10 @@ public class ECStorage {
      * If it's version is lower then an overlapping one from curVecIntervals, an exception is thrown.
      * 
      * @param commitIntervals
-     *            List of intervals to commit.
+     *            List of intervals to commit. Not necessarily over the range of the whole file.
+     * @param reqInterval
+     *            The interval currently processed. Every interval in nextVecIntervals with the same version and op id
+     *            will be ignored (neither committed or aborted). May be null.
      * @param curVecIntervals
      *            List of intervals from the currently stored data. Maybe sliced to the commitIntervals range.
      * @param nextVecIntervals
@@ -252,24 +267,18 @@ public class ECStorage {
      *            Accumulator used to return the intervals to be committed from the next buffer.
      * @param toAbortAcc
      *            Accumulator used to return the intervals to be aborted from the next buffer.
-     * @return false if an interval from commitIntervals can not be found. true otherwise.
+     * @return true if an interval from commitIntervals can not be found. false otherwise.
      * @throws IOException
      *             if an interval from commitIntervals contains a lower version version, then an overlapping interval
      *             from curVecIntervals.
      */
-    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, List<Interval> curVecIntervals,
-            List<Interval> nextVecIntervals, List<Interval> toCommitAcc, List<Interval> toAbortAcc) throws IOException {
-        
-        long commitStart = !commitIntervals.isEmpty() ? commitIntervals.get(0).getOpStart() : 0;
-        long commitEnd = !commitIntervals.isEmpty() ? commitIntervals.get(commitIntervals.size() - 1).getOpEnd() : 0;
+    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, Interval reqInterval,
+            List<Interval> curVecIntervals, List<Interval> nextVecIntervals, 
+            List<Interval> toCommitAcc, List<Interval> toAbortAcc) throws IOException {
+        assert (!commitIntervals.isEmpty());
 
-        // If there is nothing to commit, abort every interval in next and return
-        if (commitEnd + commitStart == 0) {
-            toAbortAcc.addAll(nextVecIntervals);
-            return false;
-        }
-
-        Interval emptyInterval = ObjectInterval.empty(commitStart, commitEnd);
+        Interval emptyInterval = ObjectInterval.empty(commitIntervals.get(0).getOpStart(),
+                commitIntervals.get(commitIntervals.size() - 1).getOpEnd());
 
         Iterator<Interval> curIt = curVecIntervals.iterator();
         Iterator<Interval> nextIt = nextVecIntervals.iterator();
@@ -312,7 +321,7 @@ public class ECStorage {
                 // Since the commitInterval is already in the curVector, overlapping intervals from next have to be
                 // aborted.
                 while (commitInterval.overlaps(nextInterval)) {
-                    if (!nextInterval.isEmpty()) {
+                    if (!nextInterval.isEmpty() && !nextInterval.equalsVersionId(reqInterval)) {
                         // ABORT/INVALIDATE
                         toAbortAcc.add(nextInterval);
                     }
@@ -327,8 +336,9 @@ public class ECStorage {
                 }
 
                 
-            } else {
-                if (commitInterval.getVersion() < curInterval.getVersion() && commitInterval.overlaps(curInterval)) {
+            } else if (!commitInterval.isEmpty()) {
+                if (commitInterval.overlaps(curInterval)
+                        && commitInterval.getVersion() < curInterval.getVersion()) {
                     // FAILED (should never happen)
                     // TODO (jdillmann): Log with better message.
                     throw new XtreemFSException("request interval is older then the current interval");
@@ -343,7 +353,7 @@ public class ECStorage {
                 }
             }
         }
-
+        
         return false;
     }
 
@@ -413,7 +423,6 @@ public class ECStorage {
 
     void abortECData(String fileId, FileMetadata fi, Interval interval) throws IOException {
         StripingPolicyImpl sp = fi.getStripingPolicy();
-        assert (interval.isOpComplete());
         long intervalStartOffset = interval.getStart();
         long intervalEndOffset = interval.getEnd() - 1; // end is exclusive
         long startObjNo = sp.getObjectNoForOffset(intervalStartOffset);

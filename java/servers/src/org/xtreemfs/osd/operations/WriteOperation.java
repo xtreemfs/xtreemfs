@@ -22,6 +22,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECMasterStage.WriteCallback;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
@@ -84,6 +85,27 @@ public final class WriteOperation extends OSDOperation {
 
             if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
                 replicatedWrite(rq, args, syncWrite);
+
+            } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
+
+                ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+                master.getECMasterStage().write(rq, viewBuffer, new WriteCallback() {
+                    @Override
+                    public void success(OSDWriteResponse response) {
+                        rq.sendSuccess(response, null);
+                    }
+                    
+                    @Override
+                    public void failed(ErrorResponse ex) {
+                        rq.sendError(ex);
+                    }
+                    
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
+                });
+
             } else if (numReplicas == 1 || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
 
                 ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
@@ -96,8 +118,7 @@ public final class WriteOperation extends OSDOperation {
                                 sendResult(rq, result, error);
                             }
                         });
-            } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
-                // FIXME (jdillmann): do!
+
             } else {
                 rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                         "Invalid ReplicaUpdatePolicy: " + replicaUpdatePolicy);

@@ -10,7 +10,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 
 import com.google.protobuf.Message;
 
-public interface ECInternalOperationCallback<M extends Message> {
-    void success(M result);
-    void error(ErrorResponse error);
+public interface InternalOperationCallback<M extends Message> {
+    void localResultAvailable(M result);
+    void localRequestFailed(ErrorResponse error);
 }

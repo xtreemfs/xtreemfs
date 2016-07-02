@@ -20,8 +20,11 @@ import org.xtreemfs.foundation.buffer.ASCIIString;
 import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
+import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.osd.ec.ECWorker.TYPE;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 
@@ -31,6 +34,8 @@ public class ECFileState {
         WAITING_FOR_LEASE,
         VERSION_RESET,
         
+        // BUSY, READY,
+
         INVALIDATED, 
         BACKUP, 
         PRIMARY
@@ -45,13 +50,16 @@ public class ECFileState {
     final ECPolicy           policy;
 
     AVLTreeIntervalVector    curVector;
-    AVLTreeIntervalVector    nextVector;
 
     FileState                state;
     long                     masterEpoch;
     boolean                  localIsPrimary;
     Flease                   lease;
     boolean                  cellOpen;
+
+    // TODO (jdillmann): Maybe use another data structure with better performance
+    List<ECWorker>           activeRequests;
+    AVLTreeIntervalVector    activeWriteRequests;
 
     ECFileState(String fileId, ASCIIString cellId, ServiceUUID localUUID, XLocations locations,
             FileCredentials credentials) {
@@ -91,11 +99,14 @@ public class ECFileState {
         lease = Flease.EMPTY_LEASE;
         cellOpen = false;
 
+        activeRequests = new LinkedList<ECWorker>();
+        activeWriteRequests = new AVLTreeIntervalVector();
+
         // FIXME (jdillmann): Check if this is needed.
         // curVector = new AVLTreeIntervalVector();
         // nextVector = new AVLTreeIntervalVector();
         curVector = null;
-        nextVector = null;
+        
     }
 
     String getFileId() {
@@ -211,15 +222,46 @@ public class ECFileState {
         this.curVector = curVector;
     }
 
-    AVLTreeIntervalVector getNextVector() {
-        return nextVector;
-    }
-
-    void setNextVector(AVLTreeIntervalVector nextVector) {
-        this.nextVector = nextVector;
-    }
-
     public ECPolicy getPolicy() {
         return this.policy;
+    }
+
+    boolean overlapsActiveWriteRequest(Interval reqInterval) {
+        List<Interval> overlapping = 
+                activeWriteRequests.getOverlapping(reqInterval.getOpStart(), reqInterval.getOpEnd());
+        if (overlapping.isEmpty()) {
+            return false;
+        }
+
+        if (overlapping.size() > 1 || !overlapping.get(0).isEmpty()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    void addActiveRequest(ECWorker worker) {
+        if (worker.getType() == TYPE.WRITE) {
+            activeWriteRequests.insert(worker.getRequestInterval());
+        }
+        activeRequests.add(worker);
+    }
+
+    List<ECWorker> getActiveRequests() {
+        return activeRequests;
+    }
+
+    boolean removeActiveRequest(ECWorker worker) {
+        if (worker.getType() == TYPE.WRITE) {
+            Interval empty = ObjectInterval.empty(worker.getRequestInterval());
+            activeWriteRequests.insert(empty);
+            // FIXME (jdillmann): Maybe truncate the vector?
+        }
+        return activeRequests.remove(worker);
+    }
+
+    void clearActiveRequests() {
+        activeWriteRequests = new AVLTreeIntervalVector();
+        activeRequests.clear();
     }
 }

@@ -18,7 +18,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.ec.ECInternalOperationCallback;
+import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
@@ -65,16 +65,16 @@ public class ECGetIntervalVectors extends OSDOperation {
     @Override
     public void startInternalEvent(Object[] args) {
         final String fileId = (String) args[0];
-        final ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback = 
-                (ECInternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>) args[1];
+        final InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback = 
+                (InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>) args[1];
 
         master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
             @Override
             public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
                 if (error == null) {
-                    callback.success(buildResponse(curVector, nextVector));
+                    callback.localResultAvailable(buildResponse(curVector, nextVector));
                 } else {
-                    callback.error(error);
+                    callback.localRequestFailed(error);
                 }
             }
         });

@@ -19,6 +19,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
@@ -26,6 +28,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -33,6 +36,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
+import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
 
@@ -106,22 +110,30 @@ public class ECMasterStageTest {
         int offset = 0;
         int length = 1;
 
-        RPCResponse<ObjectData> RPCresponse;
+        RPCResponse<ObjectData> RPCresponse = null;
         ObjectData response;
 
         // Find (and elect) the master
-        try {
-            for (int i = 0; i < configs.length; i++) {
+        for (int i = 0; i < configs.length; i++) {
+            try {
                 InetSocketAddress address = configs[i].getUUID().getAddress();
                 RPCresponse = osdClient.read(address, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
                         fileId, objNumber, objVersion, offset, length);
                 response = RPCresponse.get();
                 masterIdx = i;
+                RPCresponse.freeBuffers();
+                BufferPool.free(RPCresponse.getData());
+                RPCresponse = null;
                 break;
-            }
-        } catch (PBRPCException ex) {
-            if (ex.getErrorType() != ErrorType.REDIRECT) {
-                throw ex;
+
+            } catch (PBRPCException ex) {
+                if (RPCresponse != null) {
+                    RPCresponse.freeBuffers();
+                    BufferPool.free(RPCresponse.getData());
+                }
+                if (ex.getErrorType() != ErrorType.REDIRECT) {
+                    throw ex;
+                }
             }
         }
 
@@ -171,6 +183,88 @@ public class ECMasterStageTest {
         }
 
         fail("Not implemented yet");
+
+    }
+
+    @Test
+    public void testWrite() throws Exception {
+
+        List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs()).subList(0, 2);
+        StripingPolicy sp = ECOperationsTest.getECStripingPolicy(2, 0, 1);
+        Replica r = Replica.newBuilder().setStripingPolicy(sp).setReplicationFlags(0).addAllOsdUuids(osdUUIDs).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r).setReplicaUpdatePolicy("ec")
+                .build();
+        
+        Capability cap = getCap(fileId);
+        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
+
+        
+        InetSocketAddress masterAddress = null;
+        int masterIdx = 0;
+
+        long objNumber = 0;
+        long objVersion = -1;
+        int offset = 0;
+        int length = 1;
+        long lease_timeout = 0;
+
+        RPCResponse<ObjectData> RPCReadResponse = null;
+        ObjectData readResponse;
+
+        // Find (and elect) the master
+        for (int i = 0; i < configs.length; i++) {
+            try {
+                InetSocketAddress address = configs[i].getUUID().getAddress();
+                RPCReadResponse = osdClient.read(address, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                        fileId, objNumber, objVersion, offset, length);
+                readResponse = RPCReadResponse.get();
+                masterAddress = address;
+                masterIdx = i;
+                RPCReadResponse.freeBuffers();
+                BufferPool.free(RPCReadResponse.getData());
+                RPCReadResponse = null;
+                break;
+
+            } catch (PBRPCException ex) {
+                if (RPCReadResponse != null) {
+                    RPCReadResponse.freeBuffers();
+                    BufferPool.free(RPCReadResponse.getData());
+                }
+                if (ex.getErrorType() != ErrorType.REDIRECT) {
+                    throw ex;
+                }
+            }
+        }
+
+
+        RPCResponse<OSDWriteResponse> RPCWriteResponse;
+        OSDWriteResponse writeResponse;
+        ObjectData objData = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        ReusableBuffer data;
+
+        data = SetupUtils.generateData(1 * 1024);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        data = SetupUtils.generateData(2 * 1024);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        data = SetupUtils.generateData(3 * 1024);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        System.out.println("wait");
 
     }
 }

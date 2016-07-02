@@ -549,9 +549,7 @@ public class ECOperationsTest {
         } finally {
             rpcResponse.freeBuffers();
         }
-        assertEquals(opId, response.getOpId());
-        assertEquals(objNo, response.getObjectNumber());
-        assertFalse(response.hasError());
+        assertFalse(response.getNeedsReconstruction());
         
         layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
         fi = layout.getFileMetadataNoCaching(sp, fileId);
@@ -589,9 +587,7 @@ public class ECOperationsTest {
         } finally {
             rpcResponse.freeBuffers();
         }
-        assertEquals(opId, response.getOpId());
-        assertEquals(objNo, response.getObjectNumber());
-        assertFalse(response.hasError());
+        assertFalse(response.getNeedsReconstruction());
 
         layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
         fi = layout.getFileMetadataNoCaching(sp, fileId);
@@ -636,9 +632,7 @@ public class ECOperationsTest {
         } finally {
             rpcResponse.freeBuffers();
         }
-        assertEquals(opId, response.getOpId());
-        assertEquals(objNo, response.getObjectNumber());
-        assertFalse(response.hasError());
+        assertFalse(response.getNeedsReconstruction());
 
         layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
         fi = layout.getFileMetadataNoCaching(sp, fileId);
