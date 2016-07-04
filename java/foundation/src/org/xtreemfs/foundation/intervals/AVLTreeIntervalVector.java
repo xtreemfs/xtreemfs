@@ -33,6 +33,10 @@ public class AVLTreeIntervalVector extends IntervalVector {
         if (interval.getEnd() > end) {
             end = interval.getEnd();
         }
+        if (interval.getVersion() > maxVersion) {
+            maxVersion = interval.getVersion();
+        }
+
         root = insert(interval, root);
     }
 
@@ -223,6 +227,11 @@ public class AVLTreeIntervalVector extends IntervalVector {
         LinkedList<Interval> intervals = new LinkedList<Interval>();
         serialize(root, intervals);
 
+        // Remove empty intervals from the end
+        while (!intervals.isEmpty() && intervals.peekLast().isEmpty()) {
+            intervals.removeLast();
+        }
+
         // Fill gap at the beginning of the vector.
         if (intervals.size() > 0) {
             Interval first = intervals.getFirst();
@@ -257,19 +266,20 @@ public class AVLTreeIntervalVector extends IntervalVector {
 
     @Override
     public List<Interval> getOverlapping(long start, long end) {
-        LinkedList<Interval> versions = new LinkedList<Interval>();
-        getOverlapping(start, end, this.root, versions);
+        LinkedList<Interval> intervals = new LinkedList<Interval>();
+        getOverlapping(start, end, this.root, intervals);
 
-        if (versions.size() > 0) {
-            Interval first = versions.getFirst();
-            if (first.getStart() > start) {
-                // Pad from the beginning
-                ObjectInterval pad = ObjectInterval.empty(0, first.getStart());
-                versions.addFirst(pad);
-            }
+        // Remove empty intervals from the beginning
+        while (!intervals.isEmpty() && intervals.peekFirst().isEmpty()) {
+            intervals.removeFirst();
         }
 
-        return Collections.unmodifiableList(versions);
+        // Remove empty intervals from the end
+        while (!intervals.isEmpty() && intervals.peekLast().isEmpty()) {
+            intervals.removeLast();
+        }
+
+        return Collections.unmodifiableList(intervals);
     }
 
     void getOverlapping(long begin, long end, IntervalNode node, LinkedList<Interval> acc) {

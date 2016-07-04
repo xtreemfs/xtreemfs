@@ -29,18 +29,18 @@ public class AVLTreeIntervalVectorTest {
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
-        tree.insert(new ObjectInterval(1024, 2048, 1));
-        expected.add(new ObjectInterval(1024, 2048, 1));
+        tree.insert(new ObjectInterval(1024, 2048, 2));
+        expected.add(new ObjectInterval(1024, 2048, 2));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
-        tree.insert(new ObjectInterval(2048, 4096, 2));
-        expected.add(new ObjectInterval(2048, 4096, 2));
+        tree.insert(new ObjectInterval(2048, 4096, 3));
+        expected.add(new ObjectInterval(2048, 4096, 3));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
-        tree.insert(new ObjectInterval(0, 1024, 3));
-        expected.set(0, new ObjectInterval(0, 1024, 3));
+        tree.insert(new ObjectInterval(0, 1024, 4));
+        expected.set(0, new ObjectInterval(0, 1024, 4));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
     }
@@ -52,7 +52,6 @@ public class AVLTreeIntervalVectorTest {
         List<Interval> versions;
 
         tree.insert(new ObjectInterval(1024, 4096, 1));
-        expected.add(new ObjectInterval(0, 1024, -1));
         expected.add(new ObjectInterval(1024, 4096, 1));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -216,6 +215,59 @@ public class AVLTreeIntervalVectorTest {
     }
 
     @Test
+    public final void testResultAccumulation() {
+        LinkedList<ObjectInterval> expected = new LinkedList<ObjectInterval>();
+        AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
+        List<Interval> versions;
+
+        // Test to retrieve from empty tree
+        versions = tree.getOverlapping(0, 1024);
+        assertEquals(expected, versions);
+
+        versions = tree.getSlice(0, 1024);
+        expected.add(ObjectInterval.empty(0, 1024));
+        assertEquals(expected, versions);
+
+        // Test to retrieve from tree with empty interval
+        tree.insert(ObjectInterval.empty(0, 2048));
+        expected.clear();
+        versions = tree.getOverlapping(0, 1024);
+        assertEquals(expected, versions);
+
+        versions = tree.getSlice(0, 1024);
+        expected.add(ObjectInterval.empty(0, 1024));
+        assertEquals(expected, versions);
+
+        // Test if results will be joined
+        tree.insert(new ObjectInterval(0, 512, 1, 1, 0, 1024));
+        tree.insert(new ObjectInterval(512, 1024, 1, 1, 0, 1024));
+        expected.clear();
+        expected.add(new ObjectInterval(0, 1024, 1, 1, 0, 1024));
+        versions = tree.getOverlapping(0, 1024);
+        assertEquals(expected, versions);
+        versions = tree.getSlice(0, 1024);
+        assertEquals(expected, versions);
+
+        // Test on errors if a intervals version/id match, but not the operation range
+        tree.insert(new ObjectInterval(0, 512, 1, 1, 0, 512));
+        tree.insert(new ObjectInterval(512, 1024, 1, 1, 512, 1024));
+        try {
+            tree.getOverlapping(0, 1024);
+            fail();
+        } catch (AssertionError ex) {
+            // expected
+        }
+
+        try {
+            tree.getSlice(0, 1024);
+            fail();
+        } catch (AssertionError ex) {
+            // expected
+        }
+        
+    }
+
+    @Test
     public final void testBalance() {
         AVLTreeIntervalVector tree;
                 
@@ -275,10 +327,10 @@ public class AVLTreeIntervalVectorTest {
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
 
         // Test if fragmented Intervals will be joined.
-        tree.insert(new ObjectInterval(0, 1024, 0));
-        tree.insert(new ObjectInterval(1024, 2048, 0));
-        tree.insert(new ObjectInterval(2048, 4096, 0));
-        expected.add(new ObjectInterval(0, 4096, 0));
+        tree.insert(new ObjectInterval(0, 1024, 0, 0, 0, 4096));
+        tree.insert(new ObjectInterval(1024, 2048, 0, 0, 0, 4096));
+        tree.insert(new ObjectInterval(2048, 4096, 0, 0, 0, 4096));
+        expected.add(new ObjectInterval(0, 4096, 0, 0, 0, 4096));
         assertEquals(expected, tree.serialize());
 
         // Test if gaps are filled

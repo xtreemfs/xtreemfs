@@ -123,6 +123,7 @@ public abstract class Interval {
 
     @Override
     public String toString() {
-        return String.format("([%d:%d], %d, %d)", getStart(), getEnd(), getVersion(), getId());
+        return String.format("([%d:%d], [%d:%d], %d, %d)", getStart(), getEnd(), getOpStart(), getOpEnd(), getVersion(),
+                getId());
     }
 }

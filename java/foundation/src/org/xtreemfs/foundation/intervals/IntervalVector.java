@@ -185,15 +185,33 @@ public abstract class IntervalVector {
             acc.add(gap);
         }
 
-        if (last != null && interval.getStart() <= last.getEnd() && interval.getVersion() == last.getVersion() && interval.getId() == last.getId()) {
+        if (last != null && interval.getStart() <= last.getEnd() && interval.equalsVersionId(last)) {
             // There is no gap between the last and current interval and their version and id match: Merge them!
-            assert (last.getOpStart() == interval.getOpStart() && last.getOpEnd() == interval.getOpEnd());
-            ObjectInterval merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(),
-                    last.getId(), last.getOpStart(), last.getOpEnd());
+            ObjectInterval merged;
+            if (!interval.isEmpty()) {
+                assert (last.getOpStart() == interval.getOpStart() && last.getOpEnd() == interval.getOpEnd());
+                merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(), last.getId(),
+                        last.getOpStart(), last.getOpEnd());
+            } else {
+                merged = ObjectInterval.empty(last.getStart(), interval.getEnd());
+            }
             acc.removeLast();
             acc.add(merged);
+
         } else {
             acc.add(interval);
+        }
+    }
+
+    static void trimEmpty(LinkedList<Interval> intervals) {
+        // Remove empty intervals from the beginning
+        while (!intervals.isEmpty() && intervals.peekFirst().isEmpty()) {
+            intervals.removeFirst();
+        }
+
+        // Remove empty intervals from the end
+        while (!intervals.isEmpty() && intervals.peekLast().isEmpty()) {
+            intervals.removeLast();
         }
     }
 

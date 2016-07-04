@@ -57,6 +57,16 @@ public class ListIntervalVector extends IntervalVector {
             }
         }
 
+        // Remove empty intervals from the beginning
+        while (!result.isEmpty() && result.peekFirst().isEmpty()) {
+            result.removeFirst();
+        }
+
+        // Remove empty intervals from the end
+        while (!result.isEmpty() && result.peekLast().isEmpty()) {
+            result.removeLast();
+        }
+
         return Collections.unmodifiableList(result);
     }
 
