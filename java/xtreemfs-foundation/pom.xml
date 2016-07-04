@@ -20,8 +20,8 @@
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
-    <protoc.bin>/usr/bin/protoc</protoc.bin>
-    <protoc.include>/usr/include</protoc.include>
+    <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
+    <protoc.include>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src</protoc.include>
   </properties>
 
   <dependencies>
