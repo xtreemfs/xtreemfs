@@ -14,7 +14,23 @@
 
   <packaging>jar</packaging>
 
+  <properties>
+    <!-- Plugin configurations. -->
+    <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
+    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <protobuf-java.version>2.5.0</protobuf-java.version>
+    <protoc.bin>/usr/bin/protoc</protoc.bin>
+    <protoc.include>/usr/include</protoc.include>
+  </properties>
+
   <dependencies>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf-java.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
@@ -22,9 +38,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${protobuf-java.version}</version>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-pbrpcgen</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
@@ -34,4 +50,98 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Clean up generated code during mvn clean. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>src/main/java/org/xtreemfs/foundation/pbrpc/generatedinterfaces</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <!-- Create plugin for protoc. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" message="#!/bin/bash${line.separator}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message="java -cp" />
+                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" org.xtreemfs.pbrpcgen.RPCSourceGenerator${line.separator}" />
+                <chmod file="${project.build.directory}/protoc-gen-pbrpc" perm="a+x" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-maven-plugin.version}</version>
+        <executions>
+          <!-- Invoke protoc to generate Java source. -->
+          <execution>
+            <id>generate-java</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${protoc.bin}</executable>
+              <workingDirectory>${project.basedir}/../../interface</workingDirectory>
+              <arguments>
+                <argument>--proto_path=${project.basedir}/../../interface</argument>
+                <argument>--proto_path=${project.basedir}/../../interface/pbrpc</argument>
+                <argument>--proto_path=${protoc.include}</argument>
+                <argument>--java_out=${project.basedir}/src/main/java</argument>
+                <argument>${project.basedir}/../../interface/pbrpc/Ping.proto</argument>
+                <argument>${project.basedir}/../../interface/pbrpc/RPC.proto</argument>
+              </arguments>
+            </configuration>
+          </execution>
+
+          <!-- Invoke protoc again, this time with our plugin to generate custom classes. -->
+          <execution>
+            <id>generate-pbrpc</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${protoc.bin}</executable>
+              <workingDirectory>${project.basedir}/../../interface</workingDirectory>
+              <arguments>
+                <argument>--proto_path=${project.basedir}/../../interface</argument>
+                <argument>--proto_path=${project.basedir}/../../interface/pbrpc</argument>
+                <argument>--proto_path=${protoc.include}</argument>
+                <argument>--pbrpc_out=${project.basedir}/src/main/java</argument>
+                <argument>--plugin=${project.build.directory}/protoc-gen-pbrpc</argument>
+                <argument>${project.basedir}/../../interface/pbrpc/Ping.proto</argument>
+                <argument>${project.basedir}/../../interface/pbrpc/RPC.proto</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
