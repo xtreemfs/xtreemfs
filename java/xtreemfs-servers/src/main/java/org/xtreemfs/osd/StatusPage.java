@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.xtreemfs.common.statusserver.StatusServerHelper;
 import org.xtreemfs.common.statusserver.StatusServerModule;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.TimeSync;
@@ -86,26 +87,9 @@ class StatusPage extends StatusServerModule {
     private OSDRequestDispatcher myDispatcher;
 
     public StatusPage() {
-        StringBuffer sb = null;
-        try {
-            InputStream is = StatusPage.class.getClassLoader().getResourceAsStream(
-                    "org/xtreemfs/osd/templates/status.html");
-            if (is == null) {
-                is = StatusPage.class.getClass().getResourceAsStream("../templates/status.html");
-            }
-            BufferedReader br = new BufferedReader(new InputStreamReader(is));
-            sb = new StringBuffer();
-            String line = br.readLine();
-            while (line != null) {
-                sb.append(line + "\n");
-                line = br.readLine();
-            }
-            br.close();
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, null, ex);
-        }
+        StringBuffer sb = StatusServerHelper.readTemplate("org/xtreemfs/osd/templates/status.html");
         if (sb == null) {
-            statusPageTemplate = "<H1>Template was not found, unable to show status page!</h1>";
+            statusPageTemplate = "<h1>Template was not found, unable to show status page!</h1>";
         } else {
             statusPageTemplate = sb.toString();
         }
