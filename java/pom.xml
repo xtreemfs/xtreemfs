@@ -26,9 +26,9 @@
   </scm>
 
   <modules>
+    <module>xtreemfs-pbrpcgen</module>
     <module>xtreemfs-foundation</module>
     <module>xtreemfs-flease</module>
-    <module>xtreemfs-pbrpcgen</module>
     <module>xtreemfs-servers</module>
   </modules>
 
