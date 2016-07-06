@@ -1,25 +1,25 @@
 package org.xtreemfs.pbrpcgen;
 
-import com.google.protobuf.DescriptorProtos.DescriptorProto;
-import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
-import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
-import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
-import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
-
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC;
+
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.EnumDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto.Type;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.DescriptorProtos.MethodDescriptorProto;
 import com.google.protobuf.DescriptorProtos.ServiceDescriptorProto;
 import com.google.protobuf.Descriptors.FieldDescriptor;
 import com.google.protobuf.ExtensionRegistry;
-import java.util.Date;
-import java.util.HashMap;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.PBRPC;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorRequest;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse;
+import com.google.protobuf.compiler.PluginProtos.CodeGeneratorResponse.File;
 
 public class RPCSourceGenerator {
 
@@ -84,6 +84,14 @@ public class RPCSourceGenerator {
                         def.message = msg;
                         def.fileName = fileName;
                         typeDefs.put("."+pkgName+msg.getName(),def);
+
+                        for (DescriptorProto nested : msg.getNestedTypeList()) {
+                            TypeDef defN = new TypeDef();
+                            defN.fullName = fileName + "." + msg.getName() + "." + nested.getName();
+                            defN.message = nested;
+                            defN.fileName = fileName;
+                            typeDefs.put("." + pkgName + msg.getName() + "." + nested.getName(), defN);
+                        }
                     }
                     for (EnumDescriptorProto msg : proto.getEnumTypeList()) {
                         TypeDef def = new TypeDef();
@@ -142,6 +150,7 @@ public class RPCSourceGenerator {
                         codeBuilder.append("import com.google.protobuf.Message;\n");
                         codeBuilder.append("import com.google.protobuf.ByteString;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.buffer.ReusableBuffer;\n");
+                        codeBuilder.append("import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;\n");
                         codeBuilder.append("import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;\n");
