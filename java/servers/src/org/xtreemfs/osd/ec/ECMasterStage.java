@@ -63,7 +63,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.readRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
@@ -591,16 +591,16 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
         int numRemotes = remoteUUIDs.size();
 
-        LocalRPCResponseQuorumListener<xtreemfs_ec_get_interval_vectorsResponse, Integer> listener;
-        listener = new LocalRPCResponseQuorumListener<xtreemfs_ec_get_interval_vectorsResponse, Integer>() {
+        LocalRPCResponseQuorumListener<xtreemfs_ec_get_vectorsResponse, Integer> listener;
+        listener = new LocalRPCResponseQuorumListener<xtreemfs_ec_get_vectorsResponse, Integer>() {
 
             @Override
-            public void success(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
+            public void success(ResponseResult<xtreemfs_ec_get_vectorsResponse, Integer>[] results) {
                 eventVectorsAvailable(fileId, results, null);
             }
 
             @Override
-            public void failed(ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results) {
+            public void failed(ResponseResult<xtreemfs_ec_get_vectorsResponse, Integer>[] results) {
                 // TODO (jdillmann): Add numberOfFailures as a parameter?
                 String errorMsg = String.format("(EC: %s) VectorReset failed due to too many unreachable remote OSDs.",
                         localUUID);
@@ -614,16 +614,16 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         int numResponses = numRemotes + 1;
         int numReqAck = numRemotes + 1;
 
-        final LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer> handler;
-        handler = new LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numResponses,
+        final LocalRPCResponseHandler<xtreemfs_ec_get_vectorsResponse, Integer> handler;
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_get_vectorsResponse, Integer>(numResponses,
                 numReqAck, listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
                 ServiceUUID uuid = remoteUUIDs.get(i);
 
-                RPCResponse<xtreemfs_ec_get_interval_vectorsResponse> response;
-                response = osdClient.xtreemfs_ec_get_interval_vectors(uuid.getAddress(), RPCAuthentication.authNone,
+                RPCResponse<xtreemfs_ec_get_vectorsResponse> response;
+                response = osdClient.xtreemfs_ec_get_vectors(uuid.getAddress(), RPCAuthentication.authNone,
                         RPCAuthentication.userService, file.getCredentials(), fileId);
                 handler.addRemote(response, i);
             }
@@ -641,14 +641,14 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
     }
 
     void eventVectorsAvailable(String fileId,
-            ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results, ErrorResponse error) {
+            ResponseResult<xtreemfs_ec_get_vectorsResponse, Integer>[] results, ErrorResponse error) {
         this.enqueueOperation(STAGE_OP.VECTORS_AVAILABLE, new Object[] { fileId, results, error }, null, null, null);
     }
 
     void processVectorsAvailable(StageRequest method) {
         final String fileId = (String) method.getArgs()[0];
         @SuppressWarnings("unchecked")
-        final ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[] results = (ResponseResult<xtreemfs_ec_get_interval_vectorsResponse, Integer>[]) method
+        final ResponseResult<xtreemfs_ec_get_vectorsResponse, Integer>[] results = (ResponseResult<xtreemfs_ec_get_vectorsResponse, Integer>[]) method
                 .getArgs()[1];
         final ErrorResponse error = (ErrorResponse) method.getArgs()[2];
 
@@ -674,7 +674,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         // Transform protobuf messages to IntervalVectors
         for (int r = 0; r < results.length; r++) {
-            xtreemfs_ec_get_interval_vectorsResponse response = results[r].getResult();
+            xtreemfs_ec_get_vectorsResponse response = results[r].getResult();
 
             if (response != null) {
                 responseCount++;
@@ -817,7 +817,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         int numComplete = 0;
         for (ResponseResult<xtreemfs_ec_commit_vectorResponse, Integer> result : results) {
-            if (result.hasFinished() && !result.hasFailed() && result.getResult().getComplete()) {
+            if (result.hasFinished() && !result.hasFailed() && !result.getResult().getNeedsReconstruction()) {
                 numComplete++;
             }
         }

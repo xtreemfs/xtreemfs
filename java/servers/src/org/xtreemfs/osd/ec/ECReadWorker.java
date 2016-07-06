@@ -237,7 +237,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
                 } else {
                     try {
                         ServiceUUID server = getRemote(osdNo);
-                        RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read_data(
+                        RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read(
                                 server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
                                 fileCredentials, fileId, objNo, objOffset, objLength, commitIntervalMsgs);
                         handler.addRemote(rpcResponse, objNo);

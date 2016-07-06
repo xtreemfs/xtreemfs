@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 06 11:03:11 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 06 12:12:22 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -505,17 +505,17 @@ public class OSDServiceClient {
          return xtreemfs_rwr_reset_status(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> xtreemfs_ec_get_interval_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_get_interval_vectorsRequest input) throws IOException {
+    public RPCResponse<OSD.xtreemfs_ec_get_vectorsResponse> xtreemfs_ec_get_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_get_vectorsRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> response = new RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse>(OSD.xtreemfs_ec_get_interval_vectorsResponse.getDefaultInstance());
+         RPCResponse<OSD.xtreemfs_ec_get_vectorsResponse> response = new RPCResponse<OSD.xtreemfs_ec_get_vectorsResponse>(OSD.xtreemfs_ec_get_vectorsResponse.getDefaultInstance());
          client.sendRequest(server, authHeader, userCreds, 30001, 84, input, null, response, false);
          return response;
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_get_interval_vectorsResponse> xtreemfs_ec_get_interval_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
-         final OSD.xtreemfs_ec_get_interval_vectorsRequest msg = OSD.xtreemfs_ec_get_interval_vectorsRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
-         return xtreemfs_ec_get_interval_vectors(server, authHeader, userCreds,msg);
+    public RPCResponse<OSD.xtreemfs_ec_get_vectorsResponse> xtreemfs_ec_get_vectors(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id) throws IOException {
+         final OSD.xtreemfs_ec_get_vectorsRequest msg = OSD.xtreemfs_ec_get_vectorsRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).build();
+         return xtreemfs_ec_get_vectors(server, authHeader, userCreds,msg);
     }
 
     public RPCResponse<OSD.xtreemfs_ec_commit_vectorResponse> xtreemfs_ec_commit_vector(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_commit_vectorRequest input) throws IOException {
@@ -531,20 +531,20 @@ public class OSDServiceClient {
          return xtreemfs_ec_commit_vector(server, authHeader, userCreds,msg);
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_write_dataResponse> xtreemfs_ec_write_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_write_dataRequest input, ReusableBuffer data) throws IOException {
+    public RPCResponse<OSD.xtreemfs_ec_write_intervalResponse> xtreemfs_ec_write_interval(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_write_intervalRequest input, ReusableBuffer data) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
-         RPCResponse<OSD.xtreemfs_ec_write_dataResponse> response = new RPCResponse<OSD.xtreemfs_ec_write_dataResponse>(OSD.xtreemfs_ec_write_dataResponse.getDefaultInstance());
+         RPCResponse<OSD.xtreemfs_ec_write_intervalResponse> response = new RPCResponse<OSD.xtreemfs_ec_write_intervalResponse>(OSD.xtreemfs_ec_write_intervalResponse.getDefaultInstance());
          client.sendRequest(server, authHeader, userCreds, 30001, 86, input, data, response, false);
          return response;
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_write_dataResponse> xtreemfs_ec_write_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, long object_number, int offset, OSD.IntervalMsg stripe_interval, List<OSD.IntervalMsg> commit_intervals, ReusableBuffer data) throws IOException {
-         final OSD.xtreemfs_ec_write_dataRequest msg = OSD.xtreemfs_ec_write_dataRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setObjectNumber(object_number).setOffset(offset).setStripeInterval(stripe_interval).addAllCommitIntervals(commit_intervals).build();
-         return xtreemfs_ec_write_data(server, authHeader, userCreds,msg, data);
+    public RPCResponse<OSD.xtreemfs_ec_write_intervalResponse> xtreemfs_ec_write_interval(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, boolean has_data, long object_number, int offset, OSD.IntervalMsg stripe_interval, List<OSD.IntervalMsg> commit_intervals, ReusableBuffer data) throws IOException {
+         final OSD.xtreemfs_ec_write_intervalRequest msg = OSD.xtreemfs_ec_write_intervalRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setHasData(has_data).setObjectNumber(object_number).setOffset(offset).setStripeInterval(stripe_interval).addAllCommitIntervals(commit_intervals).build();
+         return xtreemfs_ec_write_interval(server, authHeader, userCreds,msg, data);
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_readRequest input) throws IOException {
+    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_readRequest input) throws IOException {
          if (server == null) server = defaultServer;
          if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
          RPCResponse<OSD.xtreemfs_ec_readResponse> response = new RPCResponse<OSD.xtreemfs_ec_readResponse>(OSD.xtreemfs_ec_readResponse.getDefaultInstance());
@@ -552,9 +552,9 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read_data(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, int offset, int length, List<OSD.IntervalMsg> intervals) throws IOException {
+    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, int offset, int length, List<OSD.IntervalMsg> intervals) throws IOException {
          final OSD.xtreemfs_ec_readRequest msg = OSD.xtreemfs_ec_readRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setOffset(offset).setLength(length).addAllIntervals(intervals).build();
-         return xtreemfs_ec_read_data(server, authHeader, userCreds,msg);
+         return xtreemfs_ec_read(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

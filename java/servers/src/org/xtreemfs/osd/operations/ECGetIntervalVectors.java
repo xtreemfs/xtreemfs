@@ -21,13 +21,13 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
 public class ECGetIntervalVectors extends OSDOperation {
-    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_GET_INTERVAL_VECTORS;
+    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_GET_VECTORS;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String      sharedSecret;
@@ -46,8 +46,8 @@ public class ECGetIntervalVectors extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_ec_get_interval_vectorsRequest args;
-        args = (xtreemfs_ec_get_interval_vectorsRequest) rq.getRequestArgs();
+        final xtreemfs_ec_get_vectorsRequest args;
+        args = (xtreemfs_ec_get_vectorsRequest) rq.getRequestArgs();
 
         // FIXME (jdillmann): Use EC Stage with caching instead reading it directly?
         master.getStorageStage().ecGetVectors(rq.getFileId(), rq, new ECGetVectorsCallback() {
@@ -63,7 +63,7 @@ public class ECGetIntervalVectors extends OSDOperation {
     }
 
     public void startLocalRequest(final String fileId,
-            final InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback) {
+            final InternalOperationCallback<xtreemfs_ec_get_vectorsResponse> callback) {
         master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
             @Override
             public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
@@ -76,8 +76,8 @@ public class ECGetIntervalVectors extends OSDOperation {
         });
     }
 
-    xtreemfs_ec_get_interval_vectorsResponse buildResponse(IntervalVector curVector, IntervalVector nextVector) {
-        xtreemfs_ec_get_interval_vectorsResponse.Builder respBuilder = xtreemfs_ec_get_interval_vectorsResponse
+    xtreemfs_ec_get_vectorsResponse buildResponse(IntervalVector curVector, IntervalVector nextVector) {
+        xtreemfs_ec_get_vectorsResponse.Builder respBuilder = xtreemfs_ec_get_vectorsResponse
                 .newBuilder();
 
         for (Interval interval : curVector.serialize()) {
@@ -94,7 +94,7 @@ public class ECGetIntervalVectors extends OSDOperation {
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_ec_get_interval_vectorsRequest rpcrq = (xtreemfs_ec_get_interval_vectorsRequest) rq
+            xtreemfs_ec_get_vectorsRequest rpcrq = (xtreemfs_ec_get_vectorsRequest) rq
                     .getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));

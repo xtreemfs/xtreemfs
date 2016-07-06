@@ -52,10 +52,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_interval_vectorsResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -165,16 +165,16 @@ public class ECOperationsTest {
 
 
 
-        xtreemfs_ec_get_interval_vectorsRequest request = xtreemfs_ec_get_interval_vectorsRequest.newBuilder()
+        xtreemfs_ec_get_vectorsRequest request = xtreemfs_ec_get_vectorsRequest.newBuilder()
                 .setFileId(fileId)
                 .setFileCredentials(fileCredentials)
                 .build();
 
-        RPCResponse<xtreemfs_ec_get_interval_vectorsResponse> rpcResponse;
-        xtreemfs_ec_get_interval_vectorsResponse response;
+        RPCResponse<xtreemfs_ec_get_vectorsResponse> rpcResponse;
+        xtreemfs_ec_get_vectorsResponse response;
 
         // Test non-existent vectors
-        rpcResponse = osdClient.xtreemfs_ec_get_interval_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
+        rpcResponse = osdClient.xtreemfs_ec_get_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request);
         try {
             response = rpcResponse.get();
@@ -190,7 +190,7 @@ public class ECOperationsTest {
         layout.setECIntervalVector(fileId, intervals, false, true);
         layout.setECIntervalVector(fileId, intervals, true, true);
 
-        rpcResponse = osdClient.xtreemfs_ec_get_interval_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
+        rpcResponse = osdClient.xtreemfs_ec_get_vectors(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request);
         try {
             response = rpcResponse.get();
@@ -260,7 +260,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertTrue(commitResponse.getComplete());
+        assertFalse(commitResponse.getNeedsReconstruction());
         assertVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
 
 
@@ -276,7 +276,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertTrue(commitResponse.getComplete());
+        assertFalse(commitResponse.getNeedsReconstruction());
         assertVectorsEquals(fileCredentials, commitIntervals, Collections.<Interval> emptyList());
 
         
@@ -305,7 +305,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertFalse(commitResponse.getComplete());
+        assertTrue(commitResponse.getNeedsReconstruction());
         // Note: if the vector can not be complete, the request is aborted. Thus there can be intervals in next.
         // assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
       
@@ -353,7 +353,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertFalse(commitResponse.getComplete());
+        assertTrue(commitResponse.getNeedsReconstruction());
         // Note: if the vector can not be complete, the request is aborted. Thus there can be intervals in next.
         // assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
     }
@@ -428,7 +428,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertTrue(commitResponse.getComplete());
+        assertFalse(commitResponse.getNeedsReconstruction());
 
         layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
         fi = layout.getFileMetadataNoCaching(sp, fileId);
@@ -479,7 +479,7 @@ public class ECOperationsTest {
         } finally {
             rpcCommitResponse.freeBuffers();
         }
-        assertTrue(commitResponse.getComplete());
+        assertFalse(commitResponse.getNeedsReconstruction());
 
         curIntervals.clear();
         curIntervals.add(ObjectInterval.empty(0, 1024));
@@ -505,7 +505,7 @@ public class ECOperationsTest {
     }
 
     @Test
-    public void testWriteData() throws Exception {
+    public void testWriteInterval() throws Exception {
         List<Interval> commitIntervals = new LinkedList<Interval>();
         Interval interval;
         long objNo;
@@ -520,14 +520,14 @@ public class ECOperationsTest {
         int chunkSize = sp.getPolicy().getStripeSize() * 1024;
         byte[] byteOut = new byte[chunkSize];
 
-        xtreemfs_ec_write_dataRequest request;
+        xtreemfs_ec_write_intervalRequest request;
         
-        xtreemfs_ec_write_dataRequest.Builder requestB = xtreemfs_ec_write_dataRequest.newBuilder()
+        xtreemfs_ec_write_intervalRequest.Builder requestB = xtreemfs_ec_write_intervalRequest.newBuilder()
                 .setFileId(fileId)
                 .setFileCredentials(fileCredentials);
 
-        RPCResponse<xtreemfs_ec_write_dataResponse> rpcResponse;
-        xtreemfs_ec_write_dataResponse response;
+        RPCResponse<xtreemfs_ec_write_intervalResponse> rpcResponse;
+        xtreemfs_ec_write_intervalResponse response;
 
 
         // Test writing to non-existent file
@@ -542,7 +542,7 @@ public class ECOperationsTest {
                 .setOffset(offset)
                 .setStripeInterval(ProtoInterval.toProto(interval));
         request = requestB.build();
-        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+        rpcResponse = osdClient.xtreemfs_ec_write_interval(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request, dataInF1);
         try {
             response = rpcResponse.get();
@@ -573,14 +573,14 @@ public class ECOperationsTest {
         commitIntervals.clear();
         interval = new ObjectInterval(0, chunkSize, 1, 1);
         commitIntervals.add(interval);
-        intervalList2WritDataRequest(commitIntervals, requestB);
+        intervalList2WriteIntervalRequest(commitIntervals, requestB);
 
         interval = new ObjectInterval(offset, chunkSize, 2, opId);
         requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
                 .setStripeInterval(ProtoInterval.toProto(interval));
 
         request = requestB.build();
-        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+        rpcResponse = osdClient.xtreemfs_ec_write_interval(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request, dataInH2);
         try {
             response = rpcResponse.get();
@@ -618,14 +618,14 @@ public class ECOperationsTest {
         commitIntervals.clear();
         interval = new ObjectInterval(0, chunkSize, 1, 1);
         commitIntervals.add(interval);
-        intervalList2WritDataRequest(commitIntervals, requestB);
+        intervalList2WriteIntervalRequest(commitIntervals, requestB);
 
         interval = new ObjectInterval(offset, chunkSize, 2, opId);
         requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
                 .setStripeInterval(ProtoInterval.toProto(interval));
 
         request = requestB.build();
-        rpcResponse = osdClient.xtreemfs_ec_write_data(osdUUID.getAddress(), RPCAuthentication.authNone,
+        rpcResponse = osdClient.xtreemfs_ec_write_interval(osdUUID.getAddress(), RPCAuthentication.authNone,
                 userCredentials, request, dataInF3);
         try {
             response = rpcResponse.get();
@@ -653,7 +653,7 @@ public class ECOperationsTest {
         assertArrayEquals(dataInF3.array(), byteOut);
     }
 
-    void intervalList2WritDataRequest(List<Interval> intervals, xtreemfs_ec_write_dataRequest.Builder builder) {
+    void intervalList2WriteIntervalRequest(List<Interval> intervals, xtreemfs_ec_write_intervalRequest.Builder builder) {
         builder.clearCommitIntervals();
         for (Interval interval : intervals) {
             builder.addCommitIntervals(ProtoInterval.toProto(interval));

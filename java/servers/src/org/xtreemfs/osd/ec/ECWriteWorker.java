@@ -23,11 +23,11 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
-import org.xtreemfs.osd.operations.ECWriteOperation;
+import org.xtreemfs.osd.operations.ECWriteIntervalOperation;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
@@ -170,10 +170,10 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
             // We will always write the version to the full stripe
             int numResponses = dataWidth;
 
-            LocalRPCResponseHandler<xtreemfs_ec_write_dataResponse, Long> handler = new LocalRPCResponseHandler<xtreemfs_ec_write_dataResponse, Long>(
-                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_write_dataResponse, Long>() {
+            LocalRPCResponseHandler<xtreemfs_ec_write_intervalResponse, Long> handler = new LocalRPCResponseHandler<xtreemfs_ec_write_intervalResponse, Long>(
+                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_write_intervalResponse, Long>() {
                         @Override
-                        public void responseAvailable(ResponseResult<xtreemfs_ec_write_dataResponse, Long> result,
+                        public void responseAvailable(ResponseResult<xtreemfs_ec_write_intervalResponse, Long> result,
                                 int numResponses, int numErrors, int numQuickFail) {
                             handleDataResponse(result, numResponses, numErrors, numQuickFail);
                         }
@@ -184,11 +184,13 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
 
             for (long objNo = firstStripeObjNo; objNo <= lastStripeObjNo; objNo++) {
 
+                boolean hasData = false;
                 ReusableBuffer reqData = null;
                 // relative offset to the current object
                 int objOffset = 0;
 
                 if (objNo >= firstObjWithData && objNo <= lastObjWithData) {
+                    hasData = true;
                     // length of the data to write off the current object
                     int objLength;
                     // relative offset to the data buffer
@@ -217,8 +219,8 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                 if (osdNo == localOsdNo) {
                     // make local request
                     handler.addLocal(objNo, reqData);
-                    ECWriteOperation writeOp = (ECWriteOperation) master.getOperation(ECWriteOperation.PROC_ID);
-                    writeOp.startLocalRequest(fileId, sp, opId, objNo, objOffset, stripeInterval.getMsg(),
+                    ECWriteIntervalOperation writeOp = (ECWriteIntervalOperation) master.getOperation(ECWriteIntervalOperation.PROC_ID);
+                    writeOp.startLocalRequest(fileId, sp, opId, hasData, objNo, objOffset, stripeInterval.getMsg(),
                             commitIntervalMsgs, reqData, handler);
 
                 } else {
@@ -226,9 +228,9 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                         ServiceUUID server = getRemote(osdNo);
                         // FIXME (jdillmann): Does write free the buffer?
                         // FIXME (jdillmann): which op id should be used?
-                        RPCResponse<xtreemfs_ec_write_dataResponse> rpcResponse = osdClient.xtreemfs_ec_write_data(
+                        RPCResponse<xtreemfs_ec_write_intervalResponse> rpcResponse = osdClient.xtreemfs_ec_write_interval(
                                 server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                                fileCredentials, fileId, opId, objNo, objOffset, stripeInterval.getMsg(),
+                                fileCredentials, fileId, opId, hasData, objNo, objOffset, stripeInterval.getMsg(),
                                 commitIntervalMsgs, reqData);
                         handler.addRemote(rpcResponse, objNo);
 
@@ -299,7 +301,7 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
     }
 
 
-    private void handleDataResponse(ResponseResult<xtreemfs_ec_write_dataResponse, Long> result, int numResponses,
+    private void handleDataResponse(ResponseResult<xtreemfs_ec_write_intervalResponse, Long> result, int numResponses,
             int numErrors, int numQuickFail) {
         long objNo = result.getMappedObject();
 

@@ -69,9 +69,9 @@ public class ECCommitVector extends OSDOperation {
                     rq.sendError(error);
                 } else if (needsReconstruct) {
                     // FIXME (jdillmann): Trigger reconstruction.
-                    rq.sendSuccess(buildResponse(false), null);
-                } else {
                     rq.sendSuccess(buildResponse(true), null);
+                } else {
+                    rq.sendSuccess(buildResponse(false), null);
                 }
             }
         });
@@ -87,17 +87,17 @@ public class ECCommitVector extends OSDOperation {
                     callback.localRequestFailed(error);
                 } else if (needsReconstruct) {
                     // FIXME (jdillmann): Trigger reconstruction.
-                    callback.localResultAvailable(buildResponse(false), null);
-                } else {
                     callback.localResultAvailable(buildResponse(true), null);
+                } else {
+                    callback.localResultAvailable(buildResponse(false), null);
                 }
             }
         });
     }
 
-    xtreemfs_ec_commit_vectorResponse buildResponse(boolean complete) {
+    xtreemfs_ec_commit_vectorResponse buildResponse(boolean needsReconstruction) {
         xtreemfs_ec_commit_vectorResponse response = xtreemfs_ec_commit_vectorResponse.newBuilder()
-                .setComplete(complete)
+                .setNeedsReconstruction(needsReconstruction)
                 .build();
         return response;
     }

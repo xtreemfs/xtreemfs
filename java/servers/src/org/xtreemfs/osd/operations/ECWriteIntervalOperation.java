@@ -26,21 +26,21 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
-import org.xtreemfs.osd.stages.StorageStage.ECWriteDataCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataRequest;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_dataResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
-public class ECWriteOperation extends OSDOperation {
-    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_WRITE_DATA;
+public class ECWriteIntervalOperation extends OSDOperation {
+    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_WRITE_INTERVAL;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String      sharedSecret;
     final ServiceUUID localUUID;
 
-    public ECWriteOperation(OSDRequestDispatcher master) {
+    public ECWriteIntervalOperation(OSDRequestDispatcher master) {
         super(master);
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -53,7 +53,7 @@ public class ECWriteOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_ec_write_dataRequest args = (xtreemfs_ec_write_dataRequest) rq.getRequestArgs();
+        final xtreemfs_ec_write_intervalRequest args = (xtreemfs_ec_write_intervalRequest) rq.getRequestArgs();
 
         final String fileId = args.getFileId();
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
@@ -79,11 +79,11 @@ public class ECWriteOperation extends OSDOperation {
 
         // FIXME (jdillmann): Distinguish data from coding devices by the OSDs relative position.
 
-        master.getStorageStage().ecWriteData(fileId, sp, objNo, offset, stripeInterval,
-                commitIntervals, viewBuffer, rq, new ECWriteDataCallback() {
+        master.getStorageStage().ecWriteInterval(fileId, sp, objNo, offset, stripeInterval,
+                commitIntervals, viewBuffer, rq, new ECWriteIntervalCallback() {
 
                     @Override
-                    public void ecWriteDataComplete(ReusableBuffer diff, boolean needsReconstruct,
+                    public void ecWriteIntervalComplete(ReusableBuffer diff, boolean needsReconstruct,
                             ErrorResponse error) {
                         if (error != null) {
                             rq.sendError(error);
@@ -105,10 +105,10 @@ public class ECWriteOperation extends OSDOperation {
 
     }
 
-
-    public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long opId, final long objNo,
-            final int offset, final IntervalMsg stripeIntervalMsg, final List<IntervalMsg> commitIntervalMsgs,
-            final ReusableBuffer data, final InternalOperationCallback<xtreemfs_ec_write_dataResponse> callback) {
+    public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long opId,
+            final boolean hasData, final long objNo, final int offset, final IntervalMsg stripeIntervalMsg,
+            final List<IntervalMsg> commitIntervalMsgs, final ReusableBuffer data,
+            final InternalOperationCallback<xtreemfs_ec_write_intervalResponse> callback) {
 
         final ReusableBuffer viewBuffer = (data != null) ? data.createViewBuffer() : null;
 
@@ -125,14 +125,12 @@ public class ECWriteOperation extends OSDOperation {
             commitIntervals.add(interval);
         }
 
-        // ReusableBuffer viewBuffer = data.createViewBuffer();
-
-        master.getStorageStage().ecWriteData(fileId, sp, objNo, offset, stripeInterval, commitIntervals, viewBuffer,
+        master.getStorageStage().ecWriteInterval(fileId, sp, objNo, offset, stripeInterval, commitIntervals, viewBuffer,
                 null,
-                new ECWriteDataCallback() {
+                new ECWriteIntervalCallback() {
 
                     @Override
-                    public void ecWriteDataComplete(ReusableBuffer diff, boolean needsReconstruct,
+                    public void ecWriteIntervalComplete(ReusableBuffer diff, boolean needsReconstruct,
                             ErrorResponse error) {
                         if (error != null) {
                             callback.localRequestFailed(error);
@@ -152,8 +150,8 @@ public class ECWriteOperation extends OSDOperation {
                     }
                 });
     }
-    xtreemfs_ec_write_dataResponse buildResponse(boolean needsReconstruction) {
-        xtreemfs_ec_write_dataResponse.Builder responseB = xtreemfs_ec_write_dataResponse.newBuilder();
+    xtreemfs_ec_write_intervalResponse buildResponse(boolean needsReconstruction) {
+        xtreemfs_ec_write_intervalResponse.Builder responseB = xtreemfs_ec_write_intervalResponse.newBuilder();
         responseB.setNeedsReconstruction(needsReconstruction);
         // if (error != null) {
         // responseB.setError(error);
@@ -164,7 +162,7 @@ public class ECWriteOperation extends OSDOperation {
     @Override
     public ErrorResponse parseRPCMessage(OSDRequest rq) {
         try {
-            xtreemfs_ec_write_dataRequest rpcrq = (xtreemfs_ec_write_dataRequest) rq.getRequestArgs();
+            xtreemfs_ec_write_intervalRequest rpcrq = (xtreemfs_ec_write_intervalRequest) rq.getRequestArgs();
             rq.setFileId(rpcrq.getFileId());
             rq.setCapability(new Capability(rpcrq.getFileCredentials().getXcap(), sharedSecret));
             rq.setLocationList(new XLocations(rpcrq.getFileCredentials().getXlocs(), localUUID));

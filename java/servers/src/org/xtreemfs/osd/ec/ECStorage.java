@@ -30,7 +30,7 @@ import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
-import org.xtreemfs.osd.stages.StorageStage.ECWriteDataCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -128,8 +128,8 @@ public class ECStorage {
 
     }
 
-    public void processWriteData(final StageRequest rq) {
-        final ECWriteDataCallback callback = (ECWriteDataCallback) rq.getCallback();
+    public void processWriteInterval(final StageRequest rq) {
+        final ECWriteIntervalCallback callback = (ECWriteIntervalCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
         final long objectNo = (Long) rq.getArgs()[2];
@@ -166,7 +166,7 @@ public class ECStorage {
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
-                callback.ecWriteDataComplete(null, true, null);
+                callback.ecWriteIntervalComplete(null, true, null);
                 return;
             }
 
@@ -225,14 +225,14 @@ public class ECStorage {
 
                 // Return the diff buffer to the caller
                 ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
-                callback.ecWriteDataComplete(diffBuffer, false, null);
+                callback.ecWriteIntervalComplete(diffBuffer, false, null);
 
             } else {
                 // Store the vector
                 layout.setECIntervalVector(fileId, Arrays.asList(reqInterval), true, true);
                 fi.getECNextVector().insert(reqInterval);
 
-                callback.ecWriteDataComplete(null, false, null);
+                callback.ecWriteIntervalComplete(null, false, null);
             }
 
         } catch (IOException ex) {
@@ -243,7 +243,7 @@ public class ECStorage {
 
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
-            callback.ecWriteDataComplete(null, false, error);
+            callback.ecWriteIntervalComplete(null, false, error);
         } finally {
             BufferPool.free(data);
         }

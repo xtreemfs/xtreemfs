@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 06 11:03:11 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 06 12:12:21 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -876,25 +876,25 @@ namespace pbrpc {
                 return sync_cb;
             }
 
-            void xtreemfs_ec_get_interval_vectors(const std::string &address,
+            void xtreemfs_ec_get_vectors(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsRequest* request,
-                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse> *callback, void *context = NULL) {
+                const xtreemfs::pbrpc::xtreemfs_ec_get_vectorsRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse> *callback, void *context = NULL) {
                 const char* data = NULL; uint32_t data_length = 0;
                 client_->sendRequest(address, 30001, 84,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse(),
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse(),
                      context, callback);
             }
 
-            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>* xtreemfs_ec_get_interval_vectors_sync(const std::string &address,
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse>* xtreemfs_ec_get_vectors_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsRequest* request) {
+                , const xtreemfs::pbrpc::xtreemfs_ec_get_vectorsRequest* request) {
                 const char* data = NULL; uint32_t data_length = 0;
-                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse>();
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse>();
                 client_->sendRequest(address, 30001, 84,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_interval_vectorsResponse(),
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_get_vectorsResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }
@@ -922,28 +922,28 @@ namespace pbrpc {
                 return sync_cb;
             }
 
-            void xtreemfs_ec_write_data(const std::string &address,
+            void xtreemfs_ec_write_interval(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
-                const xtreemfs::pbrpc::xtreemfs_ec_write_dataRequest* request,const char* data, uint32_t data_length,
-                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse> *callback, void *context = NULL) {
+                const xtreemfs::pbrpc::xtreemfs_ec_write_intervalRequest* request,const char* data, uint32_t data_length,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse> *callback, void *context = NULL) {
                 client_->sendRequest(address, 30001, 86,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse(),
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse(),
                      context, callback);
             }
 
-            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse>* xtreemfs_ec_write_data_sync(const std::string &address,
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse>* xtreemfs_ec_write_interval_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
-                , const xtreemfs::pbrpc::xtreemfs_ec_write_dataRequest* request, const char* data, uint32_t data_length) {
-                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse>();
+                , const xtreemfs::pbrpc::xtreemfs_ec_write_intervalRequest* request, const char* data, uint32_t data_length) {
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse>();
                 client_->sendRequest(address, 30001, 86,
-                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse(),
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_write_intervalResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }
 
-            void xtreemfs_ec_read_data(const std::string &address,
+            void xtreemfs_ec_read(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds,
                 const xtreemfs::pbrpc::xtreemfs_ec_readRequest* request,
@@ -954,7 +954,7 @@ namespace pbrpc {
                      context, callback);
             }
 
-            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_readResponse>* xtreemfs_ec_read_data_sync(const std::string &address,
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_readResponse>* xtreemfs_ec_read_sync(const std::string &address,
                 const xtreemfs::pbrpc::Auth& auth,
                 const xtreemfs::pbrpc::UserCredentials &creds
                 , const xtreemfs::pbrpc::xtreemfs_ec_readRequest* request) {

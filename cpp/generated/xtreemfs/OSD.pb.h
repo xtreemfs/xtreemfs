@@ -84,12 +84,12 @@ class xtreemfs_xloc_set_invalidateResponse;
 class xtreemfs_rwr_reset_statusRequest;
 class xtreemfs_rwr_reset_statusResponse;
 class IntervalMsg;
-class xtreemfs_ec_get_interval_vectorsRequest;
-class xtreemfs_ec_get_interval_vectorsResponse;
+class xtreemfs_ec_get_vectorsRequest;
+class xtreemfs_ec_get_vectorsResponse;
 class xtreemfs_ec_commit_vectorRequest;
 class xtreemfs_ec_commit_vectorResponse;
-class xtreemfs_ec_write_dataRequest;
-class xtreemfs_ec_write_dataResponse;
+class xtreemfs_ec_write_intervalRequest;
+class xtreemfs_ec_write_intervalResponse;
 class xtreemfs_ec_readRequest;
 class xtreemfs_ec_readResponse;
 
@@ -4987,14 +4987,14 @@ class IntervalMsg : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class xtreemfs_ec_get_interval_vectorsRequest : public ::google::protobuf::Message {
+class xtreemfs_ec_get_vectorsRequest : public ::google::protobuf::Message {
  public:
-  xtreemfs_ec_get_interval_vectorsRequest();
-  virtual ~xtreemfs_ec_get_interval_vectorsRequest();
+  xtreemfs_ec_get_vectorsRequest();
+  virtual ~xtreemfs_ec_get_vectorsRequest();
 
-  xtreemfs_ec_get_interval_vectorsRequest(const xtreemfs_ec_get_interval_vectorsRequest& from);
+  xtreemfs_ec_get_vectorsRequest(const xtreemfs_ec_get_vectorsRequest& from);
 
-  inline xtreemfs_ec_get_interval_vectorsRequest& operator=(const xtreemfs_ec_get_interval_vectorsRequest& from) {
+  inline xtreemfs_ec_get_vectorsRequest& operator=(const xtreemfs_ec_get_vectorsRequest& from) {
     CopyFrom(from);
     return *this;
   }
@@ -5008,17 +5008,17 @@ class xtreemfs_ec_get_interval_vectorsRequest : public ::google::protobuf::Messa
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_ec_get_interval_vectorsRequest& default_instance();
+  static const xtreemfs_ec_get_vectorsRequest& default_instance();
 
-  void Swap(xtreemfs_ec_get_interval_vectorsRequest* other);
+  void Swap(xtreemfs_ec_get_vectorsRequest* other);
 
   // implements Message ----------------------------------------------
 
-  xtreemfs_ec_get_interval_vectorsRequest* New() const;
+  xtreemfs_ec_get_vectorsRequest* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_ec_get_interval_vectorsRequest& from);
-  void MergeFrom(const xtreemfs_ec_get_interval_vectorsRequest& from);
+  void CopyFrom(const xtreemfs_ec_get_vectorsRequest& from);
+  void MergeFrom(const xtreemfs_ec_get_vectorsRequest& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -5062,7 +5062,7 @@ class xtreemfs_ec_get_interval_vectorsRequest : public ::google::protobuf::Messa
   inline ::std::string* release_file_id();
   inline void set_allocated_file_id(::std::string* file_id);
 
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_interval_vectorsRequest)
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_vectorsRequest)
  private:
   inline void set_has_file_credentials();
   inline void clear_has_file_credentials();
@@ -5082,18 +5082,18 @@ class xtreemfs_ec_get_interval_vectorsRequest : public ::google::protobuf::Messa
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
 
   void InitAsDefaultInstance();
-  static xtreemfs_ec_get_interval_vectorsRequest* default_instance_;
+  static xtreemfs_ec_get_vectorsRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Message {
+class xtreemfs_ec_get_vectorsResponse : public ::google::protobuf::Message {
  public:
-  xtreemfs_ec_get_interval_vectorsResponse();
-  virtual ~xtreemfs_ec_get_interval_vectorsResponse();
+  xtreemfs_ec_get_vectorsResponse();
+  virtual ~xtreemfs_ec_get_vectorsResponse();
 
-  xtreemfs_ec_get_interval_vectorsResponse(const xtreemfs_ec_get_interval_vectorsResponse& from);
+  xtreemfs_ec_get_vectorsResponse(const xtreemfs_ec_get_vectorsResponse& from);
 
-  inline xtreemfs_ec_get_interval_vectorsResponse& operator=(const xtreemfs_ec_get_interval_vectorsResponse& from) {
+  inline xtreemfs_ec_get_vectorsResponse& operator=(const xtreemfs_ec_get_vectorsResponse& from) {
     CopyFrom(from);
     return *this;
   }
@@ -5107,17 +5107,17 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_ec_get_interval_vectorsResponse& default_instance();
+  static const xtreemfs_ec_get_vectorsResponse& default_instance();
 
-  void Swap(xtreemfs_ec_get_interval_vectorsResponse* other);
+  void Swap(xtreemfs_ec_get_vectorsResponse* other);
 
   // implements Message ----------------------------------------------
 
-  xtreemfs_ec_get_interval_vectorsResponse* New() const;
+  xtreemfs_ec_get_vectorsResponse* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_ec_get_interval_vectorsResponse& from);
-  void MergeFrom(const xtreemfs_ec_get_interval_vectorsResponse& from);
+  void CopyFrom(const xtreemfs_ec_get_vectorsResponse& from);
+  void MergeFrom(const xtreemfs_ec_get_vectorsResponse& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -5164,7 +5164,7 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
   inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
       mutable_next_intervals();
 
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_interval_vectorsResponse)
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_get_vectorsResponse)
  private:
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
@@ -5180,7 +5180,7 @@ class xtreemfs_ec_get_interval_vectorsResponse : public ::google::protobuf::Mess
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
 
   void InitAsDefaultInstance();
-  static xtreemfs_ec_get_interval_vectorsResponse* default_instance_;
+  static xtreemfs_ec_get_vectorsResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -5350,21 +5350,21 @@ class xtreemfs_ec_commit_vectorResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required bool complete = 1;
-  inline bool has_complete() const;
-  inline void clear_complete();
-  static const int kCompleteFieldNumber = 1;
-  inline bool complete() const;
-  inline void set_complete(bool value);
+  // required bool needs_reconstruction = 1;
+  inline bool has_needs_reconstruction() const;
+  inline void clear_needs_reconstruction();
+  static const int kNeedsReconstructionFieldNumber = 1;
+  inline bool needs_reconstruction() const;
+  inline void set_needs_reconstruction(bool value);
 
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_commit_vectorResponse)
  private:
-  inline void set_has_complete();
-  inline void clear_has_complete();
+  inline void set_has_needs_reconstruction();
+  inline void clear_has_needs_reconstruction();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
-  bool complete_;
+  bool needs_reconstruction_;
 
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
@@ -5378,14 +5378,14 @@ class xtreemfs_ec_commit_vectorResponse : public ::google::protobuf::Message {
 };
 // -------------------------------------------------------------------
 
-class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
+class xtreemfs_ec_write_intervalRequest : public ::google::protobuf::Message {
  public:
-  xtreemfs_ec_write_dataRequest();
-  virtual ~xtreemfs_ec_write_dataRequest();
+  xtreemfs_ec_write_intervalRequest();
+  virtual ~xtreemfs_ec_write_intervalRequest();
 
-  xtreemfs_ec_write_dataRequest(const xtreemfs_ec_write_dataRequest& from);
+  xtreemfs_ec_write_intervalRequest(const xtreemfs_ec_write_intervalRequest& from);
 
-  inline xtreemfs_ec_write_dataRequest& operator=(const xtreemfs_ec_write_dataRequest& from) {
+  inline xtreemfs_ec_write_intervalRequest& operator=(const xtreemfs_ec_write_intervalRequest& from) {
     CopyFrom(from);
     return *this;
   }
@@ -5399,17 +5399,17 @@ class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_ec_write_dataRequest& default_instance();
+  static const xtreemfs_ec_write_intervalRequest& default_instance();
 
-  void Swap(xtreemfs_ec_write_dataRequest* other);
+  void Swap(xtreemfs_ec_write_intervalRequest* other);
 
   // implements Message ----------------------------------------------
 
-  xtreemfs_ec_write_dataRequest* New() const;
+  xtreemfs_ec_write_intervalRequest* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_ec_write_dataRequest& from);
-  void MergeFrom(const xtreemfs_ec_write_dataRequest& from);
+  void CopyFrom(const xtreemfs_ec_write_intervalRequest& from);
+  void MergeFrom(const xtreemfs_ec_write_intervalRequest& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -5460,33 +5460,40 @@ class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::uint64 op_id() const;
   inline void set_op_id(::google::protobuf::uint64 value);
 
-  // required uint64 object_number = 4;
+  // required bool has_data = 4;
+  inline bool has_has_data() const;
+  inline void clear_has_data();
+  static const int kHasDataFieldNumber = 4;
+  inline bool has_data() const;
+  inline void set_has_data(bool value);
+
+  // optional uint64 object_number = 5;
   inline bool has_object_number() const;
   inline void clear_object_number();
-  static const int kObjectNumberFieldNumber = 4;
+  static const int kObjectNumberFieldNumber = 5;
   inline ::google::protobuf::uint64 object_number() const;
   inline void set_object_number(::google::protobuf::uint64 value);
 
-  // required uint32 offset = 5;
+  // optional uint32 offset = 6;
   inline bool has_offset() const;
   inline void clear_offset();
-  static const int kOffsetFieldNumber = 5;
+  static const int kOffsetFieldNumber = 6;
   inline ::google::protobuf::uint32 offset() const;
   inline void set_offset(::google::protobuf::uint32 value);
 
-  // required .xtreemfs.pbrpc.IntervalMsg stripe_interval = 6;
+  // required .xtreemfs.pbrpc.IntervalMsg stripe_interval = 7;
   inline bool has_stripe_interval() const;
   inline void clear_stripe_interval();
-  static const int kStripeIntervalFieldNumber = 6;
+  static const int kStripeIntervalFieldNumber = 7;
   inline const ::xtreemfs::pbrpc::IntervalMsg& stripe_interval() const;
   inline ::xtreemfs::pbrpc::IntervalMsg* mutable_stripe_interval();
   inline ::xtreemfs::pbrpc::IntervalMsg* release_stripe_interval();
   inline void set_allocated_stripe_interval(::xtreemfs::pbrpc::IntervalMsg* stripe_interval);
 
-  // repeated .xtreemfs.pbrpc.IntervalMsg commit_intervals = 7;
+  // repeated .xtreemfs.pbrpc.IntervalMsg commit_intervals = 8;
   inline int commit_intervals_size() const;
   inline void clear_commit_intervals();
-  static const int kCommitIntervalsFieldNumber = 7;
+  static const int kCommitIntervalsFieldNumber = 8;
   inline const ::xtreemfs::pbrpc::IntervalMsg& commit_intervals(int index) const;
   inline ::xtreemfs::pbrpc::IntervalMsg* mutable_commit_intervals(int index);
   inline ::xtreemfs::pbrpc::IntervalMsg* add_commit_intervals();
@@ -5495,7 +5502,7 @@ class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
       mutable_commit_intervals();
 
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_write_dataRequest)
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_write_intervalRequest)
  private:
   inline void set_has_file_credentials();
   inline void clear_has_file_credentials();
@@ -5503,6 +5510,8 @@ class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
   inline void clear_has_file_id();
   inline void set_has_op_id();
   inline void clear_has_op_id();
+  inline void set_has_has_data();
+  inline void clear_has_has_data();
   inline void set_has_object_number();
   inline void clear_has_object_number();
   inline void set_has_offset();
@@ -5516,30 +5525,31 @@ class xtreemfs_ec_write_dataRequest : public ::google::protobuf::Message {
   ::std::string* file_id_;
   ::google::protobuf::uint64 op_id_;
   ::google::protobuf::uint64 object_number_;
+  bool has_data_;
+  ::google::protobuf::uint32 offset_;
   ::xtreemfs::pbrpc::IntervalMsg* stripe_interval_;
   ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg > commit_intervals_;
-  ::google::protobuf::uint32 offset_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
 
   void InitAsDefaultInstance();
-  static xtreemfs_ec_write_dataRequest* default_instance_;
+  static xtreemfs_ec_write_intervalRequest* default_instance_;
 };
 // -------------------------------------------------------------------
 
-class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
+class xtreemfs_ec_write_intervalResponse : public ::google::protobuf::Message {
  public:
-  xtreemfs_ec_write_dataResponse();
-  virtual ~xtreemfs_ec_write_dataResponse();
+  xtreemfs_ec_write_intervalResponse();
+  virtual ~xtreemfs_ec_write_intervalResponse();
 
-  xtreemfs_ec_write_dataResponse(const xtreemfs_ec_write_dataResponse& from);
+  xtreemfs_ec_write_intervalResponse(const xtreemfs_ec_write_intervalResponse& from);
 
-  inline xtreemfs_ec_write_dataResponse& operator=(const xtreemfs_ec_write_dataResponse& from) {
+  inline xtreemfs_ec_write_intervalResponse& operator=(const xtreemfs_ec_write_intervalResponse& from) {
     CopyFrom(from);
     return *this;
   }
@@ -5553,17 +5563,17 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const xtreemfs_ec_write_dataResponse& default_instance();
+  static const xtreemfs_ec_write_intervalResponse& default_instance();
 
-  void Swap(xtreemfs_ec_write_dataResponse* other);
+  void Swap(xtreemfs_ec_write_intervalResponse* other);
 
   // implements Message ----------------------------------------------
 
-  xtreemfs_ec_write_dataResponse* New() const;
+  xtreemfs_ec_write_intervalResponse* New() const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const xtreemfs_ec_write_dataResponse& from);
-  void MergeFrom(const xtreemfs_ec_write_dataResponse& from);
+  void CopyFrom(const xtreemfs_ec_write_intervalResponse& from);
+  void MergeFrom(const xtreemfs_ec_write_intervalResponse& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -5586,14 +5596,14 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required bool needs_reconstruction = 3;
+  // required bool needs_reconstruction = 1;
   inline bool has_needs_reconstruction() const;
   inline void clear_needs_reconstruction();
-  static const int kNeedsReconstructionFieldNumber = 3;
+  static const int kNeedsReconstructionFieldNumber = 1;
   inline bool needs_reconstruction() const;
   inline void set_needs_reconstruction(bool value);
 
-  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_write_dataResponse)
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_write_intervalResponse)
  private:
   inline void set_has_needs_reconstruction();
   inline void clear_has_needs_reconstruction();
@@ -5610,7 +5620,7 @@ class xtreemfs_ec_write_dataResponse : public ::google::protobuf::Message {
   friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
 
   void InitAsDefaultInstance();
-  static xtreemfs_ec_write_dataResponse* default_instance_;
+  static xtreemfs_ec_write_intervalResponse* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -10868,37 +10878,37 @@ inline void IntervalMsg::set_op_end(::google::protobuf::uint64 value) {
 
 // -------------------------------------------------------------------
 
-// xtreemfs_ec_get_interval_vectorsRequest
+// xtreemfs_ec_get_vectorsRequest
 
 // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
-inline bool xtreemfs_ec_get_interval_vectorsRequest::has_file_credentials() const {
+inline bool xtreemfs_ec_get_vectorsRequest::has_file_credentials() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_has_file_credentials() {
+inline void xtreemfs_ec_get_vectorsRequest::set_has_file_credentials() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::clear_has_file_credentials() {
+inline void xtreemfs_ec_get_vectorsRequest::clear_has_file_credentials() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::clear_file_credentials() {
+inline void xtreemfs_ec_get_vectorsRequest::clear_file_credentials() {
   if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
   clear_has_file_credentials();
 }
-inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_get_interval_vectorsRequest::file_credentials() const {
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_get_vectorsRequest::file_credentials() const {
   return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
 }
-inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_get_interval_vectorsRequest::mutable_file_credentials() {
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_get_vectorsRequest::mutable_file_credentials() {
   set_has_file_credentials();
   if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
   return file_credentials_;
 }
-inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_get_interval_vectorsRequest::release_file_credentials() {
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_get_vectorsRequest::release_file_credentials() {
   clear_has_file_credentials();
   ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
   file_credentials_ = NULL;
   return temp;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+inline void xtreemfs_ec_get_vectorsRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
   delete file_credentials_;
   file_credentials_ = file_credentials;
   if (file_credentials) {
@@ -10909,53 +10919,53 @@ inline void xtreemfs_ec_get_interval_vectorsRequest::set_allocated_file_credenti
 }
 
 // required string file_id = 2;
-inline bool xtreemfs_ec_get_interval_vectorsRequest::has_file_id() const {
+inline bool xtreemfs_ec_get_vectorsRequest::has_file_id() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_has_file_id() {
+inline void xtreemfs_ec_get_vectorsRequest::set_has_file_id() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::clear_has_file_id() {
+inline void xtreemfs_ec_get_vectorsRequest::clear_has_file_id() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::clear_file_id() {
+inline void xtreemfs_ec_get_vectorsRequest::clear_file_id() {
   if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     file_id_->clear();
   }
   clear_has_file_id();
 }
-inline const ::std::string& xtreemfs_ec_get_interval_vectorsRequest::file_id() const {
+inline const ::std::string& xtreemfs_ec_get_vectorsRequest::file_id() const {
   return *file_id_;
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_file_id(const ::std::string& value) {
+inline void xtreemfs_ec_get_vectorsRequest::set_file_id(const ::std::string& value) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(value);
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_file_id(const char* value) {
+inline void xtreemfs_ec_get_vectorsRequest::set_file_id(const char* value) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(value);
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_file_id(const char* value, size_t size) {
+inline void xtreemfs_ec_get_vectorsRequest::set_file_id(const char* value, size_t size) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* xtreemfs_ec_get_interval_vectorsRequest::mutable_file_id() {
+inline ::std::string* xtreemfs_ec_get_vectorsRequest::mutable_file_id() {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   return file_id_;
 }
-inline ::std::string* xtreemfs_ec_get_interval_vectorsRequest::release_file_id() {
+inline ::std::string* xtreemfs_ec_get_vectorsRequest::release_file_id() {
   clear_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     return NULL;
@@ -10965,7 +10975,7 @@ inline ::std::string* xtreemfs_ec_get_interval_vectorsRequest::release_file_id()
     return temp;
   }
 }
-inline void xtreemfs_ec_get_interval_vectorsRequest::set_allocated_file_id(::std::string* file_id) {
+inline void xtreemfs_ec_get_vectorsRequest::set_allocated_file_id(::std::string* file_id) {
   if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
@@ -10980,55 +10990,55 @@ inline void xtreemfs_ec_get_interval_vectorsRequest::set_allocated_file_id(::std
 
 // -------------------------------------------------------------------
 
-// xtreemfs_ec_get_interval_vectorsResponse
+// xtreemfs_ec_get_vectorsResponse
 
 // repeated .xtreemfs.pbrpc.IntervalMsg cur_intervals = 1;
-inline int xtreemfs_ec_get_interval_vectorsResponse::cur_intervals_size() const {
+inline int xtreemfs_ec_get_vectorsResponse::cur_intervals_size() const {
   return cur_intervals_.size();
 }
-inline void xtreemfs_ec_get_interval_vectorsResponse::clear_cur_intervals() {
+inline void xtreemfs_ec_get_vectorsResponse::clear_cur_intervals() {
   cur_intervals_.Clear();
 }
-inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_interval_vectorsResponse::cur_intervals(int index) const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_vectorsResponse::cur_intervals(int index) const {
   return cur_intervals_.Get(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::mutable_cur_intervals(int index) {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_vectorsResponse::mutable_cur_intervals(int index) {
   return cur_intervals_.Mutable(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::add_cur_intervals() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_vectorsResponse::add_cur_intervals() {
   return cur_intervals_.Add();
 }
 inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
-xtreemfs_ec_get_interval_vectorsResponse::cur_intervals() const {
+xtreemfs_ec_get_vectorsResponse::cur_intervals() const {
   return cur_intervals_;
 }
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
-xtreemfs_ec_get_interval_vectorsResponse::mutable_cur_intervals() {
+xtreemfs_ec_get_vectorsResponse::mutable_cur_intervals() {
   return &cur_intervals_;
 }
 
 // repeated .xtreemfs.pbrpc.IntervalMsg next_intervals = 2;
-inline int xtreemfs_ec_get_interval_vectorsResponse::next_intervals_size() const {
+inline int xtreemfs_ec_get_vectorsResponse::next_intervals_size() const {
   return next_intervals_.size();
 }
-inline void xtreemfs_ec_get_interval_vectorsResponse::clear_next_intervals() {
+inline void xtreemfs_ec_get_vectorsResponse::clear_next_intervals() {
   next_intervals_.Clear();
 }
-inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_interval_vectorsResponse::next_intervals(int index) const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_get_vectorsResponse::next_intervals(int index) const {
   return next_intervals_.Get(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals(int index) {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_vectorsResponse::mutable_next_intervals(int index) {
   return next_intervals_.Mutable(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_interval_vectorsResponse::add_next_intervals() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_get_vectorsResponse::add_next_intervals() {
   return next_intervals_.Add();
 }
 inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
-xtreemfs_ec_get_interval_vectorsResponse::next_intervals() const {
+xtreemfs_ec_get_vectorsResponse::next_intervals() const {
   return next_intervals_;
 }
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
-xtreemfs_ec_get_interval_vectorsResponse::mutable_next_intervals() {
+xtreemfs_ec_get_vectorsResponse::mutable_next_intervals() {
   return &next_intervals_;
 }
 
@@ -11173,61 +11183,61 @@ xtreemfs_ec_commit_vectorRequest::mutable_intervals() {
 
 // xtreemfs_ec_commit_vectorResponse
 
-// required bool complete = 1;
-inline bool xtreemfs_ec_commit_vectorResponse::has_complete() const {
+// required bool needs_reconstruction = 1;
+inline bool xtreemfs_ec_commit_vectorResponse::has_needs_reconstruction() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void xtreemfs_ec_commit_vectorResponse::set_has_complete() {
+inline void xtreemfs_ec_commit_vectorResponse::set_has_needs_reconstruction() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void xtreemfs_ec_commit_vectorResponse::clear_has_complete() {
+inline void xtreemfs_ec_commit_vectorResponse::clear_has_needs_reconstruction() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void xtreemfs_ec_commit_vectorResponse::clear_complete() {
-  complete_ = false;
-  clear_has_complete();
+inline void xtreemfs_ec_commit_vectorResponse::clear_needs_reconstruction() {
+  needs_reconstruction_ = false;
+  clear_has_needs_reconstruction();
 }
-inline bool xtreemfs_ec_commit_vectorResponse::complete() const {
-  return complete_;
+inline bool xtreemfs_ec_commit_vectorResponse::needs_reconstruction() const {
+  return needs_reconstruction_;
 }
-inline void xtreemfs_ec_commit_vectorResponse::set_complete(bool value) {
-  set_has_complete();
-  complete_ = value;
+inline void xtreemfs_ec_commit_vectorResponse::set_needs_reconstruction(bool value) {
+  set_has_needs_reconstruction();
+  needs_reconstruction_ = value;
 }
 
 // -------------------------------------------------------------------
 
-// xtreemfs_ec_write_dataRequest
+// xtreemfs_ec_write_intervalRequest
 
 // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
-inline bool xtreemfs_ec_write_dataRequest::has_file_credentials() const {
+inline bool xtreemfs_ec_write_intervalRequest::has_file_credentials() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_file_credentials() {
+inline void xtreemfs_ec_write_intervalRequest::set_has_file_credentials() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_file_credentials() {
+inline void xtreemfs_ec_write_intervalRequest::clear_has_file_credentials() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_file_credentials() {
+inline void xtreemfs_ec_write_intervalRequest::clear_file_credentials() {
   if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
   clear_has_file_credentials();
 }
-inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_write_dataRequest::file_credentials() const {
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_write_intervalRequest::file_credentials() const {
   return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
 }
-inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_write_dataRequest::mutable_file_credentials() {
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_write_intervalRequest::mutable_file_credentials() {
   set_has_file_credentials();
   if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
   return file_credentials_;
 }
-inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_write_dataRequest::release_file_credentials() {
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_write_intervalRequest::release_file_credentials() {
   clear_has_file_credentials();
   ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
   file_credentials_ = NULL;
   return temp;
 }
-inline void xtreemfs_ec_write_dataRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+inline void xtreemfs_ec_write_intervalRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
   delete file_credentials_;
   file_credentials_ = file_credentials;
   if (file_credentials) {
@@ -11238,53 +11248,53 @@ inline void xtreemfs_ec_write_dataRequest::set_allocated_file_credentials(::xtre
 }
 
 // required string file_id = 2;
-inline bool xtreemfs_ec_write_dataRequest::has_file_id() const {
+inline bool xtreemfs_ec_write_intervalRequest::has_file_id() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_file_id() {
+inline void xtreemfs_ec_write_intervalRequest::set_has_file_id() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_file_id() {
+inline void xtreemfs_ec_write_intervalRequest::clear_has_file_id() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_file_id() {
+inline void xtreemfs_ec_write_intervalRequest::clear_file_id() {
   if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     file_id_->clear();
   }
   clear_has_file_id();
 }
-inline const ::std::string& xtreemfs_ec_write_dataRequest::file_id() const {
+inline const ::std::string& xtreemfs_ec_write_intervalRequest::file_id() const {
   return *file_id_;
 }
-inline void xtreemfs_ec_write_dataRequest::set_file_id(const ::std::string& value) {
+inline void xtreemfs_ec_write_intervalRequest::set_file_id(const ::std::string& value) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(value);
 }
-inline void xtreemfs_ec_write_dataRequest::set_file_id(const char* value) {
+inline void xtreemfs_ec_write_intervalRequest::set_file_id(const char* value) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(value);
 }
-inline void xtreemfs_ec_write_dataRequest::set_file_id(const char* value, size_t size) {
+inline void xtreemfs_ec_write_intervalRequest::set_file_id(const char* value, size_t size) {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   file_id_->assign(reinterpret_cast<const char*>(value), size);
 }
-inline ::std::string* xtreemfs_ec_write_dataRequest::mutable_file_id() {
+inline ::std::string* xtreemfs_ec_write_intervalRequest::mutable_file_id() {
   set_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     file_id_ = new ::std::string;
   }
   return file_id_;
 }
-inline ::std::string* xtreemfs_ec_write_dataRequest::release_file_id() {
+inline ::std::string* xtreemfs_ec_write_intervalRequest::release_file_id() {
   clear_has_file_id();
   if (file_id_ == &::google::protobuf::internal::kEmptyString) {
     return NULL;
@@ -11294,7 +11304,7 @@ inline ::std::string* xtreemfs_ec_write_dataRequest::release_file_id() {
     return temp;
   }
 }
-inline void xtreemfs_ec_write_dataRequest::set_allocated_file_id(::std::string* file_id) {
+inline void xtreemfs_ec_write_intervalRequest::set_allocated_file_id(::std::string* file_id) {
   if (file_id_ != &::google::protobuf::internal::kEmptyString) {
     delete file_id_;
   }
@@ -11308,100 +11318,122 @@ inline void xtreemfs_ec_write_dataRequest::set_allocated_file_id(::std::string* 
 }
 
 // required uint64 op_id = 3;
-inline bool xtreemfs_ec_write_dataRequest::has_op_id() const {
+inline bool xtreemfs_ec_write_intervalRequest::has_op_id() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_op_id() {
+inline void xtreemfs_ec_write_intervalRequest::set_has_op_id() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_op_id() {
+inline void xtreemfs_ec_write_intervalRequest::clear_has_op_id() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_op_id() {
+inline void xtreemfs_ec_write_intervalRequest::clear_op_id() {
   op_id_ = GOOGLE_ULONGLONG(0);
   clear_has_op_id();
 }
-inline ::google::protobuf::uint64 xtreemfs_ec_write_dataRequest::op_id() const {
+inline ::google::protobuf::uint64 xtreemfs_ec_write_intervalRequest::op_id() const {
   return op_id_;
 }
-inline void xtreemfs_ec_write_dataRequest::set_op_id(::google::protobuf::uint64 value) {
+inline void xtreemfs_ec_write_intervalRequest::set_op_id(::google::protobuf::uint64 value) {
   set_has_op_id();
   op_id_ = value;
 }
 
-// required uint64 object_number = 4;
-inline bool xtreemfs_ec_write_dataRequest::has_object_number() const {
+// required bool has_data = 4;
+inline bool xtreemfs_ec_write_intervalRequest::has_has_data() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_object_number() {
+inline void xtreemfs_ec_write_intervalRequest::set_has_has_data() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_object_number() {
+inline void xtreemfs_ec_write_intervalRequest::clear_has_has_data() {
   _has_bits_[0] &= ~0x00000008u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_object_number() {
+inline void xtreemfs_ec_write_intervalRequest::clear_has_data() {
+  has_data_ = false;
+  clear_has_has_data();
+}
+inline bool xtreemfs_ec_write_intervalRequest::has_data() const {
+  return has_data_;
+}
+inline void xtreemfs_ec_write_intervalRequest::set_has_data(bool value) {
+  set_has_has_data();
+  has_data_ = value;
+}
+
+// optional uint64 object_number = 5;
+inline bool xtreemfs_ec_write_intervalRequest::has_object_number() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void xtreemfs_ec_write_intervalRequest::set_has_object_number() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void xtreemfs_ec_write_intervalRequest::clear_has_object_number() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void xtreemfs_ec_write_intervalRequest::clear_object_number() {
   object_number_ = GOOGLE_ULONGLONG(0);
   clear_has_object_number();
 }
-inline ::google::protobuf::uint64 xtreemfs_ec_write_dataRequest::object_number() const {
+inline ::google::protobuf::uint64 xtreemfs_ec_write_intervalRequest::object_number() const {
   return object_number_;
 }
-inline void xtreemfs_ec_write_dataRequest::set_object_number(::google::protobuf::uint64 value) {
+inline void xtreemfs_ec_write_intervalRequest::set_object_number(::google::protobuf::uint64 value) {
   set_has_object_number();
   object_number_ = value;
 }
 
-// required uint32 offset = 5;
-inline bool xtreemfs_ec_write_dataRequest::has_offset() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+// optional uint32 offset = 6;
+inline bool xtreemfs_ec_write_intervalRequest::has_offset() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_offset() {
-  _has_bits_[0] |= 0x00000010u;
+inline void xtreemfs_ec_write_intervalRequest::set_has_offset() {
+  _has_bits_[0] |= 0x00000020u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_offset() {
-  _has_bits_[0] &= ~0x00000010u;
+inline void xtreemfs_ec_write_intervalRequest::clear_has_offset() {
+  _has_bits_[0] &= ~0x00000020u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_offset() {
+inline void xtreemfs_ec_write_intervalRequest::clear_offset() {
   offset_ = 0u;
   clear_has_offset();
 }
-inline ::google::protobuf::uint32 xtreemfs_ec_write_dataRequest::offset() const {
+inline ::google::protobuf::uint32 xtreemfs_ec_write_intervalRequest::offset() const {
   return offset_;
 }
-inline void xtreemfs_ec_write_dataRequest::set_offset(::google::protobuf::uint32 value) {
+inline void xtreemfs_ec_write_intervalRequest::set_offset(::google::protobuf::uint32 value) {
   set_has_offset();
   offset_ = value;
 }
 
-// required .xtreemfs.pbrpc.IntervalMsg stripe_interval = 6;
-inline bool xtreemfs_ec_write_dataRequest::has_stripe_interval() const {
-  return (_has_bits_[0] & 0x00000020u) != 0;
+// required .xtreemfs.pbrpc.IntervalMsg stripe_interval = 7;
+inline bool xtreemfs_ec_write_intervalRequest::has_stripe_interval() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
 }
-inline void xtreemfs_ec_write_dataRequest::set_has_stripe_interval() {
-  _has_bits_[0] |= 0x00000020u;
+inline void xtreemfs_ec_write_intervalRequest::set_has_stripe_interval() {
+  _has_bits_[0] |= 0x00000040u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_has_stripe_interval() {
-  _has_bits_[0] &= ~0x00000020u;
+inline void xtreemfs_ec_write_intervalRequest::clear_has_stripe_interval() {
+  _has_bits_[0] &= ~0x00000040u;
 }
-inline void xtreemfs_ec_write_dataRequest::clear_stripe_interval() {
+inline void xtreemfs_ec_write_intervalRequest::clear_stripe_interval() {
   if (stripe_interval_ != NULL) stripe_interval_->::xtreemfs::pbrpc::IntervalMsg::Clear();
   clear_has_stripe_interval();
 }
-inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_write_dataRequest::stripe_interval() const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_write_intervalRequest::stripe_interval() const {
   return stripe_interval_ != NULL ? *stripe_interval_ : *default_instance_->stripe_interval_;
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_dataRequest::mutable_stripe_interval() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_intervalRequest::mutable_stripe_interval() {
   set_has_stripe_interval();
   if (stripe_interval_ == NULL) stripe_interval_ = new ::xtreemfs::pbrpc::IntervalMsg;
   return stripe_interval_;
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_dataRequest::release_stripe_interval() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_intervalRequest::release_stripe_interval() {
   clear_has_stripe_interval();
   ::xtreemfs::pbrpc::IntervalMsg* temp = stripe_interval_;
   stripe_interval_ = NULL;
   return temp;
 }
-inline void xtreemfs_ec_write_dataRequest::set_allocated_stripe_interval(::xtreemfs::pbrpc::IntervalMsg* stripe_interval) {
+inline void xtreemfs_ec_write_intervalRequest::set_allocated_stripe_interval(::xtreemfs::pbrpc::IntervalMsg* stripe_interval) {
   delete stripe_interval_;
   stripe_interval_ = stripe_interval;
   if (stripe_interval) {
@@ -11411,53 +11443,53 @@ inline void xtreemfs_ec_write_dataRequest::set_allocated_stripe_interval(::xtree
   }
 }
 
-// repeated .xtreemfs.pbrpc.IntervalMsg commit_intervals = 7;
-inline int xtreemfs_ec_write_dataRequest::commit_intervals_size() const {
+// repeated .xtreemfs.pbrpc.IntervalMsg commit_intervals = 8;
+inline int xtreemfs_ec_write_intervalRequest::commit_intervals_size() const {
   return commit_intervals_.size();
 }
-inline void xtreemfs_ec_write_dataRequest::clear_commit_intervals() {
+inline void xtreemfs_ec_write_intervalRequest::clear_commit_intervals() {
   commit_intervals_.Clear();
 }
-inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_write_dataRequest::commit_intervals(int index) const {
+inline const ::xtreemfs::pbrpc::IntervalMsg& xtreemfs_ec_write_intervalRequest::commit_intervals(int index) const {
   return commit_intervals_.Get(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_dataRequest::mutable_commit_intervals(int index) {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_intervalRequest::mutable_commit_intervals(int index) {
   return commit_intervals_.Mutable(index);
 }
-inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_dataRequest::add_commit_intervals() {
+inline ::xtreemfs::pbrpc::IntervalMsg* xtreemfs_ec_write_intervalRequest::add_commit_intervals() {
   return commit_intervals_.Add();
 }
 inline const ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >&
-xtreemfs_ec_write_dataRequest::commit_intervals() const {
+xtreemfs_ec_write_intervalRequest::commit_intervals() const {
   return commit_intervals_;
 }
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
-xtreemfs_ec_write_dataRequest::mutable_commit_intervals() {
+xtreemfs_ec_write_intervalRequest::mutable_commit_intervals() {
   return &commit_intervals_;
 }
 
 // -------------------------------------------------------------------
 
-// xtreemfs_ec_write_dataResponse
+// xtreemfs_ec_write_intervalResponse
 
-// required bool needs_reconstruction = 3;
-inline bool xtreemfs_ec_write_dataResponse::has_needs_reconstruction() const {
+// required bool needs_reconstruction = 1;
+inline bool xtreemfs_ec_write_intervalResponse::has_needs_reconstruction() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void xtreemfs_ec_write_dataResponse::set_has_needs_reconstruction() {
+inline void xtreemfs_ec_write_intervalResponse::set_has_needs_reconstruction() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void xtreemfs_ec_write_dataResponse::clear_has_needs_reconstruction() {
+inline void xtreemfs_ec_write_intervalResponse::clear_has_needs_reconstruction() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void xtreemfs_ec_write_dataResponse::clear_needs_reconstruction() {
+inline void xtreemfs_ec_write_intervalResponse::clear_needs_reconstruction() {
   needs_reconstruction_ = false;
   clear_has_needs_reconstruction();
 }
-inline bool xtreemfs_ec_write_dataResponse::needs_reconstruction() const {
+inline bool xtreemfs_ec_write_intervalResponse::needs_reconstruction() const {
   return needs_reconstruction_;
 }
-inline void xtreemfs_ec_write_dataResponse::set_needs_reconstruction(bool value) {
+inline void xtreemfs_ec_write_intervalResponse::set_needs_reconstruction(bool value) {
   set_has_needs_reconstruction();
   needs_reconstruction_ = value;
 }

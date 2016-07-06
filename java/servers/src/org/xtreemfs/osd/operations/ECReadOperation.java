@@ -35,7 +35,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
 public class ECReadOperation extends OSDOperation {
-    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_READ_DATA;
+    final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_READ;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String            sharedSecret;

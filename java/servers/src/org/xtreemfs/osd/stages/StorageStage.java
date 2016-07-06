@@ -253,15 +253,15 @@ public class StorageStage extends Stage {
      * @param request
      * @param callback
      */
-    public void ecWriteData(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
-            List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request, ECWriteDataCallback callback) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_DATA, 
+    public void ecWriteInterval(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
+            List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request, ECWriteIntervalCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_INTERVAL, 
                 new Object[] {fileId, sp, objNo, offset, reqInterval, commitIntervals, data}, 
                 request, data, callback);
     }
 
-    public static interface ECWriteDataCallback {
-        public void ecWriteDataComplete(ReusableBuffer diff, boolean needsReconstruct, ErrorResponse error);
+    public static interface ECWriteIntervalCallback {
+        public void ecWriteIntervalComplete(ReusableBuffer diff, boolean needsReconstruct, ErrorResponse error);
     }
     
 

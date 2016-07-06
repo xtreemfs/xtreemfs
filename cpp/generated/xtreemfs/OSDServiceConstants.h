@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 06 11:03:11 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 06 12:12:21 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECONSTANTS_H_
@@ -46,10 +46,10 @@ const uint32_t PROC_ID_XTREEMFS_SHUTDOWN = 70;
 const uint32_t PROC_ID_XTREEMFS_XLOC_SET_INVALIDATE = 81;
 const uint32_t PROC_ID_XTREEMFS_RWR_AUTH_STATE_INVALIDATED = 82;
 const uint32_t PROC_ID_XTREEMFS_RWR_RESET_STATUS = 83;
-const uint32_t PROC_ID_XTREEMFS_EC_GET_INTERVAL_VECTORS = 84;
+const uint32_t PROC_ID_XTREEMFS_EC_GET_VECTORS = 84;
 const uint32_t PROC_ID_XTREEMFS_EC_COMMIT_VECTOR = 85;
-const uint32_t PROC_ID_XTREEMFS_EC_WRITE_DATA = 86;
-const uint32_t PROC_ID_XTREEMFS_EC_READ_DATA = 87;
+const uint32_t PROC_ID_XTREEMFS_EC_WRITE_INTERVAL = 86;
+const uint32_t PROC_ID_XTREEMFS_EC_READ = 87;
 
 }  // namespace pbrpc
 }  // namespace xtreemfs

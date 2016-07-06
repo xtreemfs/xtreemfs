@@ -411,56 +411,72 @@ message IntervalMsg {
   optional uint64 op_end = 6;
 }
 
-message xtreemfs_ec_get_interval_vectorsRequest {
+// Request the full interval vectors stored on this device.
+// Required for vector recovery on reset.
+message xtreemfs_ec_get_vectorsRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
 }
 
-message xtreemfs_ec_get_interval_vectorsResponse {
+// Response containing the full interval vectors stored on a device.
+message xtreemfs_ec_get_vectorsResponse {
   // FIXME (jdillmann): Could be sent as data to circumvent inefficient big protobuf msgs
   repeated IntervalMsg cur_intervals = 1;
   repeated IntervalMsg next_intervals = 2;
 }
 
+
+// Request to Commit the interval vector on a device.
 message xtreemfs_ec_commit_vectorRequest {
   // FIXME (jdillmann): Maybe merge with ec_truncate
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
+
+  // FIXME (jdillmann): Could be sent as data to circumvent inefficient big protobuf msgs.
   repeated IntervalMsg intervals = 3;
 }
 
+// Response to a commit request.
+// Returns if the device needs reconstruction.
 message xtreemfs_ec_commit_vectorResponse {
-  required bool complete = 1;
+  required bool needs_reconstruction = 1;
 }
 
-message xtreemfs_ec_write_dataRequest {
+
+// Request to write a new version vector on a data device.
+// May contain data to be written on the data device.
+message xtreemfs_ec_write_intervalRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
-
   required uint64 op_id = 3;
 
+  // Indicates if the request contains data to be written or only the vector.
+  required bool has_data = 4;
+
   // Object number starting at 0.
-  required uint64 object_number = 4;
+  optional uint64 object_number = 5;
   // Offset within the object.
-  required uint32 offset = 5;
+  optional uint32 offset = 6;
 
   //required uint32 stripe_number = 5;
 
   // Interval of the stripe to be written.
   // May not cross stripe boundaries, but may have a larger op range.
-  required IntervalMsg stripe_interval = 6;
+  required IntervalMsg stripe_interval = 7;
+
   // Intervals this operation is based on.
   // Have to be committed to execute the operation.
-  repeated IntervalMsg commit_intervals = 7;
+  repeated IntervalMsg commit_intervals = 8;
 }
 
-message xtreemfs_ec_write_dataResponse {
-  // required uint64 op_id = 1;
-  // required uint64 object_number = 2;
-  required bool needs_reconstruction = 3;
+// Response to a write request on a data device.
+// Returns if the device needs reconstruction.
+message xtreemfs_ec_write_intervalResponse {
+  required bool needs_reconstruction = 1;
 }
 
 
+// Request to read an object from a data device.
 message xtreemfs_ec_readRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -472,10 +488,13 @@ message xtreemfs_ec_readRequest {
   repeated IntervalMsg intervals = 6;
 }
 
+// Response to a read request on a data device.
+// Returns if the device needs reconstruction or the requested object.
 message xtreemfs_ec_readResponse {
   required bool needs_reconstruction = 1;
   optional ObjectData object_data = 2;
 }
+
 
 service OSDService {
 
@@ -700,26 +719,32 @@ service OSDService {
     option(proc_id)=83;
   };
 
-  // TODO (jdillmann): DOC
-  rpc xtreemfs_ec_get_interval_vectors(xtreemfs_ec_get_interval_vectorsRequest)
-      returns (xtreemfs_ec_get_interval_vectorsResponse) {
+  // Requests the full interval vectors stored on this device.
+  // Required for vector recovery on reset.
+  rpc xtreemfs_ec_get_vectors(xtreemfs_ec_get_vectorsRequest)
+      returns (xtreemfs_ec_get_vectorsResponse) {
     option(proc_id)=84;
   };
 
-  // TODO (jdillmann): DOC
+  // Commit the given interval vector on a device.
+  // Returns if a commit failed because the device needs reconstruction.
   rpc xtreemfs_ec_commit_vector(xtreemfs_ec_commit_vectorRequest)
       returns (xtreemfs_ec_commit_vectorResponse) {
     option(proc_id)=85;
   };
 
-  // TODO (jdillmann): DOC
-  rpc xtreemfs_ec_write_data(xtreemfs_ec_write_dataRequest)
-      returns (xtreemfs_ec_write_dataResponse) {
+  // Write a new version on a data device.
+  // May contain data to be written on the device.
+  // Returns if the write failed because the device needs reconstruction.
+  rpc xtreemfs_ec_write_interval(xtreemfs_ec_write_intervalRequest)
+      returns (xtreemfs_ec_write_intervalResponse) {
     option(proc_id)=86;
     option(data_in)=true;
   };
 
-  rpc xtreemfs_ec_read_data(xtreemfs_ec_readRequest)
+  // Read an object from a data device.
+  // Returns if the device needs reconstruction or the requested object.
+  rpc xtreemfs_ec_read(xtreemfs_ec_readRequest)
       returns (xtreemfs_ec_readResponse) {
     option(proc_id)=87;
     option(data_out)=true;
