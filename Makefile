@@ -331,45 +331,44 @@ endif
 
 .PHONY: flease flease_clean flease_distclean
 flease: foundation
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml jar
+	$(MVN_BIN) --file java/xtreemfs-flease/pom.xml -DskipTests package
 flease_clean:
-	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-flease/pom.xml clean || exit 1;
 flease_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-flease/pom.xml clean || exit 1;
 
 .PHONY: foundation foundation_clean foundation_distclean
-foundation: set_version
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml jar
+foundation: set_version pbrpcgen
+	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml -DskipTests package
 foundation_clean:
-	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 foundation_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml clean || exit 1;
+
+pbrpcgen:
+	$(MVN_BIN) --file java/xtreemfs-pbrpcgen/pom.xml -DskipTests package
+pbrpcgen_clean:
+	$(MVN_BIN) --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
 server: check_server foundation flease
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml jar
+	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml -DskipTests package
 server_clean: check_server
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml clean || exit 1;
 server_distclean: check_server
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
 hadoop-client: server foundation
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
-	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/dist/XtreemFSHadoopClient.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
+	$(MVN_BIN) --file contrib/hadoop/pom.xml -DskipTests package
+	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client-<VERSION>.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+	$(MVN_BIN) --file contrib/hadoop/pom.xml clean || exit 1
 hadoop-client_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+	$(MVN_BIN) --file contrib/hadoop/pom.xml clean || exit 1
 
 test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
-
-pbrpcgen:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml
-
-pbrpcgen_clean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml clean || exit 1
 
 interfaces: pbrpcgen client_thirdparty
 	$(MAKE) -C interface
