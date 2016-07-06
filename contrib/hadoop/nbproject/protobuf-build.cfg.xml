@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<protobuf-config xmlns="http://tabor.waw.pl/netbeans/protobuf/generator/jaxb" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://tabor.waw.pl/netbeans/protobuf/generator/jaxb ProtobufConfig.xsd"><generator on="false" type="cpp"/><generator on="false" type="java"/><generator on="false" type="python"/></protobuf-config>
