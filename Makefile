@@ -4,10 +4,10 @@ else
 	JAVAC_BIN = $(JAVA_HOME)/bin/javac
 endif
 
-ifeq "$(ANT_HOME)" ""
-        ANT_BIN = /usr/bin/ant
+ifeq "$(MAVEN_HOME)" ""
+        MVN_BIN = /usr/bin/mvn
 else
-        ANT_BIN = $(ANT_HOME)/bin/ant
+        MVN_BIN = $(MAVEN_HOME)/bin/mvn
 endif
 
 ifeq "$(CMAKE_HOME)" ""
@@ -201,8 +201,8 @@ check_server:
 	@if [ $(shell $(JAVAC_BIN) -version 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 6 ]; then echo "java version >= 1.6.0 required!"; exit 1; fi;
 	@echo "java ok"
 
-	@if [ ! -e $(ANT_BIN) ]; then echo "ant not found! Make sure ant is installed and set ANT_HOME."; exit 1; fi;
-	@echo "ant ok"
+	@if [ ! -e $(MVN_BIN) ]; then echo "mvn not found! Make sure mvn is installed and set MAVEN_HOME."; exit 1; fi;
+	@echo "mvn ok"
 
 check_client:
 	@if [ ! $(WHICH_GPP) -a ! $(WHICH_CLANGPP) ]; then echo "C++ compiler not found";exit 1; fi;
