@@ -33,14 +33,22 @@
   </modules>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Compile dependencies -->
+    <babudb.version>0.6.0-SNAPSHOT</babudb.version>
     <commons-codec.version>1.3</commons-codec.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
-    <babudb.version>0.6.0-SNAPSHOT</babudb.version>
+
+    <!-- Test dependencies -->
     <junit.version>4.12</junit.version>
+
+    <!-- Plugin configurations -->
+    <github.global.server>github</github.global.server>
+    <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <site-maven-plugin.version>0.12</site-maven-plugin.version>
-    <github.global.server>github</github.global.server>
   </properties>
 
   <distributionManagement>
@@ -58,6 +66,16 @@
         <version>${maven-deploy-plugin.version}</version>
         <configuration>
           <altDeploymentRepository>xtreemfs-repository::default::file://${project.build.directory}/xtreemfs-repository/maven</altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
         </configuration>
       </plugin>
 
