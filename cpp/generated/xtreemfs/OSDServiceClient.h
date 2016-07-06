@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Tue Jun 28 17:02:58 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 06 11:03:11 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -939,6 +939,29 @@ namespace pbrpc {
                 SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse>();
                 client_->sendRequest(address, 30001, 86,
                      creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_write_dataResponse(),
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_ec_read_data(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_ec_readRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::xtreemfs_ec_readResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 87,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_readResponse(),
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_readResponse>* xtreemfs_ec_read_data_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_ec_readRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_readResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::xtreemfs_ec_readResponse>();
+                client_->sendRequest(address, 30001, 87,
+                     creds, auth, request, data, data_length, new xtreemfs::pbrpc::xtreemfs_ec_readResponse(),
                      NULL, sync_cb);
                 return sync_cb;
             }

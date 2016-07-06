@@ -461,6 +461,21 @@ message xtreemfs_ec_write_dataResponse {
 }
 
 
+message xtreemfs_ec_readRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+
+  required uint64 object_number = 3;
+  required uint32 offset = 4;
+  required uint32 length = 5;
+
+  repeated IntervalMsg intervals = 6;
+}
+
+message xtreemfs_ec_readResponse {
+  required bool needs_reconstruction = 1;
+  optional ObjectData object_data = 2;
+}
 
 service OSDService {
 
@@ -703,4 +718,10 @@ service OSDService {
     option(proc_id)=86;
     option(data_in)=true;
   };
+
+  rpc xtreemfs_ec_read_data(xtreemfs_ec_readRequest)
+      returns (xtreemfs_ec_readResponse) {
+    option(proc_id)=87;
+    option(data_out)=true;
+  }
 }
