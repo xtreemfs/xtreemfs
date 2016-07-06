@@ -24,7 +24,6 @@ import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECWriteOperation;
-import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
@@ -164,10 +163,15 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
             ProtoInterval stripeInterval = new ProtoInterval(stripeDataStart, stripeDataEnd, reqInterval.getVersion(),
                     reqInterval.getId(), opStart, opEnd);
 
-            int numRemoteDataOSDs = remoteOSDs.size() - parityWidth;
+            // FIXME (jdillmann): Wrong if the local OSD is a parity osd
+            // int numRemoteDataOSDs = remoteOSDs.size() - parityWidth;
+            // boolean localIsParity = localOsdNo > dataWidth;
+            // int numRemoteDataOSDs = localIsParity ? dataWidth : dataWidth - 1;
+            // We will always write the version to the full stripe
+            int numResponses = dataWidth;
 
             LocalRPCResponseHandler<xtreemfs_ec_write_dataResponse, Long> handler = new LocalRPCResponseHandler<xtreemfs_ec_write_dataResponse, Long>(
-                    numRemoteDataOSDs, new LocalRPCResponseListener<xtreemfs_ec_write_dataResponse, Long>() {
+                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_write_dataResponse, Long>() {
                         @Override
                         public void responseAvailable(ResponseResult<xtreemfs_ec_write_dataResponse, Long> result,
                                 int numResponses, int numErrors, int numQuickFail) {
@@ -213,9 +217,9 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                 if (osdNo == localOsdNo) {
                     // make local request
                     handler.addLocal(objNo, reqData);
-                    OSDOperation writeOp = master.getOperation(ECWriteOperation.PROC_ID);
-                    writeOp.startInternalEvent(new Object[] { fileId, sp, opId, objNo, objOffset,
-                            stripeInterval.getMsg(), commitIntervalMsgs, reqData, handler });
+                    ECWriteOperation writeOp = (ECWriteOperation) master.getOperation(ECWriteOperation.PROC_ID);
+                    writeOp.startLocalRequest(fileId, sp, opId, objNo, objOffset, stripeInterval.getMsg(),
+                            commitIntervalMsgs, reqData, handler);
 
                 } else {
                     try {

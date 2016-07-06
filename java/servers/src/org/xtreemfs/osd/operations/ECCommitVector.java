@@ -77,15 +77,9 @@ public class ECCommitVector extends OSDOperation {
         });
     }
 
-
-    @Override
-    public void startInternalEvent(Object[] args) {
-        final String fileId = (String) args[0];
-        final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
-        final List<Interval> commitIntervals = (List<Interval>) args[2];
-        final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback 
-            = (InternalOperationCallback<xtreemfs_ec_commit_vectorResponse>) args[3];
-
+    public void startLocalRequest(final String fileId, final StripingPolicyImpl sp,
+            final List<Interval> commitIntervals,
+            final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback) {
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
             public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
@@ -93,9 +87,9 @@ public class ECCommitVector extends OSDOperation {
                     callback.localRequestFailed(error);
                 } else if (needsReconstruct) {
                     // FIXME (jdillmann): Trigger reconstruction.
-                    callback.localResultAvailable(buildResponse(false));
+                    callback.localResultAvailable(buildResponse(false), null);
                 } else {
-                    callback.localResultAvailable(buildResponse(true));
+                    callback.localResultAvailable(buildResponse(true), null);
                 }
             }
         });
@@ -133,5 +127,10 @@ public class ECCommitVector extends OSDOperation {
     public boolean bypassViewValidation() {
         // FIXME (jdillmann): What about views?
         return false;
+    }
+
+    @Override
+    public void startInternalEvent(Object[] args) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

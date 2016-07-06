@@ -71,9 +71,13 @@ public class ECStripingPolicyImpl extends StripingPolicyImpl {
 
     @Override
     public Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo, final long endObjectNo) {
+        long firstObjForOsdInRow = getRow(startObjectNo) * getWidth() + osdIndex;
+        final long startObj = firstObjForOsdInRow >= startObjectNo ? firstObjForOsdInRow - getWidth()
+                : firstObjForOsdInRow;
+
         return new Iterator<Long>() {
-            // first correct objectNo will be set if the first time "next()" is called
-            private long object = (getRow(startObjectNo) * getWidth() + osdIndex) - getWidth();
+            // first correct objectNo will be set if the first time "next()" is called            
+            private long object = startObj;
 
             @Override
             public boolean hasNext() {

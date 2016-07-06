@@ -40,7 +40,7 @@ public class LocalRPCResponseHandler<M extends Message, O>
 
 
     @SuppressWarnings("unchecked")
-    public LocalRPCResponseHandler(int numRemotes, LocalRPCResponseListener<M, O> listener) {
+    public LocalRPCResponseHandler(int numRequests, LocalRPCResponseListener<M, O> listener) {
         this.listener = listener;
 
         numResponses = new AtomicInteger(0);
@@ -48,14 +48,14 @@ public class LocalRPCResponseHandler<M extends Message, O>
         numQuickFail = new AtomicInteger(0);
 
         remoteResponsesLength = new AtomicInteger(0);
-        remoteResponses = new RPCResponse[numRemotes];
+        remoteResponses = new RPCResponse[numRequests];
         resultsLength = new AtomicInteger(0);
-        results = new ResponseResult[numRemotes + 1];
+        results = new ResponseResult[numRequests];
     }
 
-    public LocalRPCResponseHandler(int numRemotes, final int numAcksRequired,
+    public LocalRPCResponseHandler(int numResponses, final int numAcksRequired,
             final LocalRPCResponseQuorumListener<M, O> quorumListener) {
-        this(numRemotes, null);
+        this(numResponses, null);
         this.listener = new LocalRPCResponseListener<M, O>() {
             @Override
             public void responseAvailable(ResponseResult<M, O> result, int numResponses, int numErrors,
@@ -107,7 +107,9 @@ public class LocalRPCResponseHandler<M extends Message, O>
         listenersRegistered = true;
 
         for (RPCResponse<M> response : remoteResponses) {
-            response.registerListener(this);
+            if (response != null) {
+                response.registerListener(this);
+            }
         }
     }
 
@@ -135,6 +137,7 @@ public class LocalRPCResponseHandler<M extends Message, O>
             // Try to get and add the result.
             M result = r.get();
             responseResult.setResult(result);
+            responseResult.setData(r.getData());
             curNumResponses = numResponses.incrementAndGet();
             curNumErrors = numErrors.get();
         } catch (PBRPCException ex) {
@@ -171,12 +174,13 @@ public class LocalRPCResponseHandler<M extends Message, O>
     }
 
     @Override
-    public void localResultAvailable(M result) {
+    public void localResultAvailable(M result, ReusableBuffer data) {
         ResponseResult<M, O> responseResult = results[results.length - 1];
 
         int curNumResponses, curNumErrors, curNumQuickFail;
 
         responseResult.setResult(result);
+        responseResult.setData(data);
         curNumResponses = numResponses.incrementAndGet();
         curNumErrors = numErrors.get();
         curNumQuickFail = numQuickFail.get();
@@ -223,12 +227,14 @@ public class LocalRPCResponseHandler<M extends Message, O>
         private M             result;
         private boolean       local;
         private ErrorResponse error;
+        private ReusableBuffer data;
 
         ResponseResult(O object, boolean quickFail) {
             this.failed = false;
             this.result = null;
             this.object = object;
             this.quickFail = quickFail;
+            this.data = null;
         }
 
         synchronized void setFailed(ErrorResponse error) {
@@ -264,6 +270,14 @@ public class LocalRPCResponseHandler<M extends Message, O>
 
         public boolean mayQuickFail() {
             return quickFail;
+        }
+
+        public void setData(ReusableBuffer data) {
+            this.data = data;
+        }
+
+        public ReusableBuffer getData() {
+            return data;
         }
     }
 

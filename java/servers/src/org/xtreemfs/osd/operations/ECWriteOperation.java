@@ -79,7 +79,7 @@ public class ECWriteOperation extends OSDOperation {
 
         // FIXME (jdillmann): Distinguish data from coding devices by the OSDs relative position.
 
-        master.getStorageStage().ecWritedata(fileId, sp, objNo, offset, stripeInterval,
+        master.getStorageStage().ecWriteData(fileId, sp, objNo, offset, stripeInterval,
                 commitIntervals, viewBuffer, rq, new ECWriteDataCallback() {
 
                     @Override
@@ -106,19 +106,12 @@ public class ECWriteOperation extends OSDOperation {
     }
 
 
-    @Override
-    public void startInternalEvent(Object[] args) {
-        final String fileId = (String) args[0];
-        final StripingPolicyImpl sp = (StripingPolicyImpl) args[1];
-        final long opId = (Long) args[2];
-        final long objNo = (Long) args[3];
-        final int offset = (Integer) args[4];
-        final IntervalMsg stripeIntervalMsg = (IntervalMsg) args[5];
-        final List<IntervalMsg> commitIntervalMsgs = (List<IntervalMsg>) args[6];
-        final ReusableBuffer data = (ReusableBuffer) args[7];
+    public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long opId, final long objNo,
+            final int offset, final IntervalMsg stripeIntervalMsg, final List<IntervalMsg> commitIntervalMsgs,
+            final ReusableBuffer data, final InternalOperationCallback<xtreemfs_ec_write_dataResponse> callback) {
+
         final ReusableBuffer viewBuffer = (data != null) ? data.createViewBuffer() : null;
 
-        final InternalOperationCallback<xtreemfs_ec_write_dataResponse> callback = (InternalOperationCallback<xtreemfs_ec_write_dataResponse>) args[8];
 
         // Create Interval Objects from the message
         Interval stripeInterval = new ProtoInterval(stripeIntervalMsg);
@@ -134,7 +127,7 @@ public class ECWriteOperation extends OSDOperation {
 
         // ReusableBuffer viewBuffer = data.createViewBuffer();
 
-        master.getStorageStage().ecWritedata(fileId, sp, objNo, offset, stripeInterval, commitIntervals, viewBuffer,
+        master.getStorageStage().ecWriteData(fileId, sp, objNo, offset, stripeInterval, commitIntervals, viewBuffer,
                 null,
                 new ECWriteDataCallback() {
 
@@ -147,10 +140,10 @@ public class ECWriteOperation extends OSDOperation {
                         } else if (needsReconstruct) {
                             // FIXME (jdillmann): Trigger reconstruction if not complete.
                             // FIXME (jdillmann): Add response field = needReconstruction or error message type
-                            callback.localResultAvailable(buildResponse(true));
+                            callback.localResultAvailable(buildResponse(true), null);
                             BufferPool.free(diff);
                         } else {
-                            callback.localResultAvailable(buildResponse(false));
+                            callback.localResultAvailable(buildResponse(false), null);
 
                             // send to coding devices, then clear the buffer on the responseAvailable CB
                             // FIXME (jdillmann): clear diff buffer?
@@ -159,7 +152,6 @@ public class ECWriteOperation extends OSDOperation {
                     }
                 });
     }
-
     xtreemfs_ec_write_dataResponse buildResponse(boolean needsReconstruction) {
         xtreemfs_ec_write_dataResponse.Builder responseB = xtreemfs_ec_write_dataResponse.newBuilder();
         responseB.setNeedsReconstruction(needsReconstruction);
@@ -194,5 +186,10 @@ public class ECWriteOperation extends OSDOperation {
     public boolean bypassViewValidation() {
         // FIXME (jdillmann): What about views?
         return false;
+    }
+
+    @Override
+    public void startInternalEvent(Object[] args) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

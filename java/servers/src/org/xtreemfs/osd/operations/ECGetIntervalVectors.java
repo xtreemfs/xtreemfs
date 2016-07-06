@@ -62,17 +62,13 @@ public class ECGetIntervalVectors extends OSDOperation {
         });
     }
 
-    @Override
-    public void startInternalEvent(Object[] args) {
-        final String fileId = (String) args[0];
-        final InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback = 
-                (InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse>) args[1];
-
+    public void startLocalRequest(final String fileId,
+            final InternalOperationCallback<xtreemfs_ec_get_interval_vectorsResponse> callback) {
         master.getStorageStage().ecGetVectors(fileId, null, new ECGetVectorsCallback() {
             @Override
             public void ecGetVectorsComplete(IntervalVector curVector, IntervalVector nextVector, ErrorResponse error) {
                 if (error == null) {
-                    callback.localResultAvailable(buildResponse(curVector, nextVector));
+                    callback.localResultAvailable(buildResponse(curVector, nextVector), null);
                 } else {
                     callback.localRequestFailed(error);
                 }
@@ -121,5 +117,10 @@ public class ECGetIntervalVectors extends OSDOperation {
     public boolean bypassViewValidation() {
         // FIXME (jdillmann): What about views?
         return false;
+    }
+
+    @Override
+    public void startInternalEvent(Object[] args) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

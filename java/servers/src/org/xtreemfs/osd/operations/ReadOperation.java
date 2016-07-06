@@ -78,13 +78,15 @@ public final class ReadOperation extends OSDOperation {
 
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
-        if (args.getLength()+args.getOffset() > sp.getStripeSizeForObject(0)) {
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "length + ofset must be <= "+sp.getStripeSizeForObject(0)+" (stripe size)");
-            return;
-        }
-
         int numReplicas = rq.getLocationList().getNumReplicas();
         String replicaUpdatePolicy = rq.getLocationList().getReplicaUpdatePolicy();
+
+        if (!ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)
+                && args.getLength() + args.getOffset() > sp.getStripeSizeForObject(0)) {
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
+                    "length + ofset must be <= " + sp.getStripeSizeForObject(0) + " (stripe size)");
+            return;
+        }
 
         if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedRead(rq, args);
@@ -93,9 +95,7 @@ public final class ReadOperation extends OSDOperation {
             master.getECMasterStage().read(rq, new ReadCallback() {
                 @Override
                 public void success(ObjectInformation result) {
-                    // FIXME (jdillmann): Get valid eof flag
-                    boolean isLastObjectOrEOF = true;
-                    readFinish(rq, args, result, isLastObjectOrEOF);
+                    nonStripedRead(rq, args, result);
                 }
 
                 @Override
@@ -174,6 +174,7 @@ public final class ReadOperation extends OSDOperation {
                 // read only replication!
                 readReplica(rq, args);
             } else {
+                // FIXME (jdillmann): What if EC?
                 if (rq.getLocationList().getLocalReplica().isStriped()) {
                     // striped read
                     stripedRead(rq, args, result);

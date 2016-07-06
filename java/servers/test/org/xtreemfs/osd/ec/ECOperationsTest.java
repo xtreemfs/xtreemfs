@@ -147,7 +147,7 @@ public class ECOperationsTest {
         return FileCredentials.newBuilder().setXcap(getCap(fileId).getXCap()).setXlocs(xloc).build();
     }
 
-    StripingPolicyImpl getStripingPolicyImplementation(FileCredentials fileCredentials) {
+    public static StripingPolicyImpl getStripingPolicyImplementation(FileCredentials fileCredentials) {
         return StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas(0), 0);
     }
 

@@ -253,7 +253,7 @@ public class StorageStage extends Stage {
      * @param request
      * @param callback
      */
-    public void ecWritedata(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
+    public void ecWriteData(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval reqInterval,
             List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request, ECWriteDataCallback callback) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_DATA, 
                 new Object[] {fileId, sp, objNo, offset, reqInterval, commitIntervals, data}, 
@@ -264,6 +264,17 @@ public class StorageStage extends Stage {
         public void ecWriteDataComplete(ReusableBuffer diff, boolean needsReconstruct, ErrorResponse error);
     }
     
+
+    public void ecReadData(String fileId, StripingPolicyImpl sp, long objNo, int offset, int length,
+            List<Interval> intervals, OSDRequest request, ECReadDataCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_READ_DATA,
+                new Object[] { fileId, sp, objNo, offset, length, intervals }, request, null, callback);
+    }
+
+    public static interface ECReadDataCallback {
+        public void ecReadDataComplete(ObjectInformation result, boolean needsReconstruct, ErrorResponse error);
+    }
+
     @Override
     public void enqueueOperation(int stageOp, Object[] args, OSDRequest request, Object callback) {
         notifyCrashed(new Exception(

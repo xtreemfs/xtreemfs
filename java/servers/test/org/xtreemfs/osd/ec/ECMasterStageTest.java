@@ -6,6 +6,8 @@
  */
 package org.xtreemfs.osd.ec;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
@@ -19,14 +21,21 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.storage.FileMetadata;
+import org.xtreemfs.osd.storage.HashStorageLayout;
+import org.xtreemfs.osd.storage.MetadataCache;
+import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -69,6 +78,10 @@ public class ECMasterStageTest {
         configs = testEnv.getOSDConfigs();
 
         osdClient = testEnv.getOSDClient();
+        RPCNIOSocketClient client = new RPCNIOSocketClient(null, 5 * 60 * 1000, 10 * 60 * 1000, "EC1");
+        osdClient = new OSDServiceClient(client, null);
+        client.start();
+        client.waitForStartup();
 
         List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs());
 
@@ -175,6 +188,10 @@ public class ECMasterStageTest {
                 response = RPCresponse.get();
                 masterAddress = address;
                 masterIdx = i;
+
+                RPCresponse.freeBuffers();
+                BufferPool.free(RPCresponse.getData());
+                RPCresponse = null;
             }
         } catch (PBRPCException ex) {
             if (ex.getErrorType() != ErrorType.REDIRECT) {
@@ -187,7 +204,7 @@ public class ECMasterStageTest {
     }
 
     @Test
-    public void testWrite() throws Exception {
+    public void testWriteNoParity() throws Exception {
 
         List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs()).subList(0, 2);
         StripingPolicy sp = ECOperationsTest.getECStripingPolicy(2, 0, 1);
@@ -197,8 +214,264 @@ public class ECMasterStageTest {
         
         Capability cap = getCap(fileId);
         FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
+        StripingPolicyImpl spi = ECOperationsTest.getStripingPolicyImplementation(fc);
+        
+        HashStorageLayout layout;
+        FileMetadata fi;
+        ObjectInformation objInfo;
+        String fileIdNext = fileId + ".next";
+        
+        InetSocketAddress masterAddress = null;
+        int masterIdx = 0;
+        int slaveIdx = 1;
+
+        long objNumber = 0;
+        long objVersion = -1;
+        int offset = 0;
+        int length = 1;
+        long lease_timeout = 0;
+
+        RPCResponse<ObjectData> RPCReadResponse = null;
+        ObjectData readResponse;
+
+        // Find (and elect) the master
+        for (int i = 0; i < configs.length; i++) {
+            try {
+                InetSocketAddress address = configs[i].getUUID().getAddress();
+                RPCReadResponse = osdClient.read(address, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                        fileId, objNumber, objVersion, offset, length);
+                readResponse = RPCReadResponse.get();
+                masterAddress = address;
+                masterIdx = i;
+                slaveIdx = (masterIdx + 1) % 2;
+                RPCReadResponse.freeBuffers();
+                BufferPool.free(RPCReadResponse.getData());
+                RPCReadResponse = null;
+                break;
+
+            } catch (PBRPCException ex) {
+                if (RPCReadResponse != null) {
+                    RPCReadResponse.freeBuffers();
+                    BufferPool.free(RPCReadResponse.getData());
+                }
+                if (ex.getErrorType() != ErrorType.REDIRECT) {
+                    throw ex;
+                }
+            }
+        }
+
+
+
+        RPCResponse<OSDWriteResponse> RPCWriteResponse;
+        OSDWriteResponse writeResponse;
+        ObjectData objData = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        ReusableBuffer data, expected;
 
         
+
+        // Write the first object on a single OSD
+        // **************************************
+        length = 1 * 1024;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
+        data.position(0);
+        assertBufferEquals(data, objInfo.getData());
+        BufferPool.free(data);
+        BufferPool.free(objInfo.getData());
+        
+        
+        
+        // Write the whole first stripe over both OSDS
+        // *******************************************
+        length = 2 * 1024;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(0, 1024);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 1, 0, 1024, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(1024, 1024);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+        BufferPool.free(data);
+
+
+
+        // Write the whole first stripe and half of the second over both OSDS
+        // ******************************************************************
+        length = 3 * 1024;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(0, 1024);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 2, 0, 1024, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(2048, 1024);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 1, 0, 1024, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(1024, 1024);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+        BufferPool.free(data);
+
+
+
+        // Write between first and second chunk (no full stripes)
+        // ******************************************************
+        length = 1024;
+        objNumber = 0;
+        offset = 512;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 0, 512, 512, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(0, 512);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 1, 0, 512, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(512, 512);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+        BufferPool.free(data);
+
+        
+        
+        // Write between first and second stripe (no full stripes)
+        // ******************************************************
+        length = 1024;
+        objNumber = 1;
+        offset = 512;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+        BufferPool.free(data);
+
+        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 2, 0, 512, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(512, 512);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 1, 512, 512, 1);
+        data.position(0);
+        expected = data.createViewBuffer();
+        expected.range(0, 512);
+
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(expected);
+        BufferPool.free(objInfo.getData());
+        BufferPool.free(data);
+
+    }
+
+    public static void assertBufferEquals(ReusableBuffer expected, ReusableBuffer actual) {
+        expected = expected.createViewBuffer();
+        actual = actual.createViewBuffer();
+        try {
+            assertEquals(expected.remaining(), actual.remaining());
+            byte[] ex = new byte[expected.remaining()];
+            byte[] ac = new byte[expected.remaining()];
+            expected.get(ex);
+            actual.get(ac);
+
+            assertArrayEquals(ex, ac);
+        } finally {
+            BufferPool.free(expected);
+            BufferPool.free(actual);
+        }
+    }
+
+
+    @Test
+    public void testWriteReadNoParity() throws Exception {
+        List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs()).subList(0, 2);
+        StripingPolicy sp = ECOperationsTest.getECStripingPolicy(2, 0, 1);
+        Replica r = Replica.newBuilder().setStripingPolicy(sp).setReplicationFlags(0).addAllOsdUuids(osdUUIDs).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r)
+                .setReplicaUpdatePolicy("ec").build();
+
+        Capability cap = getCap(fileId);
+        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
+
         InetSocketAddress masterAddress = null;
         int masterIdx = 0;
 
@@ -236,35 +509,134 @@ public class ECMasterStageTest {
             }
         }
 
-
         RPCResponse<OSDWriteResponse> RPCWriteResponse;
         OSDWriteResponse writeResponse;
         ObjectData objData = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
                 .build();
-        ReusableBuffer data;
+        ReusableBuffer data, dout;
 
-        data = SetupUtils.generateData(1 * 1024);
+
+
+        // Write the first object on a single OSD
+        // **************************************
+        length = 1 * 1024;
+        data = SetupUtils.generateData(length, (byte) 1);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        data.position(0);
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+
+
+        // Write the whole first stripe over both OSDS
+        // *******************************************
+        length = 2 * 1024;
+        data = SetupUtils.generateData(length, (byte) 2);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        data.position(0);
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+
+
+        // Write the whole first stripe and half of the second over both OSDS
+        // ******************************************************************
+        length = 3 * 1024;
+        data = SetupUtils.generateData(length);
         RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
                 fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
         writeResponse = RPCWriteResponse.get();
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        data = SetupUtils.generateData(2 * 1024);
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        data.position(0);
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+
+
+        // Write between first and second chunk (no full stripes)
+        // ******************************************************
+        length = 1024;
+        objNumber = 0;
+        offset = 512;
+        data = SetupUtils.generateData(length);
         RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
                 fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
         writeResponse = RPCWriteResponse.get();
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        data = SetupUtils.generateData(3 * 1024);
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        data.position(0);
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+
+
+        // Write between first and second stripe (no full stripes)
+        // ******************************************************
+        length = 1024;
+        objNumber = 1;
+        offset = 512;
+        data = SetupUtils.generateData(length);
         RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
                 fileId, objNumber, objVersion, offset, lease_timeout, objData, data);
         writeResponse = RPCWriteResponse.get();
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        System.out.println("wait");
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        data.position(0);
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
 
     }
 }

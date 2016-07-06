@@ -29,6 +29,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteDataCallback;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -137,6 +138,8 @@ public class ECStorage {
         final List<Interval> commitIntervals = (List<Interval>) rq.getArgs()[5];
         final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[6];
 
+        assert (!commitIntervals.isEmpty());
+
         boolean consistent = true;
         try {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
@@ -149,8 +152,8 @@ public class ECStorage {
             // FIXME(jdillmann): A single write may never cross stripe boundaries
 
             // Get this nodes interval vectors and check if the vector this operation is based on can be fully committed
-            long commitStart = !commitIntervals.isEmpty() ? commitIntervals.get(0).getOpStart() : 0;
-            long commitEnd = !commitIntervals.isEmpty() ? commitIntervals.get(commitIntervals.size() - 1).getOpEnd() : 0;
+            long commitStart = commitIntervals.get(0).getOpStart();
+            long commitEnd = commitIntervals.get(commitIntervals.size() - 1).getOpEnd();
             // FIXME (jdillmann): Check if this is correct
             List<Interval> curVecIntervals = curVector.getOverlapping(commitStart, commitEnd);
             List<Interval> nextVecIntervals = nextVector.getOverlapping(commitStart, commitEnd);
@@ -158,7 +161,6 @@ public class ECStorage {
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
             LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
 
-            // FIXME( jdillmann): Ignore "fragments" from current operation which would be commited otherwise
             boolean failed = calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals,
                     nextVecIntervals, toCommitAcc, toAbortAcc);
 
@@ -246,6 +248,169 @@ public class ECStorage {
             BufferPool.free(data);
         }
     }
+
+    public void processReadData(final StageRequest rq) {
+        final ECReadDataCallback callback = (ECReadDataCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+        final long objNo = (Long) rq.getArgs()[2];
+        final int offset = (Integer) rq.getArgs()[3];
+        final int length = (Integer) rq.getArgs()[4];
+        final List<Interval> intervals = (List<Interval>) rq.getArgs()[5];
+
+        assert (!intervals.isEmpty());
+        assert (offset + length <= sp.getStripeSizeForObject(objNo));
+
+        final String fileIdNext = fileId + ".next";
+        long objOffset = sp.getObjectStartOffset(objNo);
+
+        // ReusableBuffer data = BufferPool.allocate(length);
+        
+        try {
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            IntervalVector curVector = fi.getECCurVector();
+            IntervalVector nextVector = fi.getECNextVector();
+
+            long commitStart = intervals.get(0).getStart();
+            long commitEnd = intervals.get(intervals.size() - 1).getEnd();
+
+            List<Interval> curOverlapping = curVector.getOverlapping(commitStart, commitEnd);
+            List<Interval> nextOverlapping = nextVector.getOverlapping(commitStart, commitEnd);
+
+            LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
+            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
+            boolean failed = calculateIntervalsToCommitAbort(intervals, null, curOverlapping, nextOverlapping,
+                    toCommitAcc, toAbortAcc);
+
+            // Signal to go to reconstruct if the vector can not be fully committed.
+            // Note: this is actually to rigorous, since we would only have to care about the overlapping intervals with
+            // the current object read range. But to keep it simple and uniform we require the whole commit interval to
+            // be present. This (faulty) behavior is also present in the commit vector routines.
+            if (failed) {
+                callback.ecReadDataComplete(null, true, null);
+                return;
+            }
+
+            // Commit or abort intervals from the next vector.
+            for (Interval interval : toCommitAcc) {
+                commitECData(fileId, fi, interval);
+            }
+            for (Interval interval : toAbortAcc) {
+                abortECData(fileId, fi, interval);
+            }
+
+            int version = 1;
+            ObjectInformation result = layout.readObject(fileId, fi, objNo, offset, length, version);
+            // TODO (jdillmann): Add Metadata?
+            // result.setChecksumInvalidOnOSD(checksumInvalidOnOSD);
+            // result.setLastLocalObjectNo(lastLocalObjectNo);
+            // result.setGlobalLastObjectNo(globalLastObjectNo);
+            callback.ecReadDataComplete(result, false, null);
+
+
+            // FIXME (jdillmann): Won't return the correct error if the read is outdated.
+
+            //
+            // Interval emptyInterval = ObjectInterval.empty(commitStart, commitEnd);
+            //
+            // Iterator<Interval> curIt = curOverlapping.iterator();
+            // Iterator<Interval> nextIt = nextOverlapping.iterator();
+            // Interval curInterval = curIt.hasNext() ? curIt.next() : emptyInterval;
+            // Interval nextInterval = nextIt.hasNext() ? nextIt.next() : emptyInterval;
+            //
+            //
+            // for (Interval interval : intervals) {
+            // int iOffset = ECHelper.safeLongToInt(interval.getStart() - objOffset);
+            // int iLength = ECHelper.safeLongToInt(interval.getEnd() - interval.getStart());
+            // int version = 1;
+            //
+            // // Advance to the next interval that could be a possible match
+            // // or set an empty interval as a placeholder
+            // while (curInterval.getEnd() <= interval.getStart() && curIt.hasNext()) {
+            // curInterval = curIt.next();
+            // }
+            // if (curInterval.getEnd() <= interval.getStart()) {
+            // curInterval = emptyInterval;
+            // }
+            //
+            // // Advance to the next interval that could be a possible match
+            // // or set an empty interval as a placeholder
+            // while (nextInterval.getEnd() <= interval.getStart() && nextIt.hasNext()) {
+            // nextInterval = nextIt.next();
+            // }
+            // if (nextInterval.getEnd() <= interval.getStart()) {
+            // nextInterval = emptyInterval;
+            // }
+            //
+            // // equals: start, end, version, id
+            // // Note: not opStart/opEnd
+            // if (interval.equals(curInterval)) {
+            // // FINE: do something
+            // readToBuf(fileId, fi, objNo, iOffset, iLength, version, data);
+            //
+            // } else {
+            // if (interval.overlaps(curInterval)
+            // && interval.getVersion() < curInterval.getVersion()) {
+            // // ERROR => non fatal, read request has to be retried or just abort
+            // String errorMsg = String
+            // .format("Could not read fileId '%s' due to a concurrent write operation.", fileId);
+            // ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO,
+            // POSIXErrno.POSIX_ERROR_EAGAIN, errorMsg);
+            // callback.ecReadDataComplete(null, false, error);
+            // return;
+            // }
+            //
+            // if (interval.equals(nextInterval)) {
+            // // FINE
+            // readToBuf(fileIdNext, fi, objNo, iOffset, iLength, version, data);
+            // } else {
+            // // NOT FOUND! => reconstruction required
+            // callback.ecReadDataComplete(null, true, null);
+            // return;
+            // }
+            // }
+            // }
+            //
+            // data.position(0);
+            // ObjectInformation result = new ObjectInformation(ObjectStatus.EXISTS, data, 0);
+            // // TODO (jdillmann): Add Metadata?
+            // // result.setChecksumInvalidOnOSD(checksumInvalidOnOSD);
+            // // result.setLastLocalObjectNo(lastLocalObjectNo);
+            // // result.setGlobalLastObjectNo(globalLastObjectNo);
+            // callback.ecReadDataComplete(result, false, null);
+
+        } catch (IOException ex) {
+            // BufferPool.free(data);
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    ex.toString(), ex);
+            callback.ecReadDataComplete(null, false, error);
+        }
+        
+    }
+
+    // void readToBuf(String fileId, FileMetadata fi, long objNo, int offset, int length, int version, ReusableBuffer
+    // data)
+    // throws IOException {
+    //
+    // // TODO (jdillmann): Add read to existing buffer method to StorageLayout
+    // ObjectInformation objInfo = layout.readObject(fileId, fi, objNo, offset, length, version);
+    //
+    // data.position(offset);
+    // assert (data.remaining() >= length);
+    //
+    // if (objInfo.getStatus() == ObjectStatus.EXISTS) {
+    // ReusableBuffer readBuf = objInfo.getData();
+    // readBuf.position(0);
+    // data.put(readBuf);
+    // BufferPool.free(readBuf);
+    // }
+    //
+    // // Fill with zeros
+    // int remaining = (offset + length) - data.position();
+    // for (int i = 0; i < remaining; i++) {
+    // data.put((byte) 0);
+    // }
+    // }
 
     /**
      * Checks for each interval in commitIntervals if it is present in the curVecIntervals or the nextVecIntervals.<br>
@@ -357,6 +522,7 @@ public class ECStorage {
         return false;
     }
 
+    
     void commitECData(String fileId, FileMetadata fi, Interval interval) throws IOException {
         StripingPolicyImpl sp = fi.getStripingPolicy();
         assert (interval.isOpComplete());
@@ -386,16 +552,39 @@ public class ECStorage {
                 // TODO (jdillmann): Allow to copy data directly between files (bypass Buffer).
                 ObjectInformation obj = layout.readObject(fileIdNext, fi, objNo, offset, length, objVer);
 
-                ReusableBuffer buf; // will be freed by writeObject
+                ReusableBuffer buf = null; // will be freed by writeObject
                 if (obj.getStatus() == ObjectStatus.EXISTS) {
                     buf = obj.getData();
+
+                    int resultLength = buf.capacity();
+                    if (resultLength < length) {
+                        if (!buf.enlarge(length)) {
+                            ReusableBuffer tmp = BufferPool.allocate(length);
+                            tmp.put(buf);
+
+                            BufferPool.free(buf);
+                            buf = tmp;
+                        }
+                    }
+
+                    buf.position(resultLength);
                 } else {
-                    byte[] zeros = new byte[length];
-                    buf = ReusableBuffer.wrap(zeros);
+                    buf = BufferPool.allocate(length);
                 }
 
-                // FIXME (jdillmann): Handle padding objects etc.
+                while (buf.hasRemaining()) {
+                    buf.put((byte) 0);
+                }
+
+                buf.flip();
                 layout.writeObject(fileId, fi, buf, objNo, offset, objVer, sync, false);
+
+                // Delete completely committed intervals.
+                if (intervalStartOffset <= sp.getObjectStartOffset(objNo)
+                        && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
+                    layout.deleteObject(fileIdNext, fi, objNo, objVer);
+                }
+
                 consistent = false;
 
             }

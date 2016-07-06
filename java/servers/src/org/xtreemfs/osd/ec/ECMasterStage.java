@@ -47,16 +47,15 @@ import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
+import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
 import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
 import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECCommitVector;
 import org.xtreemfs.osd.operations.ECGetIntervalVectors;
-import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.ObjectInformation;
-import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
@@ -216,6 +215,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         case READ:
             externalRequestsInQueue.decrementAndGet();
             processRead(method);
+            break;
+        case READ_WORKER_SIGNAL:
+            processReadWorkerSignal(method);
             break;
         case WRITE:
             // FIXME (jdillmann): The write is not finished after the process write method returned
@@ -609,11 +611,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         };
 
         // Try to get a result from every node
+        int numResponses = numRemotes + 1;
         int numReqAck = numRemotes + 1;
 
         final LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer> handler;
-        handler = new LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numRemotes, numReqAck,
-                listener);
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_get_interval_vectorsResponse, Integer>(numResponses,
+                numReqAck, listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
@@ -633,8 +636,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         handler.addLocal(-1);
 
         // Wait for the local result
-        OSDOperation getVectorOp = master.getOperation(ECGetIntervalVectors.PROC_ID);
-        getVectorOp.startInternalEvent(new Object[] { fileId, handler });
+        ECGetIntervalVectors getVectorOp = (ECGetIntervalVectors) master.getOperation(ECGetIntervalVectors.PROC_ID);
+        getVectorOp.startLocalRequest(fileId, handler);
     }
 
     void eventVectorsAvailable(String fileId,
@@ -752,8 +755,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             }
         };
 
+        int numResponses = numRemotes + 1;
         final LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer> handler;
-        handler = new LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer>(numRemotes,
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer>(numResponses,
                 file.getPolicy().k, listener);
 
         try {
@@ -774,8 +778,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         handler.addLocal(-1);
 
         // Wait for the local result
-        OSDOperation getVectorOp = master.getOperation(ECCommitVector.PROC_ID);
-        getVectorOp.startInternalEvent(new Object[] { fileId, file.getPolicy().sp, resultIntervals, handler });
+        ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
+        getVectorOp.startLocalRequest(fileId, file.getPolicy().sp, resultIntervals, handler);
 
     }
 
@@ -848,14 +852,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         final FileCredentials credentials = args.getFileCredentials();
         final StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
 
-        long firstObjNo = args.getObjectNumber();
-        int reqOffset = args.getOffset();
-        int reqSize = args.getLength();
-
-        long start = sp.getObjectStartOffset(firstObjNo) + reqOffset;
-        long end = start + reqSize;
-
-
         assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
 
         if (!preparePrimary(method, callback, credentials, loc, null)) {
@@ -870,13 +866,58 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
         assert (file.isLocalIsPrimary());
 
+        long firstObjNo = args.getObjectNumber();
+        int reqOffset = args.getOffset();
+        int reqSize = args.getLength();
 
-        final ReusableBuffer data = BufferPool.allocate(reqSize);
+        long start = sp.getObjectStartOffset(firstObjNo) + reqOffset;
+        long end = start + reqSize;
 
-        // FIXME (jdillmann): start worker
+        Interval reqInterval = ObjectInterval.empty(start, end);
+        ReusableBuffer data = BufferPool.allocate(reqSize);
 
-        ObjectInformation result = new ObjectInformation(ObjectStatus.EXISTS, data, 0);
-        callback.success(result);
+        // Prevent reads concurrent to writes?
+        if (file.overlapsActiveWriteRequest(reqInterval)) {
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "The file is currently written at an overlapping range by another process.");
+            callback.failed(error);
+            return;
+        }
+
+        List<Interval> commitIntervals = file.getCurVector().getOverlapping(start, end);
+        ECReadWorker worker = new ECReadWorker(master, osdClient, credentials, fileId, sp, reqInterval, commitIntervals,
+                file.getRemoteOSDs(), data, method, this);
+        file.addActiveRequest(worker);
+        worker.start();
+    }
+
+    void processReadWorkerSignal(StageRequest method) {
+        final ReadCallback callback = (ReadCallback) method.getCallback();
+
+        final OSDRequest rq = method.getRequest();
+        final String fileId = rq.getFileId();
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!"));
+            return;
+        }
+
+        final ECReadWorker worker = (ECReadWorker) method.getArgs()[0];
+        final ECReadWorker.ReadEvent event = (ReadEvent) method.getArgs()[1];
+
+        worker.processEvent(event);
+
+        if (worker.hasFinished()) {
+            file.removeActiveRequest(worker);
+
+            if (worker.hasFailed()) {
+                callback.failed(worker.getError());
+            } else {
+                callback.success(worker.getResult());
+            }
+        }
     }
 
 
@@ -945,7 +986,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                     "The file is currently written at an overlapping range by another process.");
             callback.failed(error);
             return;
-
         }
 
         List<Interval> commitIntervals = curVector.getOverlapping(opStart, opEnd);
@@ -976,11 +1016,11 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         if (worker.hasFinished()) {
             file.removeActiveRequest(worker);
-            file.getCurVector().insert(worker.getRequestInterval());
 
             if (worker.hasFailed()) {
                 callback.failed(worker.getError());
             } else {
+                file.getCurVector().insert(worker.getRequestInterval());
                 // FIXME (jdillmann): Make a real response with the truncate epoch and stuff
                 callback.success(OSDWriteResponse.getDefaultInstance());
             }
