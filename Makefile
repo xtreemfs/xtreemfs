@@ -1,11 +1,11 @@
 ifeq "$(JAVA_HOME)" ""
-	JAVAC_BIN = /usr/bin/javac
+	JAVAC_BIN = $(shell which javac)
 else
 	JAVAC_BIN = $(JAVA_HOME)/bin/javac
 endif
 
 ifeq "$(MAVEN_HOME)" ""
-        MVN_BIN = /usr/bin/mvn
+        MVN_BIN = $(shell which mvn)
 else
         MVN_BIN = $(MAVEN_HOME)/bin/mvn
 endif
@@ -60,7 +60,7 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
 TARGETS = client server foundation flease
-.PHONY:	clean distclean set_version
+.PHONY:	clean distclean
 
 all: check_server check_client check_test $(TARGETS)
 
@@ -214,12 +214,6 @@ check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
 	@echo "python ok"
 
-set_version:
-# Try to set the SVN revision and branch name as part of the version. We don't care if this may fail.
-ifndef SKIP_SET_SVN_VERSION
-	@./packaging/set_version.sh -s &>/dev/null; exit 0
-endif
-
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
 # Client section.
@@ -295,7 +289,7 @@ client_thirdparty_distclean:
 client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
-client: check_client client_thirdparty set_version
+client: check_client client_thirdparty
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_SKIP_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
@@ -338,20 +332,20 @@ flease_distclean:
 	$(MVN_BIN) --file java/xtreemfs-flease/pom.xml clean || exit 1;
 
 .PHONY: foundation foundation_clean foundation_distclean
-foundation: set_version pbrpcgen
+foundation: pbrpcgen
 	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml -DskipTests package
 foundation_clean:
 	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 foundation_distclean:
 	$(MVN_BIN) --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 
-pbrpcgen:
+pbrpcgen: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
 	$(MVN_BIN) --file java/xtreemfs-pbrpcgen/pom.xml -DskipTests package
 pbrpcgen_clean:
 	$(MVN_BIN) --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
-server: check_server foundation flease
+server: check_server flease foundation
 	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml -DskipTests package
 server_clean: check_server
 	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml clean || exit 1;
@@ -359,7 +353,7 @@ server_distclean: check_server
 	$(MVN_BIN) --file java/xtreemfs-servers/pom.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
-hadoop-client: server foundation
+hadoop-client: server
 	$(MVN_BIN) --file contrib/hadoop/pom.xml -DskipTests package
 	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client-<VERSION>.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
