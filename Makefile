@@ -323,38 +323,46 @@ endif
 	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
 	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
+.PHONY: parent parent_clean parent_distclean
+parent:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml --define skipTests --non-recursive install
+parent_clean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+parent_distclean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+
 .PHONY: flease flease_clean flease_distclean
-flease: foundation
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml -DskipTests install
+flease: parent foundation
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml --define skipTests install
 flease_clean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 flease_distclean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 
 .PHONY: foundation foundation_clean foundation_distclean
-foundation: pbrpcgen
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml -DskipTests install
+foundation: parent pbrpcgen
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml --define skipTests install
 foundation_clean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 foundation_distclean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 
 pbrpcgen: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml -DskipTests install
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml --define skipTests install
 pbrpcgen_clean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
-server: check_server flease foundation
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml -DskipTests install
+server: check_server parent flease foundation
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml --define skipTests install
 server_clean: check_server
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 server_distclean: check_server
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
-hadoop-client: server
-	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml -DskipTests install
+hadoop-client: parent foundation server
+	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
 	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client-<VERSION>.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
 	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
