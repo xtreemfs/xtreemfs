@@ -19,6 +19,7 @@
     <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
     <protoc.include>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src</protoc.include>
@@ -162,6 +163,56 @@
                 <argument>${project.basedir}/../../interface/xtreemfs/MRC.proto</argument>
                 <argument>${project.basedir}/../../interface/xtreemfs/OSD.proto</argument>
               </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration combine.self="override">
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <artifactSet>
+                <includes>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>commons-codec:commons-codec</include>
+                  <include>org.xtreemfs.babudb:babudb-core</include>
+                  <include>org.xtreemfs.opendmk:jdmkrt</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-flease</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-foundation</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-pbrpcgen</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-servers</include>
+                </includes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>*</artifact>
+                  <excludes>
+                    <exclude>META-INF/maven/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.xtreemfs.xtreemfs:xtreemfs-pbrpcgen</artifact>
+                  <includes>
+                    <include>org/xtreemfs/foundation/pbrpc/generatedinterfaces/**</include>
+                  </includes>
+                </filter>
+                <filter>
+                  <artifact>org.xtreemfs.xtreemfs:xtreemfs-servers</artifact>
+                  <excludes>
+                    <exclude>org/xtreemfs/sandbox/compile-DirectIOReader.txt</exclude>
+                    <exclude>org/xtreemfs/sandbox/ThroughputTest.properties</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>
