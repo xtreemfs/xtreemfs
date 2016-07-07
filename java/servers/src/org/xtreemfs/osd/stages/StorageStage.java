@@ -264,6 +264,17 @@ public class StorageStage extends Stage {
         public void ecWriteIntervalComplete(ReusableBuffer diff, boolean needsReconstruct, ErrorResponse error);
     }
     
+    public void ecWriteDiff(String fileId, StripingPolicyImpl sp, long objNo, int offset, Interval diffInterval,
+            Interval stripeInterval, List<Interval> commitIntervals, ReusableBuffer data, OSDRequest request,
+            ECWriteDiffCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_WRITE_DIFF,
+                new Object[] { fileId, sp, objNo, offset, diffInterval, stripeInterval, commitIntervals, data },
+                request, data, callback);
+    }
+
+    public static interface ECWriteDiffCallback {
+        public void ecWriteDiffComplete(boolean stripeComplete, boolean needsReconstruct, ErrorResponse error);
+    }
 
     public void ecReadData(String fileId, StripingPolicyImpl sp, long objNo, int offset, int length,
             List<Interval> intervals, OSDRequest request, ECReadDataCallback callback) {

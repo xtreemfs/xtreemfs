@@ -27,6 +27,17 @@ public abstract class IntervalVector {
 
     public abstract List<Interval> getSlice(long start, long end);
 
+    public boolean contains(Interval interval) {
+        List<Interval> overlapping = getSlice(interval.getStart(), interval.getEnd());
+        if (overlapping.size() != 1) {
+            return false;
+        }
+
+        // equals: start, end, version, id
+        // Note: not opStart/opEnd
+        return overlapping.get(0).equals(interval);
+    }
+
     /**
      * Insert the ObjectInterval i into the current IntervalVector.<br>
      * Note: This is an optional operation.

@@ -9,36 +9,44 @@ package org.xtreemfs.osd.ec;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
+import org.xtreemfs.osd.ec.ECWriteWorker.WriteEventType;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECWriteIntervalOperation;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_diffResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * This class will act as a state machine used for writing.
  */
-public class ECWriteWorker implements ECWorker<WriteEvent> {
-    public static enum WriteEvent {
-        CODE_RESPONSE_AVAILABLE, FINISHED
+public class ECWriteWorker implements ECWorker<WriteEventType> {
+    public static enum WriteEventType {
+        FINISHED, FAILED
     }
 
-    final ECWorkerEventProcessor<WriteEvent> processor;
+    final ECWorkerEventProcessor<WriteEventType> processor;
 
     // Given as argument
     final String               fileId;
@@ -50,13 +58,15 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
     final int                  qw;
     final StripeState[]        stripeStates;
     final OSDServiceClient     osdClient;
-    final List<ServiceUUID>    remoteOSDs;
+    // final List<ServiceUUID> remoteOSDs;
     final OSDRequestDispatcher master;
     final FileCredentials      fileCredentials;
+    final XLocations           xloc;
     final ReusableBuffer       data;
+    final long                                   timeoutMS;
 
     // Note: circular reference
-    final StageRequest                request;
+    final StageRequest         request;
 
     // Calculated
     final int                  localOsdNo;
@@ -70,16 +80,19 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
     // FIXME (jdillmann): Decide how the worker should be run and if sync is needed
     // int numStripesComplete;
     AtomicInteger              numStripesComplete;
-    volatile boolean           finished;
-    volatile boolean           failed;
-    volatile ErrorResponse     error;
+    boolean                    finished;
+    boolean                    failed;
+    ErrorResponse              error;
+    
+    final Timer                                  timer;
+    final TimerTask                              timeoutTimer;
 
-    public ECWriteWorker(OSDRequestDispatcher master, OSDServiceClient osdClient, FileCredentials fileCredentials,
-            String fileId, long opId, StripingPolicyImpl sp, int qw, Interval reqInterval,
-            List<Interval> commitIntervals,
-            List<ServiceUUID> remoteOSDs, ReusableBuffer data, StageRequest request,
-            ECWorkerEventProcessor<WriteEvent> processor) {
-        this.processor = processor;
+    public ECWriteWorker(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc, String fileId,
+            long opId, StripingPolicyImpl sp, int qw, Interval reqInterval, List<Interval> commitIntervals,
+            ReusableBuffer data, StageRequest request, long timeoutMS, ECMasterStage ecMaster) {
+        this.processor = ecMaster;
+        this.timer = ecMaster.timer;
+        this.osdClient = ecMaster.osdClient;
 
         this.fileId = fileId;
         this.opId = opId;
@@ -88,11 +101,12 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
         this.commitIntervals = commitIntervals;
         this.qw = qw;
         this.data = data;
-        this.osdClient = osdClient;
-        this.remoteOSDs = remoteOSDs;
+        this.xloc = xloc;
         this.master = master;
         this.fileCredentials = fileCredentials;
         this.request = request;
+        // this.remoteOSDs = remoteOSDs;
+        
 
         commitIntervalMsgs = new ArrayList<IntervalMsg>(commitIntervals.size());
         for (Interval interval : commitIntervals) {
@@ -124,21 +138,33 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
 
         numStripes = ECHelper.safeLongToInt(lastStripeNo - firstStripeNo + 1);
         stripeStates = new StripeState[numStripes];
+
+        this.timeoutMS = timeoutMS;
+        timeoutTimer = new TimerTask() {
+            @Override
+            public void run() {
+                // ECWriteWorker.this.processor.signal(ECWriteWorker.this, WriteEventType.FAILED);
+                ECWriteWorker.this.timeout();
+            }
+        };
     }
 
     @Override
-    public void processEvent(WriteEvent event) {
-        // switch (event) {
-        // case START
-        //
-        // case FINISHED:
-        // // Ohm this is awkward: nothing to do here
-        // break;
-        // }
+    public void processEvent(WriteEventType event) {
+        switch (event) {
+        case FINISHED:
+            processFinished(event);
+            break;
+        case FAILED:
+            processFailed(event);
+            break;
+        }
     }
 
     @Override
     public void start() {
+        timer.schedule(timeoutTimer, timeoutMS);
+
         long opStart = reqInterval.getOpStart();
         long opEnd = reqInterval.getOpEnd();
 
@@ -163,10 +189,6 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
             ProtoInterval stripeInterval = new ProtoInterval(stripeDataStart, stripeDataEnd, reqInterval.getVersion(),
                     reqInterval.getId(), opStart, opEnd);
 
-            // FIXME (jdillmann): Wrong if the local OSD is a parity osd
-            // int numRemoteDataOSDs = remoteOSDs.size() - parityWidth;
-            // boolean localIsParity = localOsdNo > dataWidth;
-            // int numRemoteDataOSDs = localIsParity ? dataWidth : dataWidth - 1;
             // We will always write the version to the full stripe
             int numResponses = dataWidth;
 
@@ -179,7 +201,7 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                         }
                     });
             
-            StripeState stripeState = new StripeState(stripeInterval, stripeWidth);
+            StripeState stripeState = new StripeState(stripeInterval);
             stripeStates[stripeIdx] = stripeState;
 
             for (long objNo = firstStripeObjNo; objNo <= lastStripeObjNo; objNo++) {
@@ -216,12 +238,14 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                 }
 
                 int osdNo = sp.getOSDforObject(objNo);
+                stripeState.responseStates[osdNo] = hasData ? ResponseState.REQ_DATA : ResponseState.REQ_INTERVAL;
+
                 if (osdNo == localOsdNo) {
                     // make local request
                     handler.addLocal(objNo, reqData);
                     ECWriteIntervalOperation writeOp = (ECWriteIntervalOperation) master.getOperation(ECWriteIntervalOperation.PROC_ID);
                     writeOp.startLocalRequest(fileId, sp, opId, hasData, objNo, objOffset, stripeInterval.getMsg(),
-                            commitIntervalMsgs, reqData, handler);
+                            commitIntervalMsgs, reqData, fileCredentials, xloc, handler);
 
                 } else {
                     try {
@@ -235,8 +259,9 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                         handler.addRemote(rpcResponse, objNo);
 
                     } catch (IOException ex) {
-                        // Note: This exception is never actually thrown!
-                        BufferPool.free(reqData);
+                        Logging.logError(Logging.LEVEL_WARN, this, ex);
+                        failed();
+                        return;
                     }
                 }
 
@@ -244,69 +269,18 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
 
             for (int r = 0; r < parityWidth; r++) {
                 int osdNo = dataWidth + r;
+                // stripeState.responseStates[osdNo] = ResponseState.;
             }
         }
-    }
-
-    void finish() {
-        this.finished = true;
-        BufferPool.free(data);
-        processor.signal(this, WriteEvent.FINISHED);
-    }
-
-    ServiceUUID getRemote(int osdNo) {
-        return remoteOSDs.get(osdNo < localOsdNo ? osdNo : osdNo - 1);
-    }
-
-    StripeState getStripeStateForObj(long objNo) {
-        int idx = ECHelper
-                .safeLongToInt(sp.getRow(objNo) - sp.getRow(sp.getObjectNoForOffset(reqInterval.getOpStart())));
-        return stripeStates[idx];
-    }
-
-    StripeState getStripeStateForStripe(long stripeNo) {
-        int idx = ECHelper.safeLongToInt(stripeNo - sp.getRow(sp.getObjectNoForOffset(reqInterval.getOpStart())));
-        return stripeStates[idx];
-    }
-
-
-
-
-  
-    enum ResponseState {
-        REQUESTED,
-        SUCCESS,
-        FAILED,
-        NEEDS_RECONSTRUCTION,
     }
     
-    private class StripeState {
-        final Interval        interval;
-        final ResponseState[] responseStates;
-        final int             stripeWidth;
-        // FIXME(jdillmann): Should be atomic
-        AtomicInteger         acks  = new AtomicInteger(0);
-        AtomicInteger         nacks = new AtomicInteger(0);
-        
-
-        public StripeState(Interval interval, int stripeWidth) {
-            this.interval = interval;
-            this.stripeWidth = stripeWidth;
-
-            responseStates = new ResponseState[stripeWidth];
-            for (int i = 0; i < stripeWidth; i++) {
-                responseStates[i] = ResponseState.REQUESTED;
-            }
-        }
-    }
-
 
     private void handleDataResponse(ResponseResult<xtreemfs_ec_write_intervalResponse, Long> result, int numResponses,
             int numErrors, int numQuickFail) {
         long objNo = result.getMappedObject();
 
         boolean objFailed = result.hasFailed();
-        boolean needsReconstruction = result.getResult().getNeedsReconstruction();
+        boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
 
         long stripeNo = sp.getRow(objNo);
         StripeState stripeStatus = getStripeStateForStripe(stripeNo);
@@ -350,9 +324,7 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
 
             if (stripeWidth - curNacks < qw) {
                 // we can't fullfill the write quorum anymore
-                // ERROR
-                this.failed = true;
-                // FIXME (jdillmann): Call listener
+                failed();
             }
 
         } else {
@@ -363,12 +335,100 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
                 // SUCCESS
                 int curNumStripesComplete = numStripesComplete.incrementAndGet();
                 if (curNumStripesComplete == numStripes) {
-                    finish();
+                    finished();
                 }
             }
         }
        
 
+    }
+
+    void handleParityResponse(xtreemfs_ec_write_diffResponse response) {
+        boolean objFailed = response.hasError();
+        boolean needsReconstruction = response.getNeedsReconstruction();
+
+        long stripeNo = response.getStripeNumber();
+        StripeState stripeStatus = getStripeStateForStripe(stripeNo);
+        Interval stripeInterval = stripeStatus.interval;
+
+        int osdPos = response.getOsdNumber();
+
+        if (objFailed || needsReconstruction) {
+            int curNacks = stripeStatus.nacks.incrementAndGet();
+            stripeStatus.responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
+                    : ResponseState.FAILED;
+
+
+            if (stripeWidth - curNacks < qw) {
+                // we can't fullfill the write quorum anymore
+                failed();
+            }
+
+        } else {
+            int curAcks = stripeStatus.acks.incrementAndGet();
+            stripeStatus.responseStates[osdPos] = ResponseState.SUCCESS;
+
+            if (curAcks >= qw) {
+                // SUCCESS
+                int curNumStripesComplete = numStripesComplete.incrementAndGet();
+                if (curNumStripesComplete == numStripes) {
+                    finished();
+                }
+            }
+        }
+
+    }
+
+    public void timeout() {
+        timeoutTimer.cancel();
+        // FIXME (jdillmann): check for concurrency!!!
+        processor.signal(this, WriteEventType.FAILED);
+    }
+
+    private void finished() {
+        timeoutTimer.cancel();
+        // finishedSignaled is not really needed as long as only one process is allowed to enter the when cur == num
+        // if (finishedSignaled.compareAndSet(false, true)) {
+        // }
+        processor.signal(this, WriteEventType.FINISHED);
+    }
+
+    private void processFinished(WriteEventType event) {
+        BufferPool.free(data);
+        finished = true;
+    }
+
+    private void failed() {
+        timeoutTimer.cancel();
+        processor.signal(this, WriteEventType.FAILED);
+    }
+
+    private void processFailed(WriteEventType event) {
+        BufferPool.free(data);
+        finished = true;
+        failed = true;
+
+        error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                "Request failed. Could not write enough chunks.");
+        // String.format("Request failed. Could not write to stripe %d ([%d:%d]).", event.stripeNo,
+        // errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
+    }
+
+    ServiceUUID getRemote(int osdNo) {
+        return xloc.getLocalReplica().getOSDs().get(osdNo);
+        // return remoteOSDs.get(osdNo < localOsdNo ? osdNo : osdNo - 1);
+    }
+
+    StripeState getStripeStateForObj(long objNo) {
+        return getStripeStateForStripe(sp.getRow(objNo));
+    }
+
+    StripeState getStripeStateForStripe(long stripeNo) {
+        return stripeStates[getStripeIdx(stripeNo)];
+    }
+
+    int getStripeIdx(long stripeNo) {
+        return ECHelper.safeLongToInt(stripeNo - sp.getRow(sp.getObjectNoForOffset(reqInterval.getOpStart())));
     }
 
     @Override
@@ -409,6 +469,27 @@ public class ECWriteWorker implements ECWorker<WriteEvent> {
     @Override
     public StageRequest getRequest() {
         return request;
+    }
+
+    enum ResponseState {
+        NONE, REQ_INTERVAL, REQ_DATA, SUCCESS, FAILED, NEEDS_RECONSTRUCTION,
+    }
+
+    private class StripeState {
+        final Interval        interval;
+        final ResponseState[] responseStates;
+
+        AtomicInteger         acks  = new AtomicInteger(0);
+        AtomicInteger         nacks = new AtomicInteger(0);
+
+        public StripeState(Interval interval) {
+            this.interval = interval;
+
+            responseStates = new ResponseState[stripeWidth];
+            for (int i = 0; i < stripeWidth; i++) {
+                responseStates[i] = ResponseState.NONE;
+            }
+        }
     }
 
 }

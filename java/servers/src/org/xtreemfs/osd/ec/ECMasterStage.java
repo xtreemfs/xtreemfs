@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -49,13 +50,15 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
 import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
 import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
-import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
+import org.xtreemfs.osd.ec.ECWorker.TYPE;
+import org.xtreemfs.osd.ec.ECWriteWorker.WriteEventType;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECCommitVector;
 import org.xtreemfs.osd.operations.ECGetIntervalVectors;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
@@ -64,6 +67,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_diffResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
@@ -72,6 +76,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
     private static final int               MAX_PENDING_PER_FILE       = 10;
 
     private static final String            FLEASE_PREFIX              = "/ec/";
+
+    private static final long              WRITE_WORKER_TIMEOUT_MS    = 30 * 1000;
+    private static final long              READ_WORKER_TIMEOUT_MS     = 30 * 1000;
 
     private final ServiceUUID              localUUID;
     private final ASCIIString              localID;
@@ -82,13 +89,15 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
     private final RPCNIOSocketClient       client;
 
-    private final OSDServiceClient         osdClient;
-
     private final AtomicInteger            externalRequestsInQueue;
 
     private final Map<String, ECFileState> fileStates;
 
     private long                           opIdCount;
+
+    final OSDServiceClient                 osdClient;
+
+    final Timer                            timer;
 
     public ECMasterStage(OSDRequestDispatcher master, SSLOptions sslOpts, int maxRequestsQueueLength,
             FleaseStage fstage, FleasePrefixHandler fleaseHandler) throws IOException {
@@ -96,9 +105,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         this.master = master;
 
         // FIXME (jdillmann): Do i need my own RPC client? What should be the timeouts?
-        client = new RPCNIOSocketClient(sslOpts, 15000, 60000 * 5, "ECMasterStage");
+        client = new RPCNIOSocketClient(sslOpts, 15 * 1000, 5 * 60 * 1000, "ECMasterStage");
         osdClient = new OSDServiceClient(client, null);
         externalRequestsInQueue = new AtomicInteger(0);
+
+        // Start a timer daemon
+        timer = new Timer(true);
 
         fileStates = new HashMap<String, ECFileState>();
 
@@ -197,6 +209,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
     private static enum STAGE_OP {
         READ, WRITE, TRUNCATE, 
+        SEND_DIFF_RESPONSE, RECV_DIFF_RESPONSE,
         LEASE_STATE_CHANGED, 
         CLOSE, VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE,
         WRITE_WORKER_SIGNAL, READ_WORKER_SIGNAL;
@@ -242,6 +255,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             break;
         case CLOSE:
             processCloseFile(method);
+            break;
+        case SEND_DIFF_RESPONSE:
+            processSendDiffResponse(method);
+            break;
+        case RECV_DIFF_RESPONSE:
+            processRecvDiffResponse(method);
             break;
 
         // default : throw new IllegalArgumentException("No such stageop");
@@ -517,6 +536,37 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         public void redirect(String redirectTo);
     }
 
+    boolean prepare(StageRequest method, FileCredentials credentials, XLocations loc) {
+        // final String fileId = credentials.getXcap().getFileId();
+        StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
+        assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
+
+        final ECFileState file = getFileState(credentials, loc, false);
+        file.setCredentials(credentials);
+
+        switch (file.getState()) {
+
+        case INITIALIZING:
+        case WAITING_FOR_LEASE:
+        case VERSION_RESET:
+            addPendingRequest(file, method);
+            return false;
+
+        case BACKUP:
+            assert (!file.isLocalIsPrimary());
+            return true;
+
+        case PRIMARY:
+            assert (file.isLocalIsPrimary());
+            return true;
+
+        case INVALIDATED:
+        default:
+            // TODO (jdillmann): Handle INVALIDATED errors
+            return false;
+        }
+    }
+
     boolean preparePrimary(StageRequest method, RedirectCallback callback, FileCredentials credentials, XLocations loc,
             ReusableBuffer viewData) {
         // final String fileId = credentials.getXcap().getFileId();
@@ -547,12 +597,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
             Flease lease = file.getLease();
             if (lease.isEmptyLease()) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, "Unknown lease state for %s: %s",
+                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "Unknown lease state for %s: %s",
                         file.getCellId(), lease);
                 ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
                         POSIXErrno.POSIX_ERROR_EAGAIN, "Unknown lease state for cell " + file.getCellId()
                                 + ", can't redirect to master. Please retry.");
-                // FIXME (jdillmann): abort all requests?
+                abortPendingRequests(file, error);
                 callback.failed(error);
                 return false;
             }
@@ -560,8 +610,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             callback.redirect(lease.getLeaseHolder().toString());
             return false;
 
-        // case BUSY:
-        // case READY:
         case PRIMARY:
             assert (file.isLocalIsPrimary());
             return true;
@@ -628,7 +676,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 handler.addRemote(response, i);
             }
         } catch (IOException ex) {
-            // Note: Will never be thrown!
             failed(file, ErrorUtils.getInternalServerError(ex));
         }
 
@@ -770,7 +817,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 handler.addRemote(response, i);
             }
         } catch (IOException ex) {
-            // Note: Will never be thrown!
             failed(file, ErrorUtils.getInternalServerError(ex));
         }
 
@@ -989,8 +1035,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         List<Interval> commitIntervals = curVector.getOverlapping(opStart, opEnd);
-        ECWriteWorker worker = new ECWriteWorker(master, osdClient, file.getCredentials(), fileId, opId, sp,
-                file.getPolicy().qw, reqInterval, commitIntervals, file.getRemoteOSDs(), data, method, this);
+        final ECWriteWorker worker = new ECWriteWorker(master, file.getCredentials(), file.getLocations(), fileId, opId,
+                sp, file.getPolicy().qw, reqInterval, commitIntervals, data, method, WRITE_WORKER_TIMEOUT_MS, this);
 
         file.addActiveRequest(worker);
         worker.start();
@@ -1010,7 +1056,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
-        final ECWriteWorker.WriteEvent event = (WriteEvent) method.getArgs()[1];
+        final ECWriteWorker.WriteEventType event = (WriteEventType) method.getArgs()[1];
 
         worker.processEvent(event);
 
@@ -1027,4 +1073,113 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
     }
 
-}
+    public void sendDiffResponse(String fileId, FileCredentials fileCredentials, XLocations xloc, long opId,
+            long stripeNo, int osdNo, boolean needsReconstruction, ErrorResponse error) {
+        this.enqueueOperation(STAGE_OP.SEND_DIFF_RESPONSE,
+                new Object[] { fileId, fileCredentials, xloc, opId, stripeNo, osdNo, needsReconstruction, error }, null,
+                null, null);
+    }
+
+    void processSendDiffResponse(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        final FileCredentials fileCredentials = (FileCredentials) method.getArgs()[1];
+        final XLocations xloc = (XLocations) method.getArgs()[2];
+        final long opId = (Long) method.getArgs()[3];
+        final long stripeNo = (Long) method.getArgs()[4];
+        final int osdNo = (Integer) method.getArgs()[5];
+        final boolean needsReconstruction = (Boolean) method.getArgs()[6];
+        final ErrorResponse error = (ErrorResponse) method.getArgs()[7];
+
+        // Try to find the master
+        if (!prepare(method, fileCredentials, xloc)) {
+            return;
+        }
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
+            return;
+        }
+
+        xtreemfs_ec_write_diffResponse.Builder responseB = xtreemfs_ec_write_diffResponse.newBuilder()
+                .setFileCredentials(fileCredentials).setFileId(fileId).setOpId(opId).setStripeNumber(stripeNo)
+                .setOsdNumber(osdNo).setNeedsReconstruction(needsReconstruction);
+        if (error != null) {
+            responseB.setError(error);
+        }
+
+        if (file.isLocalIsPrimary()) {
+            // handle local
+            handleParityResponse(file, responseB.build());
+
+        } else {
+            Flease lease = file.getLease();
+            if (lease.isEmptyLease()) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
+                        "Unknown lease state for %s: %s, can't send response to master.", file.getCellId(), lease);
+                return;
+            }
+
+            ServiceUUID masterServer = new ServiceUUID(lease.getLeaseHolder());
+            try {
+                @SuppressWarnings("unchecked")
+                RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff_response(
+                        masterServer.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                        responseB.build());
+                response.registerListener(ECHelper.emptyResponseListener);
+            } catch (IOException ex) {
+                Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
+            }
+        }
+    }
+
+    public void recvDiffResponse(OSDRequest request) {
+        this.enqueueOperation(STAGE_OP.RECV_DIFF_RESPONSE, new Object[] {}, request, null, null);
+    }
+
+    void processRecvDiffResponse(StageRequest method) {
+        final OSDRequest rq = method.getRequest();
+        final xtreemfs_ec_write_diffResponse args = (xtreemfs_ec_write_diffResponse) rq.getRequestArgs();
+
+        final String fileId = rq.getFileId();
+        final XLocations loc = rq.getLocationList();
+        final FileCredentials credentials = args.getFileCredentials();
+
+        if (!prepare(method, credentials, loc)) {
+            return;
+        }
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "Received diff response for non open file %s",
+                    fileId);
+            return;
+        }
+
+        if (!file.isLocalIsPrimary()) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "Backup received diff response for file %s",
+                    fileId);
+            return;
+        }
+
+        handleParityResponse(file, args);
+    }
+
+    private void handleParityResponse(ECFileState file, xtreemfs_ec_write_diffResponse args) {
+       ECWriteWorker worker = null;
+       for (ECWorker curWorker : file.getActiveRequests()) {
+            if (curWorker.getType() == TYPE.WRITE && curWorker.getRequestInterval().getId() == args.getOpId()) {
+               worker = (ECWriteWorker) curWorker;
+               break;
+           }
+       }
+
+       if (worker == null) {
+           Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
+                    "Received diff response for unkown operation %d of file %s", args.getOpId(), file.getFileId());
+           return;
+       }
+
+       worker.handleParityResponse(args);
+   }
+ }

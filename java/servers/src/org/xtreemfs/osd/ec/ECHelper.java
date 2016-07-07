@@ -6,6 +6,12 @@
  */
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+
 public class ECHelper {
     public static int safeLongToInt(long l) {
         if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
@@ -13,5 +19,19 @@ public class ECHelper {
         }
         return (int) l;
     }
+
+    public final static RPCResponseAvailableListener<emptyResponse> emptyResponseListener = new RPCResponseAvailableListener<emptyResponse>() {
+        @Override
+        public void responseAvailable(RPCResponse<emptyResponse> r) {
+            try {
+                r.get();
+            } catch (Exception ex) {
+                Logging.logUserError(Logging.LEVEL_NOTICE, Category.ec, this, ex);
+            } finally {
+                // Free the allocated buffers
+                r.freeBuffers();
+            }
+        }
+    };
 
 }

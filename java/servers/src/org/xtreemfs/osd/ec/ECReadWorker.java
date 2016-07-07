@@ -17,6 +17,7 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -243,7 +244,9 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
                         handler.addRemote(rpcResponse, objNo);
 
                     } catch (IOException ex) {
-                        // Note: This exception is never actually thrown!
+                        Logging.logError(Logging.LEVEL_WARN, this, ex);
+                        failed(stripeNo);
+                        return;
                     }
                 }
 
@@ -392,9 +395,12 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
         BufferPool.free(data);
         for (StripeState stripeState : stripeStates) {
-            // Clear response buffers
-            for (ReusableBuffer buf : stripeState.buffers) {
-                BufferPool.free(buf);
+
+            if (stripeState != null) {
+                // Clear response buffers
+                for (ReusableBuffer buf : stripeState.buffers) {
+                    BufferPool.free(buf);
+                }
             }
         }
 

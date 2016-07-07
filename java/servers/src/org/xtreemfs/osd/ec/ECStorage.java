@@ -30,6 +30,7 @@ import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECWriteDiffCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
 import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -244,6 +245,103 @@ public class ECStorage {
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
             callback.ecWriteIntervalComplete(null, false, error);
+        } finally {
+            BufferPool.free(data);
+        }
+    }
+
+    public void processWriteDiff(final StageRequest rq) {
+        final ECWriteDiffCallback callback = (ECWriteDiffCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+        final long objectNo = (Long) rq.getArgs()[2];
+        final int offset = (Integer) rq.getArgs()[3];
+        final Interval diffInterval = (Interval) rq.getArgs()[4];
+        final Interval stripeInterval = (Interval) rq.getArgs()[5];
+        final List<Interval> commitIntervals = (List<Interval>) rq.getArgs()[6];
+        final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[7];
+
+        // final long opId
+
+        assert (!commitIntervals.isEmpty());
+
+        boolean consistent = true;
+        try {
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            IntervalVector curVector = fi.getECCurVector();
+            IntervalVector nextVector = fi.getECNextVector();
+
+            long opStart = diffInterval.getOpStart();
+            long opEnd = diffInterval.getOpEnd();
+
+            // FIXME(jdillmann): A single write may never cross stripe boundaries
+
+            // Get this nodes interval vectors and check if the vector this operation is based on can be fully committed
+            long commitStart = commitIntervals.get(0).getOpStart();
+            long commitEnd = commitIntervals.get(commitIntervals.size() - 1).getOpEnd();
+            // FIXME (jdillmann): Check if this is correct
+            List<Interval> curVecIntervals = curVector.getOverlapping(commitStart, commitEnd);
+            List<Interval> nextVecIntervals = nextVector.getOverlapping(commitStart, commitEnd);
+
+            LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
+            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
+
+            boolean failed = calculateIntervalsToCommitAbort(commitIntervals, diffInterval, curVecIntervals,
+                    nextVecIntervals, toCommitAcc, toAbortAcc);
+
+            // Signal to go to reconstruct if the vector can not be fully committed.
+            if (failed) {
+                callback.ecWriteDiffComplete(false, true, null);
+                return;
+            }
+
+            // Commit or abort intervals from the next vector.
+            for (Interval interval : toCommitAcc) {
+                // FIXME (jdillmann): do
+                // commitECData(fileId, fi, interval);
+            }
+            for (Interval interval : toAbortAcc) {
+                // FIXME (jdillmann): do
+                // abortECData(fileId, fi, interval);
+            }
+
+            // Check operation boundaries.
+            // FIXME (jdillmann): Check for exclusive ends
+            long dataStart = sp.getObjectStartOffset(objectNo) + offset;
+            long dataEnd = dataStart + data.capacity();
+            // The data range has to be within the request interval and may not cross chunk boundaries
+            assert (dataStart >= diffInterval.getStart() && dataEnd <= diffInterval.getEnd());
+            assert (dataEnd - dataStart <= sp.getStripeSizeForObject(objectNo));
+
+            // Write the data
+            String fileIdCode = fileId + ".code";
+            String fileIdDelta = fileId + ".delta";
+            long version = 1;
+            // FIXME (jdillmann): Decide if/when sync should be used
+            boolean sync = false;
+            layout.writeObject(fileIdDelta, fi, data.createViewBuffer(), objectNo, offset, version, sync, false);
+            consistent = false;
+
+            // Store the vector
+            layout.setECIntervalVector(fileId, Arrays.asList(diffInterval), true, true);
+            fi.getECNextVector().insert(diffInterval);
+            consistent = true;
+            
+            // The stripe is complete if the stripeInterval is completely stored within the next vector.
+            boolean stripeComplete = fi.getECNextVector().contains(stripeInterval);
+
+            // Return the diff buffer to the caller
+            callback.ecWriteDiffComplete(stripeComplete, false, null);
+
+        } catch (IOException ex) {
+            if (!consistent) {
+                // FIXME (jdillmann): Inform in detail about critical error
+                Logging.logError(Logging.LEVEL_CRIT, this, ex);
+            }
+
+            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    ex.toString(), ex);
+            callback.ecWriteDiffComplete(false, false, error);
         } finally {
             BufferPool.free(data);
         }

@@ -17,6 +17,14 @@ import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 
 public class ECPolicy {
+    final static WriteQuorumConfig wqConf = WriteQuorumConfig.MIN;
+
+    enum WriteQuorumConfig {
+        MAX, // requires to write on n devices
+        MIN, // requires to write on k devices
+        MEAN, // requires to write on k + (m/2) devices
+    }
+
     final StripingPolicyImpl sp;
     final int n;
     final int k;
@@ -24,11 +32,40 @@ public class ECPolicy {
     final int qr;
 
     public ECPolicy(StripingPolicyImpl sp, int qw, int qr) {
+        // FIXME (jdillmann): Make configurable
+        this(sp, wqConf);
+        // this.sp = sp;
+        // this.n = sp.getWidth() + sp.getParityWidth();
+        // this.k = sp.getWidth();
+        // this.qw = qw;
+        // this.qr = qr;
+    }
+
+    public ECPolicy(StripingPolicyImpl sp, WriteQuorumConfig wqConf) {
         this.sp = sp;
         this.n = sp.getWidth() + sp.getParityWidth();
         this.k = sp.getWidth();
-        this.qw = qw;
-        this.qr = qr;
+        
+        switch (wqConf) {
+        default:
+        case MAX:
+            this.qw = n;
+            this.qr = k;
+            break;
+
+        case MEAN:
+            
+            this.qw = n;
+            this.qr = k;
+            break;
+
+        case MIN:
+            int a = (int) Math.ceil((n-k) / 2);
+            this.qw = k + a;
+            this.qr = n - a;
+            break;        
+        }
+
     }
 
     public boolean recoverVector(int responseCount, List<Interval>[] curVectors, List<Interval>[] nextVectors,

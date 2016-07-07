@@ -6,30 +6,39 @@
  */
 package org.xtreemfs.osd.operations;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
+import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECHelper;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
@@ -64,8 +73,8 @@ public class ECWriteIntervalOperation extends OSDOperation {
         ReusableBuffer data = rq.getRPCRequest().getData();
         ReusableBuffer viewBuffer = (data != null) ? data.createViewBuffer() : null;
 
-        Interval stripeInterval = new ProtoInterval(args.getStripeInterval());
-
+        final Interval stripeInterval = new ProtoInterval(args.getStripeInterval());
+        
         // Create the IntervalVector from the message
         final List<Interval> commitIntervals = new ArrayList<Interval>(args.getCommitIntervalsCount());
         for (IntervalMsg msg : args.getCommitIntervalsList()) {
@@ -94,11 +103,9 @@ public class ECWriteIntervalOperation extends OSDOperation {
                             rq.sendSuccess(buildResponse(false), null);
                             BufferPool.free(diff);
                         } else {
+                            sendDiff(fileId, args.getFileCredentials(), rq.getLocationList(), sp, opId, objNo, offset,
+                                    diff, stripeInterval, args.getCommitIntervalsList());
                             rq.sendSuccess(buildResponse(false), null);
-
-                            // send to coding devices, then clear the buffer on the responseAvailable CB
-                            // FIXME (jdillmann): clear diff buffer?
-                            // BufferPool.free(diff); // even though i know it is only wrapped ?
                         }
                     }
                 });
@@ -108,13 +115,14 @@ public class ECWriteIntervalOperation extends OSDOperation {
     public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long opId,
             final boolean hasData, final long objNo, final int offset, final IntervalMsg stripeIntervalMsg,
             final List<IntervalMsg> commitIntervalMsgs, final ReusableBuffer data,
+            final FileCredentials fileCredentials, final XLocations xloc,
             final InternalOperationCallback<xtreemfs_ec_write_intervalResponse> callback) {
 
         final ReusableBuffer viewBuffer = (data != null) ? data.createViewBuffer() : null;
 
 
         // Create Interval Objects from the message
-        Interval stripeInterval = new ProtoInterval(stripeIntervalMsg);
+        final Interval stripeInterval = new ProtoInterval(stripeIntervalMsg);
         final List<Interval> commitIntervals = new ArrayList<Interval>(commitIntervalMsgs.size());
         for (IntervalMsg msg : commitIntervalMsgs) {
             commitIntervals.add(new ProtoInterval(msg));
@@ -141,15 +149,49 @@ public class ECWriteIntervalOperation extends OSDOperation {
                             callback.localResultAvailable(buildResponse(true), null);
                             BufferPool.free(diff);
                         } else {
+                            sendDiff(fileId, fileCredentials, xloc, sp, opId, objNo, offset, diff, stripeInterval,
+                                    commitIntervalMsgs);
                             callback.localResultAvailable(buildResponse(false), null);
-
-                            // send to coding devices, then clear the buffer on the responseAvailable CB
-                            // FIXME (jdillmann): clear diff buffer?
-                            // BufferPool.free(diff); // even though i know it is only wrapped ?
                         }
                     }
                 });
     }
+
+    void sendDiff(final String fileId, final FileCredentials fileCredentials, final XLocations xloc,
+            final StripingPolicyImpl sp, final long opId, final long objNo, final int offset, ReusableBuffer diff,
+            final Interval stripeInterval, final List<IntervalMsg> commitIntervalMsgs) {
+
+        long diffStart = sp.getObjectStartOffset(objNo) + offset;
+        long diffEnd = diffStart + diff.capacity();
+        ProtoInterval diffInterval = new ProtoInterval(diffStart, diffEnd,
+                stripeInterval.getVersion(), stripeInterval.getId(), stripeInterval.getOpStart(), stripeInterval.getOpEnd());
+        
+        // Find the parity devices to update
+        Replica r = xloc.getLocalReplica();
+        List<ServiceUUID> osds = r.getOSDs();
+        List<ServiceUUID> parityOSDs = new ArrayList<ServiceUUID>(sp.getParityWidth());
+        for (int i = 0; i < sp.getParityWidth(); i++) {
+            parityOSDs.add(osds.get(sp.getWidth() + i));
+        }
+        
+        // FIXME (jdillmann): Which OSD client should i use?
+        OSDServiceClient osdClient = master.getOSDClient();
+        // master.getECMasterStage().getOSDClient();
+
+        for (ServiceUUID parityOSD : parityOSDs) {
+            try {
+                @SuppressWarnings("unchecked")
+                RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
+                        RPCAuthentication.authNone, RPCAuthentication.userService, fileCredentials, fileId, opId, objNo,
+                        offset, diffInterval.getMsg(), ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff);
+                response.registerListener(ECHelper.emptyResponseListener);
+            } catch (IOException ex) {
+                Logging.logError(Logging.LEVEL_WARN, this, ex);
+                return;
+            }
+        }
+    }
+
     xtreemfs_ec_write_intervalResponse buildResponse(boolean needsReconstruction) {
         xtreemfs_ec_write_intervalResponse.Builder responseB = xtreemfs_ec_write_intervalResponse.newBuilder();
         responseB.setNeedsReconstruction(needsReconstruction);
