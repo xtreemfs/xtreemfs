@@ -36,4 +36,5 @@
         </repository>
       </repositories>
     </profile>
+  </profiles>
 </settings>
