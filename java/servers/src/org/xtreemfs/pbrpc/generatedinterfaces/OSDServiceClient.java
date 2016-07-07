@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 06 12:12:22 CEST 2016
+//automatically generated from OSD.proto at Thu Jul 07 11:49:54 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import com.google.protobuf.Message;
 import com.google.protobuf.ByteString;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
@@ -555,6 +556,32 @@ public class OSDServiceClient {
     public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, int offset, int length, List<OSD.IntervalMsg> intervals) throws IOException {
          final OSD.xtreemfs_ec_readRequest msg = OSD.xtreemfs_ec_readRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setOffset(offset).setLength(length).addAllIntervals(intervals).build();
          return xtreemfs_ec_read(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse xtreemfs_ec_write_diff(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_write_diffRequest input, ReusableBuffer data) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 88, input, data, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_ec_write_diff(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, long object_number, int offset, OSD.IntervalMsg diff_interval, OSD.IntervalMsg stripe_interval, List<OSD.IntervalMsg> commit_intervals, ReusableBuffer data) throws IOException {
+         final OSD.xtreemfs_ec_write_diffRequest msg = OSD.xtreemfs_ec_write_diffRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setObjectNumber(object_number).setOffset(offset).setDiffInterval(diff_interval).setStripeInterval(stripe_interval).addAllCommitIntervals(commit_intervals).build();
+         return xtreemfs_ec_write_diff(server, authHeader, userCreds,msg, data);
+    }
+
+    public RPCResponse xtreemfs_ec_write_diff_response(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_write_diffResponse input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 89, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_ec_write_diff_response(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, long stripe_number, int osd_number, boolean needs_reconstruction, RPC.RPCHeader.ErrorResponse error) throws IOException {
+         final OSD.xtreemfs_ec_write_diffResponse msg = OSD.xtreemfs_ec_write_diffResponse.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setStripeNumber(stripe_number).setOsdNumber(osd_number).setNeedsReconstruction(needs_reconstruction).setError(error).build();
+         return xtreemfs_ec_write_diff_response(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

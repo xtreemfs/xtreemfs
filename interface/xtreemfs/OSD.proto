@@ -476,6 +476,43 @@ message xtreemfs_ec_write_intervalResponse {
 }
 
 
+message xtreemfs_ec_write_diffRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required uint64 op_id = 3;
+
+  // can be derived from objNo
+  // required uint64 stripe_number = ;
+
+  required uint64 object_number = 4;
+  required uint32 offset = 5;
+
+  // Interval of the diff to be written.
+  // May not cross chunk boundaries, but may have a larger op range.
+  required IntervalMsg diff_interval = 6;
+
+  // Interval of the stripe to be written.
+  // May not cross stripe boundaries, but may have a larger op range.
+  // TODO: diff interval could be omitted
+  required IntervalMsg stripe_interval = 7;
+
+  // Intervals this operation is based on.
+  // Have to be committed to execute the operation.
+  repeated IntervalMsg commit_intervals = 8;
+}
+
+message xtreemfs_ec_write_diffResponse {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required uint64 op_id = 3;
+  required uint64 stripe_number = 4;
+  required uint32 osd_number = 5;
+
+  required bool needs_reconstruction = 6;
+  optional RPCHeader.ErrorResponse error = 7;
+}
+
+
 // Request to read an object from a data device.
 message xtreemfs_ec_readRequest {
   required FileCredentials file_credentials = 1;
@@ -748,5 +785,16 @@ service OSDService {
       returns (xtreemfs_ec_readResponse) {
     option(proc_id)=87;
     option(data_out)=true;
+  }
+
+  rpc xtreemfs_ec_write_diff(xtreemfs_ec_write_diffRequest)
+      returns (emptyResponse) {
+    option(proc_id)=88;
+    option(data_in)=true;
+  }
+
+  rpc xtreemfs_ec_write_diff_response(xtreemfs_ec_write_diffResponse)
+      returns (emptyResponse) {
+    option(proc_id)=89;
   }
 }
