@@ -62,6 +62,7 @@
               <executable>${protoc.bin}</executable>
               <workingDirectory>${project.basedir}/../../interface</workingDirectory>
               <arguments>
+                <argument>--proto_path=${project.basedir}/../../interface</argument>
                 <argument>--proto_path=${project.basedir}/../../interface/include</argument>
                 <argument>--proto_path=${protoc.include}</argument>
                 <argument>--java_out=${project.basedir}/src/main/java</argument>
