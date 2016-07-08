@@ -106,16 +106,16 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
                               SSLOptions sslOptions) throws IOException {
-        this(bindPort, bindAddr, rl, sslOptions, -1);
+        this(bindPort, bindAddr, rl, sslOptions, 7, -1);
     }
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
-                              SSLOptions sslOptions, int receiveBufferSize) throws IOException {
-        this(bindPort, bindAddr, rl, sslOptions, receiveBufferSize, DEFAULT_MAX_CLIENT_Q_LENGTH);
+                              SSLOptions sslOptions, int bindRetries, int receiveBufferSize) throws IOException {
+        this(bindPort, bindAddr, rl, sslOptions, bindRetries, receiveBufferSize, DEFAULT_MAX_CLIENT_Q_LENGTH);
     }
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
-                              SSLOptions sslOptions, int receiveBufferSize,
+                              SSLOptions sslOptions, int bindRetries, int receiveBufferSize,
                               int maxClientQLength) throws IOException {
         super("PBRPCSrv@" + bindPort);
 
@@ -140,13 +140,32 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         }
 
         socket.socket().setReuseAddress(true);
-        try {
-            socket.socket().bind(
-                    bindAddr == null ? new InetSocketAddress(bindPort) : new InetSocketAddress(bindAddr, bindPort));
-        } catch (BindException e) {
-            // Rethrow exception with the failed port number.
-            throw new BindException(e.getMessage() + ". Port number: " + bindPort);
-        }
+
+        int bindTry = 0;
+        long waitTime = 1000;
+        do {
+            try {
+                ++bindTry;
+                socket.socket().bind(
+                        bindAddr == null ? new InetSocketAddress(bindPort) : new InetSocketAddress(bindAddr, bindPort));
+            } catch (BindException e) {
+                if (bindTry > bindRetries) {
+                    // Rethrow exception with the failed port number.
+                    throw new BindException("Failed to bind to port " + bindPort + " after " + bindTry + " attempt(s)"
+                            + " (" + e.getMessage() + ").");
+                } else {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
+                            "Failed to bind to port " + bindPort + ", waiting " + waitTime + "ms for it to become free ("
+                            + (bindRetries - bindTry) + " attempt(s) left).");
+                    try {
+                        Thread.sleep(waitTime);
+                    } catch (InterruptedException e1) {
+                        throw new RuntimeException("Interrupted while waiting for port " + bindPort + " to become free", e1);
+                    }
+                    waitTime *= 2;
+                }
+            }
+        } while (!socket.socket().isBound() && bindTry < bindRetries);
         this.bindPort = bindPort;
 
         // create a selector and register socket
