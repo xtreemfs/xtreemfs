@@ -15,10 +15,13 @@
   <packaging>jar</packaging>
 
   <properties>
+    <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
+
     <!-- Plugin configurations. -->
     <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
@@ -217,6 +220,15 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Djava.library.path=${libjni.directory}</argLine>
+        </configuration>
       </plugin>
     </plugins>
   </build>
