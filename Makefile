@@ -363,7 +363,7 @@ server_distclean: check_server
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
 hadoop-client: parent foundation server
 	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
-	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client-<VERSION>-shaded.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
+	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
 	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
 hadoop-client_distclean:

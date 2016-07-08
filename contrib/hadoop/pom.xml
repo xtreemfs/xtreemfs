@@ -151,6 +151,7 @@
             </goals>
             <configuration combine.self="override">
               <shadedArtifactAttached>true</shadedArtifactAttached>
+              <finalName>${project.artifactId}</finalName>
               <artifactSet>
                 <includes>
                   <include>com.google.protobuf:protobuf-java</include>

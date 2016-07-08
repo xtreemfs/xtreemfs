@@ -152,12 +152,9 @@ class Server:
             java_args.append("-ea")
 
             # Construct the -cp classpath
-            xtreemfs_servers_jar_dir = os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "xtreemfs-servers", "target"))
-            xtreemfs_servers_jars = glob.glob(xtreemfs_servers_jar_dir + os.sep + "xtreemfs-servers-*-shaded.jar")
-            if xtreemfs_servers_jars:
-                classpath = xtreemfs_servers_jars[0]
-                for i in range(1, len(xtreemfs_servers_jars)):
-                  print "ignoring jar file '", xtreemfs_servers_jars[i], "' in favor of '", xtreemfs_servers_jars[0], "'"
+            xtreemfs_jar = os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "xtreemfs-servers", "target", "xtreemfs.jar"))
+            if os.path.exists(xtreemfs_jar):
+                classpath = xtreemfs_jar
             else:
                 classpath = os.path.join("/usr/share/java/xtreemfs.jar")
             java_args.extend(("-cp", classpath))
