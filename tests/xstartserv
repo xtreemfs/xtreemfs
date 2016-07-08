@@ -76,7 +76,6 @@ class Server:
                   print "ignoring jar file '", xtreemfs_servers_jars[i], "' in favor of '", xtreemfs_servers_jars[0], "'"
             else:
                 classpath = os.path.join("/usr/share/java/xtreemfs.jar")
-
             java_args.extend(("-cp", classpath))
 
             # Name of the class to start
