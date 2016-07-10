@@ -9,11 +9,14 @@ package org.xtreemfs.osd.ec;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
@@ -71,10 +74,15 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     final List<IntervalMsg>                 commitIntervalMsgs;
     final StripeState[]                     stripeStates;
     final OSDServiceClient                  osdClient;
-    final List<ServiceUUID>                 remoteOSDs;
+    // final List<ServiceUUID> remoteOSDs;
     final OSDRequestDispatcher              master;
     final FileCredentials                   fileCredentials;
+    final XLocations                        xloc;
     final ReusableBuffer                    data;
+
+    final Timer                             timer;
+    final TimerTask                         timeoutTimer;
+    final long                              timeoutMS;
 
     // Note: circular reference
     final StageRequest                      request;
@@ -94,27 +102,27 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
     boolean                                 finished;
     boolean                                 failed;
-    ErrorResponse                           error;
+    volatile ErrorResponse                  error;
     ObjectInformation                       result;
 
     final AtomicBoolean                     finishedSignaled;
     final AtomicInteger                     activeHandlers;
 
-    public ECReadWorker(OSDRequestDispatcher master, OSDServiceClient osdClient, FileCredentials fileCredentials,
+    public ECReadWorker(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc,
             String fileId, StripingPolicyImpl sp, Interval reqInterval, List<Interval> commitIntervals,
-            List<ServiceUUID> remoteOSDs, ReusableBuffer data, StageRequest request,
-            ECWorkerEventProcessor<ReadEvent> processor) {
-        this.processor = processor;
+            ReusableBuffer data, StageRequest request, long timeoutMS, ECMasterStage ecMaster) {
+        this.processor = ecMaster;
+        this.timer = ecMaster.timer;
+        this.osdClient = ecMaster.osdClient;
 
         this.fileId = fileId;
         this.sp = sp;
         this.reqInterval = reqInterval;
         this.commitIntervals = commitIntervals;
         this.data = data;
-        this.osdClient = osdClient;
-        this.remoteOSDs = remoteOSDs;
         this.master = master;
         this.fileCredentials = fileCredentials;
+        this.xloc = xloc;
         this.request = request;
 
         commitIntervalMsgs = new ArrayList<IntervalMsg>(commitIntervals.size());
@@ -150,6 +158,15 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
         finishedSignaled = new AtomicBoolean(false);
         activeHandlers = new AtomicInteger(0);
+
+        this.timeoutMS = timeoutMS;
+        timeoutTimer = new TimerTask() {
+            @Override
+            public void run() {
+                // ECWriteWorker.this.processor.signal(ECWriteWorker.this, WriteEventType.FAILED);
+                ECReadWorker.this.timeout();
+            }
+        };
     }
 
     @Override
@@ -166,6 +183,8 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
     @Override
     public void start() {
+        timer.schedule(timeoutTimer, timeoutMS);
+
         long opStart = reqInterval.getOpStart();
         long opEnd = reqInterval.getOpEnd();
 
@@ -261,7 +280,6 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
     private void handleDataResponse(ResponseResult<xtreemfs_ec_readResponse, Long> result, int numResponses,
             int numErrors, int numQuickFail) {
-
         if (finishedSignaled.get()) {
             BufferPool.free(result.getData());
             return;
@@ -271,7 +289,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         long objNo = result.getMappedObject();
 
         boolean objFailed = result.hasFailed();
-        boolean needsReconstruction = result.getResult().getNeedsReconstruction();
+        boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
 
         long stripeNo = sp.getRow(objNo);
         StripeState stripeState = getStripeStateForStripe(stripeNo);
@@ -281,7 +299,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
 
         if (objFailed || needsReconstruction) {
-            boolean stripeFailed = stripeState.markFailed(osdPos);
+            boolean stripeFailed = stripeState.markFailed(osdPos, needsReconstruction);
             if (stripeFailed) {
                 failed(stripeNo);
             }
@@ -303,6 +321,18 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         }
     }
 
+    private void waitForActiveHandlers() {
+        synchronized (activeHandlers) {
+            while (activeHandlers.get() > 0) {
+                try {
+                    activeHandlers.wait();
+                } catch (InterruptedException ex) {
+                    // ignore
+                }
+            }
+        }
+    }
+
     private void stripeComplete(long stripeNo) {
         // processor.signal(this, new ReadEvent(ReadEventType.STRIPE_COMPLETE, stripeNo, osdPos));
 
@@ -313,22 +343,14 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     }
 
     private void finished() {
-        // finishedSignaled is not really needed as long as only one process is allowed to enter the when cur == num
+        timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
             processor.signal(this, new ReadEvent(ReadEventType.FINISHED, 0, 0));
         }
     }
 
     private void processFinished(ReadEvent event) {
-        synchronized (activeHandlers) {
-            while (activeHandlers.get() > 0) {
-                try {
-                    activeHandlers.wait();
-                } catch (InterruptedException ex) {
-                    // ignore
-                }
-            }
-        }
+        waitForActiveHandlers();
 
         finished = true;
         
@@ -375,8 +397,17 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         result = new ObjectInformation(ObjectStatus.EXISTS, data, chunkSize);
     }
 
+    private void timeout() {
+        timeoutTimer.cancel();
+        if (finishedSignaled.compareAndSet(false, true)) {
+            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "Request failed due to a timeout.");
+            processor.signal(this, new ReadEvent(ReadEventType.FAILED, 0, 0));
+        }
+    }
+
     private void failed(long stripeNo) {
-        // finishedSignaled is not really needed as long as only one process is allowed to enter the when cur == num
+        timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
             processor.signal(this, new ReadEvent(ReadEventType.FAILED, stripeNo, 0));
         }
@@ -407,15 +438,18 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         finished = true;
         failed = true;
         
-        StripeState errorStripeState = getStripeStateForStripe(event.stripeNo);
-        error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                String.format("Request failed. Could not read from stripe %d ([%d:%d]).",
-                        event.stripeNo, errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
+        if (error == null) {
+            StripeState errorStripeState = getStripeStateForStripe(event.stripeNo);
+            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    String.format("Request failed. Could not read from stripe %d ([%d:%d]).", event.stripeNo,
+                            errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
+        }
 
     }
 
     ServiceUUID getRemote(int osdNo) {
-        return remoteOSDs.get(osdNo < localOsdNo ? osdNo : osdNo - 1);
+        return xloc.getLocalReplica().getOSDs().get(osdNo);
+        // return remoteOSDs.get(osdNo < localOsdNo ? osdNo : osdNo - 1);
     }
 
     StripeState getStripeStateForObj(long objNo) {
@@ -487,7 +521,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         final AtomicInteger    nacks;
         final AtomicInteger    chunksAvailable;
         final int              chunksRequired;
-        volatile boolean       finished;
+        final AtomicBoolean    finished;
 
         public StripeState(Interval interval) {
             this.interval = interval;
@@ -503,12 +537,12 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             acks = new AtomicInteger(0);
             nacks = new AtomicInteger(0);
             chunksAvailable = new AtomicInteger(0);
+            finished = new AtomicBoolean(false);
 
             firstOSDWithData = sp.getOSDforOffset(interval.getStart());
             lastOSDWithData = sp.getOSDforOffset(interval.getEnd() - 1);
             chunksRequired = lastOSDWithData - firstOSDWithData + 1;
 
-            finished = false;
         }
 
         /**
@@ -517,16 +551,20 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
          * @param osdNum
          * @return
          */
-        boolean markFailed(int osdPos) {
+        boolean markFailed(int osdPos, boolean needsReconstruction) {
             int curNacks = nacks.incrementAndGet();
-            if (!finished) {
-                responseStates[osdPos] = ResponseState.FAILED;
 
-                if (stripeWidth - curNacks < dataWidth) {
-                    finished = true;
-                    return true;
-                }
+            if (!finished.get()) {
+                responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
+                        : ResponseState.FAILED;
             }
+
+            if (stripeWidth - curNacks < dataWidth) {
+                // we can't fullfill the write quorum anymore
+                finished.set(true);
+                return true;
+            }
+
             return false;
         }
 
@@ -541,15 +579,16 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             int curAcks = acks.incrementAndGet();
             int curComplete = chunksAvailable.incrementAndGet();
 
-            if (!finished) {
+            if (!finished.get()) {
                 responseStates[osdPos] = ResponseState.SUCCESS;
                 buffers[osdPos] = buf;
                 responses[osdPos] = response;
 
                 if (curComplete == chunksRequired) {
-                    finished = true;
-                    return true;
+                    finished.set(true);
                 }
+
+                return true;
             } else {
                 BufferPool.free(buf);
             }

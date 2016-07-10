@@ -13,7 +13,6 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,7 +21,7 @@ import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.test.TestHelper;
 
-public class ECStorageTest {
+public class ECStorageTest extends ECTestCommon {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
 
@@ -213,12 +212,6 @@ public class ECStorageTest {
             fail();
         } catch (IOException ex) {
             // expected
-        }
-    }
-
-    static void clearAll(List... lists) {
-        for (List list : lists) {
-            list.clear();
         }
     }
 

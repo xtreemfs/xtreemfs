@@ -931,8 +931,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         List<Interval> commitIntervals = file.getCurVector().getOverlapping(start, end);
-        ECReadWorker worker = new ECReadWorker(master, osdClient, credentials, fileId, sp, reqInterval, commitIntervals,
-                file.getRemoteOSDs(), data, method, this);
+        ECReadWorker worker = new ECReadWorker(master, credentials, loc, fileId, sp, reqInterval, commitIntervals, data,
+                method, READ_WORKER_TIMEOUT_MS, this);
         file.addActiveRequest(worker);
         worker.start();
     }

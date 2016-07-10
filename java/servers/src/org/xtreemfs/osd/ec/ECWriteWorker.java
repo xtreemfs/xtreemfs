@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -63,7 +64,11 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
     final FileCredentials      fileCredentials;
     final XLocations           xloc;
     final ReusableBuffer       data;
-    final long                                   timeoutMS;
+
+    final Timer                timer;
+    final TimerTask            timeoutTimer;
+    final long                 timeoutMS;
+
 
     // Note: circular reference
     final StageRequest         request;
@@ -84,8 +89,8 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
     boolean                    failed;
     ErrorResponse              error;
     
-    final Timer                                  timer;
-    final TimerTask                              timeoutTimer;
+    final AtomicBoolean       finishedSignaled;
+    final AtomicInteger       activeHandlers;
 
     public ECWriteWorker(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc, String fileId,
             long opId, StripingPolicyImpl sp, int qw, Interval reqInterval, List<Interval> commitIntervals,
@@ -138,6 +143,9 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
 
         numStripes = ECHelper.safeLongToInt(lastStripeNo - firstStripeNo + 1);
         stripeStates = new StripeState[numStripes];
+
+        finishedSignaled = new AtomicBoolean(false);
+        activeHandlers = new AtomicInteger(0);
 
         this.timeoutMS = timeoutMS;
         timeoutTimer = new TimerTask() {
@@ -277,6 +285,11 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
 
     private void handleDataResponse(ResponseResult<xtreemfs_ec_write_intervalResponse, Long> result, int numResponses,
             int numErrors, int numQuickFail) {
+        if (finishedSignaled.get()) {
+            return;
+        }
+        activeHandlers.incrementAndGet();
+
         long objNo = result.getMappedObject();
 
         boolean objFailed = result.hasFailed();
@@ -289,9 +302,10 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
         int osdPos = sp.getOSDforObject(objNo);
 
         if (objFailed || needsReconstruction) {
-            int curNacks = stripeStatus.nacks.incrementAndGet();
-            stripeStatus.responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
-                    : ResponseState.FAILED;
+            if (stripeStatus.markFailed(osdPos, needsReconstruction)) {
+                failed();
+            }
+
             // Only needed if the OSD would have been written
             // if (relOsdPos == sp.getOSDforObject(objNo)) {
             // // Need read/write cycle
@@ -322,17 +336,8 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
             // // }
             // }
 
-            if (stripeWidth - curNacks < qw) {
-                // we can't fullfill the write quorum anymore
-                failed();
-            }
-
         } else {
-            int curAcks = stripeStatus.acks.incrementAndGet();
-            stripeStatus.responseStates[osdPos] = ResponseState.SUCCESS;
-
-            if (curAcks >= qw) {
-                // SUCCESS
+            if (stripeStatus.markSuccess(osdPos)) {
                 int curNumStripesComplete = numStripesComplete.incrementAndGet();
                 if (curNumStripesComplete == numStripes) {
                     finished();
@@ -340,12 +345,21 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
             }
         }
        
-
+        if (activeHandlers.decrementAndGet() == 0) {
+            synchronized (activeHandlers) {
+                activeHandlers.notifyAll();
+            }
+        }
     }
 
     void handleParityResponse(xtreemfs_ec_write_diffResponse response) {
+        if (finishedSignaled.get()) {
+            return;
+        }
+        activeHandlers.incrementAndGet();
+
         boolean objFailed = response.hasError();
-        boolean needsReconstruction = response.getNeedsReconstruction();
+        boolean needsReconstruction = !objFailed && response.getNeedsReconstruction();
 
         long stripeNo = response.getStripeNumber();
         StripeState stripeStatus = getStripeStateForStripe(stripeNo);
@@ -354,22 +368,11 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
         int osdPos = response.getOsdNumber();
 
         if (objFailed || needsReconstruction) {
-            int curNacks = stripeStatus.nacks.incrementAndGet();
-            stripeStatus.responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
-                    : ResponseState.FAILED;
-
-
-            if (stripeWidth - curNacks < qw) {
-                // we can't fullfill the write quorum anymore
+            if (stripeStatus.markFailed(osdPos, needsReconstruction)) {
                 failed();
             }
-
         } else {
-            int curAcks = stripeStatus.acks.incrementAndGet();
-            stripeStatus.responseStates[osdPos] = ResponseState.SUCCESS;
-
-            if (curAcks >= qw) {
-                // SUCCESS
+            if (stripeStatus.markSuccess(osdPos)) {
                 int curNumStripesComplete = numStripesComplete.incrementAndGet();
                 if (curNumStripesComplete == numStripes) {
                     finished();
@@ -377,39 +380,66 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
             }
         }
 
+        if (activeHandlers.decrementAndGet() == 0) {
+            synchronized (activeHandlers) {
+                activeHandlers.notifyAll();
+            }
+        }
     }
 
-    public void timeout() {
+    private void waitForActiveHandlers() {
+        synchronized (activeHandlers) {
+            while (activeHandlers.get() > 0) {
+                try {
+                    activeHandlers.wait();
+                } catch (InterruptedException ex) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    private void timeout() {
         timeoutTimer.cancel();
-        // FIXME (jdillmann): check for concurrency!!!
-        processor.signal(this, WriteEventType.FAILED);
+        if (finishedSignaled.compareAndSet(false, true)) {
+            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "Request failed due to a timeout.");
+            // FIXME (jdillmann): check for concurrency!!!
+            processor.signal(this, WriteEventType.FAILED);
+        }
     }
 
     private void finished() {
         timeoutTimer.cancel();
-        // finishedSignaled is not really needed as long as only one process is allowed to enter the when cur == num
-        // if (finishedSignaled.compareAndSet(false, true)) {
-        // }
-        processor.signal(this, WriteEventType.FINISHED);
+        if (finishedSignaled.compareAndSet(false, true)) {
+            processor.signal(this, WriteEventType.FINISHED);
+        }
     }
 
     private void processFinished(WriteEventType event) {
+        waitForActiveHandlers();
         BufferPool.free(data);
         finished = true;
     }
 
     private void failed() {
         timeoutTimer.cancel();
-        processor.signal(this, WriteEventType.FAILED);
+        if (finishedSignaled.compareAndSet(false, true)) {
+            processor.signal(this, WriteEventType.FAILED);
+        }
     }
 
     private void processFailed(WriteEventType event) {
+        waitForActiveHandlers();
+        
         BufferPool.free(data);
         finished = true;
         failed = true;
 
-        error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                "Request failed. Could not write enough chunks.");
+        if (error == null) {
+            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                    "Request failed. Could not write enough chunks.");
+        }
         // String.format("Request failed. Could not write to stripe %d ([%d:%d]).", event.stripeNo,
         // errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
     }
@@ -472,15 +502,19 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
     }
 
     enum ResponseState {
-        NONE, REQ_INTERVAL, REQ_DATA, SUCCESS, FAILED, NEEDS_RECONSTRUCTION,
+        NONE, 
+        REQ_INTERVAL, REQ_DATA,
+        FAILED, NEEDS_RECONSTRUCTION,
+        SUCCESS
     }
 
     private class StripeState {
         final Interval        interval;
         final ResponseState[] responseStates;
 
-        AtomicInteger         acks  = new AtomicInteger(0);
-        AtomicInteger         nacks = new AtomicInteger(0);
+        final AtomicInteger   acks;
+        final AtomicInteger   nacks;
+        final AtomicBoolean   finished;
 
         public StripeState(Interval interval) {
             this.interval = interval;
@@ -489,7 +523,40 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
             for (int i = 0; i < stripeWidth; i++) {
                 responseStates[i] = ResponseState.NONE;
             }
+
+            acks = new AtomicInteger(0);
+            nacks = new AtomicInteger(0);
+            finished = new AtomicBoolean(false);
         }
+
+        boolean markFailed(int osdPos, boolean needsReconstruction) {
+            int curNacks = nacks.incrementAndGet();
+
+            if (!finished.get()) {
+                responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
+                        : ResponseState.FAILED;
+            }
+
+            if (stripeWidth - curNacks < qw) {
+                // we can't fullfill the write quorum anymore
+                finished.set(true);
+                return true;
+            }
+
+            return false;
+        }
+
+        boolean markSuccess(int osdPos) {
+            int curAcks = acks.incrementAndGet();
+
+            responseStates[osdPos] = ResponseState.SUCCESS;
+            if (curAcks >= qw) {
+                return true;
+            }
+
+            return false;
+        }
+
     }
 
 }
