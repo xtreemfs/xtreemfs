@@ -6,8 +6,6 @@
  */
 package org.xtreemfs.osd.ec;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
@@ -49,7 +47,7 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
 
-public class ECMasterStageTest {
+public class ECMasterStageTest extends ECTestCommon {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
 
@@ -219,11 +217,9 @@ public class ECMasterStageTest {
         HashStorageLayout layout;
         FileMetadata fi;
         ObjectInformation objInfo;
-        String fileIdNext = fileId + ".next";
+        String fileIdNext = fileId + ECStorage.FILEID_NEXT_SUFFIX;
         
         InetSocketAddress masterAddress = null;
-        int masterIdx = 0;
-        int slaveIdx = 1;
 
         long objNumber = 0;
         long objVersion = -1;
@@ -242,8 +238,6 @@ public class ECMasterStageTest {
                         fileId, objNumber, objVersion, offset, length);
                 readResponse = RPCReadResponse.get();
                 masterAddress = address;
-                masterIdx = i;
-                slaveIdx = (masterIdx + 1) % 2;
                 RPCReadResponse.freeBuffers();
                 BufferPool.free(RPCReadResponse.getData());
                 RPCReadResponse = null;
@@ -279,7 +273,7 @@ public class ECMasterStageTest {
         writeResponse = RPCWriteResponse.get();
         RPCWriteResponse.freeBuffers();
         
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
         data.position(0);
@@ -298,7 +292,7 @@ public class ECMasterStageTest {
         writeResponse = RPCWriteResponse.get();
         RPCWriteResponse.freeBuffers();
 
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
         data.position(0);
@@ -309,7 +303,7 @@ public class ECMasterStageTest {
         BufferPool.free(expected);
         BufferPool.free(objInfo.getData());
 
-        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[1], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 1, 0, 1024, 1);
         data.position(0);
@@ -333,7 +327,7 @@ public class ECMasterStageTest {
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
         data.position(0);
@@ -344,7 +338,7 @@ public class ECMasterStageTest {
         BufferPool.free(expected);
         BufferPool.free(objInfo.getData());
 
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 2, 0, 1024, 1);
         data.position(0);
@@ -355,7 +349,7 @@ public class ECMasterStageTest {
         BufferPool.free(expected);
         BufferPool.free(objInfo.getData());
 
-        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[1], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 1, 0, 1024, 1);
         data.position(0);
@@ -381,7 +375,7 @@ public class ECMasterStageTest {
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 0, 512, 512, 1);
         data.position(0);
@@ -392,7 +386,7 @@ public class ECMasterStageTest {
         BufferPool.free(expected);
         BufferPool.free(objInfo.getData());
 
-        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[1], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 1, 0, 512, 1);
         data.position(0);
@@ -418,7 +412,7 @@ public class ECMasterStageTest {
         RPCWriteResponse.freeBuffers();
         BufferPool.free(data);
 
-        layout = new HashStorageLayout(configs[masterIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 2, 0, 512, 1);
         data.position(0);
@@ -429,7 +423,7 @@ public class ECMasterStageTest {
         BufferPool.free(expected);
         BufferPool.free(objInfo.getData());
 
-        layout = new HashStorageLayout(configs[slaveIdx], new MetadataCache());
+        layout = new HashStorageLayout(configs[1], new MetadataCache());
         fi = layout.getFileMetadata(spi, fileId);
         objInfo = layout.readObject(fileIdNext, fi, 1, 512, 512, 1);
         data.position(0);
@@ -442,24 +436,6 @@ public class ECMasterStageTest {
         BufferPool.free(data);
 
     }
-
-    public static void assertBufferEquals(ReusableBuffer expected, ReusableBuffer actual) {
-        expected = expected.createViewBuffer();
-        actual = actual.createViewBuffer();
-        try {
-            assertEquals(expected.remaining(), actual.remaining());
-            byte[] ex = new byte[expected.remaining()];
-            byte[] ac = new byte[expected.remaining()];
-            expected.get(ex);
-            actual.get(ac);
-
-            assertArrayEquals(ex, ac);
-        } finally {
-            BufferPool.free(expected);
-            BufferPool.free(actual);
-        }
-    }
-
 
     @Test
     public void testWriteReadNoParity() throws Exception {

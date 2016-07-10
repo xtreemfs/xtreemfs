@@ -27,6 +27,7 @@ import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.AVLTreeIntervalVector;
 import org.xtreemfs.foundation.intervals.Interval;
@@ -43,17 +44,17 @@ import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_get_vectorsResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_diffRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
@@ -61,7 +62,9 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestHelper;
 
-public class ECOperationsTest {
+import com.backblaze.erasure.ReedSolomon;
+
+public class ECOperationsTest extends ECTestCommon {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
 
@@ -113,7 +116,8 @@ public class ECOperationsTest {
                 //TestEnvironment.Services.MRC,
                 // TestEnvironment.Services.MRC_CLIENT,
                 TestEnvironment.Services.OSD,
-                TestEnvironment.Services.OSD_CLIENT });
+                TestEnvironment.Services.OSD_CLIENT,
+                TestEnvironment.Services.MOCKUP_OSD, TestEnvironment.Services.MOCKUP_OSD2 });
         testEnv.start();
 
         osdClient = testEnv.getOSDClient();
@@ -124,11 +128,6 @@ public class ECOperationsTest {
 
         fileCredentials = getCreds(fileId, 1, 0, 128);
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
-    }
-
-    public static StripingPolicy getECStripingPolicy(int width, int parity, int stripeSize) {
-        return StripingPolicy.newBuilder().setType(StripingPolicyType.STRIPING_POLICY_ERASURECODE).setWidth(width)
-                .setParityWidth(parity).setStripeSize(stripeSize).build();
     }
 
     Capability getCap(String fileId) {
@@ -147,9 +146,7 @@ public class ECOperationsTest {
         return FileCredentials.newBuilder().setXcap(getCap(fileId).getXCap()).setXlocs(xloc).build();
     }
 
-    public static StripingPolicyImpl getStripingPolicyImplementation(FileCredentials fileCredentials) {
-        return StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas(0), 0);
-    }
+
 
     @After
     public void tearDown() throws Exception {
@@ -514,7 +511,7 @@ public class ECOperationsTest {
         FileMetadata fi;
         ObjectInformation objInf;
         
-        String fileIdNext = fileId + ".next";
+        String fileIdNext = fileId + ECStorage.FILEID_NEXT_SUFFIX;
         HashStorageLayout layout;
         StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
         int chunkSize = sp.getPolicy().getStripeSize() * 1024;
@@ -653,15 +650,504 @@ public class ECOperationsTest {
         assertArrayEquals(dataInF3.array(), byteOut);
     }
 
-    void intervalList2WriteIntervalRequest(List<Interval> intervals, xtreemfs_ec_write_intervalRequest.Builder builder) {
+    void intervalList2WriteIntervalRequest(List<Interval> intervals,
+            xtreemfs_ec_write_intervalRequest.Builder builder) {
         builder.clearCommitIntervals();
         for (Interval interval : intervals) {
             builder.addCommitIntervals(ProtoInterval.toProto(interval));
         }
     }
 
-    void assertVectorsEquals(FileCredentials fileCredentials, List<Interval> curExpected,
-            List<Interval> nextExpected) throws Exception {
+
+    @Test
+    public void testWriteDiff() throws Exception {
+        List<Interval> commitIntervals = new LinkedList<Interval>();
+        Interval interval;
+        Interval diffInterval;
+        Interval stripeInterval;
+        long objNo;
+        long opId;
+        int offset;
+        long stripeNo;
+        FileMetadata fi;
+        ObjectInformation objInf;
+
+        String fileIdDelta = fileId + ECStorage.FILEID_DELTA_SUFFIX;
+        String fileIdCode = fileId + ECStorage.FILEID_CODE_SUFFIX;
+        HashStorageLayout layout;
+
+        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(2, 1, 1))
+                .addOsdUuids("mockUpOSD").addOsdUuids("mockUpOSD2").addOsdUuids(osdUUID.toString()).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0)
+                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_EC).addReplicas(r).setVersion(1).build();
+        FileCredentials fileCredentials = FileCredentials.newBuilder().setXcap(getCap(fileId).getXCap()).setXlocs(xloc)
+                .build();
+
+        StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
+
+        ReedSolomon codec = ReedSolomon.create(2, 1);
+
+        int chunkSize = sp.getPolicy().getStripeSize() * 1024;
+        byte[] byteOut;
+
+
+        byte[][] data = new byte[2][chunkSize];
+        ReusableBuffer[] dataBuf = { ReusableBuffer.wrap(data[0]), ReusableBuffer.wrap(data[1]) };
+
+        byte[] code = new byte[chunkSize];
+        ReusableBuffer codeBuf = ReusableBuffer.wrap(code);
+
+        byte[] diff = new byte[chunkSize];
+        ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
+        ReusableBuffer diffView;
+        ReusableBuffer delta;
+
+
+        byte[][] dataCode = { data[0], data[1], code };
+
+
+        xtreemfs_ec_write_diffRequest request;
+
+        xtreemfs_ec_write_diffRequest.Builder requestB = xtreemfs_ec_write_diffRequest.newBuilder().setFileId(fileId)
+                .setFileCredentials(fileCredentials);
+
+        RPCResponse<emptyResponse> rpcResponse;
+        emptyResponse response;
+
+        // Test writing to non-existent file
+        // ***********************************
+        final ReusableBuffer dataInF1 = SetupUtils.generateData(chunkSize, (byte) 1);
+        objNo = 0;
+        stripeNo = 0;
+        opId = 1;
+        offset = 0;
+        interval = new ObjectInterval(offset, chunkSize, 1, opId);
+        stripeInterval = interval;
+        diffInterval = interval;
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+        
+        diffBuffer = diff(dataInF1.createViewBuffer(), dataBuf[0].createViewBuffer(), 0);
+        
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(Collections.EMPTY_LIST, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(stripeInterval), fi.getECNextVector().serialize());
+
+        // Assert new delta is correct
+        objInf = layout.readObject(fileIdDelta, fi, objNo, offset, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(0);
+        dataBuf[0].put(dataInF1.createViewBuffer());
+        dataBuf[0].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+
+
+        // Test writing second half of the chunk: should commit the whole chunk
+        // ********************************************************************
+        ReusableBuffer dataInH2 = SetupUtils.generateData(chunkSize / 2, (byte) 2);
+        objNo = 0;
+        stripeNo = 0;
+        opId = 2;
+        offset = chunkSize / 2;
+        commitIntervals.clear();
+        interval = new ObjectInterval(0, chunkSize, 1, 1);
+        commitIntervals.add(interval);
+        intervalList2WriteDiffRequest(commitIntervals, requestB);
+
+        interval = new ObjectInterval(offset, chunkSize, 2, opId);
+        stripeInterval = interval;
+        diffInterval = interval;
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+
+        diffBuffer = diff(dataInH2.createViewBuffer(), dataBuf[0].createViewBuffer(), offset);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(offset, chunkSize));
+
+        // Assert new delta is correct
+        objInf = layout.readObject(fileIdDelta, fi, objNo, offset, chunkSize / 2, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Test committed codes
+        objInf = layout.readObject(fileIdCode, fi, stripeNo, 0, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        assertBufferEquals(codeBuf, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(chunkSize / 2);
+        dataBuf[0].put(dataInH2.createViewBuffer());
+        dataBuf[0].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+
+
+        // Test overwriting the whole chunk and test the code
+        // ********************************************************************
+        ReusableBuffer dataInF3 = SetupUtils.generateData(chunkSize, (byte) 3);
+        objNo = 0;
+        stripeNo = 0;
+        opId = 3;
+        offset = 0;
+        commitIntervals.clear();
+        commitIntervals.add(new ObjectInterval(0, chunkSize / 2, 1, 1));
+        commitIntervals.add(new ObjectInterval(chunkSize / 2, chunkSize, 2, 2));
+        intervalList2WriteDiffRequest(commitIntervals, requestB);
+
+        interval = new ObjectInterval(offset, chunkSize, 3, opId);
+        stripeInterval = interval;
+        diffInterval = interval;
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+
+        diffBuffer = diff(dataInF3.createViewBuffer(), dataBuf[0].createViewBuffer(), offset);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(offset, chunkSize));
+
+        // Assert new delta is correct
+        objInf = layout.readObject(fileIdDelta, fi, objNo, offset, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+
+        // Test committed codes
+        objInf = layout.readObject(fileIdCode, fi, stripeNo, 0, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        assertBufferEquals(codeBuf, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(0);
+        dataBuf[0].put(dataInF3.createViewBuffer());
+        dataBuf[0].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+
+
+
+        // Test overwriting the whole stripe with two separate diffs (should commit)
+        // *************************************************************************
+        ReusableBuffer dataInF4 = SetupUtils.generateData(chunkSize, (byte) 4);
+        objNo = -1;
+        stripeNo = 0;
+        opId = 4;
+        offset = 0;
+        commitIntervals.clear();
+        commitIntervals.add(new ObjectInterval(0, chunkSize, 3, 3));
+        intervalList2WriteDiffRequest(commitIntervals, requestB);
+
+        stripeInterval = new ObjectInterval(offset, 2 * chunkSize, 4, opId);
+        diffInterval = new ObjectInterval(0, chunkSize, 4, opId, offset, 2 * chunkSize);
+        requestB.setObjectNumber(0).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+        diffBuffer = diff(dataInF4.createViewBuffer(), dataBuf[0].createViewBuffer(), 0);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer);
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        diffInterval = new ObjectInterval(chunkSize, 2 * chunkSize, 4, opId, offset, 2 * chunkSize);
+        requestB.setObjectNumber(1).setOpId(opId).setOffset(offset)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+        diffBuffer = diff(dataInF4.createViewBuffer(), dataBuf[1].createViewBuffer(), 0);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer);
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(stripeInterval), fi.getECNextVector().getSlice(offset, 2 * chunkSize));
+
+        // Assert new deltas are correct
+        objInf = layout.readObject(fileIdDelta, fi, 0, offset, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        diffBuffer = diff(dataInF4.createViewBuffer(), dataBuf[0].createViewBuffer(), 0);
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        objInf = layout.readObject(fileIdDelta, fi, 1, offset, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        diffBuffer = diff(dataInF4.createViewBuffer(), dataBuf[1].createViewBuffer(), 0);
+        delta = encode(codec, diffBuffer, 1);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+
+        // Test committed codes
+        objInf = layout.readObject(fileIdCode, fi, stripeNo, 0, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        assertBufferEquals(codeBuf, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(0);
+        dataBuf[0].put(dataInF4.createViewBuffer());
+        dataBuf[0].position(0);
+        dataBuf[1].position(0);
+        dataBuf[1].put(dataInF4.createViewBuffer());
+        dataBuf[1].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+
+
+        // Test overwriting a partial stripe with two separate diffs (should commit)
+        // *************************************************************************
+        ReusableBuffer dataInH5 = SetupUtils.generateData(512, (byte) 5);
+        objNo = -1;
+        stripeNo = 0;
+        opId = 5;
+        offset = -1;
+        commitIntervals.clear();
+        commitIntervals.add(new ObjectInterval(0, 2 * chunkSize, 4, 4));
+        intervalList2WriteDiffRequest(commitIntervals, requestB);
+
+        stripeInterval = new ObjectInterval(512, 1536, 5, opId);
+        diffInterval = new ObjectInterval(512, 1024, 5, opId, 512, 1536);
+        requestB.setObjectNumber(0).setOpId(opId).setOffset(512)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+
+        diffBuffer = diff(dataInH5.createViewBuffer(), dataBuf[0].createViewBuffer(), 512);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        diffInterval = new ObjectInterval(1024, 1536, 5, opId, 512, 1536);
+        requestB.setObjectNumber(1).setOpId(opId).setOffset(0).setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+        diffBuffer = diff(dataInH5.createViewBuffer(), dataBuf[1].createViewBuffer(), 0);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(stripeInterval), fi.getECNextVector().getSlice(512, 1536));
+
+
+        // Assert new deltas are correct
+        objInf = layout.readObject(fileIdDelta, fi, 0, 512, 512, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        diffBuffer = diff(dataInH5.createViewBuffer(), dataBuf[0].createViewBuffer(), 512);
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        objInf = layout.readObject(fileIdDelta, fi, 1, 0, 512, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        diffBuffer = diff(dataInH5.createViewBuffer(), dataBuf[1].createViewBuffer(), 0);
+        delta = encode(codec, diffBuffer, 1);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+
+        // Test committed codes
+        objInf = layout.readObject(fileIdCode, fi, stripeNo, 0, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        assertBufferEquals(codeBuf, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(512);
+        dataBuf[0].put(dataInH5.createViewBuffer());
+        dataBuf[0].position(0);
+        dataBuf[1].position(0);
+        dataBuf[1].put(dataInH5.createViewBuffer());
+        dataBuf[1].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+
+
+
+        // Test overwriting within the first chunk and test the code
+        // ********************************************************************
+        ReusableBuffer dataInQ6 = SetupUtils.generateData(512, (byte) 6);
+        objNo = 0;
+        stripeNo = 0;
+        opId = 6;
+        offset = -1;
+
+        commitIntervals.clear();
+        commitIntervals.add(new ObjectInterval(0, 512, 4, 4));
+        commitIntervals.add(new ObjectInterval(512, 1536, 5, 5));
+        commitIntervals.add(new ObjectInterval(1536, 2048, 4, 4));
+        intervalList2WriteDiffRequest(commitIntervals, requestB);
+
+        interval = new ObjectInterval(256, 768, 6, opId);
+        stripeInterval = interval;
+        diffInterval = interval;
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(256)
+                .setStripeInterval(ProtoInterval.toProto(stripeInterval))
+                .setDiffInterval(ProtoInterval.toProto(diffInterval));
+
+        diffBuffer = diff(dataInQ6.createViewBuffer(), dataBuf[0].createViewBuffer(), 256);
+
+        request = requestB.build();
+        rpcResponse = osdClient.xtreemfs_ec_write_diff(osdUUID.getAddress(), RPCAuthentication.authNone,
+                userCredentials, request, diffBuffer.createViewBuffer());
+        try {
+            response = rpcResponse.get();
+        } finally {
+            rpcResponse.freeBuffers();
+        }
+
+        // Wait until the storage stage completed.
+        Thread.sleep(5 * 1000);
+
+        layout = new HashStorageLayout(osdConfig, new MetadataCache()); // clears cache
+        fi = layout.getFileMetadataNoCaching(sp, fileId);
+        assertEquals(commitIntervals, fi.getECCurVector().serialize());
+        assertEquals(Arrays.asList(interval), fi.getECNextVector().getSlice(256, 768));
+
+        // Assert new delta is correct
+        objInf = layout.readObject(fileIdDelta, fi, 0, 256, 512, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        diffBuffer = diff(dataInQ6.createViewBuffer(), dataBuf[0].createViewBuffer(), 256);
+        delta = encode(codec, diffBuffer, 0);
+        assertBufferEquals(delta, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+
+        // Test committed codes
+        objInf = layout.readObject(fileIdCode, fi, stripeNo, 0, chunkSize, 1);
+        assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
+        assertBufferEquals(codeBuf, objInf.getData());
+        BufferPool.free(objInf.getData());
+
+        // Update Data and Code
+        dataBuf[0].position(256);
+        dataBuf[0].put(dataInQ6.createViewBuffer());
+        dataBuf[0].position(0);
+        codec.encodeParity(dataCode, 0, chunkSize);
+
+    }
+
+    ReusableBuffer encode(ReedSolomon codec, ReusableBuffer diff, int shardOffset) {
+        ReusableBuffer delta = ReusableBuffer.wrap(new byte[diff.capacity()]);
+        codec.encodeDiffParity(diff.getBuffer().slice(), delta.getBuffer().slice(), shardOffset, 0, 0, diff.capacity());
+        delta.position(0);
+        return delta;
+    }
+
+
+
+    ReusableBuffer diff(ReusableBuffer data, ReusableBuffer curData, int offset) {
+        curData.position(offset);
+        data.position(0);
+        ReusableBuffer diff = ReusableBuffer.wrap(new byte[data.capacity()]); // BufferPool.allocate(data.capacity());
+        ECHelper.xor(diff, data, curData);
+        diff.position(0);
+        return diff;
+    }
+
+    
+    void intervalList2WriteDiffRequest(List<Interval> intervals,
+            xtreemfs_ec_write_diffRequest.Builder builder) {
+        builder.clearCommitIntervals();
+        for (Interval interval : intervals) {
+            builder.addCommitIntervals(ProtoInterval.toProto(interval));
+        }
+    }
+
+    void assertVectorsEquals(FileCredentials fileCredentials, List<Interval> curExpected, List<Interval> nextExpected)
+            throws Exception {
 
         String fileId = fileCredentials.getXcap().getFileId();
         HashStorageLayout layout = new HashStorageLayout(osdConfig, new MetadataCache()); // no cache

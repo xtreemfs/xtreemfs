@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
@@ -33,5 +34,32 @@ public class ECHelper {
             }
         }
     };
+
+    public static void xor(byte[] target, byte[] a, byte[] b) {
+        // xor(ReusableBuffer.wrap(target), ReusableBuffer.wrap(a), ReusableBuffer.wrap(b));
+        assert (target.length == a.length);
+        assert (target.length == b.length);
+
+        for (int i = 0; i < target.length; i++) {
+            target[i] = (byte) (a[i] ^ b[i]);
+        }
+    }
+
+    public static void xor(byte[] target, ReusableBuffer a, ReusableBuffer b) {
+        xor(ReusableBuffer.wrap(target), a, b);
+    }
+
+    public static void xor(ReusableBuffer dst, ReusableBuffer src, ReusableBuffer cur) {
+        assert (src.remaining() == dst.remaining());
+        assert (src.remaining() <= cur.remaining());
+
+        while (src.remaining() >= 8) {
+            dst.putLong(src.getLong() ^ cur.getLong());
+        }
+
+        while (src.hasRemaining()) {
+            dst.put((byte) (src.get() ^ cur.get()));
+        }
+    }
 
 }
