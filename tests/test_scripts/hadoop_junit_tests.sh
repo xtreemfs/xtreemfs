@@ -11,9 +11,6 @@ export XTREEMFS_DEFAULT_VOLUME="$(basename $(dirname $(pwd)))"
 
 RESULT=0
 for VERSION in $HADOOP_VERSIONS; do
-
-  cd $TEST_DIR
-
   echo "Running JUnit Tests for Hadoop Adapter and Hadoop $VERSION..."
   mvn --settings $XTREEMFS/contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file $XTREEMFS/contrib/hadoop/pom.xml --define hadoop-common.version=$VERSION test 2>&1 > $TEST_DIR/log/hadoop-$VERSION-junit.log
 
@@ -23,6 +20,6 @@ for VERSION in $HADOOP_VERSIONS; do
     echo "JUnit Tests for Hadoop Adapter and Hadoop $VERSION failed, see $TEST_DIR/log/hadoop-$VERSION-junit.log for details."
     RESULT=1
   fi
-
 done
+
 exit $RESULT

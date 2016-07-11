@@ -86,6 +86,9 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         }
 
         if (useFSFactory) {
+            // Don't use caching, because previous tests leave the file system in a non-standard state
+            // which does not allow reusing it in a new test.
+            conf.setBoolean("fs.xtreemfs.impl.disable.cache", true);
             fs = FileSystem.get(fileSystemPath.toUri(), conf);
         } else {
             fs = new XtreemFSFileSystem();
