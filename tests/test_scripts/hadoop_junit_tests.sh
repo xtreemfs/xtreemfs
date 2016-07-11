@@ -17,7 +17,6 @@ for VERSION in $HADOOP_VERSIONS; do
   echo "Running JUnit Tests for Hadoop Adapter and Hadoop $VERSION..."
   mvn --settings $XTREEMFS/contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file $XTREEMFS/contrib/hadoop/pom.xml --define hadoop-common.version=$VERSION test 2>&1 > $TEST_DIR/log/hadoop-$VERSION-junit.log
 
-  grep "BUILD SUCCESSFUL" $TEST_DIR/log/hadoop-$VERSION-junit.log >/dev/null
   if [ $? -eq 0 ]; then
     echo "JUnit Tests for Hadoop Adapter and Hadoop $VERSION successful."
   else
