@@ -17,4 +17,4 @@ fi
 echo "TEST_DIR: $TEST_DIR"
 
 mvn --settings $XTREEMFS/java/settings.xml --activate-profiles xtreemfs-dev --file $XTREEMFS/java/pom.xml test 2>&1 | tee "${TEST_DIR}/log/junit.log"
-exit $?
+exit ${PIPESTATUS[0]}
