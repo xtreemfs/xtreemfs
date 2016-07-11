@@ -40,7 +40,7 @@ script: |
     true
   else
     make client server hadoop-client -j2
-    ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
+    ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -d 7 -p $TEST_SUITE
   fi
 
 after_failure:
