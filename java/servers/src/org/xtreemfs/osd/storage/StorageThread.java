@@ -105,6 +105,8 @@ public class StorageThread extends Stage {
 
     public static final int            STAGEOP_EC_READ_DATA          = 20;
 
+    public static final int            STAGEOP_EC_READ_PARITY        = 21;
+
     private final MetadataCache        cache;
 
     private final StorageLayout        layout;
@@ -193,6 +195,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_EC_READ_DATA:
                 ecStorage.processReadData(method);
+                break;
+            case STAGEOP_EC_READ_PARITY:
+                ecStorage.processReadParity(method);
                 break;
             }
             

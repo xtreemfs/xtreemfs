@@ -27,6 +27,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECReadParityCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_readRequest;
@@ -79,30 +80,59 @@ public class ECReadOperation extends OSDOperation {
 
         // FIXME (jdillmann): Distinguish data from coding devices by the OSDs relative position.
 
-        master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, rq,
-                new ECReadDataCallback() {
+        int osdNo = sp.getRelativeOSDPosition();
+        if (osdNo >= sp.getWidth()) {
 
-                    @Override
-                    public void ecReadDataComplete(ObjectInformation result, boolean needsReconstruct,
-                            ErrorResponse error) {
-                        if (error != null) {
-                            rq.sendError(error);
-                        } else if (needsReconstruct) {
-                            // FIXME (jdillmann): Trigger reconstruction if not complete.
-                            // FIXME (jdillmann): Add response field = needReconstruction or error message type
-                            BufferPool.free(result.getData());
-                            rq.sendSuccess(buildResponse(false, null), null);
-                        } else {
-                            master.objectSent();
-                            if (result.getData() != null)
-                                master.dataSent(result.getData().capacity());
+            master.getStorageStage().ecReadParity(fileId, sp, objNo, offset, length, intervals, rq,
+                    new ECReadParityCallback() {
 
-                            // FIXME (jdillmann): Could it make sense to set isLastObj?
-                            InternalObjectData intObjData = result.getObjectData(false, offset, length);
-                            rq.sendSuccess(buildResponse(false, intObjData), result.getData());
+                        @Override
+                        public void ecReadParityComplete(ObjectInformation result, boolean needsReconstruct,
+                                ErrorResponse error) {
+                            if (error != null) {
+                                rq.sendError(error);
+                            } else if (needsReconstruct) {
+                                // FIXME (jdillmann): Trigger reconstruction if not complete.
+                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
+                                BufferPool.free(result.getData());
+                                rq.sendSuccess(buildResponse(false, null), null);
+                            } else {
+                                master.objectSent();
+                                if (result.getData() != null)
+                                    master.dataSent(result.getData().capacity());
+
+                                // FIXME (jdillmann): Could it make sense to set isLastObj?
+                                InternalObjectData intObjData = result.getObjectData(false, offset, length);
+                                rq.sendSuccess(buildResponse(false, intObjData), result.getData());
+                            }
                         }
-                    }
-                });
+                    });
+        } else {
+            master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, rq,
+                    new ECReadDataCallback() {
+
+                        @Override
+                        public void ecReadDataComplete(ObjectInformation result, boolean needsReconstruct,
+                                ErrorResponse error) {
+                            if (error != null) {
+                                rq.sendError(error);
+                            } else if (needsReconstruct) {
+                                // FIXME (jdillmann): Trigger reconstruction if not complete.
+                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
+                                BufferPool.free(result.getData());
+                                rq.sendSuccess(buildResponse(false, null), null);
+                            } else {
+                                master.objectSent();
+                                if (result.getData() != null)
+                                    master.dataSent(result.getData().capacity());
+
+                                // FIXME (jdillmann): Could it make sense to set isLastObj?
+                                InternalObjectData intObjData = result.getObjectData(false, offset, length);
+                                rq.sendSuccess(buildResponse(false, intObjData), result.getData());
+                            }
+                        }
+                    });
+        }
     }
 
     public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long objNo, final int offset,

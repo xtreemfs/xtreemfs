@@ -41,24 +41,24 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_readResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
+import com.backblaze.erasure.ReedSolomon;
+
 /**
  * This class will act as a state machine used for reading.
  */
 public class ECReadWorker implements ECWorker<ReadEvent> {
     public static enum ReadEventType {
         // STRIPE_COMPLETE, STRIPE_FAILED,
-        FINISHED, FAILED
+        FINISHED, FAILED, START_RECONSTRUCTION
     }
 
     public final static class ReadEvent {
         final ReadEventType type;
-        final long          stripeNo;
-        final int           osdNo;
+        final StripeState   stripeState;
 
-        public ReadEvent(ReadEventType type, long stripeNo, int osdNo) {
+        public ReadEvent(ReadEventType type, StripeState stripeState) {
             this.type = type;
-            this.stripeNo = stripeNo;
-            this.osdNo = osdNo;
+            this.stripeState = stripeState;
         }
     }
 
@@ -94,6 +94,11 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     final int                               stripeWidth;       // n
     final int                               chunkSize;
     final int                               numStripes;
+
+    final int                               firstObjOffset;
+    final int                               firstObjLength;
+    final int                               lastObjOffset;
+    final int                               lastObjLength;
 
     // State Stuff
     // FIXME (jdillmann): Decide how the worker should be run and if sync is needed
@@ -153,6 +158,23 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         long firstStripeNo = sp.getRow(firstObjNo);
         long lastStripeNo = sp.getRow(lastObjNo);
 
+        int firstObjOffset = ECHelper.safeLongToInt(opStart - sp.getObjectStartOffset(firstObjNo));
+        int firstObjLength = chunkSize - firstObjOffset;
+        int lastObjOffset = 0;
+        int lastObjLength = chunkSize - ECHelper.safeLongToInt(sp.getObjectEndOffset(lastObjNo) - (opEnd - 1));
+        if (firstObjNo == lastObjNo) {
+            lastObjOffset = firstObjOffset;
+            firstObjLength = chunkSize - (chunkSize - firstObjLength) - (chunkSize - lastObjLength);
+            lastObjLength = firstObjLength;
+        }
+
+        this.firstObjOffset = firstObjOffset;
+        this.firstObjLength = firstObjLength;
+        this.lastObjOffset = lastObjOffset;
+        this.lastObjLength = lastObjLength;
+
+
+
         numStripes = ECHelper.safeLongToInt(lastStripeNo - firstStripeNo + 1);
         stripeStates = new StripeState[numStripes];
 
@@ -177,6 +199,9 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             break;
         case FAILED:
             processFailed(event);
+            break;
+        case START_RECONSTRUCTION:
+            processStartReconstruction(event);
             break;
         }
     }
@@ -212,46 +237,46 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             // boolean localIsParity = localOsdNo > dataWidth;
             int numResponses = ECHelper.safeLongToInt(lastObjWithData - firstObjWithData + 1);
 
-            LocalRPCResponseHandler<xtreemfs_ec_readResponse, Long> handler = new LocalRPCResponseHandler<xtreemfs_ec_readResponse, Long>(
-                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_readResponse, Long>() {
+            LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState> handler = new LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState>(
+                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_readResponse, ChunkState>() {
                         @Override
-                        public void responseAvailable(ResponseResult<xtreemfs_ec_readResponse, Long> result,
+                        public void responseAvailable(ResponseResult<xtreemfs_ec_readResponse, ChunkState> result,
                                 int numResponses, int numErrors, int numQuickFail) {
                             handleDataResponse(result, numResponses, numErrors, numQuickFail);
                         }
                     });
 
 
-            StripeState stripeState = new StripeState(stripeInterval);
+            StripeState stripeState = new StripeState(stripeNo, stripeInterval);
             stripeStates[stripeIdx] = stripeState;
 
             for (long objNo = firstObjWithData; objNo <= lastObjWithData; objNo++) {
 
                 // ReusableBuffer reqData = null;
                 // relative offset to the current object
-                int objOffset = 0;
+                int objOffset;
                 // length of the data to read from the current object
                 int objLength;
-
                 if (objNo == firstObjNo) {
-                    objOffset = ECHelper.safeLongToInt(opStart - sp.getObjectStartOffset(firstObjNo));
-                    objLength = chunkSize - objOffset;
+                    objOffset = firstObjOffset;
+                    objLength = firstObjLength;
+                } else if (objNo == lastObjNo) {
+                    objOffset = lastObjOffset;
+                    objLength = lastObjLength;
                 } else {
                     objOffset = 0;
                     objLength = chunkSize;
                 }
 
-                // Don't merge with cases above as firstObjNo and lastObjNo can be the same.
-                if (objNo == lastObjNo) {
-                    objLength = ECHelper.safeLongToInt(opEnd - sp.getObjectStartOffset(lastObjNo) - objOffset);
-                }
-
                 int osdNo = sp.getOSDforObject(objNo);
-                stripeState.responseStates[osdNo] = ResponseState.REQUESTED;
+
+                boolean partial = (objLength < chunkSize);
+                ChunkState chunkState = new ChunkState(osdNo, objNo, stripeNo, partial, ResponseState.REQUESTED);
+                stripeState.chunkStates[osdNo] = chunkState;
 
                 if (osdNo == localOsdNo) {
                     // make local request
-                    handler.addLocal(objNo);
+                    handler.addLocal(chunkState);
                     ECReadOperation readOp = (ECReadOperation) master.getOperation(ECReadOperation.PROC_ID);
                     readOp.startLocalRequest(fileId, sp, objNo, objOffset, objLength, commitIntervalMsgs, handler);
                 } else {
@@ -260,11 +285,11 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
                         RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read(
                                 server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
                                 fileCredentials, fileId, objNo, objOffset, objLength, commitIntervalMsgs);
-                        handler.addRemote(rpcResponse, objNo);
+                        handler.addRemote(rpcResponse, chunkState);
 
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_WARN, this, ex);
-                        failed(stripeNo);
+                        failed(stripeState);
                         return;
                     }
                 }
@@ -278,7 +303,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     }
 
 
-    private void handleDataResponse(ResponseResult<xtreemfs_ec_readResponse, Long> result, int numResponses,
+    private void handleDataResponse(ResponseResult<xtreemfs_ec_readResponse, ChunkState> result, int numResponses,
             int numErrors, int numQuickFail) {
         if (finishedSignaled.get()) {
             BufferPool.free(result.getData());
@@ -286,31 +311,42 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         }
         activeHandlers.incrementAndGet();
 
-        long objNo = result.getMappedObject();
+        ChunkState chunkState = result.getMappedObject();
+
+        long stripeNo = chunkState.stripeNo;
+        StripeState stripeState = getStripeStateForStripe(stripeNo);
 
         boolean objFailed = result.hasFailed();
         boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
 
-        long stripeNo = sp.getRow(objNo);
-        StripeState stripeState = getStripeStateForStripe(stripeNo);
-        Interval stripeInterval = stripeState.interval;
 
-        int osdPos = sp.getOSDforObject(objNo);
-
-
-        if (objFailed || needsReconstruction) {
-            boolean stripeFailed = stripeState.markFailed(osdPos, needsReconstruction);
-            if (stripeFailed) {
-                failed(stripeNo);
+        synchronized (stripeState) {
+            if (stripeState.isInRecovery() && chunkState.partial) {
+                // Ignore
+                Logging.logMessage(Logging.LEVEL_INFO, this,
+                        "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
+                        chunkState.osdNo, chunkState.objNo);
+                BufferPool.free(result.getData());
+                return;
             }
 
-        } else {
-            boolean stripeComplete = stripeState.setResultBuffer(osdPos, result.getData(),
-                    result.getResult().getObjectData());
+            if (objFailed || needsReconstruction) {
+                boolean stripeFailed = stripeState.markFailed(chunkState, needsReconstruction);
+                if (stripeFailed) {
+                    failed(stripeState);
+                } else {
+                    startReconstruction(stripeState);
+                }
 
-            if (stripeComplete) {
-                stripeComplete(stripeNo);
+            } else {
+                boolean stripeComplete = stripeState.dataAvailable(chunkState, result.getData(),
+                        result.getResult().getObjectData());
+
+                if (stripeComplete) {
+                    stripeComplete(stripeState);
+                }
             }
+
         }
 
 
@@ -320,6 +356,8 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             }
         }
     }
+
+
 
     private void waitForActiveHandlers() {
         synchronized (activeHandlers) {
@@ -333,7 +371,126 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         }
     }
 
-    private void stripeComplete(long stripeNo) {
+    private void startReconstruction(StripeState stripeState) {
+        processor.signal(this, new ReadEvent(ReadEventType.START_RECONSTRUCTION, stripeState));
+    }
+
+    private void processStartReconstruction(ReadEvent event) {
+        StripeState stripeState = event.stripeState;
+        synchronized (stripeState) {
+            stripeState.markForRecovery();
+
+
+            long firstObjWithData = sp.getObjectNoForOffset(stripeState.interval.getStart());
+            long stripeNo = sp.getRow(firstObjWithData);
+            long firstStripeObj = stripeNo * dataWidth;
+            int numResponses = parityWidth;
+
+            for (int osdNo = 0; osdNo < dataWidth; osdNo++) {
+                ChunkState chunkState = stripeState.chunkStates[osdNo];
+                if (chunkState.state == ResponseState.SUCCESS && chunkState.partial) {
+                    // Remove partial results from the result
+                    stripeState.numDataAvailable--;
+                    BufferPool.free(chunkState.buffer);
+                }
+                
+                if (chunkState.state == ResponseState.NONE || chunkState.partial) {
+                    numResponses++;
+                }
+            }
+
+            LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState> handler = new LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState>(
+                    numResponses, new LocalRPCResponseListener<xtreemfs_ec_readResponse, ChunkState>() {
+                        @Override
+                        public void responseAvailable(ResponseResult<xtreemfs_ec_readResponse, ChunkState> result,
+                                int numResponses, int numErrors, int numQuickFail) {
+                            handleReconstructionResponse(result, numResponses, numErrors, numQuickFail);
+                        }
+                    });
+
+
+            int objOffset = 0;
+            int objLength = chunkSize;
+
+            for (int osdNo = 0; osdNo < stripeWidth; osdNo++) {
+                // FIXME (jdillmann): Maybe send stripe no
+                long objNo = osdNo < dataWidth ? firstStripeObj + osdNo : firstStripeObj;
+
+                ChunkState chunkState = stripeState.chunkStates[osdNo];
+                if (chunkState == null || chunkState.state == ResponseState.NONE || chunkState.partial) {
+
+                    chunkState = new ChunkState(osdNo, objNo, stripeNo, false, ResponseState.REQ_RECOVERY);
+                    stripeState.chunkStates[osdNo] = chunkState;
+
+                    if (osdNo == localOsdNo) {
+                        // make local request
+                        handler.addLocal(chunkState);
+                        ECReadOperation readOp = (ECReadOperation) master.getOperation(ECReadOperation.PROC_ID);
+                        readOp.startLocalRequest(fileId, sp, objNo, objOffset, objLength, commitIntervalMsgs, handler);
+                    } else {
+                        try {
+                            ServiceUUID server = getRemote(osdNo);
+                            RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read(
+                                    server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                                    fileCredentials, fileId, objNo, objOffset, objLength, commitIntervalMsgs);
+                            handler.addRemote(rpcResponse, chunkState);
+
+                        } catch (IOException ex) {
+                            Logging.logError(Logging.LEVEL_WARN, this, ex);
+
+                            boolean stripeFailed = stripeState.markFailed(chunkState, false);
+                            if (stripeFailed) {
+                                failed(stripeState);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleReconstructionResponse(ResponseResult<xtreemfs_ec_readResponse, ChunkState> result,
+            int numResponses, int numErrors, int numQuickFail) {
+        if (finishedSignaled.get()) {
+            BufferPool.free(result.getData());
+            return;
+        }
+        activeHandlers.incrementAndGet();
+
+        ChunkState chunkState = result.getMappedObject();
+
+        long stripeNo = chunkState.stripeNo;
+        StripeState stripeState = getStripeStateForStripe(stripeNo);
+
+        boolean objFailed = result.hasFailed();
+        boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
+
+
+        if (objFailed || needsReconstruction) {
+            boolean stripeFailed = stripeState.markFailed(chunkState, needsReconstruction);
+            if (stripeFailed) {
+                failed(stripeState);
+            }
+        } else {
+            boolean stripeComplete = stripeState.dataAvailable(chunkState, result.getData(),
+                    result.getResult().getObjectData());
+
+            if (stripeComplete) {
+                stripeComplete(stripeState);
+            }
+        }
+
+
+        if (activeHandlers.decrementAndGet() == 0) {
+            synchronized (activeHandlers) {
+                activeHandlers.notifyAll();
+            }
+        }
+    }
+
+
+    private void stripeComplete(StripeState stripeState) {
         // processor.signal(this, new ReadEvent(ReadEventType.STRIPE_COMPLETE, stripeNo, osdPos));
 
         int curStripesComplete = numStripesComplete.incrementAndGet();
@@ -345,34 +502,90 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     private void finished() {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
-            processor.signal(this, new ReadEvent(ReadEventType.FINISHED, 0, 0));
+            processor.signal(this, new ReadEvent(ReadEventType.FINISHED, null));
         }
     }
 
     private void processFinished(ReadEvent event) {
         waitForActiveHandlers();
 
-        finished = true;
-        
-        
+        // absolute start and end to the whole file range
+        long opStart = reqInterval.getOpStart();
+        long opEnd = reqInterval.getOpEnd();
+
+        long firstObjNo = sp.getObjectNoForOffset(opStart);
+        long lastObjNo = sp.getObjectNoForOffset(opEnd - 1); // interval.end is exclusive
+
         data.position(0);
         for (StripeState stripeState : stripeStates) {
             // Reconstruct if necessary
-            if (stripeState.chunksAvailable.get() < stripeState.chunksRequired) {
-                // FIXME (jdillmann): do
+            if (stripeState.isInRecovery()) {
+                ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
+                boolean[] present = new boolean[stripeWidth];
+                byte[][] shards = new byte[stripeWidth][chunkSize];
+                for (int i = 0; i < stripeWidth; i++) {
+                    ChunkState chunkState = stripeState.chunkStates[i];
+                    if (chunkState != null && chunkState.state == ResponseState.SUCCESS) {
+                        present[i] = true;
+                        ReusableBuffer viewBuf = chunkState.buffer.createViewBuffer();
+                        viewBuf.get(shards[i]);
+                        BufferPool.free(viewBuf);
+                    } else {
+                        present[i] = false;
+                    }
+                }
+
+                // FIXME (jdillmann): optimize / use buffer
+                codec.decodeMissing(shards, present, 0, chunkSize);
+                for (int i = 0; i < dataWidth; i++) {
+                    ChunkState chunkState = stripeState.chunkStates[i];
+                    if (chunkState != null && chunkState.state == ResponseState.FAILED
+                            || chunkState.state == ResponseState.NEEDS_RECONSTRUCTION) {
+                        ReusableBuffer recoveredBuf = ReusableBuffer.wrap(shards[i]);
+                        chunkState.state = ResponseState.RECONSTRUCTED;
+                        chunkState.buffer = recoveredBuf;
+                    }
+                }
             }
 
-            for (int osdNo = stripeState.firstOSDWithData; osdNo <= stripeState.lastOSDWithData; osdNo++) {
-                ResponseState responseState = stripeState.responseStates[osdNo];
-                assert (responseState == ResponseState.SUCCESS || responseState == ResponseState.FAILED);
+            long firstObjWithData = sp.getObjectNoForOffset(stripeState.interval.getStart());
 
-                ObjectData objData = stripeState.responses[osdNo];
-                ReusableBuffer buf = stripeState.buffers[osdNo];
+            for (int osdNo = stripeState.firstOSDWithData; osdNo <= stripeState.lastOSDWithData; osdNo++) {
+                ChunkState chunkState = stripeState.chunkStates[osdNo];
+                assert (chunkState.state == ResponseState.SUCCESS || chunkState.state == ResponseState.RECONSTRUCTED);
+
+                long objNo = firstObjWithData + osdNo;
+
+                ObjectData objData = chunkState.objData;
+                ReusableBuffer buf = chunkState.buffer;
 
                 // Copy the buffer to the result
                 if (buf != null) {
+                    // relative offset to the current object
+                    int objOffset;
+                    // length of the data to read from the current object
+                    int objLength;
+                    if (objNo == firstObjNo) {
+                        objOffset = firstObjOffset;
+                        objLength = firstObjLength;
+                    } else if (objNo == lastObjNo) {
+                        objOffset = lastObjOffset;
+                        objLength = lastObjLength;
+                    } else {
+                        objOffset = 0;
+                        objLength = chunkSize;
+                    }
+
+                    // TODO (jdillmann): viewBuf not necessarily needed.
+                    ReusableBuffer viewBuf = buf.createViewBuffer();
+                    if (buf.capacity() > objLength) { // remaining
+                        viewBuf.range(objOffset, objLength);
+                    }
+
                     // TODO: This is probably very slow
                     data.put(buf);
+
+                    BufferPool.free(viewBuf);
                 }
 
                 if (objData != null) {
@@ -385,8 +598,10 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             }
 
             // Clear response buffers
-            for (ReusableBuffer buf : stripeState.buffers) {
-                BufferPool.free(buf);
+            for (ChunkState chunkState : stripeState.chunkStates) {
+                if (chunkState != null) {
+                    BufferPool.free(chunkState.buffer);
+                }
             }
         }
 
@@ -395,6 +610,8 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         // TODO (jdillmann): Padding responses at the end could be merged and reflected int the objInfo
         data.position(0);
         result = new ObjectInformation(ObjectStatus.EXISTS, data, chunkSize);
+
+        finished = true;
     }
 
     private void timeout() {
@@ -402,14 +619,14 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         if (finishedSignaled.compareAndSet(false, true)) {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "Request failed due to a timeout.");
-            processor.signal(this, new ReadEvent(ReadEventType.FAILED, 0, 0));
+            processor.signal(this, new ReadEvent(ReadEventType.FAILED, null));
         }
     }
 
-    private void failed(long stripeNo) {
+    private void failed(StripeState stripeState) {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
-            processor.signal(this, new ReadEvent(ReadEventType.FAILED, stripeNo, 0));
+            processor.signal(this, new ReadEvent(ReadEventType.FAILED, stripeState));
         }
     }
 
@@ -426,25 +643,24 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
         BufferPool.free(data);
         for (StripeState stripeState : stripeStates) {
-
-            if (stripeState != null) {
-                // Clear response buffers
-                for (ReusableBuffer buf : stripeState.buffers) {
-                    BufferPool.free(buf);
+            // Clear response buffers
+            for (ChunkState chunkState : stripeState.chunkStates) {
+                if (chunkState != null) {
+                    BufferPool.free(chunkState.buffer);
                 }
             }
         }
 
-        finished = true;
-        failed = true;
-        
-        if (error == null) {
-            StripeState errorStripeState = getStripeStateForStripe(event.stripeNo);
+        if (error == null && event.stripeState != null) {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    String.format("Request failed. Could not read from stripe %d ([%d:%d]).", event.stripeNo,
-                            errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
+                    String.format("Request failed. Could not read from stripe %d ([%d:%d]).",
+                            event.stripeState.stripeNo,
+                            event.stripeState.interval.getStart(),
+                            event.stripeState.interval.getEnd()));
         }
 
+        finished = true;
+        failed = true;
     }
 
     ServiceUUID getRemote(int osdNo) {
@@ -505,97 +721,153 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     }
 
     enum ResponseState {
-        NONE, REQUESTED,
+        NONE, REQUESTED, REQ_RECOVERY,
         FAILED, NEEDS_RECONSTRUCTION,
         SUCCESS, RECONSTRUCTED;
     }
 
+    final private static class ChunkState {
+        final int      osdNo;
+        final long     objNo;
+        final long     stripeNo;
+        boolean        partial;
+        ResponseState  state;
+        ReusableBuffer buffer;
+        ObjectData     objData;
+
+        public ChunkState(int osdNo, long objNo, long stripeNo, boolean partial, ResponseState state) {
+            this.osdNo = osdNo;
+            this.objNo = objNo;
+            this.stripeNo = stripeNo;
+            this.partial = partial;
+        }
+    }
+
     private class StripeState {
-        final Interval         interval;
-        final ResponseState[]  responseStates;
-        final ReusableBuffer[] buffers;
-        final ObjectData[]     responses;
-        final int              firstOSDWithData;
-        final int              lastOSDWithData;
-        final AtomicInteger    acks;
-        final AtomicInteger    nacks;
-        final AtomicInteger    chunksAvailable;
-        final int              chunksRequired;
-        final AtomicBoolean    finished;
+        final long         stripeNo;
+        final Interval     interval;
+        final ChunkState[] chunkStates;
 
-        public StripeState(Interval interval) {
+        final int          firstOSDWithData;
+        final int          lastOSDWithData;
+
+        int                numFailures          = 0;
+
+        final int          numCompleteRequired;
+        int                numCompleteAvailable = 0;
+
+        final int          numDataRequired;
+        int                numDataAvailable     = 0;
+
+        boolean            finished             = false;
+        boolean            recovery             = false;
+
+        public StripeState(long stripeNo, Interval interval) {
+            this.stripeNo = stripeNo;
             this.interval = interval;
-
-            responseStates = new ResponseState[stripeWidth];
-            for (int i = 0; i < stripeWidth; i++) {
-                responseStates[i] = ResponseState.NONE;
-            }
-
-            buffers = new ReusableBuffer[stripeWidth];
-            responses = new ObjectData[stripeWidth];
-
-            acks = new AtomicInteger(0);
-            nacks = new AtomicInteger(0);
-            chunksAvailable = new AtomicInteger(0);
-            finished = new AtomicBoolean(false);
+            chunkStates = new ChunkState[stripeWidth];
 
             firstOSDWithData = sp.getOSDforOffset(interval.getStart());
             lastOSDWithData = sp.getOSDforOffset(interval.getEnd() - 1);
-            chunksRequired = lastOSDWithData - firstOSDWithData + 1;
+            numDataRequired = lastOSDWithData - firstOSDWithData + 1;
 
+            numCompleteRequired = dataWidth;
         }
 
+        synchronized void markForRecovery() {
+            recovery = true;
+        }
+
+        synchronized boolean isInRecovery() {
+            return recovery;
+        }
+
+        synchronized boolean hasFinished() {
+            return finished;
+        }
+
+
         /**
-         * Sets the OSDs response to failed and returns true if the request can no longer be fullfilled
+         * Sets the OSDs response to failed and returns true if the request can no longer be fullfilled <br>
+         * Note: Needs monitor on chunkState
          * 
          * @param osdNum
          * @return
          */
-        boolean markFailed(int osdPos, boolean needsReconstruction) {
-            int curNacks = nacks.incrementAndGet();
-
-            if (!finished.get()) {
-                responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
-                        : ResponseState.FAILED;
+        synchronized boolean markFailed(ChunkState chunkState, boolean needsReconstruction) {
+            if (finished) {
+                return false;
             }
 
-            if (stripeWidth - curNacks < dataWidth) {
+            numFailures++;
+            chunkState.state = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION : ResponseState.FAILED;
+
+            if (stripeWidth - numFailures < dataWidth) {
                 // we can't fullfill the write quorum anymore
-                finished.set(true);
+                finished = true;
                 return true;
             }
 
             return false;
         }
 
+
         /**
-         * Sets the OSDs result to success and returns true if all chunks are available.
+         * Sets the OSDs result to success and returns true if all chunks are available. <br>
+         * Note: Needs monitor on chunkState
          * 
          * @param osdPos
          * @param buf
          * @return
          */
-        boolean setResultBuffer(int osdPos, ReusableBuffer buf, ObjectData response) {
-            int curAcks = acks.incrementAndGet();
-            int curComplete = chunksAvailable.incrementAndGet();
-
-            if (!finished.get()) {
-                responseStates[osdPos] = ResponseState.SUCCESS;
-                buffers[osdPos] = buf;
-                responses[osdPos] = response;
-
-                if (curComplete == chunksRequired) {
-                    finished.set(true);
-                }
-
-                return true;
-            } else {
+        synchronized boolean dataAvailable(ChunkState chunkState, ReusableBuffer buf, ObjectData response) {
+            if (finished) {
                 BufferPool.free(buf);
+                return false;
+            }
+
+            int responseSize = 0;
+            if (buf != null) {
+                responseSize += buf.capacity();
+            }
+            if (response != null) {
+                responseSize += response.getZeroPadding();
+            }
+            
+                        
+            boolean complete = !chunkState.partial && (responseSize == chunkSize);
+            if (recovery && !complete) {
+                // ignore partial results, if a recovery is requested
+                BufferPool.free(buf);
+                return false;
+            }
+
+
+            if (chunkState.osdNo >= firstOSDWithData && chunkState.osdNo <= lastOSDWithData) {
+                numDataAvailable++;
+            }
+
+            if (complete) {
+                numCompleteAvailable++;
+            }
+
+
+            chunkState.state = ResponseState.SUCCESS;
+            chunkState.buffer = buf;
+            chunkState.objData = response;
+
+
+            if (recovery && numCompleteAvailable == numCompleteRequired) {
+                finished = true;
+                return true;
+
+            } else if (numDataAvailable == numDataRequired) {
+                finished = true;
+                return true;
             }
 
             return false;
         }
     }
-
 
 }

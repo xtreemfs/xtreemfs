@@ -615,4 +615,109 @@ public class ECMasterStageTest extends ECTestCommon {
 
 
     }
+    @Test
+    public void testWriteReadParity() throws Exception {
+        List<String> osdUUIDs = Arrays.asList(testEnv.getOSDUUIDs()).subList(0, 3);
+        StripingPolicy sp = ECOperationsTest.getECStripingPolicy(2, 1, 1);
+        Replica r = Replica.newBuilder().setStripingPolicy(sp).setReplicationFlags(0).addAllOsdUuids(osdUUIDs).build();
+        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0).setVersion(1).addReplicas(r)
+                .setReplicaUpdatePolicy("ec").build();
+
+        Capability cap = getCap(fileId);
+        FileCredentials fc = FileCredentials.newBuilder().setXcap(cap.getXCap()).setXlocs(xloc).build();
+        StripingPolicyImpl spi = ECOperationsTest.getStripingPolicyImplementation(fc);
+
+        HashStorageLayout layout;
+        FileMetadata fi;
+        ObjectInformation objInfo;
+        String fileIdNext = fileId + ECStorage.FILEID_NEXT_SUFFIX;
+        String fileIdDelta = fileId + ECStorage.FILEID_DELTA_SUFFIX;
+
+        InetSocketAddress masterAddress = null;
+
+        long objNumber = 0;
+        long objVersion = -1;
+        int offset = 0;
+        int length = 1;
+        long lease_timeout = 0;
+
+        RPCResponse<ObjectData> RPCReadResponse = null;
+        ObjectData readResponse;
+
+        // Find (and elect) the master
+        for (int i = 0; i < configs.length; i++) {
+            try {
+                InetSocketAddress address = configs[i].getUUID().getAddress();
+                RPCReadResponse = osdClient.read(address, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                        fileId, objNumber, objVersion, offset, length);
+                readResponse = RPCReadResponse.get();
+                masterAddress = address;
+                RPCReadResponse.freeBuffers();
+                BufferPool.free(RPCReadResponse.getData());
+                RPCReadResponse = null;
+                break;
+
+            } catch (PBRPCException ex) {
+                if (RPCReadResponse != null) {
+                    RPCReadResponse.freeBuffers();
+                    BufferPool.free(RPCReadResponse.getData());
+                }
+                if (ex.getErrorType() != ErrorType.REDIRECT) {
+                    throw ex;
+                }
+            }
+        }
+
+        RPCResponse<OSDWriteResponse> RPCWriteResponse;
+        OSDWriteResponse writeResponse;
+        ObjectData objData = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        ReusableBuffer data, expected;
+
+
+        // Write the first object on both data OSDs
+        // *********************************************************************
+
+        length = 2 * 1024;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data.createViewBuffer());
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+
+        layout = new HashStorageLayout(configs[0], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 0, 0, 1024, 1);
+        expected = data.createViewBuffer();
+        expected.range(0, 1024);
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(objInfo.getData());
+
+        layout = new HashStorageLayout(configs[1], new MetadataCache());
+        fi = layout.getFileMetadata(spi, fileId);
+        objInfo = layout.readObject(fileIdNext, fi, 1, 0, 1024, 1);
+        expected = data.createViewBuffer();
+        expected.range(1024, 1024);
+        assertBufferEquals(expected, objInfo.getData());
+        BufferPool.free(objInfo.getData());
+
+        // Wait for the parity device to finish
+        Thread.sleep(2 * 1000);
+
+
+        // Stop the second data device and try to decode on the fly
+        testEnv.stopOSD(configs[1].getUUID().toString());
+
+
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, 0, objVersion, offset, 2048);
+        readResponse = RPCReadResponse.get();
+
+        expected = data.createViewBuffer();
+        assertBufferEquals(expected, RPCReadResponse.getData());
+        RPCReadResponse.freeBuffers();
+        BufferPool.free(RPCReadResponse.getData());
+        RPCReadResponse = null;
+
+    }
 }

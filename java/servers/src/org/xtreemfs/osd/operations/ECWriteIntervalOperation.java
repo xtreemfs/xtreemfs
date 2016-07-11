@@ -103,8 +103,10 @@ public class ECWriteIntervalOperation extends OSDOperation {
                             rq.sendSuccess(buildResponse(false), null);
                             BufferPool.free(diff);
                         } else {
-                            sendDiff(fileId, args.getFileCredentials(), rq.getLocationList(), sp, opId, objNo, offset,
-                                    diff, stripeInterval, args.getCommitIntervalsList());
+                            if (diff != null) {
+                                sendDiff(fileId, args.getFileCredentials(), rq.getLocationList(), sp, opId, objNo,
+                                        offset, diff, stripeInterval, args.getCommitIntervalsList());
+                            }
                             rq.sendSuccess(buildResponse(false), null);
                         }
                     }
@@ -149,8 +151,10 @@ public class ECWriteIntervalOperation extends OSDOperation {
                             callback.localResultAvailable(buildResponse(true), null);
                             BufferPool.free(diff);
                         } else {
-                            sendDiff(fileId, fileCredentials, xloc, sp, opId, objNo, offset, diff, stripeInterval,
-                                    commitIntervalMsgs);
+                            if (diff != null) {
+                                sendDiff(fileId, fileCredentials, xloc, sp, opId, objNo, offset, diff, stripeInterval,
+                                        commitIntervalMsgs);
+                            }
                             callback.localResultAvailable(buildResponse(false), null);
                         }
                     }
