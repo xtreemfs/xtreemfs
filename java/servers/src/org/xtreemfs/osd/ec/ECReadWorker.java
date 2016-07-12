@@ -7,6 +7,7 @@
 package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -321,7 +322,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
 
 
         synchronized (stripeState) {
-            if (stripeState.isInRecovery() && chunkState.partial) {
+            if (stripeState.isInReconstruction() && chunkState.partial) {
                 // Ignore
                 Logging.logMessage(Logging.LEVEL_INFO, this,
                         "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
@@ -378,11 +379,15 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
     private void processStartReconstruction(ReadEvent event) {
         StripeState stripeState = event.stripeState;
         synchronized (stripeState) {
-            stripeState.markForRecovery();
+            stripeState.markForReconstruction();
 
+            // FIXME (jdillmann): Only k chunks have to be fetched.
+            // If we would have a better (non timeout) error detector we could just read one full chunk from a partial
+            // data device, or a data or coding device not read yet. But since we have to wait for timeouts, the serial
+            // execution could possibly take very long. Thus we immediately fetch the whole stripe, which results is
+            // higher (maybe unnecessary) network bandwidth.
 
-            long firstObjWithData = sp.getObjectNoForOffset(stripeState.interval.getStart());
-            long stripeNo = sp.getRow(firstObjWithData);
+            long stripeNo = stripeState.stripeNo;
             long firstStripeObj = stripeNo * dataWidth;
             int numResponses = parityWidth;
 
@@ -519,33 +524,54 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         data.position(0);
         for (StripeState stripeState : stripeStates) {
             // Reconstruct if necessary
-            if (stripeState.isInRecovery()) {
+            if (stripeState.isInReconstruction()) {
                 ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
                 boolean[] present = new boolean[stripeWidth];
-                byte[][] shards = new byte[stripeWidth][chunkSize];
+                ByteBuffer[] shards = new ByteBuffer[stripeWidth];
+                                
                 for (int i = 0; i < stripeWidth; i++) {
                     ChunkState chunkState = stripeState.chunkStates[i];
-                    if (chunkState != null && chunkState.state == ResponseState.SUCCESS) {
+                    
+                    if (chunkState.state == ResponseState.SUCCESS) {
                         present[i] = true;
-                        ReusableBuffer viewBuf = chunkState.buffer.createViewBuffer();
-                        viewBuf.get(shards[i]);
-                        BufferPool.free(viewBuf);
+                        shards[i] = chunkState.buffer.getBuffer().slice();
                     } else {
                         present[i] = false;
+                        chunkState.buffer = BufferPool.allocate(chunkSize);
+                        chunkState.state = ResponseState.RECONSTRUCTED;
+                        shards[i] = chunkState.buffer.getBuffer().slice();
                     }
                 }
 
                 // FIXME (jdillmann): optimize / use buffer
-                codec.decodeMissing(shards, present, 0, chunkSize);
-                for (int i = 0; i < dataWidth; i++) {
-                    ChunkState chunkState = stripeState.chunkStates[i];
-                    if (chunkState != null && chunkState.state == ResponseState.FAILED
-                            || chunkState.state == ResponseState.NEEDS_RECONSTRUCTION) {
-                        ReusableBuffer recoveredBuf = ReusableBuffer.wrap(shards[i]);
-                        chunkState.state = ResponseState.RECONSTRUCTED;
-                        chunkState.buffer = recoveredBuf;
-                    }
-                }
+                codec.decodeMissing(shards, present, 0, chunkSize, false);
+
+
+                // boolean[] present = new boolean[stripeWidth];
+                // byte[][] shards = new byte[stripeWidth][chunkSize];
+                // for (int i = 0; i < stripeWidth; i++) {
+                // ChunkState chunkState = stripeState.chunkStates[i];
+                // if (chunkState != null && chunkState.state == ResponseState.SUCCESS) {
+                // present[i] = true;
+                // ReusableBuffer viewBuf = chunkState.buffer.createViewBuffer();
+                // viewBuf.get(shards[i]);
+                // BufferPool.free(viewBuf);
+                // } else {
+                // present[i] = false;
+                // }
+                // }
+                //
+                // // FIXME (jdillmann): optimize / use buffer
+                // codec.decodeMissing(shards, present, 0, chunkSize);
+                // for (int i = 0; i < dataWidth; i++) {
+                // ChunkState chunkState = stripeState.chunkStates[i];
+                // if (chunkState != null && chunkState.state == ResponseState.FAILED
+                // || chunkState.state == ResponseState.NEEDS_RECONSTRUCTION) {
+                // ReusableBuffer recoveredBuf = ReusableBuffer.wrap(shards[i]);
+                // chunkState.state = ResponseState.RECONSTRUCTED;
+                // chunkState.buffer = recoveredBuf;
+                // }
+                // }
             }
 
             long firstObjWithData = sp.getObjectNoForOffset(stripeState.interval.getStart());
@@ -760,7 +786,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
         int                numDataAvailable     = 0;
 
         boolean            finished             = false;
-        boolean            recovery             = false;
+        boolean            reconstruction       = false;
 
         public StripeState(long stripeNo, Interval interval) {
             this.stripeNo = stripeNo;
@@ -774,12 +800,12 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             numCompleteRequired = dataWidth;
         }
 
-        synchronized void markForRecovery() {
-            recovery = true;
+        synchronized void markForReconstruction() {
+            reconstruction = true;
         }
 
-        synchronized boolean isInRecovery() {
-            return recovery;
+        synchronized boolean isInReconstruction() {
+            return reconstruction;
         }
 
         synchronized boolean hasFinished() {
@@ -836,7 +862,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             
                         
             boolean complete = !chunkState.partial && (responseSize == chunkSize);
-            if (recovery && !complete) {
+            if (reconstruction && !complete) {
                 // ignore partial results, if a recovery is requested
                 BufferPool.free(buf);
                 return false;
@@ -857,7 +883,7 @@ public class ECReadWorker implements ECWorker<ReadEvent> {
             chunkState.objData = response;
 
 
-            if (recovery && numCompleteAvailable == numCompleteRequired) {
+            if (reconstruction && numCompleteAvailable == numCompleteRequired) {
                 finished = true;
                 return true;
 
