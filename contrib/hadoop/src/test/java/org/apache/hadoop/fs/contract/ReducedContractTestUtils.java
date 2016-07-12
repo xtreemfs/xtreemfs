@@ -46,7 +46,7 @@ public class ReducedContractTestUtils extends Assert {
      */
     private static void rejectRootOperation(Path path,
             boolean allowRootOperation) throws IOException {
-        if (path.isRoot() && !allowRootOperation) {
+        if (path.getParent() == null && !allowRootOperation) {
             throw new IOException("Root directory operation rejected: " + path);
         }
     }

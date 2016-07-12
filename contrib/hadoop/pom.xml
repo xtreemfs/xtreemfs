@@ -56,6 +56,14 @@
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
       <version>${hadoop-common.version}</version>
+      <!-- Depends on protobuf-java:2.4.0a which is not compatible -->
+      <!-- with what xtreemfs-* depends on (2.5.0), so exclude it. -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -64,6 +72,14 @@
       <version>${hadoop-common.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
+      <!-- Depends on protobuf-java:2.4.0a which is not compatible -->
+      <!-- with what xtreemfs-* depends on (2.5.0), so exclude it. -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
