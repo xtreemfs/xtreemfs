@@ -1124,6 +1124,7 @@ public class QuotaTest {
             }
         } finally {
             assertTrue(error);
+            fileHandle.close();
         }
 
         client.deleteVolume(mrcAddress, auth, userCredentials, VOLUME_NAME);
