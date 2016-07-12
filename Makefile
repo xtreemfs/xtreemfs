@@ -289,7 +289,7 @@ client_thirdparty_distclean:
 client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
-client: check_client client_thirdparty
+client: check_client client_thirdparty interfaces
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_SKIP_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
@@ -373,7 +373,11 @@ test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
 
 interfaces: pbrpcgen client_thirdparty
-	$(MAKE) -C interface
+	$(MVN_BIN) --file interface/pom.xml generate-sources
+interfaces_clean:
+	$(MVN_BIN) --file interface/pom.xml clean || exit 1
+interfaces_distclean:
+	$(MVN_BIN) --file interface/pom.xml clean || exit 1
 
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
