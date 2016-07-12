@@ -228,6 +228,9 @@
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <argLine>-Djava.library.path=${libjni.directory}</argLine>
+          <!-- FIXME: Too many open file handles/sockets eventually cause shutdown of the VM.   -->
+          <!-- So run each test in its own VM such that during shutdown all handles are closed. -->
+          <reuseForks>false</reuseForks>
         </configuration>
       </plugin>
     </plugins>
