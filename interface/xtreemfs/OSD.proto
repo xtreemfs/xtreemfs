@@ -475,14 +475,13 @@ message xtreemfs_ec_write_intervalResponse {
   required bool needs_reconstruction = 1;
 }
 
-
+// Request to store a diff at a parity device.
+// As soon as every diff of the diff interval is stored, the master is informed
+// asynchronous by the parity device.
 message xtreemfs_ec_write_diffRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
   required uint64 op_id = 3;
-
-  // can be derived from objNo
-  // required uint64 stripe_number = ;
 
   required uint64 object_number = 4;
   required uint32 offset = 5;
@@ -501,6 +500,7 @@ message xtreemfs_ec_write_diffRequest {
   repeated IntervalMsg commit_intervals = 8;
 }
 
+// Asynchronous response to writeDiff requests.
 message xtreemfs_ec_write_diffResponse {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
@@ -513,16 +513,24 @@ message xtreemfs_ec_write_diffResponse {
 }
 
 
-// Request to read an object from a data device.
+// Request to read an object from a data or parity device.
 message xtreemfs_ec_readRequest {
   required FileCredentials file_credentials = 1;
   required string file_id = 2;
 
+  // If a parity device is read, the object number is the stripe number.
   required uint64 object_number = 3;
+
   required uint32 offset = 4;
   required uint32 length = 5;
 
+  // Intervals this operation is based on.
+  // Have to be committed to execute the operation.
   repeated IntervalMsg intervals = 6;
+
+  // If this flag is set, no data in the next or delta buffer is aborted.
+  // This is required for reading chunks during degraded writes.
+  required bool ignore_abort = 7;
 }
 
 // Response to a read request on a data device.
@@ -779,7 +787,7 @@ service OSDService {
     option(data_in)=true;
   };
 
-  // Read an object from a data device.
+  // Read an object from a data or parity device.
   // Returns if the device needs reconstruction or the requested object.
   rpc xtreemfs_ec_read(xtreemfs_ec_readRequest)
       returns (xtreemfs_ec_readResponse) {
@@ -787,12 +795,14 @@ service OSDService {
     option(data_out)=true;
   }
 
+  // Request to store a diff at a parity device.
   rpc xtreemfs_ec_write_diff(xtreemfs_ec_write_diffRequest)
       returns (emptyResponse) {
     option(proc_id)=88;
     option(data_in)=true;
   }
 
+  // Asynchronous response to writeDiff requests.
   rpc xtreemfs_ec_write_diff_response(xtreemfs_ec_write_diffResponse)
       returns (emptyResponse) {
     option(proc_id)=89;

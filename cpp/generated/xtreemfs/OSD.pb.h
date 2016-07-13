@@ -6051,6 +6051,13 @@ class xtreemfs_ec_readRequest : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
       mutable_intervals();
 
+  // required bool ignore_abort = 7;
+  inline bool has_ignore_abort() const;
+  inline void clear_ignore_abort();
+  static const int kIgnoreAbortFieldNumber = 7;
+  inline bool ignore_abort() const;
+  inline void set_ignore_abort(bool value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_readRequest)
  private:
   inline void set_has_file_credentials();
@@ -6063,6 +6070,8 @@ class xtreemfs_ec_readRequest : public ::google::protobuf::Message {
   inline void clear_has_offset();
   inline void set_has_length();
   inline void clear_has_length();
+  inline void set_has_ignore_abort();
+  inline void clear_has_ignore_abort();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -6072,9 +6081,10 @@ class xtreemfs_ec_readRequest : public ::google::protobuf::Message {
   ::google::protobuf::uint32 offset_;
   ::google::protobuf::uint32 length_;
   ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg > intervals_;
+  bool ignore_abort_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(6 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
@@ -12531,6 +12541,28 @@ xtreemfs_ec_readRequest::intervals() const {
 inline ::google::protobuf::RepeatedPtrField< ::xtreemfs::pbrpc::IntervalMsg >*
 xtreemfs_ec_readRequest::mutable_intervals() {
   return &intervals_;
+}
+
+// required bool ignore_abort = 7;
+inline bool xtreemfs_ec_readRequest::has_ignore_abort() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
+}
+inline void xtreemfs_ec_readRequest::set_has_ignore_abort() {
+  _has_bits_[0] |= 0x00000040u;
+}
+inline void xtreemfs_ec_readRequest::clear_has_ignore_abort() {
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline void xtreemfs_ec_readRequest::clear_ignore_abort() {
+  ignore_abort_ = false;
+  clear_has_ignore_abort();
+}
+inline bool xtreemfs_ec_readRequest::ignore_abort() const {
+  return ignore_abort_;
+}
+inline void xtreemfs_ec_readRequest::set_ignore_abort(bool value) {
+  set_has_ignore_abort();
+  ignore_abort_ = value;
 }
 
 // -------------------------------------------------------------------
