@@ -48,6 +48,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.xtreemfs.opendmk</groupId>
+      <artifactId>jdmktk</artifactId>
+      <version>1.0-b02-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-flease</artifactId>
       <version>${project.version}</version>
@@ -83,10 +89,46 @@
         <configuration>
           <filesets>
             <fileset>
+              <directory>src/main/java/org/xtreemfs/common/monitoring/generatedcode</directory>
+            </fileset>
+            <fileset>
               <directory>src/main/java/org/xtreemfs/pbrpc/generatedinterfaces</directory>
             </fileset>
           </filesets>
         </configuration>
+      </plugin>
+
+      <!-- Generate MIB code. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>generate-mib</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
+                <java classname="com.sun.jdmk.tools.MibGen" fork="true">
+                  <classpath>
+                    <pathelement location="${maven.dependency.org.xtreemfs.opendmk.toolkit.jar.path}" />
+                  </classpath>
+                  <arg value="-mc" />
+                  <arg value="-d" />
+                  <arg value="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
+                  <arg value="-tp" />
+                  <arg value="org.xtreemfs.common.monitoring.generatedcode" />
+                  <arg value="${project.basedir}/src/main/resources/xtreemfs-mib.txt" />
+                  <arg value="${project.basedir}/src/main/resources/mib_core.txt" />
+                </java>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Create plugin for protoc. -->
@@ -96,6 +138,7 @@
         <version>${maven-antrun-plugin.version}</version>
         <executions>
           <execution>
+            <id>generate-protoc-plugin</id>
             <phase>generate-sources</phase>
             <goals>
               <goal>run</goal>
@@ -212,6 +255,8 @@
                 <filter>
                   <artifact>org.xtreemfs.xtreemfs:xtreemfs-servers</artifact>
                   <excludes>
+                    <exclude>xtreemfs-mib.txt</exclude>
+                    <exclude>mib_core.txt</exclude>
                     <exclude>org/xtreemfs/sandbox/compile-DirectIOReader.txt</exclude>
                     <exclude>org/xtreemfs/sandbox/ThroughputTest.properties</exclude>
                   </excludes>
