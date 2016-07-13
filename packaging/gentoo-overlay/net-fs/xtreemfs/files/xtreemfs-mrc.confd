@@ -1,7 +1,0 @@
-XTREEMFS_MRC_LIB="/usr/share/xtreemfs/java"
-XTREEMFS_MRC_CLASS="-classpath ${XTREEMFS_MRC_LIB}/servers/dist/XtreemFS.jar:${XTREEMFS_MRC_LIB}/lib/BabuDB.jar:${XTREEMFS_MRC_LIB}/flease/dist/Flease.jar:${XTREEMFS_MRC_LIB}/lib/protobuf-java-2.5.0.jar:${XTREEMFS_MRC_LIB}/foundation/dist/Foundation.jar:${XTREEMFS_MRC_LIB}/lib/commons-codec-1.3.jar:${XTREEMFS_MRC_LIB}/lib/jdmktk.jar:${XTREEMFS_MRC_LIB}/lib/jdmkrt.jar"
-XTREEMFS_MRC_ARGS="${XTREEMFS_MRC_CLASS} org.xtreemfs.mrc.MRC"
-XTREEMFS_MRC_CONFIG="/etc/xtreemfs/mrcconfig.properties"
-XTREEMFS_MRC_PIDFILE="/var/run/xtreemfs/mrc.pid"
-XTREEMFS_MRC_LOGFILE="/var/log/xtreemfs/mrc.log"
-XTREEMFS_MRC_ERRFILE="/var/log/xtreemfs/mrc.err"

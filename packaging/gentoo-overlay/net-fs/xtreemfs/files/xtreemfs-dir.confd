@@ -1,7 +1,0 @@
-XTREEMFS_DIR_LIB="/usr/share/xtreemfs/java"
-XTREEMFS_DIR_CLASS="-classpath ${XTREEMFS_DIR_LIB}/servers/dist/XtreemFS.jar:${XTREEMFS_DIR_LIB}/lib/BabuDB.jar:${XTREEMFS_DIR_LIB}/flease/dist/Flease.jar:${XTREEMFS_DIR_LIB}/lib/protobuf-java-2.5.0.jar:${XTREEMFS_DIR_LIB}/foundation/dist/Foundation.jar:${XTREEMFS_DIR_LIB}/lib/commons-codec-1.3.jar:${XTREEMFS_DIR_LIB}/lib/jdmktk.jar:${XTREEMFS_DIR_LIB}/lib/jdmkrt.jar"
-XTREEMFS_DIR_ARGS="${XTREEMFS_DIR_CLASS} org.xtreemfs.dir.DIR"
-XTREEMFS_DIR_CONFIG="/etc/xtreemfs/dirconfig.properties"
-XTREEMFS_DIR_PIDFILE="/var/run/xtreemfs/dir.pid"
-XTREEMFS_DIR_LOGFILE="/var/log/xtreemfs/dir.log"
-XTREEMFS_DIR_ERRFILE="/var/log/xtreemfs/dir.err"
