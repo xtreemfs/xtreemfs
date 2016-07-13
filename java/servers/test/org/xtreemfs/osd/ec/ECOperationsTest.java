@@ -1121,7 +1121,7 @@ public class ECOperationsTest extends ECTestCommon {
 
     ReusableBuffer encode(ReedSolomon codec, ReusableBuffer diff, int shardOffset) {
         ReusableBuffer delta = ReusableBuffer.wrap(new byte[diff.capacity()]);
-        codec.encodeDiffParity(diff.getBuffer().slice(), delta.getBuffer().slice(), shardOffset, 0, 0, diff.capacity());
+        codec.encodeDiffParity(diff.getBuffer().slice(), shardOffset, delta.getBuffer().slice(), 0, 0, diff.capacity());
         delta.position(0);
         return delta;
     }

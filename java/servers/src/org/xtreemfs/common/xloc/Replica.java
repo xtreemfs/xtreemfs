@@ -86,6 +86,13 @@ public class Replica {
     }
 
     /**
+     * Returns the OSD at the given position in the stripe.
+     */
+    public ServiceUUID getOSDByPos(int osdIdx) {
+        return getOSDs().get(osdIdx);
+    }
+
+    /**
      * Checks if the given OSD is part of this Replica.
      * @param osd
      * @return

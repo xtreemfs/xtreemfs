@@ -7,11 +7,9 @@
 package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -25,127 +23,69 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.ec.ECWriteWorker.WriteEventType;
+import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
+import org.xtreemfs.osd.ec.StripeReconstructor.StripeReconstructorCallback;
 import org.xtreemfs.osd.operations.ECWriteIntervalOperation;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_diffResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_write_intervalResponse;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * This class will act as a state machine used for writing.
  */
-public class ECWriteWorker implements ECWorker<WriteEventType> {
+public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     public static enum WriteEventType {
-        FINISHED, FAILED
+        FINISHED, FAILED, START_RECONSTRUCTION, RECONSTRUCTION_FINISHED
     }
 
-    final ECWorkerEventProcessor<WriteEventType> processor;
+    public final static class WriteEvent {
+        final WriteEventType type;
+        final StripeState    stripeState;
+
+        public WriteEvent(WriteEventType type, StripeState stripeState) {
+            this.type = type;
+            this.stripeState = stripeState;
+        }
+    }
+
+    final ECWorkerEventProcessor<WriteEvent> processor;
 
     // Given as argument
-    final String               fileId;
-    final long                 opId;
-    final StripingPolicyImpl   sp;
-    final Interval             reqInterval;
-    final List<Interval>       commitIntervals;
-    final List<IntervalMsg>    commitIntervalMsgs;
-    final int                  qw;
-    final StripeState[]        stripeStates;
-    final OSDServiceClient     osdClient;
-    // final List<ServiceUUID> remoteOSDs;
-    final OSDRequestDispatcher master;
-    final FileCredentials      fileCredentials;
-    final XLocations           xloc;
-    final ReusableBuffer       data;
+    final long                               opId;
+    final int                                qw;
+    final ReusableBuffer                     data;
 
-    final Timer                timer;
-    final TimerTask            timeoutTimer;
-    final long                 timeoutMS;
+    final Timer                              timer;
+    final TimerTask                          timeoutTimer;
+    final long                               timeoutMS;
 
-
-    // Note: circular reference
-    final StageRequest         request;
-
-    // Calculated
-    final int                  localOsdNo;
-    final int                  dataWidth;         // k
-    final int                  parityWidth;       // m
-    final int                  stripeWidth;       // n
-    final int                  chunkSize;
-    final int                  numStripes;
+    final StripeReconstructorCallback        stripeReconstructorCallback;
 
     // State Stuff
     // FIXME (jdillmann): Decide how the worker should be run and if sync is needed
-    // int numStripesComplete;
-    AtomicInteger              numStripesComplete;
-    boolean                    finished;
-    boolean                    failed;
-    ErrorResponse              error;
-    
-    final AtomicBoolean       finishedSignaled;
-    final AtomicInteger       activeHandlers;
+    final StripeState[]                      stripeStates;
+    AtomicInteger                            numStripesComplete;
+
 
     public ECWriteWorker(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc, String fileId,
             long opId, StripingPolicyImpl sp, int qw, Interval reqInterval, List<Interval> commitIntervals,
             ReusableBuffer data, StageRequest request, long timeoutMS, ECMasterStage ecMaster) {
+        super(master, ecMaster.osdClient, fileCredentials, xloc, fileId, sp, reqInterval, commitIntervals, request);
         this.processor = ecMaster;
         this.timer = ecMaster.timer;
-        this.osdClient = ecMaster.osdClient;
 
-        this.fileId = fileId;
         this.opId = opId;
-        this.sp = sp;
-        this.reqInterval = reqInterval;
-        this.commitIntervals = commitIntervals;
         this.qw = qw;
         this.data = data;
-        this.xloc = xloc;
-        this.master = master;
-        this.fileCredentials = fileCredentials;
-        this.request = request;
-        // this.remoteOSDs = remoteOSDs;
-        
 
-        commitIntervalMsgs = new ArrayList<IntervalMsg>(commitIntervals.size());
-        for (Interval interval : commitIntervals) {
-            commitIntervalMsgs.add(ProtoInterval.toProto(interval));
-        }
-
-
-        dataWidth = sp.getWidth();
-        parityWidth = sp.getParityWidth();
-        stripeWidth = sp.getWidth() + sp.getParityWidth();
-        chunkSize = sp.getPolicy().getStripeSize() * 1024;
-        localOsdNo = sp.getRelativeOSDPosition();
-
-        // numStripesComplete = 0;
-        numStripesComplete = new AtomicInteger(0);
-        finished = false;
-        failed = false;
-        error = null;
-
-        // absolute start and end to the whole file range
-        long opStart = reqInterval.getOpStart();
-        long opEnd = reqInterval.getOpEnd();
-
-        long firstObjNo = sp.getObjectNoForOffset(opStart);
-        long lastObjNo = sp.getObjectNoForOffset(opEnd - 1); // interval.end is exclusive
-                
-        long firstStripeNo = sp.getRow(firstObjNo);
-        long lastStripeNo = sp.getRow(lastObjNo);
-
-        numStripes = ECHelper.safeLongToInt(lastStripeNo - firstStripeNo + 1);
         stripeStates = new StripeState[numStripes];
-
-        finishedSignaled = new AtomicBoolean(false);
-        activeHandlers = new AtomicInteger(0);
+        numStripesComplete = new AtomicInteger(0);
 
         this.timeoutMS = timeoutMS;
         timeoutTimer = new TimerTask() {
@@ -155,16 +95,35 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
                 ECWriteWorker.this.timeout();
             }
         };
+
+        stripeReconstructorCallback = new StripeReconstructorCallback() {
+
+            @Override
+            public void success(long stripeNo) {
+                ECWriteWorker.this.reconstructionFinished(stripeNo);
+            }
+
+            @Override
+            public void failed(long stripeNo) {
+                ECWriteWorker.this.failed();
+            }
+        };
     }
 
     @Override
-    public void processEvent(WriteEventType event) {
-        switch (event) {
+    public void processEvent(WriteEvent event) {
+        switch (event.type) {
         case FINISHED:
             processFinished(event);
             break;
         case FAILED:
             processFailed(event);
+            break;
+        case START_RECONSTRUCTION:
+            processStartReconstruction(event);
+            break;
+        case RECONSTRUCTION_FINISHED:
+            processReconstructionFinished(event);
             break;
         }
     }
@@ -175,9 +134,6 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
 
         long opStart = reqInterval.getOpStart();
         long opEnd = reqInterval.getOpEnd();
-
-        long firstObjNo = sp.getObjectNoForOffset(opStart);
-        long lastObjNo = sp.getObjectNoForOffset(opEnd - 1); // interval.end is exclusive
 
         long firstStripeNo = sp.getRow(firstObjNo);
         long lastStripeNo = sp.getRow(lastObjNo);
@@ -209,7 +165,7 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
                         }
                     });
             
-            StripeState stripeState = new StripeState(stripeInterval);
+            StripeState stripeState = new StripeState(stripeNo, stripeInterval);
             stripeStates[stripeIdx] = stripeState;
 
             for (long objNo = firstStripeObjNo; objNo <= lastStripeObjNo; objNo++) {
@@ -221,25 +177,12 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
 
                 if (objNo >= firstObjWithData && objNo <= lastObjWithData) {
                     hasData = true;
+                    objOffset = getObjOffset(objNo);
                     // length of the data to write off the current object
-                    int objLength;
+                    int objLength = getObjLength(objNo);
                     // relative offset to the data buffer
-                    int bufOffset;
-
-                    if (objNo == firstObjNo) {
-                        objOffset = ECHelper.safeLongToInt(opStart - sp.getObjectStartOffset(firstObjNo));
-                        objLength = chunkSize - objOffset;
-                        bufOffset = 0;
-                    } else {
-                        objOffset = 0;
-                        objLength = chunkSize;
-                        bufOffset = ECHelper.safeLongToInt(sp.getObjectStartOffset(objNo) - opStart);
-                    }
-
-                    // Don't merge with cases above as firstObjNo and lastObjNo can be the same.
-                    if (objNo == lastObjNo) {
-                        objLength = ECHelper.safeLongToInt(opEnd - sp.getObjectStartOffset(lastObjNo) - objOffset);
-                    }
+                    int bufOffset = (objNo == firstObjNo) ? 0
+                            : ECHelper.safeLongToInt(sp.getObjectStartOffset(objNo) - opStart);
 
                     reqData = data.createViewBuffer();
                     reqData.range(bufOffset, objLength);
@@ -274,11 +217,6 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
                 }
 
             }
-
-            for (int r = 0; r < parityWidth; r++) {
-                int osdNo = dataWidth + r;
-                // stripeState.responseStates[osdNo] = ResponseState.;
-            }
         }
     }
     
@@ -296,48 +234,23 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
         boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
 
         long stripeNo = sp.getRow(objNo);
-        StripeState stripeStatus = getStripeStateForStripe(stripeNo);
-        Interval stripeInterval = stripeStatus.interval;
+        StripeState stripeState = getStripeStateForStripe(stripeNo);
+        Interval stripeInterval = stripeState.interval;
 
-        int osdPos = sp.getOSDforObject(objNo);
+        int osdNo = sp.getOSDforObject(objNo);
 
         if (objFailed || needsReconstruction) {
-            if (stripeStatus.markFailed(osdPos, needsReconstruction)) {
+            if (stripeState.markFailed(osdNo, needsReconstruction)) {
                 failed();
+            } else {
+                // If this device would have been written, the data has to be reconstructed.
+                if (osdNo >= stripeState.firstOSDWithData && osdNo <= stripeState.lastOSDWithData) {
+                    startReconstruction(stripeState);
+                }
             }
 
-            // Only needed if the OSD would have been written
-            // if (relOsdPos == sp.getOSDforObject(objNo)) {
-            // // Need read/write cycle
-            // long chunkStart = sp.getObjectStartOffset(objNo);
-            // long chunkEnd = sp.getObjectStartOffset(objNo) + 1;
-            //
-            // long stripeStart = stripeNo * dataWidth * chunkSize;
-            // long stripeEnd = stripeStart + chunkSize;
-            //
-            // // Get the right vector from the
-            // IntervalVector commitVector = new ListIntervalVector(commitIntervals);
-            // List<Interval> prevIntervals = commitVector.getSlice(stripeStart, stripeEnd);
-            //
-            // // FIXME (jdillmann): Give a solution!
-            //
-            // // // THIS IS NOT TRUE! as we can't diff this would break (or we would need another operation)
-            // // especially
-            // // // for full stripes.
-            // // // easier: if (stripeInterval.getEnd() - stripeInterval.getStart() == chunkSize) {
-            // // if (stripeInterval.getStart() == stripeStart && stripeInterval.getEnd() == stripeEnd) {
-            // // // The full stripe is written, no need to get data from the other devices
-            // // long dataOffset = stripeInterval.getOpStart() - stripeInterval.getStart();
-            // //
-            // //
-            // // } else {
-            // // // get data from the other devices.
-            // // // TODO (jdillmann): could be optimized by only getting those not available with this request.
-            // // }
-            // }
-
         } else {
-            if (stripeStatus.markSuccess(osdPos)) {
+            if (stripeState.markSuccess(osdNo)) {
                 int curNumStripesComplete = numStripesComplete.incrementAndGet();
                 if (curNumStripesComplete == numStripes) {
                     finished();
@@ -405,36 +318,37 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "Request failed due to a timeout.");
             // FIXME (jdillmann): check for concurrency!!!
-            processor.signal(this, WriteEventType.FAILED);
+            processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
         }
     }
 
     private void finished() {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
-            processor.signal(this, WriteEventType.FINISHED);
+            processor.signal(this, new WriteEvent(WriteEventType.FINISHED, null));
         }
     }
 
-    private void processFinished(WriteEventType event) {
+    private void processFinished(WriteEvent event) {
         waitForActiveHandlers();
-        BufferPool.free(data);
         finished = true;
+        freeBuffers();
     }
 
     private void failed() {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
-            processor.signal(this, WriteEventType.FAILED);
+            processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
         }
     }
 
-    private void processFailed(WriteEventType event) {
+    private void processFailed(WriteEvent event) {
         waitForActiveHandlers();
         
-        BufferPool.free(data);
         finished = true;
         failed = true;
+
+        freeBuffers();
 
         if (error == null) {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -444,9 +358,122 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
         // errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
     }
 
-    ServiceUUID getRemote(int osdNo) {
-        return xloc.getLocalReplica().getOSDs().get(osdNo);
-        // return remoteOSDs.get(osdNo < localOsdNo ? osdNo : osdNo - 1);
+    private void freeBuffers() {
+        BufferPool.free(data);
+
+        for (StripeState stripeState : stripeStates) {
+            if (stripeState.reconstructor != null) {
+                stripeState.reconstructor.abort();
+            }
+        }
+
+    }
+
+    private void startReconstruction(StripeState stripeState) {
+        processor.signal(this, new WriteEvent(WriteEventType.START_RECONSTRUCTION, stripeState));
+    }
+
+    private void processStartReconstruction(WriteEvent event) {
+        if (finishedSignaled.get()) {
+            return;
+        }
+
+        StripeState stripeState = event.stripeState;
+        StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
+                stripeState.stripeNo, sp, reqInterval, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
+        stripeState.markForReconstruction(reconstructor);
+
+        reconstructor.start();
+    }
+
+    private void reconstructionFinished(long stripeNo) {
+        StripeState stripeState = getStripeStateForStripe(stripeNo);
+        processor.signal(this, new WriteEvent(WriteEventType.RECONSTRUCTION_FINISHED, stripeState));
+    }
+
+    private void processReconstructionFinished(WriteEvent event) {
+        if (finishedSignaled.get()) {
+            return;
+        }
+
+        StripeState stripeState = event.stripeState;
+        StripeReconstructor reconstructor = stripeState.reconstructor;
+        assert (reconstructor.isComplete());
+        stripeState.reconstructor.decode();
+
+        long stripeNo = stripeState.stripeNo;
+        Interval stripeInterval = stripeState.interval;
+
+        // long firstStripeObjNo = stripeNo * dataWidth;
+        // long lastStripeObjNo = (stripeNo + 1) * dataWidth - 1;
+
+        long opStart = reqInterval.getOpStart();
+        long opEnd = reqInterval.getOpEnd();
+
+        long firstStripeObjWithData = sp.getObjectNoForOffset(stripeInterval.getStart());
+        long lastStripeObjWithData = sp.getObjectNoForOffset(stripeInterval.getEnd() - 1);
+
+        for (long objNo = firstStripeObjWithData; objNo <= lastStripeObjWithData; objNo++) {
+
+            int osdNo = sp.getOSDforObject(objNo);
+            
+            if (!stripeState.hasFailed(osdNo)) {
+                continue;
+            }
+            
+            
+            // relative offset to the current object
+            int objOffset = getObjOffset(objNo);
+            // length of the data to write off the current object
+            int objLength = getObjLength(objNo);
+            // relative offset to the data buffer
+            int bufOffset = (objNo == firstObjNo) ? 0
+                    : ECHelper.safeLongToInt(sp.getObjectStartOffset(objNo) - opStart);
+
+            ReusableBuffer reqData = data.createViewBuffer();
+            reqData.range(bufOffset, objLength);
+
+            ReusableBuffer prevData = reconstructor.getObject(osdNo);
+            prevData.range(objOffset, objLength);
+
+            ReusableBuffer diff = BufferPool.allocate(objLength);
+
+            ECHelper.xor(diff, reqData, prevData);
+            diff.flip();
+            BufferPool.free(reqData);
+            BufferPool.free(prevData);
+
+            long diffStart = sp.getObjectStartOffset(objNo) + objOffset;
+            long diffEnd = diffStart + objLength;
+            Interval diffInterval = new ProtoInterval(diffStart, diffEnd, stripeInterval.getVersion(),
+                    stripeInterval.getId(), stripeInterval.getOpStart(), stripeInterval.getOpEnd());
+
+            for (int parityOsdNo = dataWidth; parityOsdNo < stripeWidth; parityOsdNo++) {
+
+                if (stripeState.hasFailed(parityOsdNo)) {
+                    // Parity OSD did already fail, don't send diff again.
+                    continue;
+                }
+
+                synchronized (stripeState) {
+                    stripeState.responseStates[parityOsdNo] = ResponseState.REQ_DIFF;
+                }
+                ServiceUUID parityOSD = getRemote(parityOsdNo);
+
+                try {
+                    @SuppressWarnings("unchecked")
+                    RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
+                            RPCAuthentication.authNone, RPCAuthentication.userService, fileCredentials, fileId, opId,
+                            objNo, objOffset, ProtoInterval.toProto(diffInterval),
+                            ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff);
+                    response.registerListener(ECHelper.emptyResponseListener);
+                } catch (IOException ex) {
+                    Logging.logError(Logging.LEVEL_WARN, this, ex);
+                    BufferPool.free(diff);
+                }
+
+            }
+        }
     }
 
     StripeState getStripeStateForObj(long objNo) {
@@ -455,30 +482,6 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
 
     StripeState getStripeStateForStripe(long stripeNo) {
         return stripeStates[getStripeIdx(stripeNo)];
-    }
-
-    int getStripeIdx(long stripeNo) {
-        return ECHelper.safeLongToInt(stripeNo - sp.getRow(sp.getObjectNoForOffset(reqInterval.getOpStart())));
-    }
-
-    @Override
-    public boolean hasFinished() {
-        return finished;
-    }
-
-    @Override
-    public boolean hasFailed() {
-        return failed;
-    }
-
-    @Override
-    public boolean hasSucceeded() {
-        return !failed && finished;
-    }
-
-    @Override
-    public ErrorResponse getError() {
-        return error;
     }
 
     @Override
@@ -491,72 +494,88 @@ public class ECWriteWorker implements ECWorker<WriteEventType> {
         return TYPE.WRITE;
     }
 
-    @Override
-    public Interval getRequestInterval() {
-        return reqInterval;
-    }
-
-    @Override
-    public StageRequest getRequest() {
-        return request;
-    }
-
     enum ResponseState {
         NONE, 
-        REQ_INTERVAL, REQ_DATA,
+        REQ_INTERVAL, REQ_DATA, REQ_DIFF,
         FAILED, NEEDS_RECONSTRUCTION,
-        SUCCESS
+        SUCCESS,
     }
 
     private class StripeState {
+        final long            stripeNo;
         final Interval        interval;
         final ResponseState[] responseStates;
 
-        final AtomicInteger   acks;
-        final AtomicInteger   nacks;
-        final AtomicBoolean   finished;
+        final int             firstOSDWithData;
+        final int             lastOSDWithData;
 
-        public StripeState(Interval interval) {
+
+        int                   acks           = 0;
+        int                   nacks          = 0;
+        boolean               finished       = false;
+        StripeReconstructor   reconstructor  = null;
+
+        public StripeState(long stripeNo, Interval interval) {
+            this.stripeNo = stripeNo;
             this.interval = interval;
+
+            firstOSDWithData = sp.getOSDforOffset(interval.getStart());
+            lastOSDWithData = sp.getOSDforOffset(interval.getEnd() - 1);
 
             responseStates = new ResponseState[stripeWidth];
             for (int i = 0; i < stripeWidth; i++) {
                 responseStates[i] = ResponseState.NONE;
             }
 
-            acks = new AtomicInteger(0);
-            nacks = new AtomicInteger(0);
-            finished = new AtomicBoolean(false);
         }
 
-        boolean markFailed(int osdPos, boolean needsReconstruction) {
-            int curNacks = nacks.incrementAndGet();
-
-            if (!finished.get()) {
-                responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION
-                        : ResponseState.FAILED;
+        synchronized boolean markFailed(int osdPos, boolean needsReconstruction) {
+            if (finished) {
+                return false;
             }
+            nacks++;
+            responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION : ResponseState.FAILED;
 
-            if (stripeWidth - curNacks < qw) {
+
+            if (stripeWidth - nacks < qw) {
                 // we can't fullfill the write quorum anymore
-                finished.set(true);
+                finished = true;
                 return true;
             }
 
             return false;
         }
 
-        boolean markSuccess(int osdPos) {
-            int curAcks = acks.incrementAndGet();
+        synchronized boolean markSuccess(int osdPos) {
+            if (finished) {
+                return false;
+            }
+
+            acks++;
 
             responseStates[osdPos] = ResponseState.SUCCESS;
-            if (curAcks >= qw) {
+            if (acks >= qw) {
                 return true;
             }
 
             return false;
         }
 
+
+        synchronized void markForReconstruction(StripeReconstructor reconstructor) {
+            this.reconstructor = reconstructor;
+
+            for (int osdNo = 0; osdNo < dataWidth; osdNo++) {
+                if (hasFailed(osdNo)) {
+                    reconstructor.markFailed(osdNo);
+                }
+            }
+        }
+
+        synchronized boolean hasFailed(int osdNo) {
+            return (responseStates[osdNo] == ResponseState.FAILED
+                    || responseStates[osdNo] == ResponseState.NEEDS_RECONSTRUCTION);
+        }
     }
 
 }

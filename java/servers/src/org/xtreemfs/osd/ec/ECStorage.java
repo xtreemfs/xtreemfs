@@ -382,6 +382,7 @@ public class ECStorage {
         final int offset = (Integer) rq.getArgs()[3];
         final int length = (Integer) rq.getArgs()[4];
         final List<Interval> intervals = (List<Interval>) rq.getArgs()[5];
+        final boolean ignoreAbort = (Boolean) rq.getArgs()[6];
 
         assert (!intervals.isEmpty());
         assert (offset + length <= sp.getStripeSizeForObject(objNo));
@@ -422,8 +423,11 @@ public class ECStorage {
             for (Interval interval : toCommitAcc) {
                 commitECData(fileId, fi, interval);
             }
-            for (Interval interval : toAbortAcc) {
-                abortECData(fileId, fi, interval);
+
+            if (!ignoreAbort) {
+                for (Interval interval : toAbortAcc) {
+                    abortECData(fileId, fi, interval);
+                }
             }
 
             ObjectInformation result = layout.readObject(fileId, fi, objNo, offset, length, objVer);
@@ -518,18 +522,16 @@ public class ECStorage {
         final ECReadParityCallback callback = (ECReadParityCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
-        final long objNo = (Long) rq.getArgs()[2];
+        final long stripeNo = (Long) rq.getArgs()[2];
         final int offset = (Integer) rq.getArgs()[3];
         final int length = (Integer) rq.getArgs()[4];
         final List<Interval> intervals = (List<Interval>) rq.getArgs()[5];
+        final boolean ignoreAbort = (Boolean) rq.getArgs()[6];
 
         assert (!intervals.isEmpty());
-        assert (offset + length <= sp.getStripeSizeForObject(objNo));
+        assert (offset + length <= sp.getStripeSizeForObject(0));
 
         final String fileIdCode = fileId + FILEID_CODE_SUFFIX;
-        long objOffset = sp.getObjectStartOffset(objNo);
-
-        long stripeNo = sp.getRow(objNo);
 
         long objVer = 1;
 
@@ -567,11 +569,13 @@ public class ECStorage {
             for (Interval interval : toCommitAcc) {
                 commitECDelta(fileId, fi, interval);
             }
-            for (Interval interval : toAbortAcc) {
-                abortECDelta(fileId, fi, interval);
+            if (!ignoreAbort) {
+                for (Interval interval : toAbortAcc) {
+                    abortECDelta(fileId, fi, interval);
+                }
             }
 
-            ObjectInformation result = layout.readObject(fileIdCode, fi, objNo, offset, length, objVer);
+            ObjectInformation result = layout.readObject(fileIdCode, fi, stripeNo, offset, length, objVer);
             // TODO (jdillmann): Add Metadata?
             // result.setChecksumInvalidOnOSD(checksumInvalidOnOSD);
             // result.setLastLocalObjectNo(lastLocalObjectNo);

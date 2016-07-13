@@ -1056,7 +1056,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
-        final ECWriteWorker.WriteEventType event = (WriteEventType) method.getArgs()[1];
+        final ECWriteWorker.WriteEvent event = (WriteEvent) method.getArgs()[1];
 
         worker.processEvent(event);
 

@@ -6,6 +6,7 @@
  */
 package org.xtreemfs.osd.ec;
 
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -54,6 +55,7 @@ public class ECHelper {
         assert (src.remaining() <= cur.remaining());
 
         while (src.remaining() >= 8) {
+            // FIXME (jdillmann): Check endianess! This is probably a bad idea.
             dst.putLong(src.getLong() ^ cur.getLong());
         }
 
@@ -62,4 +64,19 @@ public class ECHelper {
         }
     }
 
+    public static ReusableBuffer zeroPad(ReusableBuffer src, int size) {
+        if (src.capacity() >= size) {
+            return src;
+        }
+
+        ReusableBuffer padded = BufferPool.allocate(size);
+        padded.put(src);
+        BufferPool.free(src);
+
+        while (padded.hasRemaining()) {
+            padded.put((byte) 0);
+        }
+        padded.flip();
+        return padded;
+    }
 }

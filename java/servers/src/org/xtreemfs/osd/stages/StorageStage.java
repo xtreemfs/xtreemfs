@@ -277,19 +277,19 @@ public class StorageStage extends Stage {
     }
 
     public void ecReadData(String fileId, StripingPolicyImpl sp, long objNo, int offset, int length,
-            List<Interval> intervals, OSDRequest request, ECReadDataCallback callback) {
+            List<Interval> intervals, boolean ignoreAbort, OSDRequest request, ECReadDataCallback callback) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_READ_DATA,
-                new Object[] { fileId, sp, objNo, offset, length, intervals }, request, null, callback);
+                new Object[] { fileId, sp, objNo, offset, length, intervals, ignoreAbort }, request, null, callback);
     }
 
     public static interface ECReadDataCallback {
         public void ecReadDataComplete(ObjectInformation result, boolean needsReconstruct, ErrorResponse error);
     }
 
-    public void ecReadParity(String fileId, StripingPolicyImpl sp, long objNo, int offset, int length,
-            List<Interval> intervals, OSDRequest request, ECReadParityCallback callback) {
+    public void ecReadParity(String fileId, StripingPolicyImpl sp, long stripeNo, int offset, int length,
+            List<Interval> intervals, boolean ignoreAbort, OSDRequest request, ECReadParityCallback callback) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_READ_PARITY,
-                new Object[] { fileId, sp, objNo, offset, length, intervals }, request, null, callback);
+                new Object[] { fileId, sp, stripeNo, offset, length, intervals, ignoreAbort }, request, null, callback);
     }
 
     public static interface ECReadParityCallback {
