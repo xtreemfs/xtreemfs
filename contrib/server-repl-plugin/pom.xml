@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-contrib-replication</artifactId>
+  <version>1.5.1-SNAPSHOT</version>
+
+  <properties>
+    <babudb-replication.version>0.6.0-SNAPSHOT</babudb-replication.version>
+
+    <!-- Plugin configurations. -->
+    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.xtreemfs.babudb</groupId>
+      <artifactId>babudb-replication</artifactId>
+      <version>${babudb-replication.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <copy file="${maven.dependency.org.xtreemfs.babudb.babudb-replication.jar.path}" tofile="${project.build.directory}/babudb-replication-plugin.jar" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

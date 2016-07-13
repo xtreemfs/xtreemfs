@@ -225,6 +225,7 @@ rm -rf $RPM_BUILD_ROOT
 %files backend
 %defattr(-,root,root,-)
 /usr/share/java/xtreemfs.jar
+/usr/share/java/babudb-replication-plugin.jar
 %doc LICENSE
 
 %files server

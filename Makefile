@@ -68,7 +68,7 @@ clean: check_server check_client $(patsubst %,%_clean,$(TARGETS))
 
 distclean: check_server check_client $(patsubst %,%_distclean,$(TARGETS))
 
-install: install-client install-server install-tools install-libs
+install: install-client install-server install-server-repl-plugin install-tools install-libs
 
 install-client:
 
@@ -109,10 +109,6 @@ install-server:
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
 
-	@mkdir -p $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
-
 	@cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
 	@chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
@@ -127,6 +123,16 @@ install-server:
 	@cp contrib/xtreemfs-osd-farm/xtreemfs-osd-farm $(XTREEMFS_SHARE_DIR)
 
 	@echo "to complete the server installation, please execute $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh"
+
+install-server-repl-plugin:
+
+	@if [ ! -f contrib/server-repl-plugin/target/babudb-replication-plugin.jar ]; then echo "PLEASE RUN 'make server-repl-plugin' FIRST!"; exit 1; fi
+
+	@cp contrib/server/repl-plugin/target/babudb-replication-plugin.jar $(XTREEMFS_JAR_DIR)
+
+	@mkdir -p $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/src/main/resources/config/dir.properties $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/src/main/resources/config/mrc.properties $(PLUGIN_CONFIG_DIR)
 
 install-tools:
 
@@ -168,6 +174,7 @@ uninstall:
 	@rmdir $(XTREEMFS_LIB_DIR)
 
 	@rm -f $(XTREEMFS_JAR_DIR)/xtreemfs.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/babudb-replication-plugin.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 
@@ -345,6 +352,14 @@ server_clean: check_server
 server_distclean: check_server
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 
+.PHONY: server-repl-plugin server-repl-plugin_clean server-repl-plugin_distclean
+server-repl-plugin:
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml package
+server-repl-plugin_clean: check_server
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
+server-repl-plugin_distclean: check_server
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
+
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
 hadoop-client: parent foundation server
 	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
@@ -358,11 +373,11 @@ test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
 
 interfaces: pbrpcgen client_thirdparty
-	$(MVN_BIN) --file interface/pom.xml generate-sources
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml generate-sources
 interfaces_clean:
-	$(MVN_BIN) --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml clean || exit 1
 interfaces_distclean:
-	$(MVN_BIN) --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml clean || exit 1
 
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true

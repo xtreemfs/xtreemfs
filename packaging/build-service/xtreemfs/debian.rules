@@ -80,7 +80,8 @@ install: build
 	# move files of the xtreemfs-backend package
 	mkdir -p $(BUILD_DIR)-backend/usr/share/java
 	mv    -t $(BUILD_DIR)-backend/usr/share/java \
-	         $(BUILD_DIR)/usr/share/java/xtreemfs.jar
+	         $(BUILD_DIR)/usr/share/java/xtreemfs.jar \
+	         $(BUILD_DIR)/usr/share/java/babudb-replication-plugin.jar
 	mkdir -p $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend
 	cp    -t $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend \
 	         $(CURDIR)/LICENSE

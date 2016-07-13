@@ -21,7 +21,7 @@ SOURCE_BLACK_LIST=(
   "contrib/hadoop"
   "doc"
   "etc/xos/xtreemfs/*test"
-  "contrib/server-repl-plugin/config/*-test*"
+  "contrib/server-repl-plugin/src/main/resources/config/*-test*"
   "classfiles"
   "cpp/CMakeFiles"
   "java/xtreemfs-pbrpcgen/target"
