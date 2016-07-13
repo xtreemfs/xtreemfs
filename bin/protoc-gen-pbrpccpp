@@ -1,4 +1,0 @@
-#!/bin/bash
-FULLPATH=`readlink -f $0`
-BASEDIR=`dirname ${FULLPATH}`
-java -cp ${BASEDIR}/../java/pbrpcgen/dist/pbrpcgen.jar:${BASEDIR}/../java/lib/protobuf-java-2.5.0.jar org.xtreemfs.pbrpcgen.RPCCPPSourceGenerator 
