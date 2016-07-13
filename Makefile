@@ -94,17 +94,13 @@ install-client:
 
 install-server:
 
-	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
+	@if [ ! -f java/xtreemfs-servers/target/xtreemfs.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_SERVER)
 	@cp LICENSE $(DOC_DIR_SERVER)
 
 	@mkdir -p $(XTREEMFS_JAR_DIR)
-	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
-	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
-	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
-	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
-	@cp contrib/server-repl-plugin/BabuDB_replication_plugin.jar $(XTREEMFS_JAR_DIR)
+	@cp java/xtreemfs-servers/target/xtreemfs.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
@@ -134,16 +130,13 @@ install-server:
 
 install-tools:
 
-	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
+	@if [ ! -f java/xtreemfs-servers/target/xtreemfs.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_TOOLS)
 	@cp LICENSE $(DOC_DIR_TOOLS)
 
 	@mkdir -p $(XTREEMFS_JAR_DIR)
-	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
-	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
-	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
-	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
+	@cp java/xtreemfs-servers/target/xtreemfs.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
 	@cp   -p  `ls $(XTREEMFS_BINARIES_DIR)/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
@@ -174,15 +167,7 @@ uninstall:
 	@rm -f $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
 	@rmdir $(XTREEMFS_LIB_DIR)
 
-	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/Flease.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/commons-codec-1.3.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/jdmkrt.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/jdmktk.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/protobuf-java-2.5.0.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/xtreemfs.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 

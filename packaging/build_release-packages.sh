@@ -24,8 +24,7 @@ SOURCE_BLACK_LIST=(
   "contrib/server-repl-plugin/config/*-test*"
   "classfiles"
   "cpp/CMakeFiles"
-  "java/pbrpcgen/build"
-  "java/pbrpcgen/dist"
+  "java/xtreemfs-pbrpcgen/target"
 )
 
 # --------------------------
@@ -141,7 +140,7 @@ else
 fi
 
 VERSION="$1"
-if [ ! -d "$XTREEMFS_HOME_DIR/java/servers" ] ;
+if [ ! -d "$XTREEMFS_HOME_DIR/java/xtreemfs-servers" ] ;
 then
   echo "directory is not the xtreemfs home directory"
   usage

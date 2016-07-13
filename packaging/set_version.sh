@@ -14,7 +14,7 @@ then
 fi
 
 # Path is relative to the directory path of this script, usually /packaging/
-xtreemfs_version_management_files="../java/foundation/src/org/xtreemfs/foundation/VersionManagement.java:RELEASE_VERSION ../cpp/include/libxtreemfs/version_management.h:XTREEMFS_VERSION_STRING"
+xtreemfs_version_management_files="../java/xtreemfs-foundation/src/main/java/org/xtreemfs/foundation/VersionManagement.java:RELEASE_VERSION ../cpp/include/libxtreemfs/version_management.h:XTREEMFS_VERSION_STRING"
 
 xtreemfs_release_names="
 1.0|Jelly Donut

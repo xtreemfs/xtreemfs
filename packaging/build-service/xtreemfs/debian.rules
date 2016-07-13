@@ -13,7 +13,6 @@ CFLAGS += -O2
 endif
 
 BUILD_DIR:=$(CURDIR)/debian/xtreemfs
-export ANT_OPTS=-D"file.encoding=UTF-8"
 
 build: build-stamp
 build-stamp:
@@ -81,15 +80,7 @@ install: build
 	# move files of the xtreemfs-backend package
 	mkdir -p $(BUILD_DIR)-backend/usr/share/java
 	mv    -t $(BUILD_DIR)-backend/usr/share/java \
-	         $(BUILD_DIR)/usr/share/java/XtreemFS.jar \
-	         $(BUILD_DIR)/usr/share/java/Foundation.jar \
-	         $(BUILD_DIR)/usr/share/java/protobuf-java-2.5.0.jar \
-	         $(BUILD_DIR)/usr/share/java/Flease.jar \
-	         $(BUILD_DIR)/usr/share/java/BabuDB.jar \
-	         $(BUILD_DIR)/usr/share/java/BabuDB_replication_plugin.jar \
-	         $(BUILD_DIR)/usr/share/java/jdmkrt.jar \
-	         $(BUILD_DIR)/usr/share/java/jdmktk.jar \
-	         $(BUILD_DIR)/usr/share/java/commons-codec-1.3.jar
+	         $(BUILD_DIR)/usr/share/java/xtreemfs.jar
 	mkdir -p $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend
 	cp    -t $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend \
 	         $(CURDIR)/LICENSE
