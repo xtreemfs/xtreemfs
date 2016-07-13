@@ -49,7 +49,7 @@
 
     <dependency>
       <groupId>org.xtreemfs.opendmk</groupId>
-      <artifactId>jdmktk</artifactId>
+      <artifactId>toolkit</artifactId>
       <version>1.0-b02-SNAPSHOT</version>
     </dependency>
 
