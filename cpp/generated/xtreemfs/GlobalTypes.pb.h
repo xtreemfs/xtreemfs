@@ -579,6 +579,13 @@ class StripingPolicy : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 parity_width() const;
   inline void set_parity_width(::google::protobuf::uint32 value);
 
+  // optional fixed32 ec_write_quorum = 5;
+  inline bool has_ec_write_quorum() const;
+  inline void clear_ec_write_quorum();
+  static const int kEcWriteQuorumFieldNumber = 5;
+  inline ::google::protobuf::uint32 ec_write_quorum() const;
+  inline void set_ec_write_quorum(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.StripingPolicy)
  private:
   inline void set_has_type();
@@ -589,6 +596,8 @@ class StripingPolicy : public ::google::protobuf::Message {
   inline void clear_has_width();
   inline void set_has_parity_width();
   inline void clear_has_parity_width();
+  inline void set_has_ec_write_quorum();
+  inline void clear_has_ec_write_quorum();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -596,9 +605,10 @@ class StripingPolicy : public ::google::protobuf::Message {
   ::google::protobuf::uint32 stripe_size_;
   ::google::protobuf::uint32 width_;
   ::google::protobuf::uint32 parity_width_;
+  ::google::protobuf::uint32 ec_write_quorum_;
 
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(5 + 31) / 32];
 
   friend void  protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto();
   friend void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto();
@@ -2048,6 +2058,28 @@ inline ::google::protobuf::uint32 StripingPolicy::parity_width() const {
 inline void StripingPolicy::set_parity_width(::google::protobuf::uint32 value) {
   set_has_parity_width();
   parity_width_ = value;
+}
+
+// optional fixed32 ec_write_quorum = 5;
+inline bool StripingPolicy::has_ec_write_quorum() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void StripingPolicy::set_has_ec_write_quorum() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void StripingPolicy::clear_has_ec_write_quorum() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void StripingPolicy::clear_ec_write_quorum() {
+  ec_write_quorum_ = 0u;
+  clear_has_ec_write_quorum();
+}
+inline ::google::protobuf::uint32 StripingPolicy::ec_write_quorum() const {
+  return ec_write_quorum_;
+}
+inline void StripingPolicy::set_ec_write_quorum(::google::protobuf::uint32 value) {
+  set_has_ec_write_quorum();
+  ec_write_quorum_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -115,11 +115,12 @@ void protobuf_AssignDesc_xtreemfs_2fGlobalTypes_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(NewFileSize));
   StripingPolicy_descriptor_ = file->message_type(2);
-  static const int StripingPolicy_offsets_[4] = {
+  static const int StripingPolicy_offsets_[5] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, stripe_size_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, width_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, parity_width_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(StripingPolicy, ec_write_quorum_),
   };
   StripingPolicy_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -404,86 +405,86 @@ void protobuf_AddDesc_xtreemfs_2fGlobalTypes_2eproto() {
     "\030\001 \002(\010\022\026\n\016tracing_policy\030\002 \001(\t\022\035\n\025tracin"
     "g_policy_config\030\003 \001(\t\"<\n\013NewFileSize\022\025\n\r"
     "size_in_bytes\030\001 \002(\006\022\026\n\016truncate_epoch\030\002 "
-    "\002(\007\"|\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".xt"
-    "reemfs.pbrpc.StripingPolicyType\022\023\n\013strip"
-    "e_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_wi"
-    "dth\030\004 \001(\007\"p\n\007Replica\022\021\n\tosd_uuids\030\001 \003(\t\022"
-    "\031\n\021replication_flags\030\002 \002(\007\0227\n\017striping_p"
-    "olicy\030\003 \002(\0132\036.xtreemfs.pbrpc.StripingPol"
-    "icy\"5\n\010Replicas\022)\n\010replicas\030\001 \003(\0132\027.xtre"
-    "emfs.pbrpc.Replica\"\364\002\n\004XCap\022\023\n\013access_mo"
-    "de\030\001 \002(\007\022\027\n\017client_identity\030\002 \002(\t\022\025\n\rexp"
-    "ire_time_s\030\003 \002(\006\022\030\n\020expire_timeout_s\030\004 \002"
-    "(\007\022\017\n\007file_id\030\005 \002(\t\022\032\n\022replicate_on_clos"
-    "e\030\006 \002(\010\022\030\n\020server_signature\030\007 \002(\t\022\026\n\016tru"
-    "ncate_epoch\030\010 \002(\007\022/\n\013snap_config\030\t \002(\0162\032"
-    ".xtreemfs.pbrpc.SnapConfig\022\026\n\016snap_times"
-    "tamp\030\n \002(\006\022\027\n\014voucher_size\030\013 \001(\006:\0010\022\031\n\016e"
-    "xpire_time_ms\030\014 \001(\006:\0010\0221\n\014trace_config\030\r"
-    " \001(\0132\033.xtreemfs.pbrpc.TraceConfig\"\201\001\n\007XL"
-    "ocSet\022\033\n\023read_only_file_size\030\001 \002(\006\022)\n\010re"
-    "plicas\030\002 \003(\0132\027.xtreemfs.pbrpc.Replica\022\035\n"
-    "\025replica_update_policy\030\003 \002(\t\022\017\n\007version\030"
-    "\004 \002(\007\"]\n\017FileCredentials\022\"\n\004xcap\030\001 \002(\0132\024"
-    ".xtreemfs.pbrpc.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xt"
-    "reemfs.pbrpc.XLocSet\"O\n\022FileCredentialsS"
-    "et\0229\n\020file_credentials\030\001 \001(\0132\037.xtreemfs."
-    "pbrpc.FileCredentials\"U\n\022VivaldiCoordina"
-    "tes\022\024\n\014x_coordinate\030\001 \002(\001\022\024\n\014y_coordinat"
-    "e\030\002 \002(\001\022\023\n\013local_error\030\003 \002(\001\"x\n\033OSDFinal"
-    "izeVouchersResponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n"
-    "\020server_signature\030\002 \002(\t\022\025\n\rsize_in_bytes"
-    "\030\003 \002(\006\022\026\n\016truncate_epoch\030\004 \002(\006\"A\n\020OSDWri"
-    "teResponse\022\025\n\rsize_in_bytes\030\001 \001(\006\022\026\n\016tru"
-    "ncate_epoch\030\002 \001(\007\"*\n\014KeyValuePair\022\013\n\003key"
-    "\030\001 \002(\t\022\r\n\005value\030\002 \002(\t*|\n\027AccessControlPo"
-    "licyType\022\036\n\032ACCESS_CONTROL_POLICY_NULL\020\001"
-    "\022\037\n\033ACCESS_CONTROL_POLICY_POSIX\020\002\022 \n\034ACC"
-    "ESS_CONTROL_POLICY_VOLUME\020\003*\365\003\n\026OSDSelec"
-    "tionPolicyType\022(\n#OSD_SELECTION_POLICY_F"
-    "ILTER_DEFAULT\020\350\007\022%\n OSD_SELECTION_POLICY"
-    "_FILTER_FQDN\020\351\007\022%\n OSD_SELECTION_POLICY_"
-    "FILTER_UUID\020\352\007\022%\n OSD_SELECTION_POLICY_G"
-    "ROUP_DCMAP\020\320\017\022$\n\037OSD_SELECTION_POLICY_GR"
-    "OUP_FQDN\020\321\017\022$\n\037OSD_SELECTION_POLICY_SORT"
-    "_DCMAP\020\270\027\022#\n\036OSD_SELECTION_POLICY_SORT_F"
-    "QDN\020\271\027\022%\n OSD_SELECTION_POLICY_SORT_RAND"
-    "OM\020\272\027\022&\n!OSD_SELECTION_POLICY_SORT_VIVAL"
-    "DI\020\273\027\022/\n*OSD_SELECTION_POLICY_SORT_HOST_"
-    "ROUND_ROBIN\020\274\027\022#\n\036OSD_SELECTION_POLICY_S"
-    "ORT_UUID\020\236\037\022&\n!OSD_SELECTION_POLICY_SORT"
-    "_REVERSE\020\237\037*A\n\032ReplicaSelectionPolicyTyp"
-    "e\022#\n\037REPLICA_SELECTION_POLICY_SIMPLE\020\001*i"
-    "\n\nSnapConfig\022\036\n\032SNAP_CONFIG_SNAPS_DISABL"
-    "ED\020\000\022\036\n\032SNAP_CONFIG_ACCESS_CURRENT\020\001\022\033\n\027"
-    "SNAP_CONFIG_ACCESS_SNAP\020\002*P\n\022StripingPol"
-    "icyType\022\031\n\025STRIPING_POLICY_RAID0\020\000\022\037\n\033ST"
-    "RIPING_POLICY_ERASURECODE\020\001*9\n\nLeaseStat"
-    "e\022\010\n\004NONE\020\000\022\013\n\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004"
-    "IDLE\020\003*\270\001\n\005PORTS\022\033\n\025DIR_HTTP_PORT_DEFAUL"
-    "T\020\256\357\001\022\034\n\026DIR_PBRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025M"
-    "RC_HTTP_PORT_DEFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PO"
-    "RT_DEFAULT\020\374\376\001\022\033\n\025OSD_HTTP_PORT_DEFAULT\020"
-    "\260\357\001\022\034\n\026OSD_PBRPC_PORT_DEFAULT\020\200\377\001*+\n\tCON"
-    "STANTS\022\036\n\032XCAP_RENEW_INTERVAL_IN_MIN\020\001*\202"
-    "\003\n\016SYSTEM_V_FCNTL\022\035\n\031SYSTEM_V_FCNTL_H_O_"
-    "RDONLY\020\000\022\035\n\031SYSTEM_V_FCNTL_H_O_WRONLY\020\001\022"
-    "\033\n\027SYSTEM_V_FCNTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V"
-    "_FCNTL_H_O_APPEND\020\010\022\035\n\030SYSTEM_V_FCNTL_H_"
-    "O_CREAT\020\200\002\022\035\n\030SYSTEM_V_FCNTL_H_O_TRUNC\020\200"
-    "\004\022\034\n\027SYSTEM_V_FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTE"
-    "M_V_FCNTL_H_O_SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H"
-    "_S_IFREG\020\200\200\002\022\036\n\030SYSTEM_V_FCNTL_H_S_IFDIR"
-    "\020\200\200\001\022\036\n\030SYSTEM_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030"
-    "SYSTEM_V_FCNTL_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLA"
-    "G\022\032\n\026REPL_FLAG_FULL_REPLICA\020\001\022\031\n\025REPL_FL"
-    "AG_IS_COMPLETE\020\002\022\035\n\031REPL_FLAG_STRATEGY_R"
-    "ANDOM\020\004\022#\n\037REPL_FLAG_STRATEGY_RAREST_FIR"
-    "ST\020\010\022!\n\035REPL_FLAG_STRATEGY_SEQUENTIAL\020\020\022"
-    "-\n)REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETC"
-    "HING\020 *%\n\010SERVICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003"
-    "OSD\020\003B(\n&org.xtreemfs.pbrpc.generatedint"
-    "erfaces", 3407);
+    "\002(\007\"\225\001\n\016StripingPolicy\0220\n\004type\030\001 \002(\0162\".x"
+    "treemfs.pbrpc.StripingPolicyType\022\023\n\013stri"
+    "pe_size\030\002 \002(\007\022\r\n\005width\030\003 \002(\007\022\024\n\014parity_w"
+    "idth\030\004 \001(\007\022\027\n\017ec_write_quorum\030\005 \001(\007\"p\n\007R"
+    "eplica\022\021\n\tosd_uuids\030\001 \003(\t\022\031\n\021replication"
+    "_flags\030\002 \002(\007\0227\n\017striping_policy\030\003 \002(\0132\036."
+    "xtreemfs.pbrpc.StripingPolicy\"5\n\010Replica"
+    "s\022)\n\010replicas\030\001 \003(\0132\027.xtreemfs.pbrpc.Rep"
+    "lica\"\364\002\n\004XCap\022\023\n\013access_mode\030\001 \002(\007\022\027\n\017cl"
+    "ient_identity\030\002 \002(\t\022\025\n\rexpire_time_s\030\003 \002"
+    "(\006\022\030\n\020expire_timeout_s\030\004 \002(\007\022\017\n\007file_id\030"
+    "\005 \002(\t\022\032\n\022replicate_on_close\030\006 \002(\010\022\030\n\020ser"
+    "ver_signature\030\007 \002(\t\022\026\n\016truncate_epoch\030\010 "
+    "\002(\007\022/\n\013snap_config\030\t \002(\0162\032.xtreemfs.pbrp"
+    "c.SnapConfig\022\026\n\016snap_timestamp\030\n \002(\006\022\027\n\014"
+    "voucher_size\030\013 \001(\006:\0010\022\031\n\016expire_time_ms\030"
+    "\014 \001(\006:\0010\0221\n\014trace_config\030\r \001(\0132\033.xtreemf"
+    "s.pbrpc.TraceConfig\"\201\001\n\007XLocSet\022\033\n\023read_"
+    "only_file_size\030\001 \002(\006\022)\n\010replicas\030\002 \003(\0132\027"
+    ".xtreemfs.pbrpc.Replica\022\035\n\025replica_updat"
+    "e_policy\030\003 \002(\t\022\017\n\007version\030\004 \002(\007\"]\n\017FileC"
+    "redentials\022\"\n\004xcap\030\001 \002(\0132\024.xtreemfs.pbrp"
+    "c.XCap\022&\n\005xlocs\030\002 \002(\0132\027.xtreemfs.pbrpc.X"
+    "LocSet\"O\n\022FileCredentialsSet\0229\n\020file_cre"
+    "dentials\030\001 \001(\0132\037.xtreemfs.pbrpc.FileCred"
+    "entials\"U\n\022VivaldiCoordinates\022\024\n\014x_coord"
+    "inate\030\001 \002(\001\022\024\n\014y_coordinate\030\002 \002(\001\022\023\n\013loc"
+    "al_error\030\003 \002(\001\"x\n\033OSDFinalizeVouchersRes"
+    "ponse\022\020\n\010osd_uuid\030\001 \002(\t\022\030\n\020server_signat"
+    "ure\030\002 \002(\t\022\025\n\rsize_in_bytes\030\003 \002(\006\022\026\n\016trun"
+    "cate_epoch\030\004 \002(\006\"A\n\020OSDWriteResponse\022\025\n\r"
+    "size_in_bytes\030\001 \001(\006\022\026\n\016truncate_epoch\030\002 "
+    "\001(\007\"*\n\014KeyValuePair\022\013\n\003key\030\001 \002(\t\022\r\n\005valu"
+    "e\030\002 \002(\t*|\n\027AccessControlPolicyType\022\036\n\032AC"
+    "CESS_CONTROL_POLICY_NULL\020\001\022\037\n\033ACCESS_CON"
+    "TROL_POLICY_POSIX\020\002\022 \n\034ACCESS_CONTROL_PO"
+    "LICY_VOLUME\020\003*\365\003\n\026OSDSelectionPolicyType"
+    "\022(\n#OSD_SELECTION_POLICY_FILTER_DEFAULT\020"
+    "\350\007\022%\n OSD_SELECTION_POLICY_FILTER_FQDN\020\351"
+    "\007\022%\n OSD_SELECTION_POLICY_FILTER_UUID\020\352\007"
+    "\022%\n OSD_SELECTION_POLICY_GROUP_DCMAP\020\320\017\022"
+    "$\n\037OSD_SELECTION_POLICY_GROUP_FQDN\020\321\017\022$\n"
+    "\037OSD_SELECTION_POLICY_SORT_DCMAP\020\270\027\022#\n\036O"
+    "SD_SELECTION_POLICY_SORT_FQDN\020\271\027\022%\n OSD_"
+    "SELECTION_POLICY_SORT_RANDOM\020\272\027\022&\n!OSD_S"
+    "ELECTION_POLICY_SORT_VIVALDI\020\273\027\022/\n*OSD_S"
+    "ELECTION_POLICY_SORT_HOST_ROUND_ROBIN\020\274\027"
+    "\022#\n\036OSD_SELECTION_POLICY_SORT_UUID\020\236\037\022&\n"
+    "!OSD_SELECTION_POLICY_SORT_REVERSE\020\237\037*A\n"
+    "\032ReplicaSelectionPolicyType\022#\n\037REPLICA_S"
+    "ELECTION_POLICY_SIMPLE\020\001*i\n\nSnapConfig\022\036"
+    "\n\032SNAP_CONFIG_SNAPS_DISABLED\020\000\022\036\n\032SNAP_C"
+    "ONFIG_ACCESS_CURRENT\020\001\022\033\n\027SNAP_CONFIG_AC"
+    "CESS_SNAP\020\002*P\n\022StripingPolicyType\022\031\n\025STR"
+    "IPING_POLICY_RAID0\020\000\022\037\n\033STRIPING_POLICY_"
+    "ERASURECODE\020\001*9\n\nLeaseState\022\010\n\004NONE\020\000\022\013\n"
+    "\007PRIMARY\020\001\022\n\n\006BACKUP\020\002\022\010\n\004IDLE\020\003*\270\001\n\005POR"
+    "TS\022\033\n\025DIR_HTTP_PORT_DEFAULT\020\256\357\001\022\034\n\026DIR_P"
+    "BRPC_PORT_DEFAULT\020\376\376\001\022\033\n\025MRC_HTTP_PORT_D"
+    "EFAULT\020\254\357\001\022\034\n\026MRC_PBRPC_PORT_DEFAULT\020\374\376\001"
+    "\022\033\n\025OSD_HTTP_PORT_DEFAULT\020\260\357\001\022\034\n\026OSD_PBR"
+    "PC_PORT_DEFAULT\020\200\377\001*+\n\tCONSTANTS\022\036\n\032XCAP"
+    "_RENEW_INTERVAL_IN_MIN\020\001*\202\003\n\016SYSTEM_V_FC"
+    "NTL\022\035\n\031SYSTEM_V_FCNTL_H_O_RDONLY\020\000\022\035\n\031SY"
+    "STEM_V_FCNTL_H_O_WRONLY\020\001\022\033\n\027SYSTEM_V_FC"
+    "NTL_H_O_RDWR\020\002\022\035\n\031SYSTEM_V_FCNTL_H_O_APP"
+    "END\020\010\022\035\n\030SYSTEM_V_FCNTL_H_O_CREAT\020\200\002\022\035\n\030"
+    "SYSTEM_V_FCNTL_H_O_TRUNC\020\200\004\022\034\n\027SYSTEM_V_"
+    "FCNTL_H_O_EXCL\020\200\010\022\033\n\027SYSTEM_V_FCNTL_H_O_"
+    "SYNC\020\020\022\036\n\030SYSTEM_V_FCNTL_H_S_IFREG\020\200\200\002\022\036"
+    "\n\030SYSTEM_V_FCNTL_H_S_IFDIR\020\200\200\001\022\036\n\030SYSTEM"
+    "_V_FCNTL_H_S_IFLNK\020\200\300\002\022\035\n\030SYSTEM_V_FCNTL"
+    "_H_S_IFIFO\020\200 *\330\001\n\tREPL_FLAG\022\032\n\026REPL_FLAG"
+    "_FULL_REPLICA\020\001\022\031\n\025REPL_FLAG_IS_COMPLETE"
+    "\020\002\022\035\n\031REPL_FLAG_STRATEGY_RANDOM\020\004\022#\n\037REP"
+    "L_FLAG_STRATEGY_RAREST_FIRST\020\010\022!\n\035REPL_F"
+    "LAG_STRATEGY_SEQUENTIAL\020\020\022-\n)REPL_FLAG_S"
+    "TRATEGY_SEQUENTIAL_PREFETCHING\020 *%\n\010SERV"
+    "ICES\022\007\n\003DIR\020\001\022\007\n\003MRC\020\002\022\007\n\003OSD\020\003B(\n&org.x"
+    "treemfs.pbrpc.generatedinterfaces", 3433);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "xtreemfs/GlobalTypes.proto", &protobuf_RegisterTypes);
   TraceConfig::default_instance_ = new TraceConfig();
@@ -1280,6 +1281,7 @@ const int StripingPolicy::kTypeFieldNumber;
 const int StripingPolicy::kStripeSizeFieldNumber;
 const int StripingPolicy::kWidthFieldNumber;
 const int StripingPolicy::kParityWidthFieldNumber;
+const int StripingPolicy::kEcWriteQuorumFieldNumber;
 #endif  // !_MSC_VER
 
 StripingPolicy::StripingPolicy()
@@ -1302,6 +1304,7 @@ void StripingPolicy::SharedCtor() {
   stripe_size_ = 0u;
   width_ = 0u;
   parity_width_ = 0u;
+  ec_write_quorum_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1341,6 +1344,7 @@ void StripingPolicy::Clear() {
     stripe_size_ = 0u;
     width_ = 0u;
     parity_width_ = 0u;
+    ec_write_quorum_ = 0u;
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -1416,6 +1420,22 @@ bool StripingPolicy::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
+        if (input->ExpectTag(45)) goto parse_ec_write_quorum;
+        break;
+      }
+
+      // optional fixed32 ec_write_quorum = 5;
+      case 5: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
+         parse_ec_write_quorum:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_FIXED32>(
+                 input, &ec_write_quorum_)));
+          set_has_ec_write_quorum();
+        } else {
+          goto handle_uninterpreted;
+        }
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -1459,6 +1479,11 @@ void StripingPolicy::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteFixed32(4, this->parity_width(), output);
   }
 
+  // optional fixed32 ec_write_quorum = 5;
+  if (has_ec_write_quorum()) {
+    ::google::protobuf::internal::WireFormatLite::WriteFixed32(5, this->ec_write_quorum(), output);
+  }
+
   if (!unknown_fields().empty()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -1486,6 +1511,11 @@ void StripingPolicy::SerializeWithCachedSizes(
   // optional fixed32 parity_width = 4;
   if (has_parity_width()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(4, this->parity_width(), target);
+  }
+
+  // optional fixed32 ec_write_quorum = 5;
+  if (has_ec_write_quorum()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteFixed32ToArray(5, this->ec_write_quorum(), target);
   }
 
   if (!unknown_fields().empty()) {
@@ -1517,6 +1547,11 @@ int StripingPolicy::ByteSize() const {
 
     // optional fixed32 parity_width = 4;
     if (has_parity_width()) {
+      total_size += 1 + 4;
+    }
+
+    // optional fixed32 ec_write_quorum = 5;
+    if (has_ec_write_quorum()) {
       total_size += 1 + 4;
     }
 
@@ -1559,6 +1594,9 @@ void StripingPolicy::MergeFrom(const StripingPolicy& from) {
     if (from.has_parity_width()) {
       set_parity_width(from.parity_width());
     }
+    if (from.has_ec_write_quorum()) {
+      set_ec_write_quorum(from.ec_write_quorum());
+    }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
 }
@@ -1587,6 +1625,7 @@ void StripingPolicy::Swap(StripingPolicy* other) {
     std::swap(stripe_size_, other->stripe_size_);
     std::swap(width_, other->width_);
     std::swap(parity_width_, other->parity_width_);
+    std::swap(ec_write_quorum_, other->ec_write_quorum_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

@@ -129,6 +129,8 @@ message StripingPolicy {
     required fixed32 width = 3;
     // Number of OSDs to distribute parity chunks on.
     optional fixed32 parity_width = 4;
+    //
+    optional fixed32 ec_write_quorum = 5;
 }
 
 // Details for a file replica.
