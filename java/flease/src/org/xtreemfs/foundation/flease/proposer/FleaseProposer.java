@@ -323,7 +323,7 @@ public class FleaseProposer {
                 return;
             }
     
-            if (myViewId > msg.getViewId()) {
+            if (myViewId > msg.getViewId() && !msg.isInternalEvent()) {
                 //drop
                 if (Logging.isDebug() && config.isDebugPrintMessages()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG,
