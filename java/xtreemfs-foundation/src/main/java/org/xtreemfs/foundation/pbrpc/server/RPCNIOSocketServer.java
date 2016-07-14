@@ -163,7 +163,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                             "Failed to bind to port " + bindPort + ", waiting " + waitTime + "ms for it to become free ("
                             + (bindRetries - bindTry) + " attempt(s) left).");
                     if (bindTry == 1) {
-                        Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                        Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                 "You can configure the number of attempts using the 'listen.port.bind_retries' parameter."
                                 + " Current value: " + bindRetries + ".");
                     }
@@ -175,7 +175,7 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     waitTime *= 2;
                 }
             }
-        } while (!socket.socket().isBound() && bindTry < bindRetries);
+        } while (!socket.socket().isBound());
 
         this.bindPort = bindPort;
         if (bindTry > 1) {
