@@ -44,11 +44,13 @@ script: |
   fi
 
 after_failure:
-  - cat $TEST_DIR/log/*
   - JUNIT_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'JUnit tests'`
   - CPP_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'C++ Unit Tests'`
   - VALGRIND_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'Valgrind memory-leak check for C++ Unit Tests'`
   - CONTRIB_RESULT=`./contrib/travis/parse_results.py $TEST_DIR/result.json 'hadoop adapter junit tests'`
+  - cat $TEST_DIR/log/dir.log
+  - cat $TEST_DIR/log/mrc.log
+  - cat $TEST_DIR/log/osd*.log
   - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
   - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
   - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
