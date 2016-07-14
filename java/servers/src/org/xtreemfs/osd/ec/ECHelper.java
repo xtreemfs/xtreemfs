@@ -36,47 +36,93 @@ public class ECHelper {
         }
     };
 
-    public static void xor(byte[] target, byte[] a, byte[] b) {
-        // xor(ReusableBuffer.wrap(target), ReusableBuffer.wrap(a), ReusableBuffer.wrap(b));
-        assert (target.length == a.length);
-        assert (target.length == b.length);
+    /*
+     * public static void xor(byte[] target, byte[] a, byte[] b) { // xor(ReusableBuffer.wrap(target),
+     * ReusableBuffer.wrap(a), ReusableBuffer.wrap(b)); assert (target.length == a.length); assert (target.length ==
+     * b.length);
+     * 
+     * for (int i = 0; i < target.length; i++) { target[i] = (byte) (a[i] ^ b[i]); } }
+     * 
+     * public static void xor(byte[] target, ReusableBuffer a, ReusableBuffer b) { xor(ReusableBuffer.wrap(target), a,
+     * b); }
+     */
 
-        for (int i = 0; i < target.length; i++) {
-            target[i] = (byte) (a[i] ^ b[i]);
-        }
-    }
-
-    public static void xor(byte[] target, ReusableBuffer a, ReusableBuffer b) {
-        xor(ReusableBuffer.wrap(target), a, b);
-    }
-
+    /**
+     * Computes the xor between the src and cur buffers and stores the result in the dst buffer. <br>
+     * The src buffers position will be at its limit afterwards, <br>
+     * and the dst buffers position will be forwarded by the number of xor'd bytes.
+     */
     public static void xor(ReusableBuffer dst, ReusableBuffer src, ReusableBuffer cur) {
-        assert (src.remaining() == dst.remaining());
+        assert (src.remaining() <= dst.remaining());
         assert (src.remaining() <= cur.remaining());
 
-        while (src.remaining() >= 8) {
-            // FIXME (jdillmann): Check endianess! This is probably a bad idea.
-            dst.putLong(src.getLong() ^ cur.getLong());
-        }
+        // while (src.remaining() >= 8) {
+        // // FIXME (jdillmann): Check endianess! This is probably a bad idea.
+        // dst.putLong(src.getLong() ^ cur.getLong());
+        // }
 
         while (src.hasRemaining()) {
             dst.put((byte) (src.get() ^ cur.get()));
         }
     }
 
-    public static ReusableBuffer zeroPad(ReusableBuffer src, int size) {
-        if (src.capacity() >= size) {
-            return src;
+
+    /**
+     * Computes the xor between the dst and src buffers and stores the result in the dst buffer. <br>
+     * The src buffers position will be at its limit afterwards, <br>
+     * and the dst buffers position will be forwarded by the number of xor'd bytes.
+     */
+    public static void xor(ReusableBuffer dst, ReusableBuffer src) {
+        int dstPos = dst.position();
+        ReusableBuffer dstViewBuffer = dst.createViewBuffer();
+        dst.position(dstPos);
+        dstViewBuffer.position(dstPos);
+
+        xor(dst, src, dstViewBuffer);
+        BufferPool.free(dstViewBuffer);
+    }
+
+
+    /**
+     * Returns a new (maybe view) buffer with a capacity of length, which contains the data from the src buffer followed
+     * by zeros if the src capacity is less then length. <br>
+     * If the src capacity was larger then length, a view buffer from 0:length will be returned.<br>
+     * Note: the caller is responsible for freeing the returned buffer.
+     */
+    public static ReusableBuffer zeroPad(ReusableBuffer src, int length) {
+        if (src != null && src.capacity() >= length) {
+            int srcPos = src.position();
+            src.position(0);
+            ReusableBuffer viewBuffer = src.createViewBuffer();
+            viewBuffer.range(0, length);
+            src.position(srcPos);
+            return viewBuffer;
         }
 
-        ReusableBuffer padded = BufferPool.allocate(size);
-        padded.put(src);
-        BufferPool.free(src);
-
-        while (padded.hasRemaining()) {
-            padded.put((byte) 0);
+        ReusableBuffer padded = BufferPool.allocate(length);
+        if (src != null) {
+            int srcPos = src.position();
+            src.position(0);
+            padded.put(src);
+            src.position(srcPos);
         }
+
+        zeroFill(padded);
         padded.flip();
         return padded;
+    }
+
+    /**
+     * Fills the buffer from position to limit with zeros. <br>
+     * The buffers position will be limit afterwards.
+     */
+    public static void zeroFill(ReusableBuffer buffer) {
+        while (buffer.remaining() >= 8) {
+            buffer.putLong(0L);
+        }
+
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
+        }
     }
 }

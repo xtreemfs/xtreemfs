@@ -51,7 +51,7 @@ import org.xtreemfs.osd.ec.ECFileState.FileState;
 import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
 import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
 import org.xtreemfs.osd.ec.ECWorker.TYPE;
-import org.xtreemfs.osd.ec.ECWriteWorker.WriteEventType;
+import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECCommitVector;
@@ -660,7 +660,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         // Try to get a result from every node
         int numResponses = numRemotes + 1;
-        int numReqAck = numRemotes + 1;
+        // FIXME (jdillmann): How to determine how long to wait without an error detector?
+        int numReqAck = file.getPolicy().getReadQuorum();
 
         final LocalRPCResponseHandler<xtreemfs_ec_get_vectorsResponse, Integer> handler;
         handler = new LocalRPCResponseHandler<xtreemfs_ec_get_vectorsResponse, Integer>(numResponses,
@@ -803,9 +804,10 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         };
 
         int numResponses = numRemotes + 1;
+        int numAcksReq = file.getPolicy().getDataWidth();
         final LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer> handler;
-        handler = new LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer>(numResponses,
-                file.getPolicy().k, listener);
+        handler = new LocalRPCResponseHandler<xtreemfs_ec_commit_vectorResponse, Integer>(numResponses, numAcksReq,
+                listener);
 
         try {
             for (int i = 0; i < numRemotes; i++) {
@@ -825,7 +827,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         // Wait for the local result
         ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
-        getVectorOp.startLocalRequest(fileId, file.getPolicy().sp, resultIntervals, handler);
+        getVectorOp.startLocalRequest(fileId, file.getPolicy().getStripingPolicy(), resultIntervals, handler);
 
     }
 
@@ -868,7 +870,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             }
         }
 
-        if (numComplete < file.getPolicy().k) {
+        if (numComplete >= file.getPolicy().getDataWidth()) {
             doPrimary(file);
         } else {
             String errorMsg = String.format(
@@ -918,6 +920,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         long start = sp.getObjectStartOffset(firstObjNo) + reqOffset;
         long end = start + reqSize;
+        
+        long stripeStart = sp.getObjectStartOffset(sp.getRow(firstObjNo) * sp.getWidth());
+        long stripeEnd = sp.getObjectStartOffset((sp.getRow(firstObjNo) + 1) * sp.getWidth());
 
         Interval reqInterval = ObjectInterval.empty(start, end);
         ReusableBuffer data = BufferPool.allocate(reqSize);
@@ -931,6 +936,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         List<Interval> commitIntervals = file.getCurVector().getOverlapping(start, end);
+        List<Interval> fullStripeCommitIntervals = file.getCurVector().getOverlapping(stripeStart, stripeEnd);
         ECReadWorker worker = new ECReadWorker(master, credentials, loc, fileId, sp, reqInterval, commitIntervals, data,
                 method, READ_WORKER_TIMEOUT_MS, this);
         file.addActiveRequest(worker);
@@ -1036,7 +1042,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         List<Interval> commitIntervals = curVector.getOverlapping(opStart, opEnd);
         final ECWriteWorker worker = new ECWriteWorker(master, file.getCredentials(), file.getLocations(), fileId, opId,
-                sp, file.getPolicy().qw, reqInterval, commitIntervals, data, method, WRITE_WORKER_TIMEOUT_MS, this);
+                sp, file.getPolicy().getWriteQuorum(), reqInterval, commitIntervals, data, method,
+                WRITE_WORKER_TIMEOUT_MS, this);
 
         file.addActiveRequest(worker);
         worker.start();

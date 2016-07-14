@@ -182,17 +182,21 @@ public class ECWriteIntervalOperation extends OSDOperation {
         OSDServiceClient osdClient = master.getOSDClient();
         // master.getECMasterStage().getOSDClient();
 
-        for (ServiceUUID parityOSD : parityOSDs) {
-            try {
+
+
+        try {
+            for (ServiceUUID parityOSD : parityOSDs) {
                 @SuppressWarnings("unchecked")
                 RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
                         RPCAuthentication.authNone, RPCAuthentication.userService, fileCredentials, fileId, opId, objNo,
-                        offset, diffInterval.getMsg(), ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff);
+                        offset, diffInterval.getMsg(), ProtoInterval.toProto(stripeInterval), commitIntervalMsgs,
+                        diff.createViewBuffer());
                 response.registerListener(ECHelper.emptyResponseListener);
-            } catch (IOException ex) {
-                Logging.logError(Logging.LEVEL_WARN, this, ex);
-                return;
             }
+        } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_WARN, this, ex);
+        } finally {
+            BufferPool.free(diff);
         }
     }
 

@@ -226,7 +226,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         if (finishedSignaled.get()) {
             return;
         }
-        activeHandlers.incrementAndGet();
+        registerActiveHandler();
 
         long objNo = result.getMappedObject();
 
@@ -258,18 +258,14 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             }
         }
        
-        if (activeHandlers.decrementAndGet() == 0) {
-            synchronized (activeHandlers) {
-                activeHandlers.notifyAll();
-            }
-        }
+        deregisterActiveHandler();
     }
 
     void handleParityResponse(xtreemfs_ec_write_diffResponse response) {
         if (finishedSignaled.get()) {
             return;
         }
-        activeHandlers.incrementAndGet();
+        registerActiveHandler();
 
         boolean objFailed = response.hasError();
         boolean needsReconstruction = !objFailed && response.getNeedsReconstruction();
@@ -293,23 +289,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             }
         }
 
-        if (activeHandlers.decrementAndGet() == 0) {
-            synchronized (activeHandlers) {
-                activeHandlers.notifyAll();
-            }
-        }
-    }
-
-    private void waitForActiveHandlers() {
-        synchronized (activeHandlers) {
-            while (activeHandlers.get() > 0) {
-                try {
-                    activeHandlers.wait();
-                } catch (InterruptedException ex) {
-                    // ignore
-                }
-            }
-        }
+        deregisterActiveHandler();
     }
 
     private void timeout() {
@@ -435,7 +415,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
             ReusableBuffer prevData = reconstructor.getObject(osdNo);
             prevData.range(objOffset, objLength);
-
+            
             ReusableBuffer diff = BufferPool.allocate(objLength);
 
             ECHelper.xor(diff, reqData, prevData);
@@ -448,30 +428,33 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             Interval diffInterval = new ProtoInterval(diffStart, diffEnd, stripeInterval.getVersion(),
                     stripeInterval.getId(), stripeInterval.getOpStart(), stripeInterval.getOpEnd());
 
-            for (int parityOsdNo = dataWidth; parityOsdNo < stripeWidth; parityOsdNo++) {
+            try {
+                for (int parityOsdNo = dataWidth; parityOsdNo < stripeWidth; parityOsdNo++) {
 
-                if (stripeState.hasFailed(parityOsdNo)) {
-                    // Parity OSD did already fail, don't send diff again.
-                    continue;
+                    if (stripeState.hasFailed(parityOsdNo)) {
+                        // Parity OSD did already fail, don't send diff again.
+                        continue;
+                    }
+
+                    synchronized (stripeState) {
+                        stripeState.responseStates[parityOsdNo] = ResponseState.REQ_DIFF;
+                    }
+                    ServiceUUID parityOSD = getRemote(parityOsdNo);
+                    
+                    try {
+                        @SuppressWarnings("unchecked")
+                        RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
+                                RPCAuthentication.authNone, RPCAuthentication.userService, fileCredentials, fileId,
+                                opId, objNo, objOffset, ProtoInterval.toProto(diffInterval),
+                                ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff.createViewBuffer());
+                        response.registerListener(ECHelper.emptyResponseListener);
+                    } catch (IOException ex) {
+                        Logging.logError(Logging.LEVEL_WARN, this, ex);
+                    }
+
                 }
-
-                synchronized (stripeState) {
-                    stripeState.responseStates[parityOsdNo] = ResponseState.REQ_DIFF;
-                }
-                ServiceUUID parityOSD = getRemote(parityOsdNo);
-
-                try {
-                    @SuppressWarnings("unchecked")
-                    RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
-                            RPCAuthentication.authNone, RPCAuthentication.userService, fileCredentials, fileId, opId,
-                            objNo, objOffset, ProtoInterval.toProto(diffInterval),
-                            ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff);
-                    response.registerListener(ECHelper.emptyResponseListener);
-                } catch (IOException ex) {
-                    Logging.logError(Logging.LEVEL_WARN, this, ex);
-                    BufferPool.free(diff);
-                }
-
+            } finally {
+                BufferPool.free(diff);
             }
         }
     }

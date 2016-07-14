@@ -15,9 +15,10 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
 public class ECPolicy {
-    final static WriteQuorumConfig wqConf = WriteQuorumConfig.MIN;
+    final static WriteQuorumConfig DEFAULT_WRITE_QUORUM = WriteQuorumConfig.MAX;
 
     enum WriteQuorumConfig {
         MAX, // requires to write on n devices
@@ -25,20 +26,47 @@ public class ECPolicy {
         MEAN, // requires to write on k + (m/2) devices
     }
 
-    final StripingPolicyImpl sp;
-    final int n;
-    final int k;
-    final int qw;
-    final int qr;
+    final private StripingPolicyImpl sp;
+    final private int n;
+    final private int k;
+    final private int qw;
+    final private int qr;
 
-    public ECPolicy(StripingPolicyImpl sp, int qw, int qr) {
-        // FIXME (jdillmann): Make configurable
-        this(sp, wqConf);
-        // this.sp = sp;
-        // this.n = sp.getWidth() + sp.getParityWidth();
-        // this.k = sp.getWidth();
-        // this.qw = qw;
-        // this.qr = qr;
+    public ECPolicy(StripingPolicyImpl sp) {
+        this.sp = sp;
+        this.n = sp.getWidth() + sp.getParityWidth();
+        this.k = sp.getWidth();
+        
+        StripingPolicy spMsg = sp.getPolicy();
+        if (spMsg.hasEcWriteQuorum()) {
+            qw = spMsg.getEcWriteQuorum();
+            // FIXME (jdillmann): Check this!
+            assert (qw >= k) : "Write Quorum has to be >=k";
+
+            int a = n - qw;
+            qr = k + a;
+
+        } else {
+            switch (DEFAULT_WRITE_QUORUM) {
+            default:
+            case MAX:
+                this.qw = n;
+                this.qr = k;
+                break;
+
+            case MEAN:
+
+                this.qw = n;
+                this.qr = k;
+                break;
+
+            case MIN:
+                int a = (int) Math.ceil((n - k) / 2);
+                this.qw = k + a;
+                this.qr = n - a;
+                break;
+            }
+        }
     }
 
     public ECPolicy(StripingPolicyImpl sp, WriteQuorumConfig wqConf) {
@@ -66,6 +94,22 @@ public class ECPolicy {
             break;        
         }
 
+    }
+
+    public int getWriteQuorum() {
+        return qw;
+    }
+
+    public int getReadQuorum() {
+        return qr;
+    }
+    
+    public int getDataWidth() {
+        return k;
+    }
+
+    public StripingPolicyImpl getStripingPolicy() {
+        return sp;
     }
 
     public boolean recoverVector(int responseCount, List<Interval>[] curVectors, List<Interval>[] nextVectors,

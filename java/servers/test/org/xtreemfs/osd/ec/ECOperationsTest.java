@@ -11,6 +11,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -24,7 +25,6 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
-import org.xtreemfs.common.libxtreemfs.Helper;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
@@ -47,8 +47,6 @@ import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
-import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
@@ -83,6 +81,8 @@ public class ECOperationsTest extends ECTestCommon {
     OSDServiceClient      osdClient;
 
     TestEnvironment       testEnv;
+
+    List<String>          osdUUIDs;
 
     @BeforeClass
     public static void initializeTest() throws Exception {
@@ -126,26 +126,15 @@ public class ECOperationsTest extends ECTestCommon {
 
         fileId = "ABCDEF:1";
 
-        fileCredentials = getCreds(fileId, 1, 0, 128);
+        osdUUIDs = new ArrayList<String>(2);
+        osdUUIDs.addAll(Arrays.asList(testEnv.getOSDUUIDs()));
+        osdUUIDs.add("mockUpOSD");
+        osdUUIDs.add("mockUpOSD2");
+        
+        
+        fileCredentials = getFileCredentials(fileId, 1, 0, 128, 1, osdUUIDs.subList(0, 1));
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
     }
-
-    Capability getCap(String fileId) {
-        // TODO (jdillmann): Check if this Cap is correct
-        return new Capability(fileId,
-                Helper.flagsToInt(SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_TRUNC, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR), 60,
-                System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0,
-                osdConfig.getCapabilitySecret());
-    }
-
-    FileCredentials getCreds(String fileId, int width, int parity, int stripeSize) {
-        Replica r = Replica.newBuilder().setReplicationFlags(0).setStripingPolicy(getECStripingPolicy(1, 0, stripeSize))
-                .addOsdUuids(osdUUID.toString()).build();
-        XLocSet xloc = XLocSet.newBuilder().setReadOnlyFileSize(0)
-                .setReplicaUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_EC).addReplicas(r).setVersion(1).build();
-        return FileCredentials.newBuilder().setXcap(getCap(fileId).getXCap()).setXlocs(xloc).build();
-    }
-
 
 
     @After
@@ -233,7 +222,7 @@ public class ECOperationsTest extends ECTestCommon {
         // Write Interval 0:12 to next and commit it
         // *****************************************
         fileId = "ABCDEF:1";
-        fileCredentials = getCreds(fileId, 1, 0, 128);
+        fileCredentials = getFileCredentials(fileId, 1, 0, 128, 1, osdUUIDs.subList(0, 1));
         commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
                 .setFileCredentials(fileCredentials);
 
@@ -310,7 +299,7 @@ public class ECOperationsTest extends ECTestCommon {
         // Drop intervals with a older version or id
         // *****************************************
         fileId = "ABCDEF:2";
-        fileCredentials = getCreds(fileId, 1, 0, 128);
+        fileCredentials = getFileCredentials(fileId, 1, 0, 128, 1, osdUUIDs.subList(0, 1));
         commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
                 .setFileCredentials(fileCredentials);
 
@@ -393,7 +382,7 @@ public class ECOperationsTest extends ECTestCommon {
         // *****************************************
         fileId = "ABCDEF:1";
         fileIdNext = "ABCDEF:1.next";
-        fileCredentials = getCreds(fileId, 2, 0, 1);
+        fileCredentials = getFileCredentials(fileId, 2, 0, 1, 1, osdUUIDs.subList(0, 2));
         sp = getStripingPolicyImplementation(fileCredentials);
         commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
                 .setFileCredentials(fileCredentials);
@@ -438,19 +427,21 @@ public class ECOperationsTest extends ECTestCommon {
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c0.array(), byteOut);
+        BufferPool.free(objInf.getData());
 
         objInf = layout.readObject(fileId, fi, 2, 0, 1024, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c2.array(), byteOut);
+        BufferPool.free(objInf.getData());
 
 
         // Test committing one chunk and from a operation spanning two stripes
         // *******************************************************************
         fileId = "ABCDEF:2";
         fileIdNext = "ABCDEF:2.next";
-        fileCredentials = getCreds(fileId, 2, 0, 1);
+        fileCredentials = getFileCredentials(fileId, 2, 0, 1, 1, osdUUIDs.subList(0, 2));
         sp = getStripingPolicyImplementation(fileCredentials);
         commitRequestBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder().setFileId(fileId)
                 .setFileCredentials(fileCredentials);
@@ -499,6 +490,7 @@ public class ECOperationsTest extends ECTestCommon {
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c2.array(), byteOut);
+        BufferPool.free(objInf.getData());
     }
 
     @Test
@@ -537,6 +529,7 @@ public class ECOperationsTest extends ECTestCommon {
         requestB.setObjectNumber(objNo)
                 .setOpId(opId)
                 .setOffset(offset)
+                .setHasData(true)
                 .setStripeInterval(ProtoInterval.toProto(interval));
         request = requestB.build();
         rpcResponse = osdClient.xtreemfs_ec_write_interval(osdUUID.getAddress(), RPCAuthentication.authNone,
@@ -573,7 +566,7 @@ public class ECOperationsTest extends ECTestCommon {
         intervalList2WriteIntervalRequest(commitIntervals, requestB);
 
         interval = new ObjectInterval(offset, chunkSize, 2, opId);
-        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset).setHasData(true)
                 .setStripeInterval(ProtoInterval.toProto(interval));
 
         request = requestB.build();
@@ -595,6 +588,7 @@ public class ECOperationsTest extends ECTestCommon {
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
+        BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF1.array(), byteOut);
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize / 2, 1);
@@ -602,6 +596,7 @@ public class ECOperationsTest extends ECTestCommon {
         byteOut = new byte[chunkSize / 2];
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
+        BufferPool.free(objInf.getData());
         assertArrayEquals(dataInH2.array(), byteOut);
 
         
@@ -618,7 +613,7 @@ public class ECOperationsTest extends ECTestCommon {
         intervalList2WriteIntervalRequest(commitIntervals, requestB);
 
         interval = new ObjectInterval(offset, chunkSize, 2, opId);
-        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset)
+        requestB.setObjectNumber(objNo).setOpId(opId).setOffset(offset).setHasData(true)
                 .setStripeInterval(ProtoInterval.toProto(interval));
 
         request = requestB.build();
@@ -641,12 +636,14 @@ public class ECOperationsTest extends ECTestCommon {
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
+        BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF1.array(), byteOut);
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         objInf.getData().position(0);
         objInf.getData().get(byteOut);
+        BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF3.array(), byteOut);
     }
 

@@ -84,7 +84,7 @@ public class StripeReconstructor {
         chunkSize = sp.getPolicy().getStripeSize() * 1024;
         localOsdNo = sp.getRelativeOSDPosition();
 
-        long firstObjNo = stripeWidth * stripeNo;
+        long firstObjNo = dataWidth * stripeNo;
 
         chunks = new Chunk[stripeWidth];
         for (int osdNo = 0; osdNo < stripeWidth; osdNo++) {
@@ -207,7 +207,7 @@ public class StripeReconstructor {
                     // make local request
                     handler.addLocal(chunk);
                     ECReadOperation readOp = (ECReadOperation) master.getOperation(ECReadOperation.PROC_ID);
-                    readOp.startLocalRequest(fileId, sp, chunk.osdNo, objOffset, objLength, commitIntervalMsgs, true,
+                    readOp.startLocalRequest(fileId, sp, chunk.objNo, objOffset, objLength, commitIntervalMsgs, true,
                             handler);
                 } else {
                     try {
@@ -274,7 +274,10 @@ public class StripeReconstructor {
             for (Chunk chunk : chunks) {
                 if (chunk.state == ChunkState.COMPLETE) {
                     present[chunk.osdNo] = true;
-                    chunk.buffer = ECHelper.zeroPad(chunk.buffer, chunkSize);
+                    ReusableBuffer fullChunk = ECHelper.zeroPad(chunk.buffer, chunkSize);
+
+                    BufferPool.free(chunk.buffer);
+                    chunk.buffer = fullChunk;
                 } else {
                     present[chunk.osdNo] = false;
                     chunk.state = ChunkState.RECONSTRUCTED;

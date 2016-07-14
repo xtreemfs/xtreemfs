@@ -220,7 +220,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             BufferPool.free(result.getData());
             return;
         }
-        activeHandlers.incrementAndGet();
+        registerActiveHandler();
 
         ChunkState chunkState = result.getMappedObject();
 
@@ -234,10 +234,11 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         synchronized (stripeState) {
             if (stripeState.isInReconstruction() && chunkState.partial) {
                 // Ignore
-                Logging.logMessage(Logging.LEVEL_INFO, this,
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
                         "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
                         chunkState.osdNo, chunkState.objNo);
                 BufferPool.free(result.getData());
+                deregisterActiveHandler();
                 return;
             }
 
@@ -260,24 +261,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         }
 
-
-        if (activeHandlers.decrementAndGet() == 0) {
-            synchronized (activeHandlers) {
-                activeHandlers.notifyAll();
-            }
-        }
-    }
-
-    private void waitForActiveHandlers() {
-        synchronized (activeHandlers) {
-            while (activeHandlers.get() > 0) {
-                try {
-                    activeHandlers.wait();
-                } catch (InterruptedException ex) {
-                    // ignore
-                }
-            }
-        }
+        deregisterActiveHandler();
     }
 
     private void startReconstruction(StripeState stripeState) {
@@ -382,7 +366,8 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                 int osdNo = sp.getOSDforObject(objNo);
 
                 ChunkState chunkState = stripeState.chunkStates[osdNo];
-                assert (chunkState.state == ResponseState.SUCCESS || chunkState.state == ResponseState.RECONSTRUCTED);
+                assert (chunkState.state == ResponseState.SUCCESS
+                        || chunkState.state == ResponseState.RECONSTRUCTED) : "chunkState was: " + chunkState.state;
 
                 ObjectData objData = chunkState.objData;
                 ReusableBuffer buf = chunkState.buffer;
@@ -453,15 +438,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void processFailed(ReadEvent event) {
-        synchronized (activeHandlers) {
-            while (activeHandlers.get() > 0) {
-                try {
-                    activeHandlers.wait();
-                } catch (InterruptedException ex) {
-                    // ignore
-                }
-            }
-        }
+        waitForActiveHandlers();
 
         BufferPool.free(data);
         for (StripeState stripeState : stripeStates) {
@@ -523,6 +500,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             this.objNo = objNo;
             this.stripeNo = stripeNo;
             this.partial = partial;
+            this.state = state;
         }
 
         public boolean hasFailed() {
@@ -580,8 +558,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
                     case SUCCESS:
                         if (!chunkState.partial) {
-                            ReusableBuffer viewBuffer = ECHelper.zeroPad(chunkState.buffer.createViewBuffer(),
-                                    chunkSize);
+                            ReusableBuffer viewBuffer = ECHelper.zeroPad(chunkState.buffer, chunkSize);
                             reconstructor.addResult(osdNo, viewBuffer);
                         }
                         break;
@@ -679,7 +656,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             }
 
             if (reconstruction && !chunkState.partial) {
-                ReusableBuffer viewBuffer = ECHelper.zeroPad(chunkState.buffer.createViewBuffer(), chunkSize);
+                ReusableBuffer viewBuffer = ECHelper.zeroPad(chunkState.buffer, chunkSize);
                 reconstructor.addResult(chunkState.osdNo, viewBuffer);
 
                 // even if enough chunks for reconstruction are available the StripeState is not finished yet.

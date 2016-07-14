@@ -210,25 +210,18 @@ public class ECStorage {
                 consistent = true;
 
                 // Generate diff between the current data and the newly written data.
-                byte[] diff = new byte[data.capacity()];
-                ReusableBuffer diffBuffer = ReusableBuffer.wrap(diff);
+                ReusableBuffer diffBuffer = BufferPool.allocate(data.capacity());
                 ObjectInformation objInfo = layout.readObject(fileId, fi, objectNo, offset, data.capacity(), objVer);
-                if (objInfo.getStatus() == ObjectStatus.PADDING_OBJECT
-                        || objInfo.getStatus() == ObjectStatus.DOES_NOT_EXIST || objInfo.getData() == null) {
-                    // There is no current data: the new data is the diff.
-                    data.position(0);
-                    diffBuffer.put(data);
-                } else {
+                if (objInfo.getData() != null) {
                     ReusableBuffer curData = objInfo.getData();
-                    assert (curData.capacity() == data.capacity());
-
-                    // byte-wise diff between cur and next data
-                    // TODO (jdillmann): Benchmark if getting the buffers as byte[] would be faster
-                    data.position(0);
-                    curData.position(0);
-                    ECHelper.xor(diffBuffer, data, curData);
+                    ECHelper.xor(diffBuffer, curData, data);
                     BufferPool.free(curData);
                 }
+                
+                diffBuffer.put(data);
+                assert (!data.hasRemaining() && !diffBuffer.hasRemaining());
+                data.flip();
+                diffBuffer.flip();
 
                 // Return the diff buffer to the caller
                 callback.ecWriteIntervalComplete(diffBuffer, false, null);
@@ -341,7 +334,6 @@ public class ECStorage {
             codec.encodeDiffParity(data.getBuffer(), chunkOSDNoOff, deltaBuf.getBuffer(), parityOSDNoOff, 0,
                     data.capacity());
             deltaBuf.position(0);
-
 
             // Write the data
             String fileIdDelta = fileId + FILEID_DELTA_SUFFIX;
@@ -824,7 +816,9 @@ public class ECStorage {
         long startObjNo = sp.getObjectNoForOffset(intervalStartOffset);
         long endObjNo = sp.getObjectNoForOffset(intervalEndOffset);
 
-        long stripeNo = sp.getRow(startObjNo);
+        long firstStripNo = sp.getRow(startObjNo);
+        long lastStripeNo = sp.getRow(endObjNo);
+
         String fileIdDelta = fileId + FILEID_DELTA_SUFFIX;
         String fileIdCode = fileId + FILEID_CODE_SUFFIX;
 
@@ -832,50 +826,56 @@ public class ECStorage {
         // FIXME (jdillmann): Decide if/when sync should be used
         boolean sync = false;
 
+        // Read from the complete code object (could be optimized)
+        int codeOff = 0;
+        int codeLength = sp.getStripeSizeForObject(startObjNo);
+
         ReusableBuffer codeBuf = null;
         boolean consistent = true;
         try {
-            
-            // Read from the code object (objNo is the stripeNo)
-            // int codeOff = ECHelper.safeLongToInt(intervalStartOffset - sp.getObjectStartOffset(startObjNo));
-            int codeOff = 0;
-            // Note: The byte from the end offset has to be included.
-            // final int codeLength = ECHelper.safeLongToInt(intervalEndOffset - intervalStartOffset + 1);
-            int codeLength = sp.getStripeSizeForObject(startObjNo);
-            codeBuf = readCode(fileId, fi, stripeNo, codeOff, codeLength, objVer);
+            for (long stripeNo = firstStripNo; stripeNo <= lastStripeNo; stripeNo++) {
+                long firstObjInStripe = stripeNo * sp.getWidth();
+                long lastObjInStripe = (stripeNo + 1) * sp.getWidth() - 1;
 
-            // For each delta object belonging to this stripe/operation calculate an XOR diff
-            for (long objNo = startObjNo; objNo <= endObjNo; objNo++) {
-                long startOff = Math.max(sp.getObjectStartOffset(objNo), intervalStartOffset);
-                long endOff = Math.min(sp.getObjectEndOffset(objNo), intervalEndOffset);
+                long stripeStartObjNo = Math.max(firstObjInStripe, startObjNo);
+                long stripeEndObjNo = Math.min(lastObjInStripe, endObjNo);
 
-                int offset = (int) (startOff - sp.getObjectStartOffset(objNo));
-                int length = (int) (endOff - startOff) + 1; // The byte from the end offset has to be included.
+                // Read the code for the current stripe
+                codeBuf = readCode(fileId, fi, stripeNo, codeOff, codeLength, objVer);
 
-                // Read the current delta object and XOR it with the current code data
-                ObjectInformation deltaObj = layout.readObject(fileIdDelta, fi, objNo, offset, length, objVer);
+                // For each delta object belonging to this stripe/operation calculate an XOR diff
+                for (long objNo = stripeStartObjNo; objNo <= stripeEndObjNo; objNo++) {
+                    long startOff = Math.max(sp.getObjectStartOffset(objNo), intervalStartOffset);
+                    long endOff = Math.min(sp.getObjectEndOffset(objNo), intervalEndOffset);
 
-                ReusableBuffer deltaBuf = null;
-                int deltaLength = 0;
-                if (deltaObj.getStatus() == ObjectStatus.EXISTS) {
-                    deltaBuf = deltaObj.getData();
-                    deltaLength = deltaBuf.capacity();
+                    int offset = (int) (startOff - sp.getObjectStartOffset(objNo));
+                    int length = (int) (endOff - startOff) + 1; // The byte from the end offset has to be included.
+
+                    // Read the current delta object and XOR it with the current code data
+                    ObjectInformation deltaObj = layout.readObject(fileIdDelta, fi, objNo, offset, length, objVer);
+
+                    ReusableBuffer deltaBuf = null;
+                    int deltaLength = 0;
+                    if (deltaObj.getStatus() == ObjectStatus.EXISTS) {
+                        deltaBuf = deltaObj.getData();
+                        deltaLength = deltaBuf.capacity();
+                    }
+
+                    if (deltaLength > 0) {
+                        codeBuf.position(offset);
+                        ECHelper.xor(codeBuf, deltaBuf);
+                        codeBuf.position(0);
+                    }
+                    BufferPool.free(deltaBuf);
                 }
 
-                if (deltaLength > 0) {
-                    ReusableBuffer viewBuf = codeBuf.createViewBuffer();
-                    viewBuf.range(offset, deltaLength);
-                    codeBuf.position(offset);
-                    ECHelper.xor(viewBuf, deltaBuf, codeBuf);
-                    BufferPool.free(viewBuf);
-                }
-                BufferPool.free(deltaBuf);
-
+                // Write the updated code back
+                codeBuf.position(0);
+                layout.writeObject(fileIdCode, fi, codeBuf, stripeNo, codeOff, objVer, sync, false);
+                consistent = false;
+                codeBuf = null;
             }
 
-            codeBuf.position(0);
-            layout.writeObject(fileIdCode, fi, codeBuf.createViewBuffer(), stripeNo, codeOff, objVer, sync, false);
-            consistent = false;
 
             // Finally append the interval to the cur vector and "remove" it from the next vector
             layout.setECIntervalVector(fileId, Arrays.asList(interval), false, true);
@@ -894,7 +894,9 @@ public class ECStorage {
             }
             throw ex;
         } finally {
-            BufferPool.free(codeBuf);
+            if (codeBuf != null) {
+                BufferPool.free(codeBuf);
+            }
         }
 
         // Delete completely committed deltas.
@@ -927,24 +929,8 @@ public class ECStorage {
         ObjectInformation codeObj = layout.readObject(fileIdCode, fi, stripeNo, offset, length, version);
 
         // Read the current code data and append 0 until the buffer is full (codeLength)
-        ReusableBuffer codeBuf = null;
-        if (codeObj.getStatus() == ObjectStatus.EXISTS) {
-            if (codeObj.getData().capacity() == length) {
-                codeBuf = codeObj.getData();
-                codeBuf.position(length);
-            } else {
-                codeBuf = BufferPool.allocate(length);
-                codeBuf.put(codeObj.getData());
-                BufferPool.free(codeObj.getData());
-            }
-        } else {
-            codeBuf = BufferPool.allocate(length);
-        }
-
-        while (codeBuf.hasRemaining()) {
-            codeBuf.put((byte) 0);
-        }
-        codeBuf.flip();
+        ReusableBuffer codeBuf = ECHelper.zeroPad(codeObj.getData(), length);
+        BufferPool.free(codeObj.getData());
 
         return codeBuf;
     }

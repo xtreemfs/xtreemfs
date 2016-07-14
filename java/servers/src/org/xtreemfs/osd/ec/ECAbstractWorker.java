@@ -146,6 +146,30 @@ public abstract class ECAbstractWorker<EVENT> implements ECWorker<EVENT> {
         }
     }
 
+    void registerActiveHandler() {
+        activeHandlers.incrementAndGet();
+    }
+
+    void deregisterActiveHandler() {
+        if (activeHandlers.decrementAndGet() == 0) {
+            synchronized (activeHandlers) {
+                activeHandlers.notifyAll();
+            }
+        }
+    }
+
+    void waitForActiveHandlers() {
+        synchronized (activeHandlers) {
+            while (activeHandlers.get() > 0) {
+                try {
+                    activeHandlers.wait();
+                } catch (InterruptedException ex) {
+                    // ignore
+                }
+            }
+        }
+    }
+
     @Override
     public boolean hasFinished() {
         return finished;
