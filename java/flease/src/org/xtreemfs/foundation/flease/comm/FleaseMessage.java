@@ -379,7 +379,8 @@ public class FleaseMessage implements Serializable, Cloneable {
     public boolean isInternalEvent() {
         return msgType == MsgType.EVENT_RESTART ||
                msgType == MsgType.EVENT_TIMEOUT_ACCEPT ||
-               msgType == MsgType.EVENT_TIMEOUT_PREPARE;
+               msgType == MsgType.EVENT_TIMEOUT_PREPARE ||
+               msgType == MsgType.EVENT_RENEW;
     }
 
     public boolean isAcceptorMessage() {
@@ -393,7 +394,8 @@ public class FleaseMessage implements Serializable, Cloneable {
         return msgType == MsgType.MSG_ACCEPT_ACK ||
                msgType == MsgType.MSG_ACCEPT_NACK ||
                msgType == MsgType.MSG_PREPARE_ACK ||
-               msgType == MsgType.MSG_PREPARE_NACK;
+               msgType == MsgType.MSG_PREPARE_NACK || 
+               msgType == MsgType.MSG_WRONG_VIEW;
     }
 
     public int getSize() {
