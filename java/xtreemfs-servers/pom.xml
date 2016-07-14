@@ -21,7 +21,6 @@
     <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
     <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
-    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
@@ -265,19 +264,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
-        <configuration>
-          <argLine>-Xms1024m -Xmx2048m -Djava.library.path=${libjni.directory}</argLine>
-          <!-- FIXME: Too many open file handles/sockets eventually cause shutdown of the VM.   -->
-          <!-- So run each test in its own VM such that during shutdown all handles are closed. -->
-          <reuseForks>false</reuseForks>
-          <forkCount>1</forkCount>
-        </configuration>
       </plugin>
     </plugins>
   </build>
