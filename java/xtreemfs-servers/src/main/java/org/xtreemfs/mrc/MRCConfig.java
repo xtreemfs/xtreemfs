@@ -27,6 +27,7 @@ public class MRCConfig extends ServiceConfig {
             Parameter.DEBUG_LEVEL,
             Parameter.DEBUG_CATEGORIES,
             Parameter.PORT,
+            Parameter.BIND_RETRIES,
             Parameter.HTTP_PORT,
             Parameter.LISTEN_ADDRESS,
             Parameter.HOSTNAME,

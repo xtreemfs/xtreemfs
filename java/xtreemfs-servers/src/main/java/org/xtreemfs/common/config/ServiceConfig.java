@@ -43,6 +43,7 @@ public class ServiceConfig extends Config {
         DIRECTORY_SERVICE3("dir_service.3.host", null, InetSocketAddress.class, false),
         DIRECTORY_SERVICE4("dir_service.4.host", null, InetSocketAddress.class, false),
         PORT("listen.port", null, Integer.class, true),
+        BIND_RETRIES("listen.port.bind_retries", 7, Integer.class, false),
         HTTP_PORT("http_port", null, Integer.class, true),
         LISTEN_ADDRESS("listen.address", null, InetAddress.class, false),
         USE_SSL("ssl.enabled", false, Boolean.class, false),
@@ -580,6 +581,10 @@ public class ServiceConfig extends Config {
 
     public int getPort() {
         return (Integer) parameter.get(Parameter.PORT);
+    }
+
+    public int getBindRetries() {
+        return (Integer) parameter.get(Parameter.BIND_RETRIES);
     }
 
     public int getHttpPort() {

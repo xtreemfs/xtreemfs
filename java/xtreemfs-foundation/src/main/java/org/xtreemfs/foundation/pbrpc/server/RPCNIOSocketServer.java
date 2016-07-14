@@ -106,7 +106,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
                               SSLOptions sslOptions) throws IOException {
-        this(bindPort, bindAddr, rl, sslOptions, 7, -1);
+        this(bindPort, bindAddr, rl, sslOptions, 0, -1);
+    }
+
+    public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
+                              SSLOptions sslOptions, int bindRetries) throws IOException {
+        this(bindPort, bindAddr, rl, sslOptions, bindRetries, -1);
     }
 
     public RPCNIOSocketServer(int bindPort, InetAddress bindAddr, RPCServerRequestListener rl,
@@ -157,6 +162,11 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                     Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                             "Failed to bind to port " + bindPort + ", waiting " + waitTime + "ms for it to become free ("
                             + (bindRetries - bindTry) + " attempt(s) left).");
+                    if (bindTry == 1) {
+                        Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                                "You can configure the number of attempts using the 'listen.port.bind_retries' parameter."
+                                + " Current value: " + bindRetries + ".");
+                    }
                     try {
                         Thread.sleep(waitTime);
                     } catch (InterruptedException e1) {
@@ -166,7 +176,12 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                 }
             }
         } while (!socket.socket().isBound() && bindTry < bindRetries);
+
         this.bindPort = bindPort;
+        if (bindTry > 1) {
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "Successfully bound to port " + bindPort
+                    + " after " + bindTry + " attempts");
+        }
 
         // create a selector and register socket
         selector = Selector.open();

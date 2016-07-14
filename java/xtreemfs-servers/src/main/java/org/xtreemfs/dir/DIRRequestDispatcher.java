@@ -169,7 +169,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         queue = new LinkedBlockingQueue<RPCServerRequest>();
         quit = false;
         
-        server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
+        server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions, config.getBindRetries());
         server.setLifeCycleListener(this);
         
         if (config.isAutodiscoverEnabled()) {

@@ -195,7 +195,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 "MRCRequestDispatcher");
         clientStage.setLifeCycleListener(this);
 
-        serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
+        serverStage = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions, config.getBindRetries());
         serverStage.setLifeCycleListener(this);
 
         DIRServiceClient dirRpcClient = new DIRServiceClient(clientStage, config.getDirectoryService());

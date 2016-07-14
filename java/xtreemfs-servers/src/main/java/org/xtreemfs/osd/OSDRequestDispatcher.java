@@ -295,7 +295,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 .isGRIDSSLmode(), config.getSSLProtocolString(), tm1) : null;
         
         rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts,
-                config.getSocketReceiveBufferSize(), config.getMaxClientQ());
+                config.getBindRetries(), config.getSocketReceiveBufferSize(), config.getMaxClientQ());
         rpcServer.setLifeCycleListener(this);
         
         final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(config.getServiceCredsFile(),
