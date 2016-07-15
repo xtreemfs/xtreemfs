@@ -203,7 +203,7 @@ public class MasterEpochTest {
 
         synchronized(result) {
             if (result.get() == null)
-                result.wait(1000);
+                result.wait(120000);
             if (result.get() == null)
                 fail("timeout!");
         }
@@ -263,7 +263,7 @@ public class MasterEpochTest {
 
         synchronized(result) {
             if (result.get() == null)
-                result.wait(1000);
+                result.wait(120000);
             if (result.get() == null)
                 fail("timeout!");
         }
