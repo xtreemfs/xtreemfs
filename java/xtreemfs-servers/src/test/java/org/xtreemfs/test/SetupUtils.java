@@ -47,7 +47,7 @@ public class SetupUtils {
     
     public static boolean          CHECKSUMS_ON     = false;
     
-    public static final int        DEBUG_LEVEL      = Logging.LEVEL_WARN;
+    public static final int        DEBUG_LEVEL      = Logging.LEVEL_DEBUG;
     
     public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
