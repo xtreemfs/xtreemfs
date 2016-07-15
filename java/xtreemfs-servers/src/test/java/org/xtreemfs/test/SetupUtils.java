@@ -67,6 +67,7 @@ public class SetupUtils {
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", "" + port);
+        props.setProperty("listen.port.bind_retries", "7");
         props.setProperty("http_port", "" + (port - 3000));
         props.setProperty("listen.address", "localhost");
         props.setProperty("local_clock_renewal", "0");
@@ -150,6 +151,7 @@ public class SetupUtils {
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", new Integer(32638 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("listen.port.bind_retries", "7");
         props.setProperty("http_port", new Integer(30638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("uuid", "UUID:localhost:" + new Integer(32638 + PORT_RANGE_OFFSET).toString());
         props.setProperty("ssl.enabled", "" + SSL_ON);
@@ -198,6 +200,7 @@ public class SetupUtils {
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", new Integer(32636 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("listen.port.bind_retries", "7");
         props.setProperty("http_port", new Integer(30636 + PORT_RANGE_OFFSET).toString());
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
@@ -250,6 +253,7 @@ public class SetupUtils {
         props.setProperty("debug.categories",
                 "" + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
         props.setProperty("listen.port", new Integer(32639 + PORT_RANGE_OFFSET).toString());
+        props.setProperty("listen.port.bind_retries", "7");
         props.setProperty("http_port", new Integer(30639 + PORT_RANGE_OFFSET).toString());
         props.setProperty("listen.address", "localhost");
         props.setProperty("no_atime", "true");
