@@ -53,13 +53,15 @@ public class ECHelper {
      * and the dst buffers position will be forwarded by the number of xor'd bytes.
      */
     public static void xor(ReusableBuffer dst, ReusableBuffer src, ReusableBuffer cur) {
-        assert (src.remaining() <= dst.remaining());
-        assert (src.remaining() <= cur.remaining());
+        if (src.remaining() > dst.remaining() || src.remaining() > cur.remaining()) {
+            throw new IndexOutOfBoundsException(
+                    "cur.remaining() and dst.remaining() have to be at least src.remaining()");
+        }
 
-        // while (src.remaining() >= 8) {
-        // // FIXME (jdillmann): Check endianess! This is probably a bad idea.
-        // dst.putLong(src.getLong() ^ cur.getLong());
-        // }
+        while (src.remaining() >= 8) {
+            // FIXME (jdillmann): Check endianess!
+            dst.putLong(src.getLong() ^ cur.getLong());
+        }
 
         while (src.hasRemaining()) {
             dst.put((byte) (src.get() ^ cur.get()));
@@ -125,4 +127,5 @@ public class ECHelper {
             buffer.put((byte) 0);
         }
     }
+
 }

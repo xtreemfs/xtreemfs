@@ -237,7 +237,7 @@ public class StorageStage extends Stage {
     }
 
     public static interface ECCommitVectorCallback {
-        public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error);
+        public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error);
     }
 
     /**

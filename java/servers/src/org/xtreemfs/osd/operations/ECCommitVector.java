@@ -64,7 +64,7 @@ public class ECCommitVector extends OSDOperation {
 
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, rq, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
+            public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
                     rq.sendError(error);
                 } else if (needsReconstruct) {
@@ -82,7 +82,7 @@ public class ECCommitVector extends OSDOperation {
             final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback) {
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(boolean needsReconstruct, ErrorResponse error) {
+            public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error) {
                 if (error != null) {
                     callback.localRequestFailed(error);
                 } else if (needsReconstruct) {

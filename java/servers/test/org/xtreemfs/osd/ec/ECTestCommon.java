@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
@@ -93,6 +94,12 @@ public class ECTestCommon {
     public static void clearAll(List... lists) {
         for (List list : lists) {
             list.clear();
+        }
+    }
+
+    public static void freeAll(ReusableBuffer... buffers) {
+        for (ReusableBuffer buffer : buffers) {
+            BufferPool.free(buffer);
         }
     }
 }

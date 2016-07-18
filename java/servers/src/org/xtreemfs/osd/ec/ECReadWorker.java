@@ -134,29 +134,9 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     public void start() {
         timer.schedule(timeoutTimer, timeoutMS);
 
-        long opStart = reqInterval.getOpStart();
-        long opEnd = reqInterval.getOpEnd();
-
-        long firstStripeNo = sp.getRow(firstObjNo);
-        long lastStripeNo = sp.getRow(lastObjNo);
-
-        for (int stripeIdx = 0; stripeIdx < numStripes; stripeIdx++) {
-            long stripeNo = firstStripeNo + stripeIdx;
-
-            long firstStripeObjNo = stripeNo * dataWidth;
-            long lastStripeObjNo = (stripeNo + 1) * dataWidth - 1;
-
-            long firstObjWithData = Math.max(firstStripeObjNo, firstObjNo);
-            long lastObjWithData = Math.min(lastStripeObjNo, lastObjNo);
-
-            long stripeDataStart = Math.max(sp.getObjectStartOffset(firstObjWithData), opStart);
-            long stripeDataEnd = Math.min(sp.getObjectEndOffset(lastObjWithData) + 1, opEnd);
-
-            ProtoInterval stripeInterval = new ProtoInterval(stripeDataStart, stripeDataEnd, reqInterval.getVersion(),
-                    reqInterval.getId(), opStart, opEnd);
-
+        for (Stripe stripe : Stripe.getIterable(reqInterval, sp)) {
             // boolean localIsParity = localOsdNo > dataWidth;
-            int numResponses = ECHelper.safeLongToInt(lastObjWithData - firstObjWithData + 1);
+            int numResponses = ECHelper.safeLongToInt(stripe.getLastObjWithData() - stripe.getFirstObjWithData() + 1);
 
             LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState> handler = new LocalRPCResponseHandler<xtreemfs_ec_readResponse, ChunkState>(
                     numResponses, new LocalRPCResponseListener<xtreemfs_ec_readResponse, ChunkState>() {
@@ -168,10 +148,10 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                     });
 
 
-            StripeState stripeState = new StripeState(stripeNo, stripeInterval);
-            stripeStates[stripeIdx] = stripeState;
+            StripeState stripeState = new StripeState(stripe.getStripeNo(), stripe.getStripeInterval());
+            stripeStates[stripe.getRelIdx()] = stripeState;
 
-            for (long objNo = firstObjWithData; objNo <= lastObjWithData; objNo++) {
+            for (long objNo = stripe.getFirstObjWithData(); objNo <= stripe.getLastObjWithData(); objNo++) {
                 int osdNo = sp.getOSDforObject(objNo);
 
                 // ReusableBuffer reqData = null;
@@ -181,7 +161,8 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                 int objLength = getObjLength(objNo);
 
                 boolean partial = (objLength < chunkSize);
-                ChunkState chunkState = new ChunkState(osdNo, objNo, stripeNo, partial, ResponseState.REQUESTED);
+                ChunkState chunkState = new ChunkState(osdNo, objNo, stripe.getStripeNo(), partial,
+                        ResponseState.REQUESTED);
                 stripeState.chunkStates[osdNo] = chunkState;
 
                 if (osdNo == localOsdNo) {
@@ -207,9 +188,6 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
             }
 
-            for (int r = 0; r < parityWidth; r++) {
-                int osdNo = dataWidth + r;
-            }
         }
     }
 
@@ -275,7 +253,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, reqInterval, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
+                stripeState.stripeNo, sp, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
         stripeState.markForReconstruction(reconstructor);
         reconstructor.start();
         
@@ -299,7 +277,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = stripeState.reconstructor;
         assert (reconstructor.isComplete());
-        stripeState.reconstructor.decode();
+        stripeState.reconstructor.decode(false);
 
         // absolute start and end to the whole file range
         long opStart = reqInterval.getOpStart();

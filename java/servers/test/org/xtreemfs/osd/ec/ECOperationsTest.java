@@ -424,14 +424,12 @@ public class ECOperationsTest extends ECTestCommon {
         byteOut = new byte[1024];
         objInf = layout.readObject(fileId, fi, 0, 0, 1024, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c0.array(), byteOut);
         BufferPool.free(objInf.getData());
 
         objInf = layout.readObject(fileId, fi, 2, 0, 1024, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c2.array(), byteOut);
         BufferPool.free(objInf.getData());
@@ -487,7 +485,6 @@ public class ECOperationsTest extends ECTestCommon {
 
         objInf = layout.readObject(fileId, fi, 2, 0, 1024, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         assertArrayEquals(c2.array(), byteOut);
         BufferPool.free(objInf.getData());
@@ -548,8 +545,8 @@ public class ECOperationsTest extends ECTestCommon {
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
+        BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF1.array(), byteOut);
 
 
@@ -586,7 +583,6 @@ public class ECOperationsTest extends ECTestCommon {
 
         objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF1.array(), byteOut);
@@ -594,7 +590,6 @@ public class ECOperationsTest extends ECTestCommon {
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize / 2, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
         byteOut = new byte[chunkSize / 2];
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         BufferPool.free(objInf.getData());
         assertArrayEquals(dataInH2.array(), byteOut);
@@ -634,14 +629,12 @@ public class ECOperationsTest extends ECTestCommon {
         byteOut = new byte[chunkSize];
         objInf = layout.readObject(fileId, fi, objNo, 0, chunkSize, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF1.array(), byteOut);
 
         objInf = layout.readObject(fileIdNext, fi, objNo, offset, chunkSize, 1);
         assertEquals(ObjectStatus.EXISTS, objInf.getStatus());
-        objInf.getData().position(0);
         objInf.getData().get(byteOut);
         BufferPool.free(objInf.getData());
         assertArrayEquals(dataInF3.array(), byteOut);

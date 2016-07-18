@@ -6,11 +6,13 @@
  */
 package org.xtreemfs.osd.ec;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
@@ -371,6 +373,142 @@ public class ECPolicy {
 
         return result;
     }
+
+
+    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, Interval reqInterval,
+            List<Interval> curVecIntervals, List<Interval> nextVecIntervals, List<Interval> toCommitAcc,
+            List<Interval> toAbortAcc) throws IOException {
+        return calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals, nextVecIntervals,
+                toCommitAcc, toAbortAcc, null);
+    }
+
+    /**
+     * Checks for each interval in commitIntervals if it is present in the curVecIntervals or the nextVecIntervals.<br>
+     * If it is present in curVecIntervals, overlapping intervals from nextVecIntervals will be added to toAbortAcc.<br>
+     * If it is present in nextVecIntervals, it is added to the toCommitAcc accumulator.<br>
+     * If it isn't present in neither, false is returned immediately.<br>
+     * If it's version is lower then an overlapping one from curVecIntervals, an exception is thrown.
+     * 
+     * @param commitIntervals
+     *            List of intervals to commit. Not necessarily over the range of the whole file.
+     * @param reqInterval
+     *            The interval currently processed. Every interval in nextVecIntervals with the same version and op id
+     *            will be ignored (neither committed or aborted). May be null.
+     * @param curVecIntervals
+     *            List of intervals from the currently stored data. Maybe sliced to the commitIntervals range.
+     * @param nextVecIntervals
+     *            List of intervals from the next buffer. Maybe sliced to the commitIntervals range.
+     * @param toCommitAcc
+     *            Accumulator used to return the intervals to be committed from the next buffer.
+     * @param toAbortAcc
+     *            Accumulator used to return the intervals to be aborted from the next buffer.
+     * @param missingAcc
+     *            Accumulator used to return the intervals that are missing.
+     * @return true if an interval from commitIntervals can not be found. false otherwise.
+     * @throws IOException
+     *             if an interval from commitIntervals contains a lower version version, then an overlapping interval
+     *             from curVecIntervals.
+     */
+    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, Interval reqInterval,
+            List<Interval> curVecIntervals, List<Interval> nextVecIntervals, List<Interval> toCommitAcc,
+            List<Interval> toAbortAcc, List<Interval> missingAcc) throws IOException {
+        assert (!commitIntervals.isEmpty());
+
+        Interval emptyInterval = ObjectInterval.empty(commitIntervals.get(0).getOpStart(),
+                commitIntervals.get(commitIntervals.size() - 1).getOpEnd());
+
+        Iterator<Interval> curIt = curVecIntervals.iterator();
+        Iterator<Interval> nextIt = nextVecIntervals.iterator();
+
+        Interval curInterval = curIt.hasNext() ? curIt.next() : emptyInterval;
+        Interval nextInterval = nextIt.hasNext() ? nextIt.next() : emptyInterval;
+
+
+        // Check for every commit interval if it is available.
+        for (Interval commitInterval : commitIntervals) {
+            // Advance to the next interval that could be a possible match
+            // or set an empty interval as a placeholder
+            while (curInterval.getEnd() <= commitInterval.getStart() && curIt.hasNext()) {
+                curInterval = curIt.next();
+            }
+            if (curInterval.getEnd() <= commitInterval.getStart()) {
+                curInterval = emptyInterval;
+            }
+
+            // Advance to the next interval that could be a possible match
+            // or set an empty interval as a placeholder
+            while (nextInterval.getEnd() <= commitInterval.getStart() && nextIt.hasNext()) {
+                nextInterval = nextIt.next();
+            }
+            if (nextInterval.getEnd() <= commitInterval.getStart()) {
+                nextInterval = emptyInterval;
+            }
+
+            // Check if the interval exists in the current vector.
+            // It could be, that the interval in the current vector is larger then the current one, because it has
+            // not been split yet.
+            // req:  |--1--|-2-| or |-2-|--1--| or |-1-|-2-|-1-|
+            // cur:  |----1----|    |----1----|    |-----1-----|
+            // next: |     |-2-|    |-2-|     |    |   |-2-|   |
+            // It is obvious, that intervals from next must have matching start/end positions also.
+
+            if (commitInterval.equalsVersionId(curInterval)) {
+                // If the version and the id match, they have to overlap
+                assert (commitInterval.overlaps(curInterval));
+                
+                if (commitInterval.getStart() != curInterval.getStart() || commitInterval.getEnd() != curInterval.getEnd()) {
+                    // During reconstruction partial intervals can end up in the curVector if the reconstruction failed
+                    // It is required to start the reconstruction again
+                    if (missingAcc != null) {
+                        missingAcc.add(commitInterval);
+                    } else {
+                        return true;
+                    }
+                }
+
+                // Since the commitInterval is already in the curVector, overlapping intervals from next have to be
+                // aborted.
+                while (commitInterval.overlaps(nextInterval)) {
+                    if (!nextInterval.isEmpty() && !nextInterval.equalsVersionId(reqInterval)) {
+                        // ABORT/INVALIDATE
+                        toAbortAcc.add(nextInterval);
+                    }
+
+                    // Advance the nextInterval iterator or set an empty interval as a placeholder and stop the loop
+                    if (nextIt.hasNext()) {
+                        nextInterval = nextIt.next();
+                    } else {
+                        nextInterval = emptyInterval;
+                        break;
+                    }
+                }
+
+
+            } else if (!commitInterval.isEmpty()) {
+                if (commitInterval.overlaps(curInterval) && commitInterval.getVersion() < curInterval.getVersion()) {
+                    // FAILED (should never happen)
+                    // TODO (jdillmann): Log with better message.
+                    throw new XtreemFSException("request interval is older then the current interval");
+                }
+
+                if (commitInterval.equals(nextInterval)) {
+                    // COMMIT nextInterval
+                    toCommitAcc.add(nextInterval);
+                } else {
+                    // FAILED (go into recovery)
+                    if (missingAcc != null) {
+                        missingAcc.add(commitInterval);
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+
+
+        return (missingAcc != null && !missingAcc.isEmpty());
+    }
+
 
     /**
      * The MutableInterval allows the modification of the intervals members. It is used solely for the vector recovery

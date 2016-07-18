@@ -8,6 +8,7 @@ package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -36,7 +37,6 @@ public class StripeReconstructor {
     final String                      fileId;
     final long                        stripeNo;
     final StripingPolicyImpl          sp;
-    final Interval                    reqInterval;
     final List<IntervalMsg>           commitIntervalMsgs;
     final OSDServiceClient            osdClient;
     final OSDRequestDispatcher        master;
@@ -61,10 +61,9 @@ public class StripeReconstructor {
     boolean                           reconstructed;
     boolean                           complete;
 
-
     public StripeReconstructor(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc,
-            String fileId, long stripeNo, StripingPolicyImpl sp, Interval reqInterval,
-            List<IntervalMsg> commitIntervalMsgs, OSDServiceClient osdClient, StripeReconstructorCallback callback) {
+            String fileId, long stripeNo, StripingPolicyImpl sp, List<?> commitIntervals,
+            OSDServiceClient osdClient, StripeReconstructorCallback callback) {
 
         this.master = master;
         this.fileCredentials = fileCredentials;
@@ -72,12 +71,22 @@ public class StripeReconstructor {
         this.replica = xloc.getLocalReplica();
         this.fileId = fileId;
         this.sp = sp;
-        this.reqInterval = reqInterval;
-        this.commitIntervalMsgs = commitIntervalMsgs;
         this.osdClient = osdClient;
         this.stripeNo = stripeNo;
         this.callback = callback;
 
+        if (commitIntervals.get(0) instanceof IntervalMsg) {
+            commitIntervalMsgs = (List<IntervalMsg>) commitIntervals;
+        } else if (commitIntervals.get(0) instanceof Interval) {
+            commitIntervalMsgs = new ArrayList<IntervalMsg>(commitIntervals.size());
+            for (Object interval : commitIntervals) {
+                commitIntervalMsgs.add(ProtoInterval.toProto((Interval) interval));
+            }
+        } else {
+            throw new IllegalArgumentException("commitIntervals has to be of type Interval or IntervalMsg");
+        }
+        
+        
         dataWidth = sp.getWidth();
         parityWidth = sp.getParityWidth();
         stripeWidth = sp.getWidth() + sp.getParityWidth();
@@ -128,6 +137,7 @@ public class StripeReconstructor {
 
         if (chunksFailed > parityWidth) {
             aborted = true;
+            freeBuffers();
             callback.failed(stripeNo);
             return true;
         }
@@ -256,10 +266,9 @@ public class StripeReconstructor {
         }
     }
 
-    public void decode() {
+    public void decode(boolean recreateParity) {
         boolean needsReconstruction;
         synchronized (this) {
-            aborted = true;
             needsReconstruction = !reconstructed;
             reconstructed = true;
         }
@@ -287,7 +296,7 @@ public class StripeReconstructor {
             }
 
             // FIXME (jdillmann): optimize
-            codec.decodeMissing(shards, present, 0, chunkSize, false);
+            codec.decodeMissing(shards, present, 0, chunkSize, recreateParity);
 
 
             // boolean[] present = new boolean[stripeWidth];

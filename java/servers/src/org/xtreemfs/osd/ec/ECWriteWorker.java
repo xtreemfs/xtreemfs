@@ -132,27 +132,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     public void start() {
         timer.schedule(timeoutTimer, timeoutMS);
 
-        long opStart = reqInterval.getOpStart();
-        long opEnd = reqInterval.getOpEnd();
-
-        long firstStripeNo = sp.getRow(firstObjNo);
-        long lastStripeNo = sp.getRow(lastObjNo);
-
-        for (int stripeIdx = 0; stripeIdx < numStripes; stripeIdx++) {
-            long stripeNo = firstStripeNo + stripeIdx;
-
-            long firstStripeObjNo = stripeNo * dataWidth;
-            long lastStripeObjNo = (stripeNo + 1) * dataWidth - 1;
-
-            long firstObjWithData = Math.max(firstStripeObjNo, firstObjNo);
-            long lastObjWithData = Math.min(lastStripeObjNo, lastObjNo);
-
-            long stripeDataStart = Math.max(sp.getObjectStartOffset(firstObjWithData), opStart);
-            long stripeDataEnd = Math.min(sp.getObjectEndOffset(lastObjWithData) + 1, opEnd);
-
-            ProtoInterval stripeInterval = new ProtoInterval(stripeDataStart, stripeDataEnd, reqInterval.getVersion(),
-                    reqInterval.getId(), opStart, opEnd);
-
+        for (Stripe stripe : Stripe.getIterable(reqInterval, sp)) {
             // We will always write the version to the full stripe
             int numResponses = dataWidth;
 
@@ -165,24 +145,24 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                         }
                     });
             
-            StripeState stripeState = new StripeState(stripeNo, stripeInterval);
-            stripeStates[stripeIdx] = stripeState;
+            StripeState stripeState = new StripeState(stripe.getStripeNo(), stripe.getStripeInterval());
+            stripeStates[stripe.getRelIdx()] = stripeState;
 
-            for (long objNo = firstStripeObjNo; objNo <= lastStripeObjNo; objNo++) {
+            for (long objNo = stripe.getFirstObj(); objNo <= stripe.getLastObj(); objNo++) {
 
                 boolean hasData = false;
                 ReusableBuffer reqData = null;
                 // relative offset to the current object
                 int objOffset = 0;
 
-                if (objNo >= firstObjWithData && objNo <= lastObjWithData) {
+                if (objNo >= stripe.getFirstObjWithData() && objNo <= stripe.getLastObjWithData()) {
                     hasData = true;
                     objOffset = getObjOffset(objNo);
                     // length of the data to write off the current object
                     int objLength = getObjLength(objNo);
                     // relative offset to the data buffer
                     int bufOffset = (objNo == firstObjNo) ? 0
-                            : ECHelper.safeLongToInt(sp.getObjectStartOffset(objNo) - opStart);
+                            : ECHelper.safeLongToInt(sp.getObjectStartOffset(objNo) - reqInterval.getOpStart());
 
                     reqData = data.createViewBuffer();
                     reqData.range(bufOffset, objLength);
@@ -194,19 +174,22 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                 if (osdNo == localOsdNo) {
                     // make local request
                     handler.addLocal(objNo, reqData);
-                    ECWriteIntervalOperation writeOp = (ECWriteIntervalOperation) master.getOperation(ECWriteIntervalOperation.PROC_ID);
-                    writeOp.startLocalRequest(fileId, sp, opId, hasData, objNo, objOffset, stripeInterval.getMsg(),
-                            commitIntervalMsgs, reqData, fileCredentials, xloc, handler);
+                    ECWriteIntervalOperation writeOp = (ECWriteIntervalOperation) master
+                            .getOperation(ECWriteIntervalOperation.PROC_ID);
+                    writeOp.startLocalRequest(fileId, sp, opId, hasData, objNo, objOffset,
+                            ProtoInterval.toProto(stripe.getStripeInterval()), commitIntervalMsgs, reqData,
+                            fileCredentials, xloc, handler);
 
                 } else {
                     try {
                         ServiceUUID server = getRemote(osdNo);
                         // FIXME (jdillmann): Does write free the buffer?
                         // FIXME (jdillmann): which op id should be used?
-                        RPCResponse<xtreemfs_ec_write_intervalResponse> rpcResponse = osdClient.xtreemfs_ec_write_interval(
-                                server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                                fileCredentials, fileId, opId, hasData, objNo, objOffset, stripeInterval.getMsg(),
-                                commitIntervalMsgs, reqData);
+                        RPCResponse<xtreemfs_ec_write_intervalResponse> rpcResponse = osdClient
+                                .xtreemfs_ec_write_interval(server.getAddress(), RPCAuthentication.authNone,
+                                        RPCAuthentication.userService, fileCredentials, fileId, opId, hasData, objNo,
+                                        objOffset, ProtoInterval.toProto(stripe.getStripeInterval()),
+                                        commitIntervalMsgs, reqData);
                         handler.addRemote(rpcResponse, objNo);
 
                     } catch (IOException ex) {
@@ -360,7 +343,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, reqInterval, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
+                stripeState.stripeNo, sp, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
         stripeState.markForReconstruction(reconstructor);
 
         reconstructor.start();
@@ -379,7 +362,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = stripeState.reconstructor;
         assert (reconstructor.isComplete());
-        stripeState.reconstructor.decode();
+        stripeState.reconstructor.decode(false);
 
         long stripeNo = stripeState.stripeNo;
         Interval stripeInterval = stripeState.interval;
