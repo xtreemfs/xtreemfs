@@ -2,7 +2,7 @@
 
 XTREEMFS=$1
 TEST_DIR=$4
-HADOOP_VERSIONS="2.6.0"
+HADOOP_VERSIONS="0.23.11 2.2.0 2.3.0 2.4.1 2.5.2 2.6.4 2.7.2"
 VOLUME="$(basename $(dirname $(pwd)))"
 
 for VERSION in $HADOOP_VERSIONS; do
@@ -34,8 +34,8 @@ for VERSION in $HADOOP_VERSIONS; do
    export HADOOP_LOG_DIR="$TEST_DIR/log/hadoop.log"
    echo "Set HADOOP_LOG_DIR=$HADOOP_LOG_DIR"
 
-   echo "Copy XtreeemFSHadoopClient.jar to $HADOOP_PREFIX/share/hadoop/common"
-   cp $XTREEMFS/contrib/hadoop/dist/XtreemFSHadoopClient.jar $HADOOP_PREFIX/share/hadoop/common
+   echo "Copy xtreemfs-hadoop-client.jar to $HADOOP_PREFIX/share/hadoop/common"
+   cp $XTREEMFS/contrib/hadoop/target/xtreemfs-hadoop-client.jar $HADOOP_PREFIX/share/hadoop/common
 
    echo "configure core-site.xml"
 
