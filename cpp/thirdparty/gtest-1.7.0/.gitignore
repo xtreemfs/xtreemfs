@@ -1,10 +1,7 @@
 Makefile
-Makefile.in
-aclocal.m4
 autom4te.cache/
 build-aux/config.h
 build-aux/stamp-h1
-configure
 config.log
 config.status
 fused-src/gtest/.deps/
