@@ -327,7 +327,7 @@ public class PBRPCClientServerTest {
 
         InputStream ks = cl.getResourceAsStream(keyStoreName);
         if (ks == null) {
-            // Assume the working directory is "java/servers".
+            // Assume the working directory is "java/xtreemfs-servers".
             String testCert = "../../tests/certs/" + keyStoreName;
             if (new File(testCert).isFile()) {
                 ks = new FileInputStream(testCert);
@@ -339,7 +339,7 @@ public class PBRPCClientServerTest {
 
         InputStream ts = cl.getResourceAsStream(trustStoreName);
         if (ts == null) {
-            // Assume the working directory is "java/servers".
+            // Assume the working directory is "java/xtreemfs-servers".
             String testCert = "../../tests/certs/" + trustStoreName;
             if (new File(testCert).isFile()) {
                 ts = new FileInputStream(testCert);
