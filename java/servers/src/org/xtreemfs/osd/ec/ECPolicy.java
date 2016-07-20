@@ -122,7 +122,7 @@ public class ECPolicy {
         // FIXME(jdillmann): Throw more specific Exceptions.
         
         for (MutableInterval interval : curResult) {
-            if (interval.count < k) {
+            if (interval.count < k && !interval.isEmpty()) {
                 throw new Exception("There are not enough servers available to recover the data at interval "
                         + interval.toString() + ". Need: " + k + " Is: " + interval.count);
             }
@@ -133,6 +133,11 @@ public class ECPolicy {
 
         boolean needsCommit = false;
         for (MutableInterval interval : nextResult) {
+            if (interval.isEmpty()) {
+                // Ignore
+                continue;
+            }
+
             // Partial Write
             if (interval.count < k) {
                 // Ignore
@@ -359,6 +364,15 @@ public class ECPolicy {
         }
 
         // Merge subsequent intervals that equal in version, id and count.
+        mergeResults(result);
+        if (existingResult != null) {
+            mergeResults(existingResult);
+        }
+
+        return result;
+    }
+
+    static void mergeResults(List<MutableInterval> result) {
         ListIterator<MutableInterval> resultIt = result.listIterator();
         MutableInterval prev = null;
         while (resultIt.hasNext()) {
@@ -370,8 +384,6 @@ public class ECPolicy {
                 prev = current;
             }
         }
-
-        return result;
     }
 
 

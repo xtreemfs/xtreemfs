@@ -127,6 +127,31 @@ public class VectorRecoveryTest {
             result = ECPolicy.recoverVector(curVectorPerm, null);
             assertEqualsWithAttachment(expected, result);
         }
+        // Test gaps
+        iv1 = new AVLTreeIntervalVector();
+        iv2 = new AVLTreeIntervalVector();
+        iv3 = new AVLTreeIntervalVector();
+        iv4 = new AVLTreeIntervalVector();
+
+        interval = new ObjectInterval(0, 2, 1, 1);
+        iv2.insert(interval);
+
+        interval = new ObjectInterval(10, 12, 1, 2);
+        iv3.insert(interval);
+
+        expected.clear();
+        expected.add(new AttachmentInterval(0, 2, 1, 1, 1));
+        expected.add(new AttachmentInterval(2, 10, -1, -1, -1));
+        expected.add(new AttachmentInterval(10, 12, 1, 2, 1));
+
+        curVectors = new List[] { iv1.serialize(), iv2.serialize(), iv3.serialize(), iv4.serialize() };
+
+        curVectorPerms = new Permute(curVectors);
+        while (curVectorPerms.hasNext()) {
+            List[] curVectorPerm = (List[]) curVectorPerms.next();
+            result = ECPolicy.recoverVector(curVectorPerm, null);
+            assertEqualsWithAttachment(expected, result);
+        }
     }
 
     static List<MutableInterval> cloneResultList(List<MutableInterval> result) {
