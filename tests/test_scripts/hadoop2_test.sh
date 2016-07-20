@@ -80,7 +80,7 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.read.buffer</name>
     <value>false</value>
     <description>
-      Enable/Disable the read buffer in theXtreemFSHadoopClient
+     Enable/Disable the read buffer in theXtreemFSHadoopClient
     </description>
    </property>
 
@@ -88,7 +88,7 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.buffer.size.read</name>
     <value>64</value>
     <description>
-      Buffer size of the read buffer in the XtreemFSHadoopClient
+     Buffer size of the read buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
@@ -96,7 +96,7 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.write.buffer</name>
     <value>false</value>
     <description>
-      Enable/Disable the write buffer in the XtreemFSHadoopClient
+     Enable/Disable the write buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
@@ -104,23 +104,23 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.buffer.size.write</name>
     <value>64</value>
     <description>
-      Buffer size of the write buffer in the XtreemFSHadoopClient
+     Buffer size of the write buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
    <property>
-     <name>xtreemfs.jni.enabled</name>
-     <value>true</value>
+    <name>xtreemfs.jni.enabled</name>
+    <value>true</value>
    </property>
 
    <property>
-     <name>xtreemfs.jni.libraryPath</name>
-     <value>$XTREEMFS/cpp/build</value>
+    <name>xtreemfs.jni.libraryPath</name>
+    <value>$XTREEMFS/cpp/build</value>
    </property>
 
    <property>
-     <name>xtreemfs.hadoop.version</name>
-     <value>$VERSION</value>
+    <name>xtreemfs.hadoop.version</name>
+    <value>$VERSION</value>
    </property>
 
    </configuration>"
@@ -227,38 +227,38 @@ for VERSION in $HADOOP_VERSIONS; do
                then echo "Hadoop produced wrong output!"; RESULT=-1;
             fi
          fi
+   fi
 
-         echo "Stop Hadoop..."
-         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop nodemanager
-         $HADOOP_PREFIX/sbin/yarn-daemon.sh stop resourcemanager
-         $HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh stop historyserver
+   echo "Stop Hadoop..."
+   $HADOOP_PREFIX/sbin/yarn-daemon.sh stop nodemanager
+   $HADOOP_PREFIX/sbin/yarn-daemon.sh stop resourcemanager
+   $HADOOP_PREFIX/sbin/mr-jobhistory-daemon.sh stop historyserver
 
-         # check if servers stop
-         if [ -n "$(jps | grep NodeManager)" ]
-         then
-            echo "NodeManager does not stop, kill manually"
-            NODEMANAGER_PID=$(jps | grep NodeManager | cut -d ' ' -f1)
-            kill $NODEMANAGER_PID
-         fi
+   # check if servers stop
+   if [ -n "$(jps | grep NodeManager)" ]
+   then
+      echo "NodeManager does not stop, kill manually"
+      NODEMANAGER_PID=$(jps | grep NodeManager | cut -d ' ' -f1)
+      kill $NODEMANAGER_PID
+   fi
 
-         if [ -n "$(jps | grep ResourceManager)" ]
-         then
-            echo "ResourceManager does not stop, kill manually"
-            RESOURCEMANAGER_PID=$(jps | grep ResourceManager | cut -d ' ' -f1)
-            kill $RESOURCEMANAGER_PID
-         fi
+   if [ -n "$(jps | grep ResourceManager)" ]
+   then
+      echo "ResourceManager does not stop, kill manually"
+      RESOURCEMANAGER_PID=$(jps | grep ResourceManager | cut -d ' ' -f1)
+      kill $RESOURCEMANAGER_PID
+   fi
 
-         if [ -n "$(jps | grep JobHistoryServer)" ]
-         then
-            echo "JobHistoryServer does not stop, kill manually"
-            HISTORYSERVER_PID=$(jps | grep JobHistoryServer | cut -d ' ' -f1)
-            kill $HISTORYSERVER_PID
-         fi
-         #kill all remaining child processes
-         CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
-         if [ -n "$CHILD_PIDS" ]
-            then kill $CHILD_PIDS
-         fi
+   if [ -n "$(jps | grep JobHistoryServer)" ]
+   then
+      echo "JobHistoryServer does not stop, kill manually"
+      HISTORYSERVER_PID=$(jps | grep JobHistoryServer | cut -d ' ' -f1)
+      kill $HISTORYSERVER_PID
+   fi
+   #kill all remaining child processes
+   CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
+   if [ -n "$CHILD_PIDS" ]
+      then kill $CHILD_PIDS
    fi
 done
 

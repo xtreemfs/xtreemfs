@@ -82,7 +82,7 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.buffer.size.read</name>
     <value>64</value>
     <description>
-      Buffer size of the read buffer in the XtreemFSHadoopClient
+     Buffer size of the read buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
@@ -90,7 +90,7 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.write.buffer</name>
     <value>false</value>
     <description>
-      Enable/Disable the write buffer in the XtreemFSHadoopClient
+     Enable/Disable the write buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
@@ -98,23 +98,23 @@ for VERSION in $HADOOP_VERSIONS; do
     <name>xtreemfs.io.buffer.size.write</name>
     <value>64</value>
     <description>
-      Buffer size of the write buffer in the XtreemFSHadoopClient
+     Buffer size of the write buffer in the XtreemFSHadoopClient
     </description>
    </property>
 
    <property>
-     <name>xtreemfs.jni.enabled</name>
-     <value>true</value>
+    <name>xtreemfs.jni.enabled</name>
+    <value>true</value>
    </property>
 
    <property>
-     <name>xtreemfs.jni.libraryPath</name>
-     <value>$XTREEMFS/cpp/build</value>
+    <name>xtreemfs.jni.libraryPath</name>
+    <value>$XTREEMFS/cpp/build</value>
    </property>
 
    <property>
-     <name>xtreemfs.hadoop.version</name>
-     <value>$VERSION</value>
+    <name>xtreemfs.hadoop.version</name>
+    <value>$VERSION</value>
    </property>
 
    </configuration>"
@@ -200,31 +200,31 @@ for VERSION in $HADOOP_VERSIONS; do
          fi
 
          $HADOOP_PREFIX/bin/hadoop fs -rmr /hadoop_test/output
+   fi
 
-         echo "Stop JobTracker and TaskTracker..."
-         $HADOOP_PREFIX/bin/hadoop-daemon.sh stop jobtracker
-         $HADOOP_PREFIX/bin/hadoop-daemon.sh stop tasktracker
+   echo "Stop JobTracker and TaskTracker..."
+   $HADOOP_PREFIX/bin/hadoop-daemon.sh stop jobtracker
+   $HADOOP_PREFIX/bin/hadoop-daemon.sh stop tasktracker
 
-         # check if JobTacker and TaskTracker stop
-         if [ -n "$(jps | grep TaskTracker)" ]
-         then
-            echo "TaskTracker does not stop, kill manually"
-            TASKTRACKER_PID=$(jps | grep TaskTracker | cut -d ' ' -f1)
-            kill $TASKTRACKER_PID
-         fi
+   # check if JobTacker and TaskTracker stop
+   if [ -n "$(jps | grep TaskTracker)" ]
+   then
+      echo "TaskTracker does not stop, kill manually"
+      TASKTRACKER_PID=$(jps | grep TaskTracker | cut -d ' ' -f1)
+      kill $TASKTRACKER_PID
+   fi
 
-         if [ -n "$(jps | grep JobTracker)" ]
-         then
-            echo "JobTracker does not stop, kill manually"
-            JOBTRACKER_PID=$(jps | grep JobTracker | cut -d ' ' -f1)
-            kill $JOBTRACKER_PID
-         fi
+   if [ -n "$(jps | grep JobTracker)" ]
+   then
+      echo "JobTracker does not stop, kill manually"
+      JOBTRACKER_PID=$(jps | grep JobTracker | cut -d ' ' -f1)
+      kill $JOBTRACKER_PID
+   fi
 
-         #kill all remaining child processes
-         CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
-         if [ -n "$CHILD_PIDS" ]
-            then kill $CHILD_PIDS
-         fi
+   #kill all remaining child processes
+   CHILD_PIDS=$(jps | grep Child | cut -d ' ' -f1)
+   if [ -n "$CHILD_PIDS" ]
+      then kill $CHILD_PIDS
    fi
 done
 
