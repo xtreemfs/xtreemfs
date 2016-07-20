@@ -541,6 +541,13 @@ message xtreemfs_ec_readResponse {
 }
 
 
+// Request directed at the master to trigger reconstruction at the given OSD.
+message xtreemfs_ec_trigger_reconstructionRequest {
+  required FileCredentials file_credentials = 1;
+  required string file_id = 2;
+  required uint32 osd_number = 3;
+}
+
 service OSDService {
 
   option(interface_id)=30001;
@@ -806,5 +813,11 @@ service OSDService {
   rpc xtreemfs_ec_write_diff_response(xtreemfs_ec_write_diffResponse)
       returns (emptyResponse) {
     option(proc_id)=89;
+  }
+
+  // Request directed at the master to trigger reconstruction at the given OSD.
+  rpc xtreemfs_ec_trigger_reconstruction(xtreemfs_ec_trigger_reconstructionRequest)
+      returns (emptyResponse) {
+    option(proc_id)=90;
   }
 }

@@ -94,6 +94,7 @@ class xtreemfs_ec_write_diffRequest;
 class xtreemfs_ec_write_diffResponse;
 class xtreemfs_ec_readRequest;
 class xtreemfs_ec_readResponse;
+class xtreemfs_ec_trigger_reconstructionRequest;
 
 enum OSDHealthResult {
   OSD_HEALTH_RESULT_PASSED = 0,
@@ -6186,6 +6187,115 @@ class xtreemfs_ec_readResponse : public ::google::protobuf::Message {
 
   void InitAsDefaultInstance();
   static xtreemfs_ec_readResponse* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class xtreemfs_ec_trigger_reconstructionRequest : public ::google::protobuf::Message {
+ public:
+  xtreemfs_ec_trigger_reconstructionRequest();
+  virtual ~xtreemfs_ec_trigger_reconstructionRequest();
+
+  xtreemfs_ec_trigger_reconstructionRequest(const xtreemfs_ec_trigger_reconstructionRequest& from);
+
+  inline xtreemfs_ec_trigger_reconstructionRequest& operator=(const xtreemfs_ec_trigger_reconstructionRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const xtreemfs_ec_trigger_reconstructionRequest& default_instance();
+
+  void Swap(xtreemfs_ec_trigger_reconstructionRequest* other);
+
+  // implements Message ----------------------------------------------
+
+  xtreemfs_ec_trigger_reconstructionRequest* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const xtreemfs_ec_trigger_reconstructionRequest& from);
+  void MergeFrom(const xtreemfs_ec_trigger_reconstructionRequest& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+  inline bool has_file_credentials() const;
+  inline void clear_file_credentials();
+  static const int kFileCredentialsFieldNumber = 1;
+  inline const ::xtreemfs::pbrpc::FileCredentials& file_credentials() const;
+  inline ::xtreemfs::pbrpc::FileCredentials* mutable_file_credentials();
+  inline ::xtreemfs::pbrpc::FileCredentials* release_file_credentials();
+  inline void set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials);
+
+  // required string file_id = 2;
+  inline bool has_file_id() const;
+  inline void clear_file_id();
+  static const int kFileIdFieldNumber = 2;
+  inline const ::std::string& file_id() const;
+  inline void set_file_id(const ::std::string& value);
+  inline void set_file_id(const char* value);
+  inline void set_file_id(const char* value, size_t size);
+  inline ::std::string* mutable_file_id();
+  inline ::std::string* release_file_id();
+  inline void set_allocated_file_id(::std::string* file_id);
+
+  // required uint32 osd_number = 3;
+  inline bool has_osd_number() const;
+  inline void clear_osd_number();
+  static const int kOsdNumberFieldNumber = 3;
+  inline ::google::protobuf::uint32 osd_number() const;
+  inline void set_osd_number(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:xtreemfs.pbrpc.xtreemfs_ec_trigger_reconstructionRequest)
+ private:
+  inline void set_has_file_credentials();
+  inline void clear_has_file_credentials();
+  inline void set_has_file_id();
+  inline void clear_has_file_id();
+  inline void set_has_osd_number();
+  inline void clear_has_osd_number();
+
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+
+  ::xtreemfs::pbrpc::FileCredentials* file_credentials_;
+  ::std::string* file_id_;
+  ::google::protobuf::uint32 osd_number_;
+
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(3 + 31) / 32];
+
+  friend void  protobuf_AddDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_AssignDesc_xtreemfs_2fOSD_2eproto();
+  friend void protobuf_ShutdownFile_xtreemfs_2fOSD_2eproto();
+
+  void InitAsDefaultInstance();
+  static xtreemfs_ec_trigger_reconstructionRequest* default_instance_;
 };
 // ===================================================================
 
@@ -12627,6 +12737,140 @@ inline void xtreemfs_ec_readResponse::set_allocated_object_data(::xtreemfs::pbrp
   } else {
     clear_has_object_data();
   }
+}
+
+// -------------------------------------------------------------------
+
+// xtreemfs_ec_trigger_reconstructionRequest
+
+// required .xtreemfs.pbrpc.FileCredentials file_credentials = 1;
+inline bool xtreemfs_ec_trigger_reconstructionRequest::has_file_credentials() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_has_file_credentials() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_has_file_credentials() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_file_credentials() {
+  if (file_credentials_ != NULL) file_credentials_->::xtreemfs::pbrpc::FileCredentials::Clear();
+  clear_has_file_credentials();
+}
+inline const ::xtreemfs::pbrpc::FileCredentials& xtreemfs_ec_trigger_reconstructionRequest::file_credentials() const {
+  return file_credentials_ != NULL ? *file_credentials_ : *default_instance_->file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_trigger_reconstructionRequest::mutable_file_credentials() {
+  set_has_file_credentials();
+  if (file_credentials_ == NULL) file_credentials_ = new ::xtreemfs::pbrpc::FileCredentials;
+  return file_credentials_;
+}
+inline ::xtreemfs::pbrpc::FileCredentials* xtreemfs_ec_trigger_reconstructionRequest::release_file_credentials() {
+  clear_has_file_credentials();
+  ::xtreemfs::pbrpc::FileCredentials* temp = file_credentials_;
+  file_credentials_ = NULL;
+  return temp;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_allocated_file_credentials(::xtreemfs::pbrpc::FileCredentials* file_credentials) {
+  delete file_credentials_;
+  file_credentials_ = file_credentials;
+  if (file_credentials) {
+    set_has_file_credentials();
+  } else {
+    clear_has_file_credentials();
+  }
+}
+
+// required string file_id = 2;
+inline bool xtreemfs_ec_trigger_reconstructionRequest::has_file_id() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_has_file_id() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_has_file_id() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_file_id() {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    file_id_->clear();
+  }
+  clear_has_file_id();
+}
+inline const ::std::string& xtreemfs_ec_trigger_reconstructionRequest::file_id() const {
+  return *file_id_;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_file_id(const ::std::string& value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_file_id(const char* value) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(value);
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_file_id(const char* value, size_t size) {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  file_id_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* xtreemfs_ec_trigger_reconstructionRequest::mutable_file_id() {
+  set_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    file_id_ = new ::std::string;
+  }
+  return file_id_;
+}
+inline ::std::string* xtreemfs_ec_trigger_reconstructionRequest::release_file_id() {
+  clear_has_file_id();
+  if (file_id_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = file_id_;
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_allocated_file_id(::std::string* file_id) {
+  if (file_id_ != &::google::protobuf::internal::kEmptyString) {
+    delete file_id_;
+  }
+  if (file_id) {
+    set_has_file_id();
+    file_id_ = file_id;
+  } else {
+    clear_has_file_id();
+    file_id_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  }
+}
+
+// required uint32 osd_number = 3;
+inline bool xtreemfs_ec_trigger_reconstructionRequest::has_osd_number() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_has_osd_number() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_has_osd_number() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::clear_osd_number() {
+  osd_number_ = 0u;
+  clear_has_osd_number();
+}
+inline ::google::protobuf::uint32 xtreemfs_ec_trigger_reconstructionRequest::osd_number() const {
+  return osd_number_;
+}
+inline void xtreemfs_ec_trigger_reconstructionRequest::set_osd_number(::google::protobuf::uint32 value) {
+  set_has_osd_number();
+  osd_number_ = value;
 }
 
 

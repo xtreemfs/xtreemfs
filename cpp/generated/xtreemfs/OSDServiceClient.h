@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Jul 07 11:49:53 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 20 20:12:06 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECLIENT_H
@@ -9,11 +9,9 @@
 #include "rpc/client.h"
 #include "rpc/sync_callback.h"
 #include "rpc/callback_interface.h"
-#include "xtreemfs/OSD.pb.h"
-#include "xtreemfs/MRC.pb.h"
 #include "include/Common.pb.h"
 #include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/DIR.pb.h"
+#include "xtreemfs/OSD.pb.h"
 
 
 namespace xtreemfs {
@@ -1005,6 +1003,29 @@ namespace pbrpc {
                 const char* data = NULL; uint32_t data_length = 0;
                 SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
                 client_->sendRequest(address, 30001, 89,
+                     creds, auth, request, data, data_length, NULL,
+                     NULL, sync_cb);
+                return sync_cb;
+            }
+
+            void xtreemfs_ec_trigger_reconstruction(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds,
+                const xtreemfs::pbrpc::xtreemfs_ec_trigger_reconstructionRequest* request,
+                CallbackInterface<xtreemfs::pbrpc::emptyResponse> *callback, void *context = NULL) {
+                const char* data = NULL; uint32_t data_length = 0;
+                client_->sendRequest(address, 30001, 90,
+                     creds, auth, request, data, data_length, NULL,
+                     context, callback);
+            }
+
+            SyncCallback<xtreemfs::pbrpc::emptyResponse>* xtreemfs_ec_trigger_reconstruction_sync(const std::string &address,
+                const xtreemfs::pbrpc::Auth& auth,
+                const xtreemfs::pbrpc::UserCredentials &creds
+                , const xtreemfs::pbrpc::xtreemfs_ec_trigger_reconstructionRequest* request) {
+                const char* data = NULL; uint32_t data_length = 0;
+                SyncCallback<xtreemfs::pbrpc::emptyResponse>* sync_cb = new SyncCallback<xtreemfs::pbrpc::emptyResponse>();
+                client_->sendRequest(address, 30001, 90,
                      creds, auth, request, data, data_length, NULL,
                      NULL, sync_cb);
                 return sync_cb;

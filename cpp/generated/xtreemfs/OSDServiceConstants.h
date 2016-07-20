@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Thu Jul 07 11:49:53 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 20 20:12:06 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #ifndef OSDSERVICECONSTANTS_H_
@@ -52,6 +52,7 @@ const uint32_t PROC_ID_XTREEMFS_EC_WRITE_INTERVAL = 86;
 const uint32_t PROC_ID_XTREEMFS_EC_READ = 87;
 const uint32_t PROC_ID_XTREEMFS_EC_WRITE_DIFF = 88;
 const uint32_t PROC_ID_XTREEMFS_EC_WRITE_DIFF_RESPONSE = 89;
+const uint32_t PROC_ID_XTREEMFS_EC_TRIGGER_RECONSTRUCTION = 90;
 
 }  // namespace pbrpc
 }  // namespace xtreemfs

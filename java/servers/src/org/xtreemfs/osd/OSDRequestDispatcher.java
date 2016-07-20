@@ -76,6 +76,7 @@ import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.ECCommitVector;
 import org.xtreemfs.osd.operations.ECGetIntervalVectors;
 import org.xtreemfs.osd.operations.ECReadOperation;
+import org.xtreemfs.osd.operations.ECTriggerReconstruction;
 import org.xtreemfs.osd.operations.ECWriteDiffOperation;
 import org.xtreemfs.osd.operations.ECWriteDiffResponseOperation;
 import org.xtreemfs.osd.operations.ECWriteIntervalOperation;
@@ -1018,6 +1019,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         operations.put(op.getProcedureId(), op);
 
         op = new ECReadOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new ECTriggerReconstruction(this);
         operations.put(op.getProcedureId(), op);
 
         // --internal events here--

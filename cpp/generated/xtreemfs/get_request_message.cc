@@ -1,13 +1,13 @@
-//automatically generated at Thu Jul 07 11:49:53 CEST 2016
+//automatically generated at Wed Jul 20 20:12:06 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 #include "xtreemfs/get_request_message.h"
 
+#include "include/Common.pb.h"
+#include "xtreemfs/DIR.pb.h"
+#include "xtreemfs/GlobalTypes.pb.h"
 #include "xtreemfs/OSD.pb.h"
 #include "xtreemfs/MRC.pb.h"
-#include "include/Common.pb.h"
-#include "xtreemfs/GlobalTypes.pb.h"
-#include "xtreemfs/DIR.pb.h"
 
 namespace xtreemfs {
 namespace pbrpc {
@@ -15,6 +15,191 @@ namespace pbrpc {
 google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
                                                uint32_t proc_id) {
   switch (interface_id) {
+// Generated from OSD.proto
+    case 30001: {
+      switch (proc_id) {
+        case 10: {
+          return new xtreemfs::pbrpc::readRequest();
+          break;
+        }
+        case 11: {
+          return new xtreemfs::pbrpc::truncateRequest();
+          break;
+        }
+        case 12: {
+          return new xtreemfs::pbrpc::unlink_osd_Request();
+          break;
+        }
+        case 13: {
+          return new xtreemfs::pbrpc::writeRequest();
+          break;
+        }
+        case 20: {
+          return new xtreemfs::pbrpc::xtreemfs_broadcast_gmaxRequest();
+          break;
+        }
+        case 21: {
+          return new xtreemfs::pbrpc::xtreemfs_check_objectRequest();
+          break;
+        }
+        case 30: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 31: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 32: {
+          return new xtreemfs::pbrpc::xtreemfs_cleanup_startRequest();
+          break;
+        }
+        case 33: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 34: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 35: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 22: {
+          return new xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest();
+          break;
+        }
+        case 36: {
+          return new xtreemfs::pbrpc::xtreemfs_repair_objectRequest();
+          break;
+        }
+        case 73: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_fetchRequest();
+          break;
+        }
+        case 71: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_flease_msgRequest();
+          break;
+        }
+        case 75: {
+          return new xtreemfs::pbrpc::FileCredentials();
+          break;
+        }
+        case 78: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_set_primary_epochRequest();
+          break;
+        }
+        case 76: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_statusRequest();
+          break;
+        }
+        case 74: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_truncateRequest();
+          break;
+        }
+        case 72: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_updateRequest();
+          break;
+        }
+        case 79: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
+          break;
+        }
+        case 80: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_reset_completeRequest();
+          break;
+        }
+        case 40: {
+          return new xtreemfs::pbrpc::xtreemfs_internal_get_gmaxRequest();
+          break;
+        }
+        case 41: {
+          return new xtreemfs::pbrpc::truncateRequest();
+          break;
+        }
+        case 42: {
+          return new xtreemfs::pbrpc::xtreemfs_internal_get_file_sizeRequest();
+          break;
+        }
+        case 43: {
+          return new xtreemfs::pbrpc::xtreemfs_internal_read_localRequest();
+          break;
+        }
+        case 44: {
+          return new xtreemfs::pbrpc::xtreemfs_internal_get_object_setRequest();
+          break;
+        }
+        case 45: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 50: {
+          return new xtreemfs::pbrpc::lockRequest();
+          break;
+        }
+        case 51: {
+          return new xtreemfs::pbrpc::lockRequest();
+          break;
+        }
+        case 52: {
+          return new xtreemfs::pbrpc::lockRequest();
+          break;
+        }
+        case 60: {
+          return new xtreemfs::pbrpc::xtreemfs_pingMesssage();
+          break;
+        }
+        case 70: {
+          return new xtreemfs::pbrpc::emptyRequest();
+          break;
+        }
+        case 81: {
+          return new xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateRequest();
+          break;
+        }
+        case 82: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
+          break;
+        }
+        case 83: {
+          return new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest();
+          break;
+        }
+        case 84: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_get_vectorsRequest();
+          break;
+        }
+        case 85: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_commit_vectorRequest();
+          break;
+        }
+        case 86: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_write_intervalRequest();
+          break;
+        }
+        case 87: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_readRequest();
+          break;
+        }
+        case 88: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_write_diffRequest();
+          break;
+        }
+        case 89: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_write_diffResponse();
+          break;
+        }
+        case 90: {
+          return new xtreemfs::pbrpc::xtreemfs_ec_trigger_reconstructionRequest();
+          break;
+        }
+        default: {
+          return NULL;
+        }
+      }
+    break;
+    }
 // Generated from DIR.proto
     case 10001: {
       switch (proc_id) {
@@ -261,187 +446,6 @@ google::protobuf::Message* GetMessageForProcID(uint32_t interface_id,
         }
         case 54: {
           return new xtreemfs::pbrpc::xtreemfs_reselect_osdsRequest();
-          break;
-        }
-        default: {
-          return NULL;
-        }
-      }
-    break;
-    }
-// Generated from OSD.proto
-    case 30001: {
-      switch (proc_id) {
-        case 10: {
-          return new xtreemfs::pbrpc::readRequest();
-          break;
-        }
-        case 11: {
-          return new xtreemfs::pbrpc::truncateRequest();
-          break;
-        }
-        case 12: {
-          return new xtreemfs::pbrpc::unlink_osd_Request();
-          break;
-        }
-        case 13: {
-          return new xtreemfs::pbrpc::writeRequest();
-          break;
-        }
-        case 20: {
-          return new xtreemfs::pbrpc::xtreemfs_broadcast_gmaxRequest();
-          break;
-        }
-        case 21: {
-          return new xtreemfs::pbrpc::xtreemfs_check_objectRequest();
-          break;
-        }
-        case 30: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 31: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 32: {
-          return new xtreemfs::pbrpc::xtreemfs_cleanup_startRequest();
-          break;
-        }
-        case 33: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 34: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 35: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 22: {
-          return new xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest();
-          break;
-        }
-        case 36: {
-          return new xtreemfs::pbrpc::xtreemfs_repair_objectRequest();
-          break;
-        }
-        case 73: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_fetchRequest();
-          break;
-        }
-        case 71: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_flease_msgRequest();
-          break;
-        }
-        case 75: {
-          return new xtreemfs::pbrpc::FileCredentials();
-          break;
-        }
-        case 78: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_set_primary_epochRequest();
-          break;
-        }
-        case 76: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_statusRequest();
-          break;
-        }
-        case 74: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_truncateRequest();
-          break;
-        }
-        case 72: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_updateRequest();
-          break;
-        }
-        case 79: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
-          break;
-        }
-        case 80: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_reset_completeRequest();
-          break;
-        }
-        case 40: {
-          return new xtreemfs::pbrpc::xtreemfs_internal_get_gmaxRequest();
-          break;
-        }
-        case 41: {
-          return new xtreemfs::pbrpc::truncateRequest();
-          break;
-        }
-        case 42: {
-          return new xtreemfs::pbrpc::xtreemfs_internal_get_file_sizeRequest();
-          break;
-        }
-        case 43: {
-          return new xtreemfs::pbrpc::xtreemfs_internal_read_localRequest();
-          break;
-        }
-        case 44: {
-          return new xtreemfs::pbrpc::xtreemfs_internal_get_object_setRequest();
-          break;
-        }
-        case 45: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 50: {
-          return new xtreemfs::pbrpc::lockRequest();
-          break;
-        }
-        case 51: {
-          return new xtreemfs::pbrpc::lockRequest();
-          break;
-        }
-        case 52: {
-          return new xtreemfs::pbrpc::lockRequest();
-          break;
-        }
-        case 60: {
-          return new xtreemfs::pbrpc::xtreemfs_pingMesssage();
-          break;
-        }
-        case 70: {
-          return new xtreemfs::pbrpc::emptyRequest();
-          break;
-        }
-        case 81: {
-          return new xtreemfs::pbrpc::xtreemfs_xloc_set_invalidateRequest();
-          break;
-        }
-        case 82: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_auth_stateRequest();
-          break;
-        }
-        case 83: {
-          return new xtreemfs::pbrpc::xtreemfs_rwr_reset_statusRequest();
-          break;
-        }
-        case 84: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_get_vectorsRequest();
-          break;
-        }
-        case 85: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_commit_vectorRequest();
-          break;
-        }
-        case 86: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_write_intervalRequest();
-          break;
-        }
-        case 87: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_readRequest();
-          break;
-        }
-        case 88: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_write_diffRequest();
-          break;
-        }
-        case 89: {
-          return new xtreemfs::pbrpc::xtreemfs_ec_write_diffResponse();
           break;
         }
         default: {

@@ -101,9 +101,9 @@ public class ECReconstructionStage extends Stage {
     @Override
     protected void processMethod(StageRequest rq) {
         switch (STAGE_OP.valueOf(rq.getStageMethod())) {
-        case REQUEST_RECONSTRUCTION:
-            processRequestReconstruction(rq);
-            break;
+        // case REQUEST_RECONSTRUCTION:
+        // processRequestReconstruction(rq);
+        // break;
         case START_RECONSTRUCTION:
             processStartReconstruction(rq);
             break;
@@ -119,23 +119,24 @@ public class ECReconstructionStage extends Stage {
 
     public void requestReconstruction(String fileId, FileCredentials fileCreds, Capability capability,
             XLocations xloc) {
-        this.enqueueOperation(STAGE_OP.REQUEST_RECONSTRUCTION, new Object[] { fileId, fileCreds, capability, xloc },
-                null, null, null);
+        // Relay the request to the master
+        int osdNumber = xloc.getLocalReplica().getStripingPolicy().getRelativeOSDPosition();
+        master.getECMasterStage().triggerReconstruction(fileId, fileCreds, xloc, osdNumber);
+
+        // this.enqueueOperation(STAGE_OP.REQUEST_RECONSTRUCTION, new Object[] { fileId, fileCreds, capability, xloc },
+        // null, null, null);
     }
 
 
-    public void processRequestReconstruction(StageRequest rq) {
-        final String fileId = (String) rq.getArgs()[0];
-        final FileCredentials fileCredentials = (FileCredentials) rq.getArgs()[1];
-        final Capability capability = (Capability) rq.getArgs()[2];
-        final XLocations xloc = (XLocations) rq.getArgs()[3];
-
-        // Request vector from master
-
-        // Commit available intervals
-
-        // Start reconstruction of missing intervals
-    }
+    // public void processRequestReconstruction(StageRequest rq) {
+    // final String fileId = (String) rq.getArgs()[0];
+    // final FileCredentials fileCredentials = (FileCredentials) rq.getArgs()[1];
+    // final Capability capability = (Capability) rq.getArgs()[2];
+    // final XLocations xloc = (XLocations) rq.getArgs()[3];
+    //
+    // int osdNumber = xloc.getLocalReplica().getStripingPolicy().getRelativeOSDPosition();
+    // master.getECMasterStage().triggerReconstruction(fileId, fileCredentials, xloc, osdNumber);
+    // }
 
     public void startReconstruction(String fileId, FileCredentials fileCreds, Capability capability, XLocations xloc,
             List<Interval> commitIntervals, List<Interval> missingIntervals) {

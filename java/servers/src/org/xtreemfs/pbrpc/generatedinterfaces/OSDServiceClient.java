@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 13 15:04:30 CEST 2016
+//automatically generated from OSD.proto at Wed Jul 20 20:12:07 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -582,6 +582,19 @@ public class OSDServiceClient {
     public RPCResponse xtreemfs_ec_write_diff_response(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long op_id, long stripe_number, int osd_number, boolean needs_reconstruction, RPC.RPCHeader.ErrorResponse error) throws IOException {
          final OSD.xtreemfs_ec_write_diffResponse msg = OSD.xtreemfs_ec_write_diffResponse.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOpId(op_id).setStripeNumber(stripe_number).setOsdNumber(osd_number).setNeedsReconstruction(needs_reconstruction).setError(error).build();
          return xtreemfs_ec_write_diff_response(server, authHeader, userCreds,msg);
+    }
+
+    public RPCResponse xtreemfs_ec_trigger_reconstruction(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, OSD.xtreemfs_ec_trigger_reconstructionRequest input) throws IOException {
+         if (server == null) server = defaultServer;
+         if (server == null) throw new IllegalArgumentException("defaultServer must be set in constructor if you want to pass null as server in calls");
+         RPCResponse response = new RPCResponse(null);
+         client.sendRequest(server, authHeader, userCreds, 30001, 90, input, null, response, false);
+         return response;
+    }
+
+    public RPCResponse xtreemfs_ec_trigger_reconstruction(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, int osd_number) throws IOException {
+         final OSD.xtreemfs_ec_trigger_reconstructionRequest msg = OSD.xtreemfs_ec_trigger_reconstructionRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setOsdNumber(osd_number).build();
+         return xtreemfs_ec_trigger_reconstruction(server, authHeader, userCreds,msg);
     }
 
     public boolean clientIsAlive() {

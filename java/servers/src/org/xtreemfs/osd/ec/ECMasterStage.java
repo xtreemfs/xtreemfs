@@ -210,6 +210,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
     private static enum STAGE_OP {
         READ, WRITE, TRUNCATE, 
         SEND_DIFF_RESPONSE, RECV_DIFF_RESPONSE,
+        TRIGGER_RECONSTRUCTION,
         LEASE_STATE_CHANGED, 
         CLOSE, VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE,
         WRITE_WORKER_SIGNAL, READ_WORKER_SIGNAL;
@@ -261,6 +262,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             break;
         case RECV_DIFF_RESPONSE:
             processRecvDiffResponse(method);
+            break;
+        case TRIGGER_RECONSTRUCTION:
+            processTriggerReconstruction(method);
             break;
 
         // default : throw new IllegalArgumentException("No such stageop");
@@ -1189,5 +1193,108 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
        }
 
        worker.handleParityResponse(args);
-   }
- }
+    }
+
+
+    public void triggerReconstruction(String fileId, FileCredentials fileCredentials, XLocations xloc, int osdNumber) {
+        this.enqueueOperation(STAGE_OP.TRIGGER_RECONSTRUCTION, new Object[] { fileId, fileCredentials, xloc, osdNumber },
+                null, null, null);
+    }
+
+    void processTriggerReconstruction(StageRequest method) {
+        final String fileId = (String) method.getArgs()[0];
+        final FileCredentials fileCredentials = (FileCredentials) method.getArgs()[1];
+        final XLocations xloc = (XLocations) method.getArgs()[2];
+        final int osdNumber = (Integer) method.getArgs()[3];
+
+
+        // Try to find the master
+        if (!prepare(method, fileCredentials, xloc)) {
+            return;
+        }
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
+            return;
+        }
+
+        if (file.isLocalIsPrimary()) {
+            // The primary has to send a commit request to the OSD
+
+            final StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
+            int localOsdPos = sp.getRelativeOSDPosition();
+            
+            List<Interval> commitIntervals = file.getCurVector().serialize();
+            
+            if (localOsdPos == osdNumber) {
+                // Send local commit
+                ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
+                getVectorOp.startLocalRequest(fileId, file.getCredentials(), file.getLocations(),
+                        sp, commitIntervals, 
+                        new InternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
+                            
+                            @Override
+                            public void localResultAvailable(xtreemfs_ec_commit_vectorResponse result, ReusableBuffer data) {
+                                // Ignore
+                            }
+                            
+                            @Override
+                            public void localRequestFailed(ErrorResponse error) {
+                                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, ErrorUtils.formatError(error));
+                            }
+                        });
+
+                
+            } else {
+                // Send remote commit
+                List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
+                ServiceUUID remote = remoteUUIDs.get((localOsdPos <= osdNumber) ? osdNumber - 1 : osdNumber);
+    
+                xtreemfs_ec_commit_vectorRequest.Builder reqBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder();
+                reqBuilder.setFileId(fileId).setFileCredentials(file.getCredentials());
+    
+                for (Interval interval : file.getCurVector().serialize()) {
+                    reqBuilder.addIntervals(ProtoInterval.toProto(interval));
+                }
+    
+                RPCResponse<xtreemfs_ec_commit_vectorResponse> response = null;
+                try {
+                    response = osdClient.xtreemfs_ec_commit_vector(remote.getAddress(), RPCAuthentication.authNone,
+                            RPCAuthentication.userService, reqBuilder.build());
+                    xtreemfs_ec_commit_vectorResponse responseMsg = response.get();
+
+                } catch (Exception ex) {
+                    Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
+
+                } finally {
+                    if (response != null) {
+                        response.freeBuffers();
+                    }
+                }
+            }
+
+
+        } else {
+            // The backup has to relay the trigger to the master, which will then send a commit to the OSD
+
+            Flease lease = file.getLease();
+            if (lease.isEmptyLease()) {
+                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
+                        "Unknown lease state for %s: %s, can't send response to master.", file.getCellId(), lease);
+                return;
+            }
+
+            ServiceUUID masterServer = new ServiceUUID(lease.getLeaseHolder());
+            try {
+                @SuppressWarnings("unchecked")
+                RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_trigger_reconstruction(
+                        masterServer.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
+                        fileCredentials, fileId, osdNumber);
+                response.registerListener(ECHelper.emptyResponseListener);
+            } catch (IOException ex) {
+                Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
+            }
+        }
+    }
+}
