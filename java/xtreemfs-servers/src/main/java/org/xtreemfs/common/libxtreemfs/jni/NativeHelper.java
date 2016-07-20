@@ -158,12 +158,12 @@ public final class NativeHelper {
         if ("file".equalsIgnoreCase(classURL.getProtocol())) {
             path = classURL.getPath();
             path = path.replace(File.separator, "/");
-            pos = path.lastIndexOf("/java/servers/build/classes/");
+            pos = path.lastIndexOf("/java/xtreemfs-servers/target/classes/");
         } else if ("jar".equalsIgnoreCase(classURL.getProtocol()) && classURL.getPath().startsWith("file:")) {
             // Strip the "file:" prefix and split at the "!"
             path = classURL.getPath().substring(5).split("!")[0];
             path = path.replace(File.separator, "/");
-            pos = path.lastIndexOf("/java/servers/dist/XtreemFS.jar");
+            pos = path.lastIndexOf("/java/xtreemfs-servers/target/xtreemfs.jar");
         } else {
             return false;
         }
