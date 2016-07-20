@@ -99,13 +99,15 @@ public class StorageThread extends Stage {
 
     public static final int            STAGEOP_EC_COMMIT_VECTOR      = 17;
 
-    public static final int            STAGEOP_EC_WRITE_INTERVAL     = 18;
+    public static final int            STAGEOP_EC_RECONSTRUCT_STRIPE = 18;
 
-    public static final int            STAGEOP_EC_WRITE_DIFF         = 19;
+    public static final int            STAGEOP_EC_WRITE_INTERVAL     = 19;
 
-    public static final int            STAGEOP_EC_READ_DATA          = 20;
+    public static final int            STAGEOP_EC_WRITE_DIFF         = 20;
 
-    public static final int            STAGEOP_EC_READ_PARITY        = 21;
+    public static final int            STAGEOP_EC_READ_DATA          = 21;
+
+    public static final int            STAGEOP_EC_READ_PARITY        = 22;
 
     private final MetadataCache        cache;
 
@@ -186,6 +188,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_EC_COMMIT_VECTOR:
                 ecStorage.processCommitVector(method);
+                break;
+            case STAGEOP_EC_RECONSTRUCT_STRIPE:
+                ecStorage.processReconstructStripe(method);
                 break;
             case STAGEOP_EC_WRITE_INTERVAL:
                 ecStorage.processWriteInterval(method);

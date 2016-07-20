@@ -81,7 +81,8 @@ public class OSDConfig extends ServiceConfig {
             Parameter.STORAGE_THREADS,
             Parameter.USE_RENEWAL_SIGNAL,
             Parameter.USE_MULTIHOMING,
-            Parameter.HEALTH_CHECK
+            Parameter.HEALTH_CHECK,
+            Parameter.EC_MAX_RECONSTRUCTION_QUEUE,
     };
     /*
      * @formatter:on   
@@ -290,5 +291,9 @@ public class OSDConfig extends ServiceConfig {
     
     public String getHealthCheckScript() {
         return (String) parameter.get(Parameter.HEALTH_CHECK);
+    }
+
+    public int getECReconstructionQueueLength() {
+        return (Integer) parameter.get(Parameter.EC_MAX_RECONSTRUCTION_QUEUE);
     }
 }

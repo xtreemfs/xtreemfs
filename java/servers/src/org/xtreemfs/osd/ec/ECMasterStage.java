@@ -827,7 +827,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         // Wait for the local result
         ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
-        getVectorOp.startLocalRequest(fileId, file.getPolicy().getStripingPolicy(), resultIntervals, handler);
+        getVectorOp.startLocalRequest(fileId, file.getCredentials(), file.getLocations(),
+                file.getPolicy().getStripingPolicy(), resultIntervals, handler);
 
     }
 

@@ -139,7 +139,112 @@ public class ECStorage {
         }
     }
 
+    public void processReconstructStripe(final StageRequest rq) {
+        final ECReconstructStripeCallback callback = (ECReconstructStripeCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+        final long stripeNo = (Long) rq.getArgs()[2];
+        final List<Interval> stripeIntervals = (List<Interval>) rq.getArgs()[3];
+        final ReusableBuffer data = (ReusableBuffer) rq.getArgs()[4];
 
+        long objVer = 1;
+        // FIXME (jdillmann): Decide if/when sync should be used
+        boolean sync = false;
+
+        boolean consistent = true;
+        try {
+            String fileIdCode = fileId + FILEID_CODE_SUFFIX;
+
+            int chunkSize = sp.getStripeSizeForObject(0);
+
+            int localOsdNo = sp.getRelativeOSDPosition();
+            boolean isParity = localOsdNo >= sp.getWidth();
+
+            long stripeStart = stripeNo * sp.getWidth() * chunkSize;
+            long stripeEnd = (stripeNo + 1) * sp.getWidth() * chunkSize;
+
+            long localOsdObjNo = sp.getObjectNoForOffset(stripeStart + (localOsdNo * chunkSize));
+
+            long dataOsdStart = sp.getObjectStartOffset(localOsdObjNo);
+            long dataOsdEnd = sp.getObjectEndOffset(localOsdObjNo) + 1;
+
+            // Get stripe offsets and ensure the stripeIntervals are aligned
+            if (stripeIntervals.isEmpty() || stripeIntervals.get(0).getStart() != stripeStart) {
+                throw new XtreemFSException("stripeIntervals have to be aligned with the start of the stripe");
+            }
+
+            // Ensure there are no gaps in the stripeIntervals
+            boolean needsData = false;
+            Interval last = null;
+            for (Interval interval : stripeIntervals) {
+                // if (interval.isEmpty() || last != null && last.getEnd() < interval.getStart()) {
+                // throw new XtreemFSException("stripeIntervals may not have gaps");
+                // }
+                if (last != null && last.getEnd() < interval.getStart()) {
+                    throw new XtreemFSException("stripeIntervals may not have gaps");
+                }
+                if (interval.overlaps(dataOsdStart, dataOsdEnd)) {
+                    needsData = true;
+                }
+                last = interval;
+            }
+
+            if ((isParity || needsData) && data == null) {
+                throw new XtreemFSException("Data is missing");
+            }
+
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            AVLTreeIntervalVector curVector = fi.getECCurVector();
+            AVLTreeIntervalVector nextVector = fi.getECNextVector();
+
+            // Commit or abort existing intervals and add the new intervals to the cur vector
+            for (Interval interval : stripeIntervals) {
+                if (curVector.contains(interval)) {
+                    if (isParity) {
+                        abortECDelta(fileId, fi, interval);
+                    } else {
+                        abortECData(fileId, fi, interval);
+                    }
+
+                } else if (nextVector.contains(interval)) {
+                    if (isParity) {
+                        commitECDelta(fileId, fi, interval);
+                    } else {
+                        commitECData(fileId, fi, interval);
+                    }
+
+                } else {
+                    curVector.insert(interval);
+                    consistent = false;
+                }
+            }
+
+            // Store the data
+            if (data != null) {
+                if (isParity) {
+                    layout.writeObject(fileIdCode, fi, data.createViewBuffer(), stripeNo, 0, objVer, sync, false);
+                } else {
+                    layout.writeObject(fileId, fi, data.createViewBuffer(), localOsdObjNo, 0, objVer, sync, false);
+                }
+            }
+
+            // persist the new intervals
+            layout.setECIntervalVector(fileId, stripeIntervals, false, true);
+            consistent = true;
+
+            callback.ecReconstructStripeComplete(fileId, stripeNo, null);
+
+        } catch (IOException ex) {
+            if (!consistent) {
+                // FIXME (jdillmann): Inform in detail about critical error
+                Logging.logError(Logging.LEVEL_CRIT, this, ex);
+            }
+
+            callback.ecReconstructStripeComplete(fileId, stripeNo, ErrorUtils.getInternalServerError(ex));
+        } finally {
+            BufferPool.free(data);
+        }
+    }
 
     public void processWriteInterval(final StageRequest rq) {
         final ECWriteIntervalCallback callback = (ECWriteIntervalCallback) rq.getCallback();

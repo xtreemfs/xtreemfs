@@ -24,6 +24,7 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorResponse;
@@ -64,11 +65,13 @@ public class ECCommitVector extends OSDOperation {
 
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, rq, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error) {
+            public void ecCommitVectorComplete(List<Interval> missingIntervals, boolean needsReconstruct,
+                    ErrorResponse error) {
                 if (error != null) {
                     rq.sendError(error);
                 } else if (needsReconstruct) {
-                    // FIXME (jdillmann): Trigger reconstruction.
+                    master.getEcReconstructionStage().startReconstruction(fileId, args.getFileCredentials(),
+                            rq.getCapability(), rq.getLocationList(), commitIntervals, missingIntervals);
                     rq.sendSuccess(buildResponse(true), null);
                 } else {
                     rq.sendSuccess(buildResponse(false), null);
@@ -77,16 +80,19 @@ public class ECCommitVector extends OSDOperation {
         });
     }
 
-    public void startLocalRequest(final String fileId, final StripingPolicyImpl sp,
-            final List<Interval> commitIntervals,
+    public void startLocalRequest(final String fileId, final FileCredentials fileCredentials, final XLocations xloc,
+            final StripingPolicyImpl sp, final List<Interval> commitIntervals,
             final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback) {
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
-            public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error) {
+            public void ecCommitVectorComplete(List<Interval> missingIntervals, boolean needsReconstruct,
+                    ErrorResponse error) {
                 if (error != null) {
                     callback.localRequestFailed(error);
                 } else if (needsReconstruct) {
-                    // FIXME (jdillmann): Trigger reconstruction.
+                    Capability cap = new Capability(fileCredentials.getXcap(), sharedSecret);
+                    master.getEcReconstructionStage().startReconstruction(fileId, fileCredentials, cap, xloc,
+                            commitIntervals, missingIntervals);
                     callback.localResultAvailable(buildResponse(true), null);
                 } else {
                     callback.localResultAvailable(buildResponse(false), null);

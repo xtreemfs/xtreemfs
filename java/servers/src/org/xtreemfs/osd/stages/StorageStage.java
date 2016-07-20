@@ -240,6 +240,16 @@ public class StorageStage extends Stage {
         public void ecCommitVectorComplete(List<Interval> missing, boolean needsReconstruct, ErrorResponse error);
     }
 
+    public void ecReconstructStripe(String fileId, StripingPolicyImpl sp, long stripeNo, List<Interval> stripeIntervals,
+            ReusableBuffer data, ECReconstructStripeCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_EC_RECONSTRUCT_STRIPE,
+                new Object[] { fileId, sp, stripeNo, stripeIntervals, data }, null, callback);
+    }
+
+    public static interface ECReconstructStripeCallback {
+        public void ecReconstructStripeComplete(String fileId, long stripeNo, ErrorResponse error);
+    }
+
     /**
      * 
      * @param fileId
