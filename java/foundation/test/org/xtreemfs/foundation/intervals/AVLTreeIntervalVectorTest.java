@@ -26,16 +26,21 @@ public class AVLTreeIntervalVectorTest {
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 1024, 1));
         expected.add(new ObjectInterval(0, 1024, 1));
+        expected.add(ObjectInterval.empty(1024, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(1024, 2048, 2));
+        expected.removeLast();
         expected.add(new ObjectInterval(1024, 2048, 2));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
         tree.insert(new ObjectInterval(2048, 4096, 3));
+        expected.removeLast();
         expected.add(new ObjectInterval(2048, 4096, 3));
+        expected.add(ObjectInterval.empty(4096, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -52,7 +57,9 @@ public class AVLTreeIntervalVectorTest {
         List<Interval> versions;
 
         tree.insert(new ObjectInterval(1024, 4096, 1));
+        expected.add(ObjectInterval.empty(0, 1024));
         expected.add(new ObjectInterval(1024, 4096, 1));
+        expected.add(ObjectInterval.empty(4096, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -61,6 +68,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 512, 1));
         expected.add(new ObjectInterval(512, 1024, -1));
         expected.add(new ObjectInterval(1024, 4096, 1));
+        expected.add(ObjectInterval.empty(4096, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
     }
@@ -76,6 +84,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 512, 0));
         expected.add(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(1536, 2048, 0));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
     }
@@ -92,6 +101,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 500, 0));
         expected.add(new ObjectInterval(500, 1800, 2));
         expected.add(new ObjectInterval(1800, 2048, 0));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -108,6 +118,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(5, 500, 0));
         expected.add(new ObjectInterval(500, 1800, 2));
         expected.add(new ObjectInterval(1800, 2048, 0));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -117,6 +128,7 @@ public class AVLTreeIntervalVectorTest {
         
         expected = new LinkedList<ObjectInterval>();
         expected.add(new ObjectInterval(0, 2048, 1));
+        expected.add(ObjectInterval.empty(2048, 8192));
         tree.insert(new ObjectInterval(0, 2048, 1));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -127,6 +139,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 500, 0));
         expected.add(new ObjectInterval(500, 4000, 7));
         expected.add(new ObjectInterval(4000, 4096, 6));
+        expected.add(ObjectInterval.empty(4096, 8192));
         tree.insert(new ObjectInterval(500, 4000, 7));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -138,6 +151,7 @@ public class AVLTreeIntervalVectorTest {
         tree.insert(new ObjectInterval(0, 2048, 3));
         expected.clear();
         expected.add(new ObjectInterval(0, 2048, 3));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
     }
@@ -155,6 +169,7 @@ public class AVLTreeIntervalVectorTest {
         expected.add(new ObjectInterval(0, 512, 0));
         expected.add(new ObjectInterval(512, 1536, 1));
         expected.add(new ObjectInterval(1536, 2048, 0));
+        expected.add(ObjectInterval.empty(2048, 8192));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
 
@@ -221,20 +236,34 @@ public class AVLTreeIntervalVectorTest {
         List<Interval> versions;
 
         // Test to retrieve from empty tree
-        versions = tree.getOverlapping(0, 1024);
+        versions = tree.getOverlapping(512, 768);
+        expected.add(ObjectInterval.empty(512, 768));
         assertEquals(expected, versions);
 
-        versions = tree.getSlice(0, 1024);
+        versions = tree.getSlice(512, 768);
+        expected.clear();
+        expected.add(ObjectInterval.empty(512, 768));
+        assertEquals(expected, versions);
+
+        // Test if empty intervals will be joined
+        tree.insert(ObjectInterval.empty(0, 512));
+        tree.insert(ObjectInterval.empty(512, 1000));
+        tree.insert(ObjectInterval.empty(1000, 1024));
+        // tree.insert(ObjectInterval.empty(512, 1024));
+        expected.clear();
         expected.add(ObjectInterval.empty(0, 1024));
+        versions = tree.getOverlapping(0, 1024);
         assertEquals(expected, versions);
 
         // Test to retrieve from tree with empty interval
         tree.insert(ObjectInterval.empty(0, 2048));
         expected.clear();
+        expected.add(ObjectInterval.empty(0, 1024));
         versions = tree.getOverlapping(0, 1024);
         assertEquals(expected, versions);
 
         versions = tree.getSlice(0, 1024);
+        expected.clear();
         expected.add(ObjectInterval.empty(0, 1024));
         assertEquals(expected, versions);
 
@@ -352,6 +381,7 @@ public class AVLTreeIntervalVectorTest {
         AVLTreeIntervalVector tree = new AVLTreeIntervalVector();
         tree.insert(new ObjectInterval(0, 10, 0));
         expected.add(new ObjectInterval(0, 10, 0));
+        expected.add(ObjectInterval.empty(10, 20));
 
         // truncate without effect
         tree.truncate(20);
@@ -376,6 +406,7 @@ public class AVLTreeIntervalVectorTest {
         tree.truncate(5);
         expected.clear();
         expected.add(new ObjectInterval(0, 5, 0));
+        expected.add(ObjectInterval.empty(5, 20));
         assertEquals(5, tree.end);
         versions = tree.getOverlapping(0, 20);
         assertEquals(expected, versions);
@@ -384,13 +415,16 @@ public class AVLTreeIntervalVectorTest {
         tree.truncate(1);
         expected.clear();
         expected.add(new ObjectInterval(0, 1, 0));
+        expected.add(ObjectInterval.empty(1, 20));
         assertEquals(1, tree.end);
         versions = tree.getOverlapping(0, 20);
         assertEquals(expected, versions);
 
         // test dropping the right tree
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 2048);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 2048));
+        expected.add(ObjectInterval.empty(2048, 8192));
         tree.truncate(2048);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -399,7 +433,9 @@ public class AVLTreeIntervalVectorTest {
 
         // test truncating on rightmost node
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 4000);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 4000));
+        expected.add(ObjectInterval.empty(4000, 8192));
         tree.truncate(4000);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -408,7 +444,9 @@ public class AVLTreeIntervalVectorTest {
 
         // test truncating on leftmost right node (drops parent and its right tree)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 2500);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 2500));
+        expected.add(ObjectInterval.empty(2500, 8192));
         tree.truncate(2500);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -417,7 +455,9 @@ public class AVLTreeIntervalVectorTest {
 
         // test truncating on the leftmost node (drops root and every other node)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 500);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 500));
+        expected.add(ObjectInterval.empty(500, 8192));
         tree.truncate(500);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -426,7 +466,9 @@ public class AVLTreeIntervalVectorTest {
 
         // test truncating on the left root node (drops root and nodes right tree)
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 1000);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 1000));
+        expected.add(ObjectInterval.empty(1000, 8192));
         tree.truncate(1000);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
@@ -435,7 +477,9 @@ public class AVLTreeIntervalVectorTest {
 
         // test truncating on the rightmost left node
         tree = createFullTestTree();
-        expected = tree.getSlice(0, 1500);
+        expected.clear();
+        expected.addAll(tree.getSlice(0, 1500));
+        expected.add(ObjectInterval.empty(1500, 8192));
         tree.truncate(1500);
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);

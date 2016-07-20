@@ -67,6 +67,19 @@ public class ListIntervalVector extends IntervalVector {
             result.removeLast();
         }
 
+
+        if (result.isEmpty()) {
+            result.add(ObjectInterval.empty(start, end));
+        }
+
+        if (result.peekFirst().getStart() > start) {
+            result.addFirst(ObjectInterval.empty(start, result.peekFirst().getStart()));
+        }
+
+        if (result.peekLast().getEnd() < end) {
+            result.addLast(ObjectInterval.empty(result.peekLast().getEnd(), end));
+        }
+
         return Collections.unmodifiableList(result);
     }
 

@@ -279,6 +279,18 @@ public class AVLTreeIntervalVector extends IntervalVector {
             intervals.removeLast();
         }
 
+        if (intervals.isEmpty()) {
+            intervals.add(ObjectInterval.empty(start, end));
+        }
+
+        if (intervals.peekFirst().getStart() > start) {
+            intervals.addFirst(ObjectInterval.empty(start, intervals.peekFirst().getStart()));
+        }
+
+        if (intervals.peekLast().getEnd() < end) {
+            intervals.addLast(ObjectInterval.empty(intervals.peekLast().getEnd(), end));
+        }
+
         return Collections.unmodifiableList(intervals);
     }
 
