@@ -136,7 +136,7 @@ public class ECMasterStageTest extends ECTestCommon {
             }
         }
 
-        // Provove election error while one OSD (second) is down with ReadQuorum = 3
+        // Provoke election error while one OSD (second) is down with ReadQuorum = 3
         fileId = "testElection:2";
         // Create FileCredentials with a WriteQuorum of 2 => ReadQuorum 3
         fc = getFileCredentials(fileId, 2, 1, 1, 2, osdUUIDs);

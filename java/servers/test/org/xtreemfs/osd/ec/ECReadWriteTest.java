@@ -125,6 +125,19 @@ public class ECReadWriteTest extends ECTestCommon {
         }
     }
 
+    @Test
+    public void testWriteReadDegraded32Manual() throws Exception {
+        int i = 1;
+        String fileId = "WriteParityDegraded32:" + i;
+        FileCredentials fc = getFileCredentials(fileId, 3, 2, 1, 4, osdUUIDs.subList(0, 5));
+
+        // Stop the OSD
+        testEnv.stopOSD(configs[i].getUUID().toString());
+        // Run the tests
+        testWriteRead(fileId, fc, 3, 1024);
+        // Restart the OSD
+        testEnv.startOSD(configs[i].getUUID().toString());
+    }
 
 
     public void testWriteRead(String fileId, FileCredentials fc, int dataWidth, int chunkSize) throws Exception {
@@ -146,12 +159,30 @@ public class ECReadWriteTest extends ECTestCommon {
                 .build();
         ReusableBuffer data, dout;
 
+        // Read non existing data (0) from every data OSD
+        // **********************************************
+        data = ECHelper.zeroPad(null, chunkSize);
+        for (int i = 0; i < dataWidth; i++) {
+            objNumber = i;
+            length = chunkSize;
+            RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService,
+                    fc, fileId, objNumber, objVersion, offset, length);
+            readResponse = RPCReadResponse.get();
+            RPCReadResponse.freeBuffers();
+            dout = RPCReadResponse.getData();
+            RPCReadResponse = null;
+
+            assertBufferEquals(data, dout);
+            BufferPool.free(dout);
+        }
+        BufferPool.free(data);
 
 
-        // Write the first object on a single OSD
-        // **************************************
+        // Write a single object on the first data OSD
+        // *******************************************
+        objNumber = 0;
         length = chunkSize;
-        data = SetupUtils.generateData(length);
+        data = SetupUtils.generateData(length, (byte) 1);
         RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
                 fileId, objNumber, objVersion, offset, lease_timeout, objData, data.createViewBuffer());
         writeResponse = RPCWriteResponse.get();
@@ -170,8 +201,48 @@ public class ECReadWriteTest extends ECTestCommon {
 
 
 
+        // Write a single object on the last data OSD: provokes a gap
+        // **********************************************************
+        objNumber = dataWidth - 1;
+        length = chunkSize;
+        data = SetupUtils.generateData(length, (byte) 2);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data.createViewBuffer());
+        writeResponse = RPCWriteResponse.get();
+        RPCWriteResponse.freeBuffers();
+
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+        nowDebug = true;
+        // Try reading from the gap
+        objNumber = dataWidth - 2;
+        length = chunkSize;
+        data = ECHelper.zeroPad(null, chunkSize);
+        RPCReadResponse = osdClient.read(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, length);
+        readResponse = RPCReadResponse.get();
+        RPCReadResponse.freeBuffers();
+        dout = RPCReadResponse.getData();
+        RPCReadResponse = null;
+
+        assertBufferEquals(data, dout);
+        BufferPool.free(data);
+        BufferPool.free(dout);
+
+
+
         // Write the whole first stripe over all three OSDs
         // ************************************************
+        objNumber = 0;
         length = dataWidth * chunkSize;
         data = SetupUtils.generateData(length);
         RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,

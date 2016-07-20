@@ -174,9 +174,10 @@ public class ECReadOperation extends OSDOperation {
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
                                 // FIXME (jdillmann): Add response field = needReconstruction or error message type
-
-                                BufferPool.free(result.getData());
-                                callback.localResultAvailable(buildResponse(false, null), null);
+                                if (result != null) {
+                                    BufferPool.free(result.getData());
+                                }
+                                callback.localResultAvailable(buildResponse(true, null), null);
                             } else {
                                 // FIXME (jdillmann): Could it make sense to set isLastObj?
                                 InternalObjectData intObjData = result.getObjectData(false, offset, length);
@@ -197,9 +198,10 @@ public class ECReadOperation extends OSDOperation {
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
                                 // FIXME (jdillmann): Add response field = needReconstruction or error message type
-
-                                BufferPool.free(result.getData());
-                                callback.localResultAvailable(buildResponse(false, null), null);
+                                if (result != null) {
+                                    BufferPool.free(result.getData());
+                                }
+                                callback.localResultAvailable(buildResponse(true, null), null);
                             } else {
                                 // FIXME (jdillmann): Could it make sense to set isLastObj?
                                 InternalObjectData intObjData = result.getObjectData(false, offset, length);

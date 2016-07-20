@@ -344,7 +344,7 @@ public class ECOperationsTest extends ECTestCommon {
         // assertGetVectorsEquals(fileCredentials, curIntervals, Collections.<Interval> emptyList());
     }
 
-    xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
+    static xtreemfs_ec_commit_vectorRequest intervalList2CommitRequest(List<Interval> intervals,
             xtreemfs_ec_commit_vectorRequest.Builder builder) {
         builder.clearIntervals();
         for (Interval interval : intervals) {
@@ -640,7 +640,7 @@ public class ECOperationsTest extends ECTestCommon {
         assertArrayEquals(dataInF3.array(), byteOut);
     }
 
-    void intervalList2WriteIntervalRequest(List<Interval> intervals,
+    static void intervalList2WriteIntervalRequest(List<Interval> intervals,
             xtreemfs_ec_write_intervalRequest.Builder builder) {
         builder.clearCommitIntervals();
         for (Interval interval : intervals) {
@@ -1128,7 +1128,7 @@ public class ECOperationsTest extends ECTestCommon {
     }
 
     
-    void intervalList2WriteDiffRequest(List<Interval> intervals,
+    static void intervalList2WriteDiffRequest(List<Interval> intervals,
             xtreemfs_ec_write_diffRequest.Builder builder) {
         builder.clearCommitIntervals();
         for (Interval interval : intervals) {

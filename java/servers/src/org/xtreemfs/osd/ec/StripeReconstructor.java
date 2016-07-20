@@ -9,6 +9,7 @@ package org.xtreemfs.osd.ec;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -75,13 +76,18 @@ public class StripeReconstructor {
         this.stripeNo = stripeNo;
         this.callback = callback;
 
-        if (commitIntervals.get(0) instanceof IntervalMsg) {
+        if (commitIntervals.isEmpty()) {
+            commitIntervalMsgs = Collections.emptyList();
+
+        } else if (commitIntervals.get(0) instanceof IntervalMsg) {
             commitIntervalMsgs = (List<IntervalMsg>) commitIntervals;
+
         } else if (commitIntervals.get(0) instanceof Interval) {
             commitIntervalMsgs = new ArrayList<IntervalMsg>(commitIntervals.size());
             for (Object interval : commitIntervals) {
                 commitIntervalMsgs.add(ProtoInterval.toProto((Interval) interval));
             }
+
         } else {
             throw new IllegalArgumentException("commitIntervals has to be of type Interval or IntervalMsg");
         }
