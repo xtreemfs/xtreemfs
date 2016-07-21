@@ -17,12 +17,13 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECWorker.ECWorkerEvent;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
-public abstract class ECAbstractWorker<EVENT> implements ECWorker<EVENT> {
+public abstract class ECAbstractWorker<EVENT extends ECWorkerEvent> implements ECWorker<EVENT> {
 
     // Given as argument
     final String                      fileId;

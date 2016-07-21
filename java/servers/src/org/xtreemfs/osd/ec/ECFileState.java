@@ -227,12 +227,12 @@ public class ECFileState {
     boolean overlapsActiveWriteRequest(Interval reqInterval) {
         List<Interval> overlapping = 
                 activeWriteRequests.getOverlapping(reqInterval.getOpStart(), reqInterval.getOpEnd());
-        if (overlapping.isEmpty()) {
-            return false;
-        }
 
-        if (overlapping.size() > 1 || !overlapping.get(0).isEmpty()) {
-            return true;
+        for (Interval interval : overlapping) {
+            if (!interval.isEmpty() && !interval.equalsVersionId(reqInterval)) {
+                System.out.println(overlapping + " <- " + reqInterval);
+                return true;
+            }
         }
 
         return false;

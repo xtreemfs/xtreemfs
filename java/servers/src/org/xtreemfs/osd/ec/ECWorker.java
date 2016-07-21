@@ -6,11 +6,14 @@
  */
 package org.xtreemfs.osd.ec;
 
+import java.util.List;
+
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
+import org.xtreemfs.osd.ec.ECWorker.ECWorkerEvent;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 
-public interface ECWorker<EVENT> {
+public interface ECWorker<EVENT extends ECWorkerEvent> {
     enum TYPE {
         READ, WRITE
     };
@@ -22,6 +25,8 @@ public interface ECWorker<EVENT> {
     StageRequest getRequest();
 
     void start();
+
+    void abort(ErrorResponse error);
 
     void processEvent(EVENT event);
 
@@ -35,8 +40,15 @@ public interface ECWorker<EVENT> {
 
     Object getResult();
 
-    public interface ECWorkerEventProcessor<EVENT> {
+    public interface ECWorkerEventProcessor<EVENT extends ECWorkerEvent> {
         void signal(ECWorker<EVENT> worker, EVENT event);
+    }
+
+
+    public static interface ECWorkerEvent {
+        boolean needsStripeInterval();
+        void setStripeInterval(List<Interval> stripeInterval);
+        long getStripeNo();
     }
 
 }

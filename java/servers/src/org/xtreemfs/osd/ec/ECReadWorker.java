@@ -24,6 +24,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
@@ -48,13 +49,38 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         START_RECONSTRUCTION, RECONSTRUCTION_FINISHED
     }
 
-    public final static class ReadEvent {
+    public final static class ReadEvent implements ECWorker.ECWorkerEvent {
         final ReadEventType type;
         final StripeState   stripeState;
+        final boolean       needsStripeInterval;
+        List<Interval>      stripeInterval;
 
         public ReadEvent(ReadEventType type, StripeState stripeState) {
             this.type = type;
             this.stripeState = stripeState;
+            needsStripeInterval = false;
+        }
+
+        public ReadEvent(ReadEventType type, StripeState stripeState, boolean needsStripeInterval) {
+            this.type = type;
+            this.stripeState = stripeState;
+            this.needsStripeInterval = needsStripeInterval;
+        }
+
+
+        @Override
+        public boolean needsStripeInterval() {
+            return needsStripeInterval;
+        }
+
+        @Override
+        public long getStripeNo() {
+            return (stripeState != null) ? stripeState.stripeNo : -1;
+        }
+
+        @Override
+        public void setStripeInterval(List<Interval> stripeInterval) {
+            this.stripeInterval = stripeInterval;
         }
     }
 
@@ -243,17 +269,18 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void startReconstruction(StripeState stripeState) {
-        processor.signal(this, new ReadEvent(ReadEventType.START_RECONSTRUCTION, stripeState));
+        processor.signal(this, new ReadEvent(ReadEventType.START_RECONSTRUCTION, stripeState, true));
     }
 
     private void processStartReconstruction(ReadEvent event) {
         if (finishedSignaled.get()) {
             return;
         }
+        assert (event.stripeInterval != null);
 
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
+                stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
         stripeState.markForReconstruction(reconstructor);
         reconstructor.start();
         
@@ -404,6 +431,15 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         }
     }
 
+    @Override
+    public void abort(ErrorResponse error) {
+        timeoutTimer.cancel();
+        if (finishedSignaled.compareAndSet(false, true)) {
+            this.error = error;
+            processor.signal(this, new ReadEvent(ReadEventType.FAILED, null));
+        }
+    }
+
     private void failed(long stripeNo) {
         failed(getStripeStateForStripe(stripeNo));
     }
@@ -416,6 +452,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void processFailed(ReadEvent event) {
+        timeoutTimer.cancel();
         waitForActiveHandlers();
 
         BufferPool.free(data);

@@ -206,6 +206,10 @@ public class ECMasterStageTest extends ECTestCommon {
             if (ex.getErrorType() != ErrorType.REDIRECT) {
                 throw ex;
             }
+        } finally {
+            if (RPCresponse != null) {
+                RPCresponse.freeBuffers();
+            }
         }
     }
 

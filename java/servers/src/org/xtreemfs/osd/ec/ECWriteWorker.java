@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
@@ -44,13 +45,38 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         FINISHED, FAILED, START_RECONSTRUCTION, RECONSTRUCTION_FINISHED
     }
 
-    public final static class WriteEvent {
+    public final static class WriteEvent implements ECWorker.ECWorkerEvent {
         final WriteEventType type;
         final StripeState    stripeState;
+        final boolean        needsStripeInterval;
+        List<Interval>       stripeInterval;
 
         public WriteEvent(WriteEventType type, StripeState stripeState) {
             this.type = type;
             this.stripeState = stripeState;
+            needsStripeInterval = false;
+        }
+
+        public WriteEvent(WriteEventType type, StripeState stripeState, boolean needsStripeInterval) {
+            this.type = type;
+            this.stripeState = stripeState;
+            this.needsStripeInterval = needsStripeInterval;
+        }
+
+
+        @Override
+        public boolean needsStripeInterval() {
+            return needsStripeInterval;
+        }
+
+        @Override
+        public long getStripeNo() {
+            return (stripeState != null) ? stripeState.stripeNo : -1;
+        }
+
+        @Override
+        public void setStripeInterval(List<Interval> stripeInterval) {
+            this.stripeInterval = stripeInterval;
         }
     }
 
@@ -298,6 +324,15 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         freeBuffers();
     }
 
+    @Override
+    public void abort(ErrorResponse error) {
+        timeoutTimer.cancel();
+        if (finishedSignaled.compareAndSet(false, true)) {
+            this.error = error;
+            processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
+        }
+    }
+
     private void failed() {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
@@ -333,17 +368,18 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     }
 
     private void startReconstruction(StripeState stripeState) {
-        processor.signal(this, new WriteEvent(WriteEventType.START_RECONSTRUCTION, stripeState));
+        processor.signal(this, new WriteEvent(WriteEventType.START_RECONSTRUCTION, stripeState, true));
     }
 
     private void processStartReconstruction(WriteEvent event) {
         if (finishedSignaled.get()) {
             return;
         }
+        assert (event.stripeInterval != null);
 
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, commitIntervalMsgs, osdClient, stripeReconstructorCallback);
+                stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
         stripeState.markForReconstruction(reconstructor);
 
         reconstructor.start();

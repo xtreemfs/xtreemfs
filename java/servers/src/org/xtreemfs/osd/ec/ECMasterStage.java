@@ -48,10 +48,9 @@ import org.xtreemfs.osd.FleasePrefixHandler;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECFileState.FileState;
-import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
+import org.xtreemfs.osd.ec.ECWorker.ECWorkerEvent;
 import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
 import org.xtreemfs.osd.ec.ECWorker.TYPE;
-import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
 import org.xtreemfs.osd.operations.ECCommitVector;
@@ -272,7 +271,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
     }
 
     @Override
-    public void signal(ECWorker worker, Object event) {
+    public void signal(ECWorker worker, ECWorkerEvent event) {
         STAGE_OP op;
 
         switch (worker.getType()) {
@@ -941,9 +940,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         List<Interval> commitIntervals = file.getCurVector().getOverlapping(start, end);
-        List<Interval> fullStripeCommitIntervals = file.getCurVector().getOverlapping(stripeStart, stripeEnd);
-        ECReadWorker worker = new ECReadWorker(master, credentials, loc, fileId, sp, reqInterval, commitIntervals, data,
-                method, READ_WORKER_TIMEOUT_MS, this);
+        ECReadWorker worker = new ECReadWorker(master, credentials, loc, fileId, sp, reqInterval,
+                commitIntervals, data, method, READ_WORKER_TIMEOUT_MS, this);
         file.addActiveRequest(worker);
         worker.start();
     }
@@ -962,10 +960,38 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECReadWorker worker = (ECReadWorker) method.getArgs()[0];
-        final ECReadWorker.ReadEvent event = (ReadEvent) method.getArgs()[1];
+        final ECReadWorker.ReadEvent event = (ECReadWorker.ReadEvent) method.getArgs()[1];
 
+        // Try to get the full stripe interval
+        if (event.needsStripeInterval()) {
+            long stripeNo = event.getStripeNo();
+            assert (stripeNo >= 0);
+
+            StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
+            long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
+            long end = sp.getObjectStartOffset((stripeNo + 1) + sp.getWidth());
+
+            Interval reqInterval = worker.getRequestInterval();
+            Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
+                    reqInterval.getId());
+
+            if (file.overlapsActiveWriteRequest(stripeRangeInterval)) {
+                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                        "stripe " + stripeNo + " can not be restored, because it is currently written at an overlapping range by another process.");
+
+                worker.abort(error);
+                callback.failed(error);
+                return;
+            }
+
+            List<Interval> stripeInterval = file.getCurVector().getOverlapping(start, end);
+            event.setStripeInterval(stripeInterval);
+        }
+
+        // Process the worker event
         worker.processEvent(event);
 
+        // Respond to the request if the worker finished
         if (worker.hasFinished()) {
             file.removeActiveRequest(worker);
 
@@ -1068,10 +1094,39 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
-        final ECWriteWorker.WriteEvent event = (WriteEvent) method.getArgs()[1];
+        final ECWriteWorker.WriteEvent event = (ECWriteWorker.WriteEvent) method.getArgs()[1];
 
+        // Try to get the full stripe interval
+        if (event.needsStripeInterval()) {
+            long stripeNo = event.getStripeNo();
+            assert(stripeNo >= 0);
+            
+            StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
+            long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
+            long end = sp.getObjectStartOffset((stripeNo + 1) + sp.getWidth());
+            
+            Interval reqInterval = worker.getRequestInterval();
+            Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
+                    reqInterval.getId());
+
+            
+            if (file.overlapsActiveWriteRequest(stripeRangeInterval)) {
+                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                        "stripe " + stripeNo + " can not be restored, because it is currently written at an overlapping range by another process.");
+                
+                worker.abort(error);
+                callback.failed(error);
+                return;
+            }
+            
+            List<Interval> stripeInterval = file.getCurVector().getOverlapping(start, end);
+            event.setStripeInterval(stripeInterval);
+        }
+        
+        // Process the worker event
         worker.processEvent(event);
 
+        // Respond to the request if the worker finished
         if (worker.hasFinished()) {
             file.removeActiveRequest(worker);
 
