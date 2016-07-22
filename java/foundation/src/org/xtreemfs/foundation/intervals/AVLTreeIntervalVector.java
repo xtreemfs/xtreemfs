@@ -30,14 +30,19 @@ public class AVLTreeIntervalVector extends IntervalVector {
 
     @Override
     public void insert(Interval interval) {
-        if (interval.getEnd() > end) {
-            end = interval.getEnd();
-        }
+        root = insert(interval, root);
+
         if (interval.getVersion() > maxVersion) {
+            // FIXME (jdillmann): will be false if the interval with the maxVersion is overwritten
             maxVersion = interval.getVersion();
         }
 
-        root = insert(interval, root);
+        if (interval.isEmpty() && interval.getEnd() >= end) {
+            end = findEnd(0, root);
+
+        } else if (interval.getEnd() > end) {
+            end = interval.getEnd();
+        }
     }
 
     /**
@@ -222,6 +227,26 @@ public class AVLTreeIntervalVector extends IntervalVector {
         }
     }
 
+
+    long findEnd(long lastEnd, IntervalNode node) {
+
+        while (node != null) {
+            if (node.interval.isEmpty() 
+                    && (node.right == null || node.right.interval.isEmpty())) {
+
+                lastEnd = findEnd(lastEnd, node.left);
+
+            } else if (!node.interval.isEmpty()) {
+                lastEnd = node.interval.getEnd();
+            }
+            
+            node = node.right;            
+        }
+        
+        return lastEnd;
+    }
+
+
     @Override
     public List<Interval> serialize() {
         LinkedList<Interval> intervals = new LinkedList<Interval>();
@@ -352,6 +377,11 @@ public class AVLTreeIntervalVector extends IntervalVector {
     @Override
     public long getMaxVersion() {
         return maxVersion;
+    }
+
+    @Override
+    public long getEnd() {
+        return end;
     }
 
     @Override

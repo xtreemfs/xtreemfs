@@ -92,11 +92,11 @@ public class BufferBackedMetadataTest {
 
             // create striping policy
             BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
-            checkSP(pattern, stripeSize, width, sp1);
+            checkSP(pattern, stripeSize, width, 0, sp1);
 
             // copy striping policy
             BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
-            checkSP(pattern, stripeSize, width, sp2);
+            checkSP(pattern, stripeSize, width, 0, sp2);
         }
 
         {
@@ -106,11 +106,27 @@ public class BufferBackedMetadataTest {
 
             // create striping policy
             BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
-            checkSP(pattern, stripeSize, width, sp1);
+            checkSP(pattern, stripeSize, width, 0, sp1);
 
             // copy striping policy
             BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
-            checkSP(pattern, stripeSize, width, sp2);
+            checkSP(pattern, stripeSize, width, 0, sp2);
+        }
+
+
+        {
+            final String pattern = "EC";
+            final int stripeSize = 128;
+            final int width = 3;
+            final int parity = 2;
+
+            // create striping policy
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, parity);
+            checkSP(pattern, stripeSize, width, parity, sp1);
+
+            // copy striping policy
+            BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
+            checkSP(pattern, stripeSize, width, parity, sp2);
         }
     }
 
@@ -188,6 +204,23 @@ public class BufferBackedMetadataTest {
             assertEquals(Integer.MIN_VALUE, xloc2.getReplicationFlags());
         }
 
+        {
+            final String[] osds = { "dataOSD0", "dataOSD1", "dataOSD2", "parityOSD0", "parityOSD1" };
+            final BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("EC", 1024, 3, 2);
+            final int replFlags = 0;
+
+            // create XLoc
+            BufferBackedXLoc xloc1 = new BufferBackedXLoc(sp, osds, replFlags);
+            checkXLoc(osds, sp, replFlags, xloc1);
+
+            byte[] tmpBuf = new byte[xloc1.getBuffer().length + 10];
+            System.arraycopy(xloc1.getBuffer(), 0, tmpBuf, 3, xloc1.getBuffer().length);
+
+            // copy XLoc
+            BufferBackedXLoc xloc2 = new BufferBackedXLoc(tmpBuf, 3, xloc1.getBuffer().length);
+            checkXLoc(osds, sp, replFlags, xloc2);
+        }
+
     }
 
     @Test
@@ -203,6 +236,29 @@ public class BufferBackedMetadataTest {
                     ",mn", "asdf" }, 45));
             int version = 37;
             String updatePolicy = "bla";
+
+            // create XLocList
+            BufferBackedXLocList xlocList1 = new BufferBackedXLocList(toArray(replicas), updatePolicy, version);
+            checkXLocList(replicas, version, updatePolicy, xlocList1);
+
+            // copy XLocList
+            BufferBackedXLocList xlocList2 = new BufferBackedXLocList(xlocList1.getBuffer(), 0,
+                    xlocList1.getBuffer().length);
+            checkXLocList(replicas, version, updatePolicy, xlocList2);
+
+            // test iterator
+            Iterator<XLoc> it = xlocList2.iterator();
+            while (it.hasNext())
+                it.next();
+        }
+
+        {
+            final List<BufferBackedStripingPolicy> sp = generateSPList(new BufferBackedStripingPolicy("EC", 5, 3, 2));
+
+            final List<BufferBackedXLoc> replicas = generateXLocList(
+                    new BufferBackedXLoc(sp.get(0), new String[] { "11111", "22222", "33333", "44444", "55555" }, 0));
+            int version = 37;
+            String updatePolicy = "EC";
 
             // create XLocList
             BufferBackedXLocList xlocList1 = new BufferBackedXLocList(toArray(replicas), updatePolicy, version);
@@ -292,9 +348,10 @@ public class BufferBackedMetadataTest {
         assertEquals(rights, entry.getRights());
     }
 
-    private void checkSP(String pattern, int stripeSize, int width, BufferBackedStripingPolicy sp) {
+    private void checkSP(String pattern, int stripeSize, int width, int parity, BufferBackedStripingPolicy sp) {
         assertEquals(pattern, sp.getPattern().toString());
         assertEquals(width, sp.getWidth());
+        assertEquals(parity, sp.getParityWidth());
         assertEquals(stripeSize, sp.getStripeSize());
     }
 
@@ -316,6 +373,7 @@ public class BufferBackedMetadataTest {
         assertEquals(sp.toString(), xlocSP.toString());
         assertEquals(sp.getPattern(), xlocSP.getPattern());
         assertEquals(sp.getWidth(), xlocSP.getWidth());
+        assertEquals(sp.getParityWidth(), xlocSP.getParityWidth());
         assertEquals(sp.getStripeSize(), xlocSP.getStripeSize());
 
         assertEquals(osds.length, xloc.getOSDCount());

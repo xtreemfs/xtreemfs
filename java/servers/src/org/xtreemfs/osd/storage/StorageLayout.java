@@ -121,7 +121,10 @@ public abstract class StorageLayout {
         // if metadata is not cached ...
         if (fi == null) {
             
-            // FIXME (jdillmann): Throw an Exception if this not a regular fileId, but a derived one
+            if (fileId.contains(".")) {
+                throw new IOException(
+                        "FileMetadata is only available for real fileIds. '" + fileId + "' is a derived one.");
+            }
 
             // ... load metadata from disk
             fi = loadFileMetadata(fileId, sp);

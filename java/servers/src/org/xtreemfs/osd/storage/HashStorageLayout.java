@@ -806,141 +806,6 @@ public class HashStorageLayout extends StorageLayout {
 
         // file exists already ...
         if (fileDir.exists()) {
-
-            Map<Long, Long> largestObjVersions = new HashMap<Long, Long>();
-            Map<Long, Map<Long, Long>> objChecksums = new HashMap<Long, Map<Long, Long>>();
-            Map<Long, Long> latestObjVersions = null;
-
-            long lastObjNum = -1;
-            String lastObject = null;
-
-            File currVerFile = new File(fileDir, CURRENT_VER_FILENAME);
-            boolean multiVersionSupport = currVerFile.exists();
-
-            // if multi-file-version support is enabled, retrieve the object
-            // versions for the current file version from the "latest versions"
-            // file
-            if (multiVersionSupport) {
-
-                latestObjVersions = new HashMap<Long, Long>();
-
-                RandomAccessFile rf = new RandomAccessFile(currVerFile, "r");
-                for (long l = 0;; l++) {
-                    // read object numbers until the file ends
-                    try {
-                        long objVer = rf.readLong();
-                        if (objVer != 0)
-                            latestObjVersions.put(l, objVer);
-                    } catch (EOFException exc) {
-                        lastObjNum = l - 1;
-                        break;
-                    }
-                }
-
-                rf.close();
-            }
-
-            // determine the largest object versions, as well as all checksums
-            String[] objs = fileDir.list();
-            for (String obj : objs) {
-
-                if (obj.startsWith(".")) {
-                    continue; // ignore special files (metadata, .tepoch)
-                }
-
-                ObjFileData ofd = parseFileName(obj);
-
-                // determine the checksum
-                if (ofd.checksum != 0) {
-
-                    Map<Long, Long> checksums = objChecksums.get(ofd.objNo);
-                    if (checksums == null) {
-                        checksums = new HashMap<Long, Long>();
-                        objChecksums.put(ofd.objNo, checksums);
-                    }
-
-                    checksums.put(ofd.objVersion, ofd.checksum);
-                }
-
-                // determine the last object
-                if (multiVersionSupport) {
-                    Long latestObjVer = latestObjVersions.get(ofd.objNo);
-                    if (ofd.objNo == lastObjNum && latestObjVer != null && ofd.objVersion == latestObjVer)
-                        lastObject = obj;
-                }
-
-                else {
-                    if (ofd.objNo > lastObjNum) {
-                        lastObject = obj;
-                        lastObjNum = ofd.objNo;
-                    }
-                }
-
-                // determine the largest object version
-                Long oldver = largestObjVersions.get(ofd.objNo);
-                if ((oldver == null) || (oldver < ofd.objVersion))
-                    largestObjVersions.put(ofd.objNo, ofd.objVersion);
-            }
-
-            if (multiVersionSupport) {
-
-                // set object versions and checksums of the latest file version
-                info.initLatestObjectVersions(latestObjVersions);
-
-                // if multi-file-version support is enabled, it is also
-                // necessary to keep track of the largest file versions
-                info.initLargestObjectVersions(largestObjVersions);
-            }
-
-            // if no multi-version support is enabled, the file version consists
-            // of the set of objects with the latest version numbers
-            else {
-                info.initLatestObjectVersions(largestObjVersions);
-                info.initLargestObjectVersions(largestObjVersions);
-            }
-
-            info.initObjectChecksums(objChecksums);
-
-            // Load the VersionTrees required for Erasure Coding
-            if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
-                // filesize could be restored from versionvector, but to stay consistent with the
-                // other policies store only the local filesize to FileMetadat
-
-                AVLTreeIntervalVector curVector = new AVLTreeIntervalVector();
-                getECIntervalVector(fileId, false, curVector);
-                info.setECCurVector(curVector);
-
-                AVLTreeIntervalVector nextVector = new AVLTreeIntervalVector();
-                getECIntervalVector(fileId, true, nextVector);
-                info.setECNextVector(nextVector);
-
-            } else {
-                info.setECCurVector(new AVLTreeIntervalVector());
-                info.setECNextVector(new AVLTreeIntervalVector());
-            }
-
-            if (lastObjNum > -1) {
-                // determine filesize from lastObjectNumber
-                File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
-                long lastObjSize = lastObjFile.length();
-                // check for empty padding file
-                if (lastObjSize == 0) {
-                    lastObjSize = sp.getStripeSizeForObject(lastObjSize);
-                }
-                long fsize = lastObjSize;
-                if (lastObjNum > 0) {
-                    fsize += sp.getObjectEndOffset(lastObjNum - 1) + 1;
-                }
-                assert (fsize >= 0);
-                info.setFilesize(fsize);
-                info.setLastObjectNumber(lastObjNum);
-
-            } else {
-                // empty file!
-                info.setFilesize(0l);
-                info.setLastObjectNumber(-1);
-            }
-
             // read truncate epoch from file
             File tepoch = new File(fileDir, TEPOCH_FILENAME);
             if (tepoch.exists()) {
@@ -955,13 +820,161 @@ public class HashStorageLayout extends StorageLayout {
                 }
             }
 
-            // initialize version table
-            File vtFile = new File(fileDir, VTABLE_FILENAME);
-            VersionTable vt = new VersionTable(vtFile);
-            if (vtFile.exists())
-                vt.load();
 
-            info.initVersionTable(vt);
+            // Load the VersionTrees required for Erasure Coding
+            if (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                // filesize could be restored from versionvector, but to stay consistent with the
+                // other policies store only the local filesize to FileMetadat
+
+                AVLTreeIntervalVector curVector = new AVLTreeIntervalVector();
+                getECIntervalVector(fileId, false, curVector);
+                info.setECCurVector(curVector);
+
+                AVLTreeIntervalVector nextVector = new AVLTreeIntervalVector();
+                getECIntervalVector(fileId, true, nextVector);
+                info.setECNextVector(nextVector);
+
+                // FIXME (jdillmann): Update on ECStorage operations?
+                // long fileSize = Math.max(curVector.getEnd(), nextVector.getEnd());
+                long fileSize = curVector.getEnd();
+                info.setFilesize(fileSize);
+
+                // The following values are not used for files with EC policy
+                info.setLastObjectNumber(-1);
+                info.initLatestObjectVersions(new HashMap<Long, Long>());
+                info.initLargestObjectVersions(new HashMap<Long, Long>());
+                info.initObjectChecksums(new HashMap<Long, Map<Long, Long>>());
+                info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
+
+            } else {
+
+                info.setECCurVector(new AVLTreeIntervalVector());
+                info.setECNextVector(new AVLTreeIntervalVector());
+
+                Map<Long, Long> largestObjVersions = new HashMap<Long, Long>();
+                Map<Long, Map<Long, Long>> objChecksums = new HashMap<Long, Map<Long, Long>>();
+                Map<Long, Long> latestObjVersions = null;
+
+                long lastObjNum = -1;
+                String lastObject = null;
+
+                File currVerFile = new File(fileDir, CURRENT_VER_FILENAME);
+                boolean multiVersionSupport = currVerFile.exists();
+
+                // if multi-file-version support is enabled, retrieve the object
+                // versions for the current file version from the "latest versions"
+                // file
+                if (multiVersionSupport) {
+
+                    latestObjVersions = new HashMap<Long, Long>();
+
+                    RandomAccessFile rf = new RandomAccessFile(currVerFile, "r");
+                    for (long l = 0;; l++) {
+                        // read object numbers until the file ends
+                        try {
+                            long objVer = rf.readLong();
+                            if (objVer != 0)
+                                latestObjVersions.put(l, objVer);
+                        } catch (EOFException exc) {
+                            lastObjNum = l - 1;
+                            break;
+                        }
+                    }
+
+                    rf.close();
+                }
+
+                // determine the largest object versions, as well as all checksums
+                String[] objs = fileDir.list();
+                for (String obj : objs) {
+
+                    if (obj.startsWith(".")) {
+                        continue; // ignore special files (metadata, .tepoch)
+                    }
+
+                    ObjFileData ofd = parseFileName(obj);
+
+                    // determine the checksum
+                    if (ofd.checksum != 0) {
+
+                        Map<Long, Long> checksums = objChecksums.get(ofd.objNo);
+                        if (checksums == null) {
+                            checksums = new HashMap<Long, Long>();
+                            objChecksums.put(ofd.objNo, checksums);
+                        }
+
+                        checksums.put(ofd.objVersion, ofd.checksum);
+                    }
+
+                    // determine the last object
+                    if (multiVersionSupport) {
+                        Long latestObjVer = latestObjVersions.get(ofd.objNo);
+                        if (ofd.objNo == lastObjNum && latestObjVer != null && ofd.objVersion == latestObjVer)
+                            lastObject = obj;
+                    }
+
+                    else {
+                        if (ofd.objNo > lastObjNum) {
+                            lastObject = obj;
+                            lastObjNum = ofd.objNo;
+                        }
+                    }
+
+                    // determine the largest object version
+                    Long oldver = largestObjVersions.get(ofd.objNo);
+                    if ((oldver == null) || (oldver < ofd.objVersion))
+                        largestObjVersions.put(ofd.objNo, ofd.objVersion);
+                }
+
+                if (multiVersionSupport) {
+
+                    // set object versions and checksums of the latest file version
+                    info.initLatestObjectVersions(latestObjVersions);
+
+                    // if multi-file-version support is enabled, it is also
+                    // necessary to keep track of the largest file versions
+                    info.initLargestObjectVersions(largestObjVersions);
+                }
+
+                // if no multi-version support is enabled, the file version consists
+                // of the set of objects with the latest version numbers
+                else {
+                    info.initLatestObjectVersions(largestObjVersions);
+                    info.initLargestObjectVersions(largestObjVersions);
+                }
+
+                info.initObjectChecksums(objChecksums);
+
+                if (lastObjNum > -1) {
+                    // determine filesize from lastObjectNumber
+                    File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
+                    long lastObjSize = lastObjFile.length();
+                    // check for empty padding file
+                    if (lastObjSize == 0) {
+                        lastObjSize = sp.getStripeSizeForObject(lastObjSize);
+                    }
+                    long fsize = lastObjSize;
+                    if (lastObjNum > 0) {
+                        fsize += sp.getObjectEndOffset(lastObjNum - 1) + 1;
+                    }
+                    assert (fsize >= 0);
+                    info.setFilesize(fsize);
+                    info.setLastObjectNumber(lastObjNum);
+
+                } else {
+                    // empty file!
+                    info.setFilesize(0l);
+                    info.setLastObjectNumber(-1);
+                }
+
+                // initialize version table
+                File vtFile = new File(fileDir, VTABLE_FILENAME);
+                VersionTable vt = new VersionTable(vtFile);
+                if (vtFile.exists())
+                    vt.load();
+
+                info.initVersionTable(vt);
+            }
 
         }
 

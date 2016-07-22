@@ -74,6 +74,12 @@ public final class TruncateOperation extends OSDOperation {
         } else if (numReplicas > 1 && ReplicaUpdatePolicies.isRW(replicaUpdatePolicy)) {
             rwReplicatedTruncate(rq, args);
 
+        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
+            // FIXME (jdillmann): do!
+            Logging.logMessage(Logging.LEVEL_WARN, this, "Truncate not implemented for EC policy");
+            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "Truncate not implemented for EC policy");
+
+
         } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
                 || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {
 
@@ -88,9 +94,6 @@ public final class TruncateOperation extends OSDOperation {
                         step2(rq, args, result, error);
                     }
             });
-
-        } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
-            // FIXME (jdillmann): do!
 
         } else {
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,

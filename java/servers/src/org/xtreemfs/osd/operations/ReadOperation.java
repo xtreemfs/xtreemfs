@@ -174,7 +174,6 @@ public final class ReadOperation extends OSDOperation {
                 // read only replication!
                 readReplica(rq, args);
             } else {
-                // FIXME (jdillmann): What if EC?
                 if (rq.getLocationList().getLocalReplica().isStriped()) {
                     // striped read
                     stripedRead(rq, args, result);

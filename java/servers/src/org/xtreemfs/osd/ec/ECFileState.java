@@ -75,7 +75,6 @@ public class ECFileState {
         int n = sp.getWidth() + sp.getParityWidth();
         int k = sp.getWidth();
 
-        // FIXME (jdillmann): Make somehow configurable
         policy = new ECPolicy(r.getStripingPolicy());
 
         remoteOSDs = new ArrayList<ServiceUUID>(n - 1);

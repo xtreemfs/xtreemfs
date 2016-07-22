@@ -144,6 +144,11 @@ public class ListIntervalVector extends IntervalVector {
     }
 
     @Override
+    public long getEnd() {
+        return (intervals.get(intervals.size() - 1)).getEnd();
+    }
+
+    @Override
     public List<Interval> serialize() {
         return Collections.unmodifiableList(intervals);
     }

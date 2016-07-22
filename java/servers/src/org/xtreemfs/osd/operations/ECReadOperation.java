@@ -97,7 +97,6 @@ public class ECReadOperation extends OSDOperation {
                                 rq.sendError(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
                                 BufferPool.free(result.getData());
                                 rq.sendSuccess(buildResponse(false, null), null);
                             } else {
@@ -122,7 +121,6 @@ public class ECReadOperation extends OSDOperation {
                                 rq.sendError(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
                                 BufferPool.free(result.getData());
                                 rq.sendSuccess(buildResponse(false, null), null);
                             } else {
@@ -173,7 +171,6 @@ public class ECReadOperation extends OSDOperation {
                                 callback.localRequestFailed(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
                                 if (result != null) {
                                     BufferPool.free(result.getData());
                                 }
@@ -197,7 +194,6 @@ public class ECReadOperation extends OSDOperation {
                                 callback.localRequestFailed(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                // FIXME (jdillmann): Add response field = needReconstruction or error message type
                                 if (result != null) {
                                     BufferPool.free(result.getData());
                                 }

@@ -57,6 +57,14 @@ public abstract class IntervalVector {
      */
     public abstract long getMaxVersion();
 
+
+    /**
+     * Returns the end of the last non empty interval in this vector.
+     * 
+     * @return end of the vector
+     */
+    public abstract long getEnd();
+
     /**
      * Tests if the max version of any interval of this vector is greater then that of the passed vector v
      * and if the max version of all intervals of this vector is at least greater or equal then that

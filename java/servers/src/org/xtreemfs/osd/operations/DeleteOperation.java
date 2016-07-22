@@ -124,6 +124,7 @@ public final class DeleteOperation extends OSDOperation {
         }
 
         final Replica localReplica = rq.getLocationList().getLocalReplica();
+        // FIXME (jdillmann): What if EC?
         if (localReplica.isStriped() && localReplica.getHeadOsd().equals(localUUID)) {
             // striped replica, dissmeninate unlink requests
             try {

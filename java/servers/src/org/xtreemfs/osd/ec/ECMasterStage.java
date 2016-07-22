@@ -207,12 +207,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
     }
 
     private static enum STAGE_OP {
-        READ, WRITE, TRUNCATE, 
+        READ, WRITE, TRUNCATE, GET_FILE_SIZE,
         SEND_DIFF_RESPONSE, RECV_DIFF_RESPONSE,
         TRIGGER_RECONSTRUCTION,
         LEASE_STATE_CHANGED, 
         CLOSE, VECTORS_AVAILABLE, COMMIT_VECTOR_COMPLETE,
-        WRITE_WORKER_SIGNAL, READ_WORKER_SIGNAL;
+        WRITE_WORKER_SIGNAL, READ_WORKER_SIGNAL,;
 
         private static STAGE_OP[] values_ = values();
 
@@ -242,6 +242,10 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             break;
         case TRUNCATE:
             externalRequestsInQueue.decrementAndGet();
+            break;
+        case GET_FILE_SIZE:
+            externalRequestsInQueue.decrementAndGet();
+            processGetFileSize(method);
             break;
         // Internal requests
         case LEASE_STATE_CHANGED:
@@ -752,7 +756,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         try {
             needsCommit = file.getPolicy().recoverVector(responseCount, curVectors, nextVectors, resultVector);
         } catch (Exception e) {
-            // FIXME (jdillmann): Do something
             Logging.logError(Logging.LEVEL_WARN, this, e);
             failed(file, null);
             return;
@@ -1134,8 +1137,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 callback.failed(worker.getError());
             } else {
                 file.getCurVector().insert(worker.getRequestInterval());
-                // FIXME (jdillmann): Make a real response with the truncate epoch and stuff
-                callback.success(OSDWriteResponse.getDefaultInstance());
+
+                // FIXME (jdillmann): Get truncate epoch
+                OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(file.getCurVector().getEnd())
+                        .setTruncateEpoch(0).build();
+
+                callback.success(response);
             }
         }
     }
@@ -1351,5 +1358,44 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
             }
         }
+    }
+
+
+    public static interface GetFileSizeCallback extends RedirectCallback {
+        public void success(long fileSize);
+    }
+
+    public void getFileSize(OSDRequest rq, GetFileSizeCallback callback) {
+        this.enqueueExternalOperation(STAGE_OP.GET_FILE_SIZE, 
+                new Object[] {}, rq, null, callback);
+    }
+
+    void processGetFileSize(StageRequest method) {
+        final GetFileSizeCallback callback = (GetFileSizeCallback) method.getCallback();
+
+        final OSDRequest rq = method.getRequest();
+        final xtreemfs_internal_get_file_sizeRequest args = (xtreemfs_internal_get_file_sizeRequest) rq
+                .getRequestArgs();
+
+        final String fileId = rq.getFileId();
+        final XLocations loc = rq.getLocationList();
+        final FileCredentials credentials = args.getFileCredentials();
+        final StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
+
+        assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
+
+        if (!preparePrimary(method, callback, credentials, loc, null)) {
+            return;
+        }
+
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!"));
+            return;
+        }
+        assert (file.isLocalIsPrimary());
+
+        callback.success(file.getCurVector().getEnd());
     }
 }

@@ -25,6 +25,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECMasterStage;
 import org.xtreemfs.osd.rwre.RWReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
@@ -70,8 +71,11 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                     });
         } else if (ReplicaUpdatePolicies.isRW(replUpdatePolicy)) {
             rwReplicatedGetFS(rq, args);
+
+        } else if (ReplicaUpdatePolicies.isEC(replUpdatePolicy)) {
+            ecGetFS(rq, args);
+
         } else {
-            // FIXME (jdillmann): Handle EC Policy?
             rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL,
                     "Invalid ReplicaUpdatePolicy: " + replUpdatePolicy);
         }
@@ -175,6 +179,26 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
                         rq.sendError(err);
                     }
                 }, rq);
+    }
+
+    private void ecGetFS(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args) {
+        master.getECMasterStage().getFileSize(rq, new ECMasterStage.GetFileSizeCallback() {
+
+            @Override
+            public void failed(ErrorResponse ex) {
+                rq.sendError(ex);
+            }
+
+            @Override
+            public void redirect(String redirectTo) {
+                rq.getRPCRequest().sendRedirect(redirectTo);
+            }
+
+            @Override
+            public void success(long fileSize) {
+                sendResponse(rq, fileSize);
+            }
+        });
     }
 
     public void sendResponse(OSDRequest rq, long fileSize) {
