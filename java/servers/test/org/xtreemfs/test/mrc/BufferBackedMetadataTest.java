@@ -91,7 +91,7 @@ public class BufferBackedMetadataTest {
             final int width = 5;
 
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
             checkSP(pattern, stripeSize, width, sp1);
 
             // copy striping policy
@@ -105,7 +105,7 @@ public class BufferBackedMetadataTest {
             final int width = 1;
 
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
             checkSP(pattern, stripeSize, width, sp1);
 
             // copy striping policy

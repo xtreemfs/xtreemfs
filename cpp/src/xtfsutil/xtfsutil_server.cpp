@@ -253,6 +253,8 @@ void XtfsUtilServer::OpSetDefaultSP(const xtreemfs::pbrpc::UserCredentials& uc,
       || !input["pattern"].isString()
       || !input.isMember("width")
       || !input["width"].isInt()
+      || !input.isMember("parity")
+      || !input["parity"].isInt()
       || !input.isMember("size")
       || !input["size"].isInt()) {
     (*output)["error"] = Json::Value("One of the following fields is missing or"
@@ -266,6 +268,7 @@ void XtfsUtilServer::OpSetDefaultSP(const xtreemfs::pbrpc::UserCredentials& uc,
   xattr_value["pattern"] = input["pattern"];
   xattr_value["size"] = input["size"];
   xattr_value["width"] = input["width"];
+  xattr_value["parity"] = input["parity"];
 
   Json::FastWriter writer;
   volume_->SetXAttr(uc,

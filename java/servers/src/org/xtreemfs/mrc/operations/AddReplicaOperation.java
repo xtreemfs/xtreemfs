@@ -136,7 +136,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         // "adding replicas with a width > 1 is not supported yet");
 
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripeSize(), sp
-                .getWidth());
+                .getWidth(), 0);
         
         // Check whether the new replica relies on a set of OSDs which hasn't been used yet.
         XLocList xLocList = file.getXLocList();

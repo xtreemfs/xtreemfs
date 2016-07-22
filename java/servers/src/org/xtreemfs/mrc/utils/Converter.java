@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,7 +29,6 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
-import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
@@ -207,8 +205,9 @@ public class Converter {
 
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
+        int parity = Integer.parseInt(st.nextToken());
 
-        return sMan.createStripingPolicy(policy, size, width);
+        return sMan.createStripingPolicy(policy, size, width, parity);
     }
 
     /**
@@ -229,9 +228,11 @@ public class Converter {
         String pattern = (String) spMap.get("pattern");
         long size = (Long) spMap.get("size");
         long width = (Long) spMap.get("width");
+        long parity = (Long) spMap.get("parity");
 
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
-                StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width).build();
+                StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width)
+                .setParityWidth((int) parity).build();
     }
 
     /**
@@ -241,7 +242,7 @@ public class Converter {
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(StripingPolicy sp) {
-        return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
+        return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth() + ", " + sp.getParityWidth();
     }
 
     /**
@@ -252,14 +253,14 @@ public class Converter {
      */
     public static String stripingPolicyToString(
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp) {
-        return sp.getType().toString() + ", " + sp.getStripeSize() + ", " + sp.getWidth();
+        return sp.getType().toString() + ", " + sp.getStripeSize() + ", " + sp.getWidth() + ", " + sp.getParityWidth();
     }
 
     public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder stripingPolicyToStripingPolicy(
             StripingPolicy sp) {
-        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
-                StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize()).setWidth(
-                sp.getWidth());
+        return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder()
+                .setType(StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize())
+                .setWidth(sp.getWidth()).setParityWidth(sp.getParityWidth());
     }
 
     public static String stripingPolicyToJSONString(StripingPolicy sp) throws JSONException {
@@ -271,6 +272,7 @@ public class Converter {
         spMap.put("pattern", sp.getPattern());
         spMap.put("size", sp.getStripeSize());
         spMap.put("width", sp.getWidth());
+        spMap.put("parity", sp.getParityWidth());
         return spMap;
     }
 

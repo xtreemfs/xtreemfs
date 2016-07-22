@@ -16,7 +16,10 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
     
     private static final int WIDTH_INDEX   = 4;
     
-    private static final int PATTERN_INDEX = 8;
+    private static final int PARITY_INDEX  = 8;
+
+    private static final int PATTERN_INDEX = 12;
+
     
     private String           pattern;
     
@@ -24,6 +27,8 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
     
     private int              width;
     
+    private int              parity;
+
     public BufferBackedStripingPolicy(byte[] buffer) {
         this(buffer, 0, buffer.length);
     }
@@ -39,20 +44,27 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
         
         tmp = ByteBuffer.wrap(buffer, offset + WIDTH_INDEX, Integer.SIZE / 8);
         this.width = tmp.getInt();
+
+        tmp = ByteBuffer.wrap(buffer, offset + PARITY_INDEX, Integer.SIZE / 8);
+        this.parity = tmp.getInt();
     }
     
     public BufferBackedStripingPolicy(String pattern, int stripeSize, int width) {
-        
+        this(pattern, stripeSize, width, 0);
+    }
+
+    public BufferBackedStripingPolicy(String pattern, int stripeSize, int width, int parity) {
         super(null, 0, 0);
         
-        len = pattern.getBytes().length + 8;
+        len = pattern.getBytes().length + 12;
         buffer = new byte[len];
         ByteBuffer tmp = ByteBuffer.wrap(buffer);
-        tmp.putInt(stripeSize).putInt(width).put(pattern.getBytes());
+        tmp.putInt(stripeSize).putInt(width).putInt(parity).put(pattern.getBytes());
         
         this.pattern = pattern;
         this.stripeSize = stripeSize;
         this.width = width;
+        this.parity = parity;
     }
     
     public boolean equals(StripingPolicy pol) {
@@ -71,4 +83,7 @@ public class BufferBackedStripingPolicy extends BufferBackedMetadata implements 
         return width;
     }
     
+    public int getParityWidth() {
+        return parity;
+    }
 }

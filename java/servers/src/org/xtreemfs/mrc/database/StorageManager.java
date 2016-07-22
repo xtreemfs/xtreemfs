@@ -62,8 +62,8 @@ public interface StorageManager {
     
     public XLocList createXLocList(XLoc[] replicas, String replUpdatePolicy, int version);
     
-    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width);
-    
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width, int parity);
+
     public XAttr createXAttr(long fileId, String owner, String key, byte[] value);
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException;

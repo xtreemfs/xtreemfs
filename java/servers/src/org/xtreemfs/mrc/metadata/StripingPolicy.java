@@ -37,4 +37,11 @@ public interface StripingPolicy {
      */
     public int getStripeSize();
     
+    /**
+     * Returns the parity width, i.e. number of OSDs used for the pattern.
+     * 
+     * @return the parity width
+     */
+    public int getParityWidth();
+
 }

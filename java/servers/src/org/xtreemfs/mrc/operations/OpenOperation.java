@@ -224,6 +224,7 @@ public class OpenOperation extends MRCOperation {
             // closed
             boolean singleReplica = (defaultReplPolicy == null)
                     || ReplicaUpdatePolicies.isNONE(defaultReplPolicy.getName())
+                    || ReplicaUpdatePolicies.isEC(defaultReplPolicy.getName())
                     || replicateOnClose;
             
             if (singleReplica) {
@@ -242,11 +243,14 @@ public class OpenOperation extends MRCOperation {
                 List<XLoc> repls = new ArrayList<XLoc>();
                 repls.add(replica);
                 
+                String replPolicy = (defaultReplPolicy != null
+                        && ReplicaUpdatePolicies.isEC(defaultReplPolicy.getName()))
+                                ? ReplicaUpdatePolicies.REPL_UPDATE_PC_EC : ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE;
+
                 // update the XLoc list with the new replica; this is
                 // necessary to ensure that its OSDs will be included when
                 // adding further replias in the following loop iterations
-                xLocList = sMan.createXLocList(repls.toArray(new XLoc[repls.size()]),
-                    ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, 0);
+                xLocList = sMan.createXLocList(repls.toArray(new XLoc[repls.size()]), replPolicy, 0);
                 
             }
 
@@ -258,8 +262,6 @@ public class OpenOperation extends MRCOperation {
                 if (defaultReplPolicy != null)
                     numReplicas = defaultReplPolicy.getFactor();
                 
-                // FIXME (jdillmann): Handle EC Policy
-
                 // assign as many new replicas as needed
                 List<XLoc> repls = new ArrayList<XLoc>();
                 for (int i = 0; i < numReplicas; i++) {

@@ -56,6 +56,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceDataMap;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
 public class MRCHelper {
@@ -255,9 +256,19 @@ public class MRCHelper {
                     + ": no feasible OSDs available");
         }
 
+        if (stripingPolicy.getPattern() == "STRIPING_POLICY_ERASURECODE"
+                && usableOSDs.getServicesCount() < stripingPolicy.getWidth() + stripingPolicy.getParityWidth()) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.all, (Object) null,
+                    "not enough suitable OSDs available for file %s", path);
+
+            throw new UserException(POSIXErrno.POSIX_ERROR_EIO,
+                    "could not assign OSDs to file " + path + ": not enough suitable OSDs available");
+        }
+
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
-        int width = Math.min(stripingPolicy.getWidth(), usableOSDs.getServicesCount());
+        int parity = stripingPolicy.getParityWidth();
+        int width = Math.min(stripingPolicy.getWidth() + parity, usableOSDs.getServicesCount());
 
         // convert the set of OSDs to a string array of OSD UUIDs
         List<Service> osdServices = usableOSDs.getServicesList();
@@ -267,7 +278,7 @@ public class MRCHelper {
 
         if (width != stripingPolicy.getWidth())
             stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy.getStripeSize(),
-                    width);
+                    width - parity, parity);
 
         return sMan.createXLoc(stripingPolicy, osds, replFlags);
     }
@@ -702,7 +713,33 @@ public class MRCHelper {
                     throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
                             "Striping of rw-replicated Files is not supported yet.");
                 }
-                // FIXME (jdillmann): Handle EC files
+
+
+                if (sp != null && sp.getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                    if (sp.getWidth() <= sp.getParityWidth()) {
+                        throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                                "ParityWidth has to be smaller then the stripes data width.");
+                    }
+
+                    // Overwrite the replication policy.
+                    ReplicationPolicy replPolicyEC = new ReplicationPolicy() {
+                        @Override
+                        public String getName() {
+                            return ReplicaUpdatePolicies.REPL_UPDATE_PC_EC;
+                        }
+
+                        @Override
+                        public int getFlags() {
+                            return 0;
+                        }
+
+                        @Override
+                        public int getFactor() {
+                            return 1;
+                        }
+                    };
+                    sMan.setDefaultReplicationPolicy(file.getId(), replPolicyEC, update);
+                }
 
                 sMan.setDefaultStripingPolicy(file.getId(), sp, update);
 
