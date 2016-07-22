@@ -47,6 +47,7 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.ec.ECStorage;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
@@ -737,6 +738,10 @@ public class HashStorageLayout extends StorageLayout {
 
             @Override
             public boolean accept(File pathname) {
+                if (pathname.getName().startsWith(".ec_versions")) {
+                    return true;
+                }
+
                 if (!deleteMetadata && pathname.getName().startsWith(".")) {
                     return false;
                 }
@@ -759,12 +764,31 @@ public class HashStorageLayout extends StorageLayout {
         if (deleteMetadata) {
             del(fileDir);
         }
+        
+        
+        // Delete EC directories
+        for (String suffix : 
+            new String[] { ECStorage.FILEID_CODE_SUFFIX, ECStorage.FILEID_DELTA_SUFFIX, ECStorage.FILEID_NEXT_SUFFIX }) {
+            File ecDir = new File(generateAbsoluteFilePath(fileId + suffix));
+
+            if (ecDir != null && ecDir.exists()) {
+                File[] ecFileList = ecDir.listFiles();
+                if (ecFileList != null) {
+                    for (File file : ecFileList) {
+                        file.delete();
+                    }
+                }
+
+                del(ecDir);
+            }
+        }
     }
 
     private void del(File parent) {
         File storageDirFile = new File(this.storageDir);
-        for (File p = parent; p != null && p.list().length <= 1 && !p.equals(storageDirFile); p = p
-                .getParentFile()) {
+        for (File p = parent; 
+                p != null && p.list().length <= 1 && !p.equals(storageDirFile); 
+                p = p.getParentFile()) {
             p.delete();
         }
     }
