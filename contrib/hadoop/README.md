@@ -8,7 +8,7 @@ XtreemFS Hadoop Client
     <id>central</id>
     <url>http://repo.maven.apache.org/maven2</url>
   </repository>
-  
+
   <repository>
     <id>xtreemfs-repository</id>
     <url>https://xtreemfs.github.io/xtreemfs</url>
