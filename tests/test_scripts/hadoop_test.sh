@@ -2,7 +2,7 @@
 
 XTREEMFS=$1
 TEST_DIR=$4
-HADOOP_VERSIONS="1.0.4 1.1.2 1.2.1"
+HADOOP_VERSIONS="1.2.1"
 VOLUME="$(basename $(dirname $(pwd)))"
 
 echo "Prepare hadoop input"

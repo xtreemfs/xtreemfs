@@ -2,7 +2,7 @@
 
 XTREEMFS=$1
 TEST_DIR=$4
-HADOOP_VERSIONS="0.23.11 2.2.0 2.3.0 2.4.1 2.5.2 2.6.4 2.7.2"
+HADOOP_VERSIONS="2.2.0 2.3.0 2.4.1 2.5.2 2.6.4 2.7.2"
 VOLUME="$(basename $(dirname $(pwd)))"
 
 for VERSION in $HADOOP_VERSIONS; do
