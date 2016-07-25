@@ -32,26 +32,6 @@
 
   <build>
     <plugins>
-      <!-- Clean up generated code during mvn clean. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>../cpp/generated/include</directory>
-            </fileset>
-            <fileset>
-              <directory>../cpp/generated/pbrpc</directory>
-            </fileset>
-            <fileset>
-              <directory>../cpp/generated/xtreemfs</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
-
       <!-- Create plugin for protoc. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -191,6 +171,26 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- Clean up generated code during mvn clean. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <version>${maven-clean-plugin.version}</version>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>../cpp/generated/include</directory>
+            </fileset>
+            <fileset>
+              <directory>../cpp/generated/pbrpc</directory>
+            </fileset>
+            <fileset>
+              <directory>../cpp/generated/xtreemfs</directory>
+            </fileset>
+          </filesets>
+        </configuration>
       </plugin>
     </plugins>
   </build>
