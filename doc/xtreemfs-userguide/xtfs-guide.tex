@@ -3101,7 +3101,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \begin{itemize}
 \item XtreemFS (\href{http://xtreemfs.org/download.php?t=source}{www.XtreemFS.org})
 \item xtreemfs-hadoop-client.jar (Download it from \href{http://www.xtreemfs.org/downloads/xtreemfs-hadoop-client.jar}{www.XtreemFS.org} or build it by yourself by executing make hadoop-client)
-\item Hadoop (tested with version 0.23.11 and all stable 2.x releases up to 2.7.2, version 1.2.1 is test-compatible as well) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item Hadoop (2.2.x or 2.3+ are compatible. Versions 0.23.x, 2.0.x a,d 2.1.x use another version of Google's Protobuf (2.4.0a), however XtreemFS uses 2.5.0 which is incompatible, so rebuilding XtreemFS with version 2.4.0a is required. Versions 0.22 and earlier, as well as 1.x do not use Google's Protobuf, and are compatible as well.) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
 
