@@ -43,6 +43,31 @@
 
   <build>
     <plugins>
+      <!-- Create plugin for protoc. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" message="#!/bin/bash${line.separator}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message="java -cp" />
+                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" org.xtreemfs.pbrpcgen.RPCSourceGenerator${line.separator}" />
+                <chmod file="${project.build.directory}/protoc-gen-pbrpc" perm="a+x" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
@@ -87,31 +112,6 @@
                 <argument>${project.basedir}/../../interface/pbrpc/Ping.proto</argument>
                 <argument>${project.basedir}/../../interface/pbrpc/RPC.proto</argument>
               </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Create plugin for protoc. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" message="#!/bin/bash${line.separator}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message="java -cp" />
-                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" org.xtreemfs.pbrpcgen.RPCSourceGenerator${line.separator}" />
-                <chmod file="${project.build.directory}/protoc-gen-pbrpc" perm="a+x" />
-              </target>
             </configuration>
           </execution>
         </executions>
