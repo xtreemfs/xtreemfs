@@ -14,19 +14,6 @@
 
   <packaging>jar</packaging>
 
-  <properties>
-    <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
-
-    <!-- Plugin configurations. -->
-    <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
-    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
-    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
-    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
-    <protobuf-java.version>2.5.0</protobuf-java.version>
-    <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
-    <protoc.include>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src</protoc.include>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>com.google.protobuf</groupId>
@@ -43,13 +30,13 @@
     <dependency>
       <groupId>org.xtreemfs.opendmk</groupId>
       <artifactId>jdmkrt</artifactId>
-      <version>1.0-b02-SNAPSHOT</version>
+      <version>${opendmk.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.xtreemfs.opendmk</groupId>
       <artifactId>toolkit</artifactId>
-      <version>1.0-b02-SNAPSHOT</version>
+      <version>${opendmk.version}</version>
     </dependency>
 
     <dependency>
@@ -80,87 +67,9 @@
 
   <build>
     <plugins>
-      <!-- Clean up generated code during mvn clean. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>src/main/java/org/xtreemfs/common/monitoring/generatedcode</directory>
-            </fileset>
-            <fileset>
-              <directory>src/main/java/org/xtreemfs/pbrpc/generatedinterfaces</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
-
-      <!-- Generate MIB code. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${maven-antrun-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>generate-mib</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <mkdir dir="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
-                <java classname="com.sun.jdmk.tools.MibGen" fork="true">
-                  <classpath>
-                    <pathelement location="${maven.dependency.org.xtreemfs.opendmk.toolkit.jar.path}" />
-                  </classpath>
-                  <arg value="-mc" />
-                  <arg value="-d" />
-                  <arg value="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
-                  <arg value="-tp" />
-                  <arg value="org.xtreemfs.common.monitoring.generatedcode" />
-                  <arg value="${project.basedir}/src/main/resources/xtreemfs-mib.txt" />
-                  <arg value="${project.basedir}/src/main/resources/mib_core.txt" />
-                </java>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Create plugin for protoc. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${maven-antrun-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>generate-protoc-plugin</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" message="#!/bin/bash${line.separator}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message="java -cp" />
-                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" org.xtreemfs.pbrpcgen.RPCSourceGenerator${line.separator}" />
-                <chmod file="${project.build.directory}/protoc-gen-pbrpc" perm="a+x" />
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>${exec-maven-plugin.version}</version>
         <executions>
           <!-- Invoke protoc to generate Java source. -->
           <execution>
@@ -213,10 +122,77 @@
         </executions>
       </plugin>
 
+      <!-- Clean up generated code during mvn clean. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>src/main/java/org/xtreemfs/common/monitoring/generatedcode</directory>
+            </fileset>
+            <fileset>
+              <directory>src/main/java/org/xtreemfs/pbrpc/generatedinterfaces</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <!-- Generate MIB code. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>generate-mib</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir dir="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
+                <java classname="com.sun.jdmk.tools.MibGen" fork="true">
+                  <classpath>
+                    <pathelement location="${maven.dependency.org.xtreemfs.opendmk.toolkit.jar.path}" />
+                  </classpath>
+                  <arg value="-mc" />
+                  <arg value="-d" />
+                  <arg value="${project.basedir}/src/main/java/org/xtreemfs/common/monitoring/generatedcode" />
+                  <arg value="-tp" />
+                  <arg value="org.xtreemfs.common.monitoring.generatedcode" />
+                  <arg value="${project.basedir}/src/main/resources/xtreemfs-mib.txt" />
+                  <arg value="${project.basedir}/src/main/resources/mib_core.txt" />
+                </java>
+              </target>
+            </configuration>
+          </execution>
+
+          <!-- Create plugin for protoc. -->
+          <execution>
+            <id>generate-protoc-plugin</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" message="#!/bin/bash${line.separator}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message="java -cp" />
+                <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpc" append="true" message=" org.xtreemfs.pbrpcgen.RPCSourceGenerator${line.separator}" />
+                <chmod file="${project.build.directory}/protoc-gen-pbrpc" perm="a+x" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
         <executions>
           <execution>
             <phase>package</phase>

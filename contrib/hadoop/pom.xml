@@ -27,6 +27,9 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.source.version>1.6</java.source.version>
+    <java.target.version>1.6</java.target.version>
+
     <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
 
     <!-- Compile dependencies -->
@@ -106,52 +109,20 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>${java.source.version}</source>
+          <target>${java.target.version}</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
         <version>${maven-deploy-plugin.version}</version>
         <configuration>
           <altDeploymentRepository>xtreemfs-repository::default::file://${project.build.directory}/xtreemfs-repository/maven</altDeploymentRepository>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>com.github.github</groupId>
-        <artifactId>site-maven-plugin</artifactId>
-        <version>${site-maven-plugin.version}</version>
-        <configuration>
-          <message>Maven artifacts for ${project.name}/${project.version}</message>
-          <noJekyll>true</noJekyll>
-          <outputDirectory>${project.build.directory}/xtreemfs-repository</outputDirectory>
-          <repositoryName>xtreemfs</repositoryName>
-          <!-- Specify via mvn deploy -Dgithub.site.repositoryOwner=[xtreemfs|your-github-username-if-this-is-a-fork] -->
-          <!-- <repositoryOwner></repositoryOwner> -->
-          <merge>true</merge>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>site</goal>
-            </goals>
-            <phase>deploy</phase>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${maven-surefire-plugin.version}</version>
-        <configuration>
-          <argLine>-Djava.library.path=${libjni.directory}</argLine>
         </configuration>
       </plugin>
 
@@ -201,6 +172,38 @@
                 </filter>
               </filters>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Djava.library.path=${libjni.directory}</argLine>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>${site-maven-plugin.version}</version>
+        <configuration>
+          <message>Maven artifacts for ${project.name}/${project.version}</message>
+          <noJekyll>true</noJekyll>
+          <outputDirectory>${project.build.directory}/xtreemfs-repository</outputDirectory>
+          <repositoryName>xtreemfs</repositoryName>
+          <!-- Specify via mvn deploy -Dgithub.site.repositoryOwner=[xtreemfs|your-github-username-if-this-is-a-fork] -->
+          <!-- <repositoryOwner></repositoryOwner> -->
+          <merge>true</merge>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>deploy</phase>
           </execution>
         </executions>
       </plugin>
