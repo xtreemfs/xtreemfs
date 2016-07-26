@@ -21,7 +21,7 @@
 
         <repository>
           <id>xtreemfs-babudb</id>
-          <url>https://robert-schmidtke.github.io/babudb/maven</url>
+          <url>https://xtreemfs.github.io/babudb/maven</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
