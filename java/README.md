@@ -9,7 +9,7 @@ In your `$HOME/.m2/settings.xml` add:
     <!-- more profiles -->
   
     <profile>
-      <id>babudb-dev</id>
+      <id>xtreemfs-dev</id>
       <repositories>
         <repository>
           <id>central</id>
@@ -17,7 +17,7 @@ In your `$HOME/.m2/settings.xml` add:
         </repository>
 
         <repository>
-          <id>xtreemfs-repository</id>
+          <id>babudb-repository</id>
           <url>https://xtreemfs.github.io/babudb/maven</url>
           <snapshots>
             <enabled>true</enabled>
