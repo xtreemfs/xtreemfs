@@ -13,7 +13,7 @@
 
         <repository>
           <id>xtreemfs-xtreemfs</id>
-          <url>https://robert-schmidtke.github.io/xtreemfs/maven</url>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>
