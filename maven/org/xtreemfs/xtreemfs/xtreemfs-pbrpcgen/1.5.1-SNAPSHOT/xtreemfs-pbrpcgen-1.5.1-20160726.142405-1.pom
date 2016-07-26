@@ -1,0 +1,66 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.xtreemfs.xtreemfs</groupId>
+    <artifactId>xtreemfs-parent</artifactId>
+    <version>1.5.1-SNAPSHOT</version>
+    <relativePath>..</relativePath>
+  </parent>
+
+  <artifactId>xtreemfs-pbrpcgen</artifactId>
+  <name>xtreemfs-pbrpcgen</name>
+
+  <packaging>jar</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf-java.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Invoke protoc to generate Java source. -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>${protoc.bin}</executable>
+              <workingDirectory>${project.basedir}/../../interface</workingDirectory>
+              <arguments>
+                <argument>--proto_path=${project.basedir}/../../interface</argument>
+                <argument>--proto_path=${project.basedir}/../../interface/include</argument>
+                <argument>--proto_path=${protoc.include}</argument>
+                <argument>--java_out=${project.basedir}/src/main/java</argument>
+                <argument>${project.basedir}/../../interface/include/PBRPC.proto</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Clean up generated code during mvn clean. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>src/main/java/org/xtreemfs/foundation/pbrpc/generatedinterfaces</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
