@@ -354,7 +354,7 @@ server_distclean: check_server
 
 .PHONY: server-repl-plugin server-repl-plugin_clean server-repl-plugin_distclean
 server-repl-plugin:
-	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml package
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml --define skipTests package
 server-repl-plugin_clean: check_server
 	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
 server-repl-plugin_distclean: check_server
