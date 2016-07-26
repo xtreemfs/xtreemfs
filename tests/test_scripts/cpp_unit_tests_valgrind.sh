@@ -83,7 +83,7 @@ do
   fi
 
   set +e
-  valgrind --leak-check=full --show-reachable=yes --error-exitcode=23 --suppressions="${XTREEMFS_DIR}/cpp/valgrind.supp" ./$test &>>$VALGRIND_LOG_FILE
+  valgrind --leak-check=full --show-reachable=yes --error-exitcode=23 --suppressions="${XTREEMFS_DIR}/cpp/valgrind.supp" --gen-suppressions=all ./$test &>>$VALGRIND_LOG_FILE
   rc=$?
   set -e
   # Add some whitespace to the logfile between runs.

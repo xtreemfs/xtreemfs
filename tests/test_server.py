@@ -152,32 +152,11 @@ class Server:
             java_args.append("-ea")
 
             # Construct the -cp classpath
-            XtreemFS_jar_file_path = os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "servers", "dist", "XtreemFS.jar"))
-            if os.path.exists(XtreemFS_jar_file_path):
-                classpath = (
-                             XtreemFS_jar_file_path,
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "BabuDB.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "protobuf-java-2.5.0.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "flease", "dist", "Flease.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "foundation", "dist", "Foundation.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "jdmkrt.jar")),
-                             os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "lib", "commons-codec-1.3.jar")),
-                             )
+            xtreemfs_jar = os.path.abspath(os.path.join(self._xtreemfs_dir, "java", "xtreemfs-servers", "target", "xtreemfs.jar"))
+            if os.path.exists(xtreemfs_jar):
+                classpath = xtreemfs_jar
             else:
-                classpath = (
-                             os.path.join("/usr/share/java", "XtreemFS.jar"),
-                             os.path.join("/usr/share/java", "BabuDB.jar"),
-                             os.path.join("/usr/share/java", "protobuf-java-2.5.0.jar"),
-                             os.path.join("/usr/share/java", "Flease.jar"),
-                             os.path.join("/usr/share/java", "Foundation.jar"),
-                             os.path.join("/usr/share/java", "jdmkrt.jar"),
-                             os.path.join("/usr/share/java", "commons-codec-1.3.jar"),
-                             )
-
-            if sys.platform.startswith("win"):
-                classpath = ";".join(classpath)
-            else:
-                classpath = ":".join(classpath)
+                classpath = os.path.join("/usr/share/java/xtreemfs.jar")
             java_args.extend(("-cp", classpath))
 
             # Name of the class to start

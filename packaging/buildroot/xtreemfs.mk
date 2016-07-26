@@ -20,14 +20,14 @@ define XTREEMFS_BUILD_CMDS
 	$(TARGET_MAKE_ENV) make -C $(@D)/cpp/build
 	cp -p $(@D)/cpp/build/*.xtreemfs $(@D)/bin
 	cp -p $(@D)/cpp/build/xtfsutil $(@D)/bin
-	BOOST_ROOT=$(STAGING_DIR)/usr $(TARGET_MAKE_ENV) $(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD) -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" -C $(@D) server
+	BOOST_ROOT=$(STAGING_DIR)/usr $(TARGET_MAKE_ENV) $(MAKE) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD) -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" -C $(@D) server server-repl-plugin
 endef
 
 define XTREEMFS_INSTALL_TARGET_CMDS
 	sed -i 's/http_port = 30640/http_port = -1/'g $(@D)/etc/xos/xtreemfs/osdconfig.properties
 	sed -i 's/http_port = 30638/http_port = -1/'g $(@D)/etc/xos/xtreemfs/dirconfig.properties
 	sed -i 's/http_port = 30636/http_port = -1/'g $(@D)/etc/xos/xtreemfs/mrcconfig.properties
-	$(TARGET_MAKE_ENV) $(MAKE) DESTDIR=$(TARGET_DIR) -C $(@D) install-client install-server
+	$(TARGET_MAKE_ENV) $(MAKE) DESTDIR=$(TARGET_DIR) -C $(@D) install-client install-server install-server-repl-plugin
 	$(@D)/etc/init.d/generate_initd_scripts.sh
 	sed 's/java -ea /jamvm /'g $(@D)/etc/init.d/xtreemfs-dir > $(TARGET_DIR)/etc/init.d/xtreemfs-dir
 	sed 's/java -ea /jamvm /'g $(@D)/etc/init.d/xtreemfs-mrc > $(TARGET_DIR)/etc/init.d/xtreemfs-mrc

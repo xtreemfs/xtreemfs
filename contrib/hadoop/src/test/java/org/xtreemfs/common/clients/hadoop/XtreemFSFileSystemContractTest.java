@@ -7,12 +7,13 @@
 package org.xtreemfs.common.clients.hadoop;
 
 import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileSystemContractBaseTest;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.contract.ContractTestUtils;
+import org.apache.hadoop.fs.contract.ReducedContractTestUtils;
 import org.xtreemfs.common.libxtreemfs.Client;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.Options;
@@ -86,6 +87,9 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
         }
 
         if (useFSFactory) {
+            // Don't use caching, because previous tests leave the file system in a non-standard state
+            // which does not allow reusing it in a new test.
+            conf.setBoolean("fs.xtreemfs.impl.disable.cache", true);
             fs = FileSystem.get(fileSystemPath.toUri(), conf);
         } else {
             fs = new XtreemFSFileSystem();
@@ -169,8 +173,8 @@ public class XtreemFSFileSystemContractTest extends FileSystemContractBaseTest {
 
     protected void assertFileCreated(String path, String expected) throws IOException {
         FSDataOutputStream file = fs.create(new Path(path));
-        ContractTestUtils.assertIsFile(fs, new Path(expected));
-        ContractTestUtils.assertDeleted(fs, new Path(expected), true);
+        ReducedContractTestUtils.assertIsFile(fs, new Path(expected));
+        ReducedContractTestUtils.assertDeleted(fs, new Path(expected), true);
         file.close();
     }
 

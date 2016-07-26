@@ -151,9 +151,8 @@ public abstract class Hadoop1FileSystemContractBaseTest extends TestCase {
     }
 
     public void testListStatus() throws Exception {
-        Path[] testDirs = {path("/test/hadoop/a"),
-            path("/test/hadoop/b"),
-            path("/test/hadoop/c/1"),};
+        Path[] testDirs = { path("/test/hadoop/a"), path("/test/hadoop/b"),
+                path("/test/hadoop/c/1"), };
         assertFalse(fs.exists(testDirs[0]));
 
         for (Path path : testDirs) {
@@ -200,8 +199,8 @@ public abstract class Hadoop1FileSystemContractBaseTest extends TestCase {
         fs.mkdirs(path.getParent());
 
         FSDataOutputStream out = fs.create(path, false,
-                fs.getConf().getInt("io.file.buffer.size", 4096),
-                (short) 1, getBlockSize());
+                fs.getConf().getInt("io.file.buffer.size", 4096), (short) 1,
+                getBlockSize());
         out.write(data, 0, len);
         out.close();
 
@@ -435,8 +434,8 @@ public abstract class Hadoop1FileSystemContractBaseTest extends TestCase {
     }
 
     public void testInputStreamClosedTwice() throws IOException {
-        //HADOOP-4760 according to Closeable#close() closing already-closed 
-        //streams should have no effect. 
+        // HADOOP-4760 according to Closeable#close() closing already-closed
+        // streams should have no effect.
         Path src = path("/test/hadoop/file");
         createFile(src);
         FSDataInputStream in = fs.open(src);
@@ -445,11 +444,11 @@ public abstract class Hadoop1FileSystemContractBaseTest extends TestCase {
     }
 
     public void testOutputStreamClosedTwice() throws IOException {
-        //HADOOP-4760 according to Closeable#close() closing already-closed 
-        //streams should have no effect. 
+        // HADOOP-4760 according to Closeable#close() closing already-closed
+        // streams should have no effect.
         Path src = path("/test/hadoop/file");
         FSDataOutputStream out = fs.create(src);
-        out.writeChar('H'); //write some data
+        out.writeChar('H'); // write some data
         out.close();
         out.close();
     }

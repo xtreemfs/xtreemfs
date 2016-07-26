@@ -54,11 +54,11 @@ after_failure:
   - if [[ $JUNIT_RESULT = "false" ]]; then cat $TEST_DIR/log/junit.log; fi
   - if [[ $CPP_RESULT = "false" ]]; then cat cpp/build/Testing/Temporary/LastTest.log; fi
   - if [[ $VALGRIND_RESULT = "false" ]]; then cat $TEST_DIR/log/valgrind.log; fi
-  - if [[ $CONTRIB_RESULT = "false" ]]; then cat $TEST_DIR_/log/hadoop-*-junit.log; fi
+  - if [[ $CONTRIB_RESULT = "false" ]]; then cat $TEST_DIR/log/hadoop-*-junit.log; fi
 
 before_deploy:
   - mkdir "${XTREEMFS_DIST_DIR}"
-  - make client server hadoop-client install DESTDIR="${XTREEMFS_DIST_DIR}"
+  - make client server server-repl-plugin hadoop-client install DESTDIR="${XTREEMFS_DIST_DIR}"
   - tar czf "${XTREEMFS_DIST_TAR}" "${XTREEMFS_DIST_DIR}"
 
 deploy:

@@ -360,7 +360,8 @@ public class XtreemFSFileSystem extends FileSystem {
         return this.fileSystemURI;
     }
     
-    @Override
+    // @Override
+    // Introduced in Hadoop 2+
     public String getScheme() {
         return "xtreemfs";
     }

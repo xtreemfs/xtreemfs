@@ -3,9 +3,6 @@
 /.googletest_library_already_built
 .idea
 *.iml
-/java/flease/nbproject/private/
-/java/pbrpcgen/nbproject/private/
-/java/pbrpcgen/dist/
 /build
 [._]*.s[a-w][a-z]
 .clang_complete

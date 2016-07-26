@@ -31,8 +31,8 @@ for VERSION in $HADOOP_VERSIONS; do
    echo "Set HADOOP_LOG_DIR=$HADOOP_LOG_DIR"
 
 
-   echo "Copy XtreeemFSHadoopClient.jar to $HADOOP_PREFIX/lib/"
-   cp $XTREEMFS/contrib/hadoop/dist/XtreemFSHadoopClient.jar $HADOOP_PREFIX/lib/
+   echo "Copy xtreemfs-hadoop-client.jar to $HADOOP_PREFIX/lib/"
+   cp $XTREEMFS/contrib/hadoop/target/xtreemfs-hadoop-client.jar $HADOOP_PREFIX/lib/
 
    echo "configure core-site.xml"
 
