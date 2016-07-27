@@ -11,12 +11,7 @@ Summary:        XtreemFS base package
 Source0:        XtreemFS-%{version}.tar.gz
 
 #requires for any distribution
-%if 0%{?sles_version} == 10 || 0%{?fedora_version} >= 20 || 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
-# no need for ant-nodeps for SLE 10
-%else
-BuildRequires:  ant-nodeps >= 1.6.5
-%endif
-BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
+BuildRequires:  maven >= 3.0.4 java-devel >= 1.6.0
 # Client dependencies.
 BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8 cmake >= 2.6 boost-devel >= 1.35 libattr-devel >= 2
 
@@ -116,7 +111,6 @@ This package contains the XtreemFS JNI client library.
 
 
 %build
-export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
@@ -230,15 +224,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files backend
 %defattr(-,root,root,-)
-/usr/share/java/XtreemFS.jar
-/usr/share/java/Foundation.jar
-/usr/share/java/protobuf-java-2.5.0.jar
-/usr/share/java/Flease.jar
-/usr/share/java/BabuDB.jar
-/usr/share/java/BabuDB_replication_plugin.jar
-/usr/share/java/jdmkrt.jar
-/usr/share/java/jdmktk.jar
-/usr/share/java/commons-codec-1.3.jar
+/usr/share/java/xtreemfs.jar
+/usr/share/java/babudb-replication-plugin.jar
 %doc LICENSE
 
 %files server

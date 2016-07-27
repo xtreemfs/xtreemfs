@@ -4,3 +4,6 @@
 /.project
 /.cproject
 /.settings
+include/
+pbrpc/
+xtreemfs/

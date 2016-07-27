@@ -1,0 +1,40 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <profiles>
+    <profile>
+      <id>xtreemfs-hadoop-client-dev</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://repo.maven.apache.org/maven2</url>
+        </repository>
+
+        <repository>
+          <id>xtreemfs-xtreemfs</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+
+        <repository>
+          <id>xtreemfs-babudb</id>
+          <url>https://xtreemfs.github.io/babudb/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+
+        <repository>
+          <id>xtreemfs-opendmk</id>
+          <url>https://xtreemfs.github.io/opendmk</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+</settings>

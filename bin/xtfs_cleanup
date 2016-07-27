@@ -10,7 +10,7 @@ check_xtreemfs() {
             XTREEMFS=`pwd`/..
         fi
     fi
-    if [ ! -e "$XTREEMFS/java/servers/dist/XtreemFS.jar" -a ! -d "$XTREEMFS/java/lib" -a ! -f "/usr/share/java/XtreemFS.jar" ];
+    if [ ! -e "$XTREEMFS/java/xtreemfs-servers/target/xtreemfs.jar" -a ! -f "/usr/share/java/xtreemfs.jar" ];
     then
         echo "XtreemFS jar could not be found!"
         exit 1
@@ -42,5 +42,4 @@ check_java() {
 check_xtreemfs
 check_java
 
-exec $JAVA_HOME/bin/java -ea -cp $XTREEMFS/java/servers/dist/XtreemFS.jar:$XTREEMFS/java/foundation/dist/Foundation.jar:$XTREEMFS/java/lib/*:/usr/share/java/XtreemFS.jar:/usr/share/java/protobuf-java-2.5.0.jar:/usr/share/java/Foundation.jar:. \
-    org.xtreemfs.utils.xtfs_cleanup_osd $*
+exec $JAVA_HOME/bin/java -ea -cp $XTREEMFS/java/xtreemfs-servers/target/xtreemfs.jar:/usr/share/java/xtreemfs.jar:. org.xtreemfs.utils.xtfs_cleanup_osd $*

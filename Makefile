@@ -1,13 +1,13 @@
 ifeq "$(JAVA_HOME)" ""
-	JAVAC_BIN = /usr/bin/javac
+	JAVAC_BIN = $(shell which javac)
 else
 	JAVAC_BIN = $(JAVA_HOME)/bin/javac
 endif
 
-ifeq "$(ANT_HOME)" ""
-        ANT_BIN = /usr/bin/ant
+ifeq "$(MAVEN_HOME)" ""
+        MVN_BIN = $(shell which mvn)
 else
-        ANT_BIN = $(ANT_HOME)/bin/ant
+        MVN_BIN = $(MAVEN_HOME)/bin/mvn
 endif
 
 ifeq "$(CMAKE_HOME)" ""
@@ -60,7 +60,7 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
 TARGETS = client server foundation flease
-.PHONY:	clean distclean set_version
+.PHONY:	clean distclean
 
 all: check_server check_client check_test $(TARGETS)
 
@@ -68,7 +68,7 @@ clean: check_server check_client $(patsubst %,%_clean,$(TARGETS))
 
 distclean: check_server check_client $(patsubst %,%_distclean,$(TARGETS))
 
-install: install-client install-server install-tools install-libs
+install: install-client install-server install-server-repl-plugin install-tools install-libs
 
 install-client:
 
@@ -94,17 +94,13 @@ install-client:
 
 install-server:
 
-	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
+	@if [ ! -f java/xtreemfs-servers/target/xtreemfs.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_SERVER)
 	@cp LICENSE $(DOC_DIR_SERVER)
 
 	@mkdir -p $(XTREEMFS_JAR_DIR)
-	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
-	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
-	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
-	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
-	@cp contrib/server-repl-plugin/BabuDB_replication_plugin.jar $(XTREEMFS_JAR_DIR)
+	@cp java/xtreemfs-servers/target/xtreemfs.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 #	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
@@ -112,10 +108,6 @@ install-server:
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
 	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
-
-	@mkdir -p $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/dir.properties $(PLUGIN_CONFIG_DIR)
-	@cp contrib/server-repl-plugin/config/mrc.properties $(PLUGIN_CONFIG_DIR)
 
 	@cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
@@ -132,18 +124,25 @@ install-server:
 
 	@echo "to complete the server installation, please execute $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh"
 
+install-server-repl-plugin:
+
+	@if [ ! -f contrib/server-repl-plugin/target/babudb-replication-plugin.jar ]; then echo "PLEASE RUN 'make server-repl-plugin' FIRST!"; exit 1; fi
+
+	@cp contrib/server/repl-plugin/target/babudb-replication-plugin.jar $(XTREEMFS_JAR_DIR)
+
+	@mkdir -p $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/src/main/resources/config/dir.properties $(PLUGIN_CONFIG_DIR)
+	@cp contrib/server-repl-plugin/src/main/resources/config/mrc.properties $(PLUGIN_CONFIG_DIR)
+
 install-tools:
 
-	@if [ ! -f java/servers/dist/XtreemFS.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
+	@if [ ! -f java/xtreemfs-servers/target/xtreemfs.jar ]; then echo "PLEASE RUN 'make server' FIRST!"; exit 1; fi
 
 	@mkdir -p $(DOC_DIR_TOOLS)
 	@cp LICENSE $(DOC_DIR_TOOLS)
 
 	@mkdir -p $(XTREEMFS_JAR_DIR)
-	@cp java/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
-	@cp java/foundation/dist/Foundation.jar $(XTREEMFS_JAR_DIR)
-	@cp java/flease/dist/Flease.jar $(XTREEMFS_JAR_DIR)
-	@cp java/lib/*.jar $(XTREEMFS_JAR_DIR)
+	@cp java/xtreemfs-servers/target/xtreemfs.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(BIN_DIR)
 	@cp   -p  `ls $(XTREEMFS_BINARIES_DIR)/xtfs_* | grep -v xtfs_.*mount` $(BIN_DIR)
@@ -174,15 +173,8 @@ uninstall:
 	@rm -f $(XTREEMFS_LIB_DIR)/$(XTREEMFS_JNI_LIBRARY)
 	@rmdir $(XTREEMFS_LIB_DIR)
 
-	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/Foundation.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/Flease.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/commons-codec-1.3.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/jdmkrt.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/jdmktk.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/protobuf-java-2.5.0.jar
-	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB_replication_plugin.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/xtreemfs.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/babudb-replication-plugin.jar
 
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 
@@ -201,8 +193,8 @@ check_server:
 	@if [ $(shell $(JAVAC_BIN) -version 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 6 ]; then echo "java version >= 1.6.0 required!"; exit 1; fi;
 	@echo "java ok"
 
-	@if [ ! -e $(ANT_BIN) ]; then echo "ant not found! Make sure ant is installed and set ANT_HOME."; exit 1; fi;
-	@echo "ant ok"
+	@if [ ! -e $(MVN_BIN) ]; then echo "mvn not found! Make sure mvn is installed and set MAVEN_HOME."; exit 1; fi;
+	@echo "mvn ok"
 
 check_client:
 	@if [ ! $(WHICH_GPP) -a ! $(WHICH_CLANGPP) ]; then echo "C++ compiler not found";exit 1; fi;
@@ -213,12 +205,6 @@ check_client:
 check_test:
 	@if [[ $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 3 && $(shell python -V 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f1) -lt 3 ]]; then echo "python >= 2.4 required!"; exit 1; fi;
 	@echo "python ok"
-
-set_version:
-# Try to set the SVN revision and branch name as part of the version. We don't care if this may fail.
-ifndef SKIP_SET_SVN_VERSION
-	@./packaging/set_version.sh -s &>/dev/null; exit 0
-endif
 
 .PHONY:	client client_clean client_distclean client_thirdparty_clean client_package_macosx
 
@@ -295,7 +281,7 @@ client_thirdparty_distclean:
 client_debug: CLIENT_DEBUG = -DCMAKE_BUILD_TYPE=Debug
 client_debug: client
 
-client: check_client client_thirdparty set_version
+client: check_client client_thirdparty interfaces
 	$(CMAKE_BIN) -Hcpp -B$(XTREEMFS_CLIENT_BUILD_DIR) --check-build-system CMakeFiles/Makefile.cmake 0 $(CLIENT_DEBUG) $(CMAKE_BOOST_ROOT) $(CMAKE_BUILD_CLIENT_TESTS) $(CMAKE_SKIP_FUSE) ${CMAKE_BUILD_PRELOAD} ${CMAKE_SKIP_JNI} ${CMAKE_GENERATE_JNI} ${CMAKE_NO_BOOST_CMAKE}
 	@$(MAKE) -C $(XTREEMFS_CLIENT_BUILD_DIR)
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR); for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done; true
@@ -329,50 +315,71 @@ endif
 	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
 	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
 
+.PHONY: parent parent_clean parent_distclean
+parent:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml --define skipTests --non-recursive install
+parent_clean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+parent_distclean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+
 .PHONY: flease flease_clean flease_distclean
-flease: foundation
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml jar
+flease: parent foundation
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml --define skipTests install
 flease_clean:
-	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 flease_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/flease/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 
 .PHONY: foundation foundation_clean foundation_distclean
-foundation: set_version
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml jar
+foundation: parent pbrpcgen
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml --define skipTests install
 foundation_clean:
-	$(ANT_BIN)  -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 foundation_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/foundation/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
+
+pbrpcgen: parent $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml --define skipTests install
+pbrpcgen_clean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
+pbrpcgen_distclean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
-server: check_server foundation flease
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml jar
+server: check_server parent flease foundation
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml --define skipTests install
 server_clean: check_server
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 server_distclean: check_server
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/servers/build-1.6.5.xml clean || exit 1;
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
+
+.PHONY: server-repl-plugin server-repl-plugin_clean server-repl-plugin_distclean
+server-repl-plugin:
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml --define skipTests package
+server-repl-plugin_clean: check_server
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
+server-repl-plugin_distclean: check_server
+	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
-hadoop-client: server foundation
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml jar
-	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/dist/XtreemFSHadoopClient.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
+hadoop-client: parent foundation server
+	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
+	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
 hadoop-client_distclean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f contrib/hadoop/build.xml clean || exit 1
+	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
 
 test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
 
-pbrpcgen:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml
-
-pbrpcgen_clean:
-	$(ANT_BIN) -D"file.encoding=UTF-8" -f java/pbrpcgen/build.xml clean || exit 1
-
 interfaces: pbrpcgen client_thirdparty
-	$(MAKE) -C interface
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml generate-sources
+interfaces_clean:
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
+interfaces_distclean:
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
 
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true

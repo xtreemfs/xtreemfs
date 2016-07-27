@@ -83,10 +83,7 @@ public:
       java_home_ += "/";
     }
     
-    classpath_ = "../../java/servers/dist/XtreemFS.jar";
-    classpath_ += ":../../java/foundation/dist/Foundation.jar";
-    classpath_ += ":../../java/flease/dist/Flease.jar";
-    classpath_ += ":../../java/lib/*";
+    classpath_ = "../../java/xtreemfs-servers/target/xtreemfs.jar";
   }
       
   void cleanup() {

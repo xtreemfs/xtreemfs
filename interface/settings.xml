@@ -1,0 +1,24 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <profiles>
+    <profile>
+      <id>xtreemfs-interface-dev</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://repo.maven.apache.org/maven2</url>
+        </repository>
+
+        <repository>
+          <id>xtreemfs-xtreemfs</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+</settings>

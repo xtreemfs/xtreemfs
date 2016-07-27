@@ -323,7 +323,7 @@ Note that the source tarball contains the complete distribution of XtreemFS, whi
 
 For the pre-packaged release, you will need Sun Java JRE 1.6.0 or newer to be installed on the system.
 
-When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Ant 1.6.5 or newer and gmake.
+When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Maven 3.0.4 or newer and gmake.
 
 \subsection{Installing from Pre-Packaged Releases}
 
@@ -371,16 +371,16 @@ Both RPM and Debian-based packages will install three \texttt{init.d} scripts to
 Extract the tarball with the sources. Change to the top level directory and execute
 
 \begin{verbatim}
-$> make server
+$> make server server-repl-plugin
 \end{verbatim}
 
-This will build the XtreemFS server and Java-based tools. When done, execute
+This will build the XtreemFS server, the plugin for replicating DIR and MRC (optional), and Java-based tools. When done, execute
 
 \begin{verbatim}
-$> sudo make install-server
+$> sudo make install-server install-server-repl-plugin
 \end{verbatim}
 
-to install the server components. Finally, you will be asked to execute a post-installation script
+to install the server components and the replication plugin for DIR and MRC (optional). Finally, you will be asked to execute a post-installation script
 
 \begin{verbatim}
 $> sudo /etc/xos/xtreemfs/postinstall_setup.sh
@@ -1562,7 +1562,7 @@ snmp.port = 34638
 snmp.aclfile =  /etc/xos/xtreemfs/snmp.acl
 \end{verbatim}
 
-If \texttt{snmp.enabled} is not set to true the service will not start a SNMP agent and all other SNMP related configuration parameter will be ignored.  \texttt{snmp.port} defines the port on which the SNMP agent will listen and \texttt{snmp.address} the interface it is bound to. Since XtreemFS uses SNMPv2 which is known to be not secure it is recommended to use a dedicated monitoring network and a dedicated interface. The optional \texttt{snmp.aclfile} paramater is a path to JDMK\footnote{see \url{http://opendmk.java.net/} and \url{http://java.sun.com/products/jdmk/}} (Java Dynamic Management Kit -- the library used for providing SNMP functionality in XtreemFS) ACL file. In this file you can define who (which hosts) can use what kind of SNMP feature. Because the XtreemFS SNMP agent only provides the functionality to read values per SNMP the following example acl file is sufficient:
+If \texttt{snmp.enabled} is not set to true the service will not start a SNMP agent and all other SNMP related configuration parameter will be ignored.  \texttt{snmp.port} defines the port on which the SNMP agent will listen and \texttt{snmp.address} the interface it is bound to. Since XtreemFS uses SNMPv2 which is known to be not secure it is recommended to use a dedicated monitoring network and a dedicated interface. The optional \texttt{snmp.aclfile} parameter is a path to JDMK\footnote{see \url{http://opendmk.java.net/} and \url{http://java.sun.com/products/jdmk/}} (Java Dynamic Management Kit -- the library used for providing SNMP functionality in XtreemFS) ACL file. In this file you can define who (which hosts) can use what kind of SNMP feature. Because the XtreemFS SNMP agent only provides the functionality to read values per SNMP the following example acl file is sufficient:
 \begin{verbatim}
 acl = {
  {
@@ -1838,7 +1838,7 @@ $> sudo make install-client
 
 to complete the installation of XtreemFS.
 
-\texttt{*} The openjdk requirement is optional and can be omitted if the native JNI library  for Java is not needed (see \ref{sec:libjnixtreemfs_for_java}). To skip building the JNI library set the environment variable \texttt{SKIP\_JNI=true} when calling \texttt{make}.
+\texttt{*} The openjdk requirement is optional and can be omitted if the native JNI library for Java is not needed (see \ref{sec:libjnixtreemfs_for_java}). To skip building the JNI library set the environment variable \texttt{SKIP\_JNI=true} when calling \texttt{make}.
 
 
 
@@ -2069,7 +2069,7 @@ Note that the source tarball contains the complete distribution of XtreemFS, whi
 
 For the pre-packaged release, you will need Sun Java JRE 1.6.0 or newer to be installed on the system. Some tools also require the \texttt{attr}/\texttt{libattr} package to be installed.
 
-When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Ant 1.6.5 or newer and gmake.
+When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Maven 3.0.4 or newer and gmake.
 
 \subsection{Installing from Pre-Packaged Releases}
 
@@ -3100,8 +3100,8 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \textbf{Required software:}
 \begin{itemize}
 \item XtreemFS (\href{http://xtreemfs.org/download.php?t=source}{www.XtreemFS.org})
-\item XtreemFSHadoopClient.jar (Download it from \href{http://www.xtreemfs.org/downloads/XtreemFSHadoopClient.jar}{www.XtreemFS.org} or build it by yourself by excecuting make hadoop-client)
-\item Hadoop (v 1.0.1 or newer) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item xtreemfs-hadoop-client.jar (Download it from \href{http://www.xtreemfs.org/downloads/xtreemfs-hadoop-client.jar}{www.XtreemFS.org} or build it by yourself by executing make hadoop-client)
+\item Hadoop (2.2.x or 2.3+ are compatible. Versions 0.23.x, 2.0.x a,d 2.1.x use another version of Google's Protobuf (2.4.0a), however XtreemFS uses 2.5.0 which is incompatible, so rebuilding XtreemFS with version 2.4.0a is required. Versions 0.22 and earlier, as well as 1.x do not use Google's Protobuf, and are compatible as well.) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
 
@@ -3135,18 +3135,18 @@ For Hadoop you have so set the following environment variable:
 \item Configure Hadoop to understand XtreemFS file URIs (\texttt{xtreemfs://...}) in addition to HDFS file URIs (\texttt{hdfs://...}):
 	\begin{enumerate}
 	\item After downloading and extracting Hadoop you have to make sure it will find the XtreemFSHadoopClient package.
-	The easiest way to do so is to download XtreemFSHadoopClient.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 2.x, or to symlink it there.
+	The easiest way to do so is to download xtreemfs-hadoop-client.jar into Hadoop's \textit{lib} directory for Hadoop 1.x or \textit{share/hadoop/common/} directory for Hadoop 0.23.x and 2.x, or to symlink it there.
 
-	Alternativly, you can add it to Hadoop's classpath. It can be edited in \textit{hadoop-env.sh} which can be found in the \textit{conf} directory of Hadoop. Assuming you put XtreemFSHadoopClient.jar to the other jar-libraries located at '\textit{/usr/share/java/}', the resulting line should look like this.
+	Alternativly, you can add it to Hadoop's classpath. It can be edited in \textit{hadoop-env.sh} which can be found in the \textit{conf} directory of Hadoop. Assuming you put xtreemfs-hadoop-client.jar to the other jar-libraries located at '\textit{/usr/share/java/}', the resulting line should look like this.
 	\begin{verbatim}
-	export HADOOP_CLASSPATH="/usr/share/XtreemFSHadoopClient.jar"
+	export HADOOP_CLASSPATH="/usr/share/java/xtreemfs-hadoop-client.jar"
 	\end{verbatim}
-Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the -libjars parameter to the XtreemFSHadoopClient.jar path if you use the hadoop jar command, e.g.
+Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the -libjars parameter to the xtreemfs-hadoop-client.jar path if you use the hadoop jar command, e.g.
     \begin{verbatim}
 	hadoop jar <jar> [mainClass] \
-	-libjars=/usr/share/XtreemFSHadoopClient.jar ...
+	-libjars=/usr/share/java/xtreemfs-hadoop-client.jar ...
     \end{verbatim}
-	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} (Hadoop 1.x) or \textit{etc/hadoop} (Hadoop 2.x)
+	\item Now you have to specify some properties in \textit{core-site.xml} (in the \textit{conf} (Hadoop 1.x) or \textit{etc/hadoop} (Hadoop 0.23.x and 2.x)
 	directory of Hadoop). If this file does not exist you can safely create it.
 	\begin{verbatim}
 <configuration>
@@ -3161,7 +3161,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <name>fs.AbstractFileSystem.xtreemfs.impl</name>
     <value>org.xtreemfs.common.clients.hadoop.XtreemFS</value>
     <description>
-        The abstract file system for xtreemfs: URIs. (Hadoop 2.x only)
+        The abstract file system for xtreemfs: URIs. (Hadoop 0.23.x and 2.x only)
     </description>
   </property>
   
@@ -3417,13 +3417,13 @@ Congratulations! You successfully finished the quick start guide of the XtreemFS
 \chapter{Client Library libxtreemfs}
 \label{sec:libxtreemfs}
 
-The XtreemFS client functionality is bundled into a library \texttt{libxtreemfs}. Currently, this library is available as C++ and Java version with an almost identical feature set. Both versions are intended to run on a variety of platforms. As of June 2012, both versions work on Linux, Windows, MacOSX and Solaris (other platforms probably also work, but were not tested). The libxtreemfs is also used internally by the XtreemFS components e.g., the FUSE Client \texttt{mount.xtreemfs} uses the C++ libxtreemfs and the HDFS implementation is based on the libxtreemfs for Java.
+The XtreemFS client functionality is bundled into a library \texttt{libxtreemfs}. Currently, this library has a C++ interface which can be used directly, and a Java wrapper around it, providing identical feature sets when using the native client. There is a pure Java implementation as well, which is discontinued and has a smaller feature set than the native library with the JNI wrapper. Both versions are intended to run on a variety of platforms. As of June 2012, both versions work on Linux, Windows, MacOSX and Solaris (other platforms probably also work, but were not tested). The libxtreemfs is also used internally by the XtreemFS components e.g., the FUSE Client \texttt{mount.xtreemfs} uses the C++ libxtreemfs and the HDFS implementation is based on the Java wrapper of libxtreemfs.
 
 You can use each version of the \texttt{libxtreemfs} to integrate XtreemFS directly in your application. This way you avoid the overhead and the limitations of FUSE. For instance, you can read and write more than 128 kB data with a single read or write command and you avoid unnecessary copying between kernel and user space. The only drawback compared to using the FUSE Client \texttt{mount.xtreemfs} is that the \texttt{libxtreemfs} currently has no advanced caching functionality while FUSE inherently supports read-ahead and caching of file data.
 
 \section{General Interface}
 
-Both versions of the libxtreemfs have an almost identical design and interface. The functionality is provided by the following three main classes:
+The functionality is provided by the following three main classes:
 
 \begin{itemize}
  \item \textbf{Client}
@@ -3496,21 +3496,23 @@ Now modify \texttt{cpp/src/example\_libxtreemfs/example\_libxtreemfs.cpp} to sui
 \section{Using the libxtreemfs for Java}
 \label{sec:libxtreemfs_for_java}
 
+\textbf{Deprecated in favor of the JNI wrapper around the C++ native library, see section~\ref{sec:libjnixtreemfs_for_java}.} Development of the pure Java version of libxtreemfs has been discontinued, and has a smaller feature set than the native C++ library.
+
 The libxtreemfs for Java can be found in the XtreemFS sources in the directory
-\path{java/servers/src/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
+\path{java/xtreemfs-servers/src/main/java/org/xtreemfs/common/libxtreemfs/}. You can retrieve the
 sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
 
-Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{ClientTest.java}\footnote{located in the XtreemFS sources at \path{java/xtreemfs-servers/src/test/java/org/xtreemfs/common/libxtreemfs/}} for a minimal example how to use the library. Another example is the HDFS implementation which can be found below \texttt{contrib/hadoop/}.
 
-The libxtreemfs for Java is currently not separated from the remaining server Java code. Consequently, you'll find the available functionality as part of the XtreemFS.jar which is generated by ``make server''.
+The libxtreemfs for Java is currently not separated from the remaining server Java code. Consequently, you'll find the available functionality as part of the xtreemfs.jar which is generated by ``make server''.
 
 
 \section{Using the C++ libxtreemfs with Java Native Interfaces}
 \label{sec:libjnixtreemfs_for_java}
-The native libxtreemfs for Java is implementing the same interface as the pure Java libxtreemfs but is using Java Native Interfaces (JNI) to make calls to the C++ libxtreemfs. The Java implementation can be found in the XtreemFS sources in the directory \path{java/servers/src/org/xtreemfs/common/libxtreemfs/jni/}. You can retrieve the
+The native libxtreemfs for Java is implementing a richer interface than the pure Java libxtreemfs (which is discontinued, see section~\ref{sec:libxtreemfs_for_java}) because it is using Java Native Interfaces (JNI) to make calls to the C++ libxtreemfs. The implementation can be found in the XtreemFS sources in the directory \path{java/xtreemfs-servers/src/main/java/org/xtreemfs/common/libxtreemfs/jni/}. You can retrieve the
 sources from our Github Project page at \url{http://github.com/xtreemfs/xtreemfs}.
 
-Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/servers/test/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library.
+Have a look at the unit test ``testMinimalExample()'' in the file \texttt{NativeTest.java} as  at \path{java/xtreemfs-servers/src/test/java/org/xtreemfs/common/libxtreemfs/} for a minimal example how to use the library.
 
 To be able to use the native interface, the shared JNI library has to be accessible. It can be installed from the provided \texttt{libxtreemfs-jni} package. The library is built by default when ``\texttt{make client}'' is called and can then be found in \path{cpp/build}. 
 To skip building the JNI library set the environment variable \texttt{SKIP\_JNI=true}.
