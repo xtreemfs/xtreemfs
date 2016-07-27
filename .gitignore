@@ -11,4 +11,4 @@ cscope.out
 cov-int/
 /out/
 *.directory
-
+.DS_Store
