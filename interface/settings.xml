@@ -4,7 +4,7 @@
                       https://maven.apache.org/xsd/settings-1.0.0.xsd">
   <profiles>
     <profile>
-      <id>xtreemfs-dev</id>
+      <id>xtreemfs-interface-dev</id>
       <repositories>
         <repository>
           <id>central</id>
@@ -12,16 +12,8 @@
         </repository>
 
         <repository>
-          <id>xtreemfs-babudb</id>
-          <url>https://xtreemfs.github.io/babudb/maven</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-
-        <repository>
-          <id>xtreemfs-opendmk</id>
-          <url>https://xtreemfs.github.io/opendmk</url>
+          <id>xtreemfs-xtreemfs</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
           <snapshots>
             <enabled>true</enabled>
           </snapshots>

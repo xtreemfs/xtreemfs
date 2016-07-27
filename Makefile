@@ -375,11 +375,11 @@ test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
 
 interfaces: pbrpcgen client_thirdparty
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml generate-sources
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml generate-sources
 interfaces_clean:
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
 interfaces_distclean:
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-dev --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
 
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
