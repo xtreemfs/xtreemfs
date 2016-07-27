@@ -1,5 +1,5 @@
-XtreemFS Hadoop Client
-======================
+XtreemFS Java Components
+========================
 
 In your `$HOME/.m2/settings.xml` add:
 ```XML
@@ -9,7 +9,7 @@ In your `$HOME/.m2/settings.xml` add:
     <!-- more profiles -->
   
     <profile>
-      <id>xtreemfs-hadoop-client-dev</id>
+      <id>xtreemfs-dev</id>
       <repositories>
         <repository>
           <id>central</id>
@@ -17,15 +17,7 @@ In your `$HOME/.m2/settings.xml` add:
         </repository>
 
         <repository>
-          <id>xtreemfs-xtreemfs</id>
-          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </repository>
-
-        <repository>
-          <id>xtreemfs-babudb</id>
+          <id>babudb-repository</id>
           <url>https://xtreemfs.github.io/babudb/maven</url>
           <snapshots>
             <enabled>true</enabled>
@@ -57,10 +49,32 @@ In your `pom.xml` add:
   <dependencies>
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
-      <artifactId>xtreemfs-hadoop-client</artifactId>
+      <artifactId>xtreemfs-flease</artifactId>
+      <version>1.5.1-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-foundation</artifactId>
+      <version>1.5.1-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-pbrpcgen</artifactId>
+      <version>1.5.1-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-servers</artifactId>
       <version>1.5.1-SNAPSHOT</version>
       <!-- The shaded version bundles:                                                                   -->
       <!-- - com.google.protobuf:protobuf-java                                                           -->
+      <!-- - commons-codec:commons-codec                                                                 -->
+      <!-- - org.xtreemfs.babudb:babudb-core                                                             -->
+      <!-- - org.xtreemfs.opendmk:jdmkrt                                                                 -->
+      <!-- - org.xtreemfs.xtreemfs:xtreemfs-flease                                                       -->
       <!-- - org.xtreemfs.xtreemfs:xtreemfs-foundation                                                   -->
       <!-- - org.xtreemfs.xtreemfs:xtreemfs-pbrpcgen/org.xtreemfs.foundation.pbrpc.generatedinterfaces.* -->
       <!-- - org.xtreemfs.xtreemfs:xtreemfs-servers                                                      -->
@@ -76,5 +90,5 @@ In your `pom.xml` add:
 
 And build your project like so:
 ```Bash
-  mvn install -Pxtreemfs-hadoop-dev
+  mvn install -Pxtreemfs-dev
 ```
