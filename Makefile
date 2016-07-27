@@ -339,9 +339,11 @@ foundation_clean:
 foundation_distclean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 
-pbrpcgen: $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
+pbrpcgen: parent $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml --define skipTests install
 pbrpcgen_clean:
+	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
+pbrpcgen_distclean:
 	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
