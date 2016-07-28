@@ -227,6 +227,7 @@ for VERSION in $HADOOP_VERSIONS; do
                then echo "Hadoop produced wrong output!"; RESULT=-1;
             fi
          fi
+         $HADOOP_PREFIX/bin/hadoop fs -rm -r /hadoop2_test/output
    fi
 
    echo "Stop Hadoop..."
