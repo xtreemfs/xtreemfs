@@ -1173,7 +1173,8 @@ public class HashStorageLayout extends StorageLayout {
             do {
                 String currentDir = l.status.pop();
                 File dir = new File(storageDir + currentDir);
-                if (dir.listFiles() == null) {
+                File[] dirFiles = dir.listFiles();
+                if (dirFiles == null) {
                     Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, storageDir + currentDir
                             + " is not a valid directory!");
                     continue;
@@ -1184,7 +1185,7 @@ public class HashStorageLayout extends StorageLayout {
                 Long objectSize = 0L;
                 boolean isFileNameDir = false;
 
-                for (File ch : dir.listFiles()) {
+                for (File ch : dirFiles) {
                     // handle the directories (hash and fileName)
                     if (ch != null && ch.isDirectory()) {
                         l.status.push(currentDir + "/" + ch.getName());
