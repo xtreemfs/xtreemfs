@@ -15,7 +15,7 @@
     </property>
     <property>
         <name>xtreemfs.client.debug</name>
-        <value>true</value>
+        <value>false</value>
     </property>
     <property>
         <name>xtreemfs.jni.enabled</name>
