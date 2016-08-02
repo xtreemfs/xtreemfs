@@ -10,6 +10,7 @@ package org.xtreemfs.common.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 import java.io.IOException;
@@ -41,6 +42,10 @@ class RandomWriteBenchmark extends RandomOffsetbasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_WRONLY.getNumber();
 
         for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Writing block %d of %d ...", j + 1, numberOfBlocks);
+            }
+            
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BASFILE_FILENAME, flags, 511);
             long nextOffset = generateNextRandomOffset();
             random.nextBytes(data);

@@ -14,6 +14,7 @@ import java.util.Random;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 /**
@@ -56,6 +57,10 @@ class SequentialWriteBenchmark extends SequentialBenchmark {
         long byteCounter = 0;
 
         for (long j = 0; !cancelled && j < numberOfBlocks; j++) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Writing block %d of %d ...", j + 1, numberOfBlocks);
+            }
+            
             long nextOffset = j * requestSize;
             assert nextOffset >= 0 : "Offset < 0 not allowed";
             random.nextBytes(data);
