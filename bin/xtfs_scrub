@@ -27,7 +27,7 @@ check_java() {
         JAVA_HOME=/usr
     fi
 
-    JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep "java version" | \
+    JVERS=`$JAVA_HOME/bin/java -version 2>&1 | grep -E "(java|openjdk) version" | \
        cut -d " " -f 3`
     test "$JVERS" \> "\"1.6.0"
     if [ $? -eq 1 ]; then
