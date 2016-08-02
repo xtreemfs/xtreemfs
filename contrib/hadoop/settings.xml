@@ -5,22 +5,6 @@
   <profiles>
     <profile>
       <id>xtreemfs-hadoop-client-dev</id>
-
-      <pluginRepositories>
-        <pluginRepository>
-          <id>central</id>
-          <url>http://repo.maven.apache.org/maven2</url>
-        </pluginRepository>
-
-        <pluginRepository>
-          <id>apache-snapshots</id>
-          <url>http://repository.apache.org/snapshots</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-        </pluginRepository>
-      </pluginRepositories>
-
       <repositories>
         <repository>
           <id>central</id>
