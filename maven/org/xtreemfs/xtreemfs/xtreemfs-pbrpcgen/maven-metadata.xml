@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-pbrpcgen</artifactId>
+  <versioning>
+    <versions>
+      <version>1.5.1-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20160802132315</lastUpdated>
+  </versioning>
+</metadata>
