@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-parent</artifactId>
+  <version>1.5.1-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20160802.131450</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <lastUpdated>20160802131450</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.5.1-20160802.131450-1</value>
+        <updated>20160802131450</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
