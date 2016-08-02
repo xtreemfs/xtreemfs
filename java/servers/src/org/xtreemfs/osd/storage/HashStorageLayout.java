@@ -1620,7 +1620,7 @@ public class HashStorageLayout extends StorageLayout {
         File vectorFile = next ? new File(fileDir, EC_VERSIONS_NEXT) : new File(fileDir, EC_VERSIONS_CUR);
 
         if (!fileDir.exists() || !vectorFile.exists()) {
-            Logging.logMessage(Logging.LEVEL_INFO, this, "Could not get %s IntervalVector for fileId %s",
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Could not get %s IntervalVector for fileId %s",
                     (next ? "next" : "current"), fileId);
             return false;
             // throw new FileNotFoundException()

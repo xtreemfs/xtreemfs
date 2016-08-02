@@ -76,9 +76,17 @@ public final class TruncateOperation extends OSDOperation {
 
         } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
             // FIXME (jdillmann): do!
-            Logging.logMessage(Logging.LEVEL_WARN, this, "Truncate not implemented for EC policy");
-            rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "Truncate not implemented for EC policy");
+            
+            final int epochNo = rq.getCapability().getEpochNo();
+            final long truncateFileSize = args.getNewFileSize();
 
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                    "Truncate not implemented for EC policy (epoch: " + epochNo + ", size: " + truncateFileSize + ")");
+            // rq.sendError(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EINVAL, "Truncate not implemented for EC policy");
+
+            OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(truncateFileSize)
+                    .setTruncateEpoch(epochNo).build();
+            sendResponse(rq, response);
 
         } else if (numReplicas == 1 || ReplicaUpdatePolicies.isRO(replicaUpdatePolicy)
                 || ReplicaUpdatePolicies.isNONE(replicaUpdatePolicy)) {

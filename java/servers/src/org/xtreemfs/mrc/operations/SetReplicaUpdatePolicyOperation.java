@@ -171,6 +171,12 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
                     "Currently, it is not possible to change from a read-only to a read/write replication policy or vise versa.");
         }
 
+        // It is not supported to change a erasure coded files policy
+        if ((ReplicaUpdatePolicies.isEC(curReplUpdatePolicy))) {
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                    "Currently it is not supported to change back from a erasure coding replication");
+        }
+
         // check if striping + rw replication would be set
         StripingPolicy stripingPolicy = file.getXLocList().getReplica(0).getStripingPolicy();
         if (stripingPolicy.getWidth() > 1 && (newReplicaUpdatePolicy.equals(ReplicaUpdatePolicies.REPL_UPDATE_PC_WARONE)

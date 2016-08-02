@@ -65,8 +65,8 @@ class TestEnvironment:
             # find out how many OSDs we need
             maxOsds = 1
             for vc in self.__config.getVolumeConfigs().values():
-                if vc['stripe_width'] > maxOsds:
-                    maxOsds = vc['stripe_width']
+                if (vc['stripe_width'] + vc['stripe_parity_width']) > maxOsds:
+                    maxOsds = vc['stripe_width'] + vc['stripe_parity_width']
                 if vc['rwr_factor'] > maxOsds:
                     maxOsds = vc['rwr_factor']
                 if vc['ronly_factor'] > maxOsds:
@@ -229,6 +229,7 @@ class TestEnvironment:
                                 pkcs12_passphrase=pkcs12_passphrase,
                                 stripe_width=v['stripe_width'],
                                 stripe_size=v['stripe_size'],
+                                stripe_parity_width=v["stripe_parity_width"],
                                 rwr_policy=v.setdefault('rwr_policy', 'quorum'),
                                 rwr_factor=v['rwr_factor'],
                                 ronly_factor=v['ronly_factor'])

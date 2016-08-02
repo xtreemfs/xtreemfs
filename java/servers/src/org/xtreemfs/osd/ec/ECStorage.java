@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
@@ -30,6 +31,7 @@ import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECGetVectorsCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECReadParityCallback;
+import org.xtreemfs.osd.stages.StorageStage.ECReconstructStripeCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteDiffCallback;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
 import org.xtreemfs.osd.storage.FileMetadata;

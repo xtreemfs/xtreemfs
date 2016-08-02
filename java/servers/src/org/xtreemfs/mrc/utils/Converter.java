@@ -175,7 +175,7 @@ public class Converter {
 
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
                     .newBuilder().setType(StripingPolicyType.valueOf(xSP.getPattern())).setStripeSize(
-                            xSP.getStripeSize()).setWidth(xSP.getWidth());
+                            xSP.getStripeSize()).setWidth(xSP.getWidth()).setParityWidth(xSP.getParityWidth());
 
             Replica.Builder replBuilder = Replica.newBuilder().setReplicationFlags(
                     xRepl.getReplicationFlags()).setStripingPolicy(sp);

@@ -182,23 +182,24 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     }
 
     private void ecGetFS(final OSDRequest rq, final xtreemfs_internal_get_file_sizeRequest args) {
-        master.getECMasterStage().getFileSize(rq, new ECMasterStage.GetFileSizeCallback() {
+        master.getECMasterStage().getFileSize(rq.getFileId(), args.getFileCredentials(), rq.getLocationList(),
+                new ECMasterStage.GetFileSizeCallback() {
 
-            @Override
-            public void failed(ErrorResponse ex) {
-                rq.sendError(ex);
-            }
+                    @Override
+                    public void failed(ErrorResponse ex) {
+                        rq.sendError(ex);
+                    }
 
-            @Override
-            public void redirect(String redirectTo) {
-                rq.getRPCRequest().sendRedirect(redirectTo);
-            }
+                    @Override
+                    public void redirect(String redirectTo) {
+                        rq.getRPCRequest().sendRedirect(redirectTo);
+                    }
 
-            @Override
-            public void success(long fileSize) {
-                sendResponse(rq, fileSize);
-            }
-        });
+                    @Override
+                    public void success(long fileSize) {
+                        sendResponse(rq, fileSize);
+                    }
+                }, rq);
     }
 
     public void sendResponse(OSDRequest rq, long fileSize) {

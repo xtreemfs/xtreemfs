@@ -83,7 +83,7 @@ public class ECFileState {
                 remoteOSDs.add(osdUUID);
             }
         }
-        assert ((n - 1) == remoteOSDs.size());
+        assert ((n - 1) == remoteOSDs.size()) : (n - 1) + " remotes required, " + remoteOSDs.size() + " available";
         
         pendingRequests = new LinkedList<StageRequest>();
         resetDefaults();

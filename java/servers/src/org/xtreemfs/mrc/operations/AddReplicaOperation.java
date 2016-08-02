@@ -108,7 +108,7 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "file '" + rqArgs.getFileId()
                     + "' is a symbolic link");
         }
-        
+
         // Check if a xLocSetChange is already in progress.
         XLocSetLock lock = master.getXLocSetCoordinator().getXLocSetLock(file, sMan);
         if (lock.isLocked()) {
@@ -142,6 +142,9 @@ public class AddReplicaOperation extends MRCOperation implements XLocSetCoordina
         XLocList xLocList = file.getXLocList();
         assert (xLocList != null);
         
+        if (ReplicaUpdatePolicies.isEC(xLocList.getReplUpdatePolicy()))
+            throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "EC policy does not allow more then one replica");
+
         if (ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE.equals(xLocList.getReplUpdatePolicy()))
             throw new UserException(POSIXErrno.POSIX_ERROR_EPERM,
                 "missing replica update policy - needs to be specified before adding replicas");

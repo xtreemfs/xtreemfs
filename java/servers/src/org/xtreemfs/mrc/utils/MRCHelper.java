@@ -243,9 +243,11 @@ public class MRCHelper {
             throw new UserException(POSIXErrno.POSIX_ERROR_EIO, "could not open file " + path
                     + ": no default striping policy available");
 
+        int fullWidth = stripingPolicy.getWidth() + stripingPolicy.getParityWidth();
+
         // determine the set of OSDs to be assigned to the replica
         ServiceSet.Builder usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, clientCoordinates,
-                currentXLoc, stripingPolicy.getWidth());
+                currentXLoc, fullWidth);
 
         if (usableOSDs == null || usableOSDs.getServicesCount() == 0) {
 
@@ -257,7 +259,7 @@ public class MRCHelper {
         }
 
         if (stripingPolicy.getPattern() == "STRIPING_POLICY_ERASURECODE"
-                && usableOSDs.getServicesCount() < stripingPolicy.getWidth() + stripingPolicy.getParityWidth()) {
+                && usableOSDs.getServicesCount() < fullWidth) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.all, (Object) null,
                     "not enough suitable OSDs available for file %s", path);
 
@@ -268,7 +270,7 @@ public class MRCHelper {
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
         int parity = stripingPolicy.getParityWidth();
-        int width = Math.min(stripingPolicy.getWidth() + parity, usableOSDs.getServicesCount());
+        int width = Math.min(fullWidth, usableOSDs.getServicesCount());
 
         // convert the set of OSDs to a string array of OSD UUIDs
         List<Service> osdServices = usableOSDs.getServicesList();

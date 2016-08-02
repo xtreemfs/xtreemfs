@@ -20,6 +20,7 @@ class Volume:
                  pkcs12_passphrase,
                  stripe_width,
                  stripe_size,
+                 stripe_parity_width,
                  rwr_policy,
                  rwr_factor,
                  ronly_factor):
@@ -38,6 +39,7 @@ class Volume:
         self.__pkcs12_passphrase = pkcs12_passphrase
         self.__stripe_width = stripe_width
         self.__stripe_size = stripe_size
+        self.__stripe_parity_width = stripe_parity_width
         self.__rwr_policy = rwr_policy
         self.__rwr_factor = rwr_factor
         self.__ronly_factor = ronly_factor
@@ -142,6 +144,20 @@ class Volume:
             retcode = subprocess.call(command, shell=True)
             if retcode != 0:
                 raise RuntimeError("Failed to enable read/only replication on volume: " + self.__name
+                    + " xtfsutil return value: " + str(retcode)
+                    + " Executed command: " + command)
+
+        if self.__stripe_parity_width > 0:
+            command = (xtfsutil_file_path + " " +
+                       "--set-dsp " +
+                       "--striping-policy=EC " +
+                       "--striping-policy-width=" + str(self.__stripe_width) + " " +
+                       "--striping-policy-stripe-size=" + str(self.__stripe_size) + " " +
+                       "--striping-policy-parity=" + str(self.__stripe_parity_width) + " " +
+                       self.__mount_point_dir_path)
+            retcode = subprocess.call(command, shell=True)
+            if retcode != 0:
+                raise RuntimeError("Failed to enable erasure code replication on volume: " + self.__name
                     + " xtfsutil return value: " + str(retcode)
                     + " Executed command: " + command)
 

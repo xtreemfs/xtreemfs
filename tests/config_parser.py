@@ -66,6 +66,7 @@ class TestConfig:
                 raise Exception('VolumeConfig '+str(k)+' is missing a field: rwr_factor')
             if not v.has_key('ronly_factor'):
                 raise Exception('VolumeConfig '+str(k)+' is missing a field: ronly_factor')
+            v.setdefault("stripe_parity_width", 0)
 
         if self.__selectedVolume is not None:
             if self.__selectedVolume not in cfgVars['VolumeConfigs']:

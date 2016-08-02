@@ -1139,8 +1139,10 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 file.getCurVector().insert(worker.getRequestInterval());
 
                 // FIXME (jdillmann): Get truncate epoch
-                OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(file.getCurVector().getEnd())
-                        .setTruncateEpoch(0).build();
+                long fileSize = file.getCurVector().getEnd();
+                int truncateEpoch = file.getCredentials().getXcap().getTruncateEpoch();
+                OSDWriteResponse response = OSDWriteResponse.newBuilder().setSizeInBytes(fileSize)
+                        .setTruncateEpoch(truncateEpoch).build();
 
                 callback.success(response);
             }
@@ -1365,21 +1367,17 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         public void success(long fileSize);
     }
 
-    public void getFileSize(OSDRequest rq, GetFileSizeCallback callback) {
-        this.enqueueExternalOperation(STAGE_OP.GET_FILE_SIZE, 
-                new Object[] {}, rq, null, callback);
+    public void getFileSize(String fileId, FileCredentials credentials, XLocations loc, GetFileSizeCallback callback,
+            OSDRequest rq) {
+        this.enqueueExternalOperation(STAGE_OP.GET_FILE_SIZE, new Object[] { fileId, credentials, loc }, rq, null,
+                callback);
     }
 
     void processGetFileSize(StageRequest method) {
         final GetFileSizeCallback callback = (GetFileSizeCallback) method.getCallback();
-
-        final OSDRequest rq = method.getRequest();
-        final xtreemfs_internal_get_file_sizeRequest args = (xtreemfs_internal_get_file_sizeRequest) rq
-                .getRequestArgs();
-
-        final String fileId = rq.getFileId();
-        final XLocations loc = rq.getLocationList();
-        final FileCredentials credentials = args.getFileCredentials();
+        final String fileId = (String) method.getArgs()[0];
+        final FileCredentials credentials = (FileCredentials) method.getArgs()[1];
+        final XLocations loc = (XLocations) method.getArgs()[2];
         final StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
 
         assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);

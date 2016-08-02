@@ -12,7 +12,6 @@ import java.util.Set;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.quota.FinalizeVoucherResponseHelper;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
@@ -65,7 +64,7 @@ public class ClearVouchersOperation extends MRCOperation {
         // Striping with active replication isn't supported, so the policy should be the same on all replicas
         StripingPolicy sp = cvRequest.getCreds().getXlocs().getReplicasList().get(0).getStripingPolicy();
 
-        if (osdFinalizeVouchersResponseList.size() != sp.getWidth()) {
+        if (osdFinalizeVouchersResponseList.size() != (sp.getWidth() + sp.getParityWidth())) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, cvRequest
                     + " has a mismach for the width of the striping policy and the OSDFinalizeVouchersRespone count");
         }
