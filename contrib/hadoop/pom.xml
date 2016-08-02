@@ -163,11 +163,12 @@
                 <filter>
                   <artifact>org.xtreemfs.xtreemfs:xtreemfs-servers</artifact>
                   <excludes>
+                    <exclude>xtreemfs-mib.txt</exclude>
+                    <exclude>mib_core.txt</exclude>
                     <exclude>org/xtreemfs/dir/templates/**</exclude>
                     <exclude>org/xtreemfs/mrc/templates/**</exclude>
                     <exclude>org/xtreemfs/osd/templates/**</exclude>
-                    <exclude>org/xtreemfs/sandbox/compile-DirectIOReader.txt</exclude>
-                    <exclude>org/xtreemfs/sandbox/ThroughputTest.properties</exclude>
+                    <exclude>org/xtreemfs/sandbox/**</exclude>
                   </excludes>
                 </filter>
               </filters>
