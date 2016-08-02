@@ -232,8 +232,7 @@
                   <excludes>
                     <exclude>xtreemfs-mib.txt</exclude>
                     <exclude>mib_core.txt</exclude>
-                    <exclude>org/xtreemfs/sandbox/compile-DirectIOReader.txt</exclude>
-                    <exclude>org/xtreemfs/sandbox/ThroughputTest.properties</exclude>
+                    <exclude>org/xtreemfs/sandbox/**</exclude>
                   </excludes>
                 </filter>
               </filters>

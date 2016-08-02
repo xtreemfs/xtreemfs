@@ -10,6 +10,7 @@ package org.xtreemfs.common.benchmark;
 
 import org.xtreemfs.common.libxtreemfs.AdminClient;
 import org.xtreemfs.common.libxtreemfs.FileHandle;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 import java.io.IOException;
@@ -47,6 +48,10 @@ class FilebasedWriteBenchmark extends FilebasedBenchmark {
                 | GlobalTypes.SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
 
         for (long i = 0; !cancelled && i < numberOfFiles; i++) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Writing file %d of %d ...", i + 1, numberOfFiles);
+            }
+            
             FileHandle fileHandle = volume.openFile(config.getUserCredentials(), BENCHMARK_FILENAME + i, flags, 511);
             this.filenames.add(BENCHMARK_FILENAME + i);
 
