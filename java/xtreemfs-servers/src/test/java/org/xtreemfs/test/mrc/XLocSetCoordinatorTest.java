@@ -122,7 +122,7 @@ public class XLocSetCoordinatorTest {
 
         options.setMaxTries(2);
 
-        client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
         client.start();
 
         LEASE_TIMEOUT_MS = configs[0].getFleaseLeaseToMS();
