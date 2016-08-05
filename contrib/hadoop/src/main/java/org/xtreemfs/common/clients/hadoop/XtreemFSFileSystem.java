@@ -272,8 +272,8 @@ public class XtreemFSFileSystem extends FileSystem {
         xtreemfsOptions.setMetadataCacheSize(0);
         
         // Use the native client and use async writes if requested.
-        ClientFactory.ClientType clientType = ClientFactory.ClientType.JAVA;
-        if (conf.getBoolean("xtreemfs.jni.enabled", false)) {
+        ClientFactory.ClientType clientType;
+        if (conf.getBoolean("xtreemfs.jni.enabled", true)) {
             clientType = ClientFactory.ClientType.NATIVE;
             
             String libraryPath = conf.get("xtreemfs.jni.libraryPath");
@@ -289,6 +289,8 @@ public class XtreemFSFileSystem extends FileSystem {
             if (maxWriteAhead > -1) {
                 xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
             }
+        } else {
+            clientType = ClientFactory.ClientType.JAVA
         }
         
         // Initialize XtreemFS Client

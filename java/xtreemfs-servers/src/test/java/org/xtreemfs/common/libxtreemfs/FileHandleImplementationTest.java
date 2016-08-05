@@ -92,7 +92,7 @@ public class FileHandleImplementationTest {
         mrcClient = testEnv.getMrcClient();
 
         options = new Options();
-        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
     }
 
@@ -108,7 +108,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -137,7 +137,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -153,7 +153,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -169,7 +169,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -185,7 +185,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -201,7 +201,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);
@@ -230,7 +230,7 @@ public class FileHandleImplementationTest {
         String fileName = "testfile";
         int flags = SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_CREAT.getNumber()
                 | SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDWR.getNumber();
-        Client client = ClientFactory.createClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        Client client = ClientFactory.createClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcAddress, auth, userCredentials, volumeName);
         Volume volume = client.openVolume(volumeName, null, options);

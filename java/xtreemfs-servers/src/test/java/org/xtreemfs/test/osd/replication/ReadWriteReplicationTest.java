@@ -83,7 +83,7 @@ public class ReadWriteReplicationTest {
 
         options = new Options();
 
-        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
     }
 

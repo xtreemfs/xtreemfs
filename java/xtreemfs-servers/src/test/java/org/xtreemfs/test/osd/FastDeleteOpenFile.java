@@ -84,7 +84,7 @@ public class FastDeleteOpenFile {
         String globalFileId = null;
 
         // Create client.
-        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddress, userCredentials, null, options);
         client.start();
 
         // Create and open volume.

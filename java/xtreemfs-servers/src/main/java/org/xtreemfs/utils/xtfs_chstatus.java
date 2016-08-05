@@ -140,7 +140,7 @@ public class xtfs_chstatus {
 
         String newStatusName = (arguments.size() == 2) ? arguments.get(1) : null;
 
-        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddrs, RPCAuthentication.userService,
+        AdminClient client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddrs, RPCAuthentication.userService,
                 sslOptions, new Options());
         try {
             client.start();

@@ -177,7 +177,7 @@ public class DIRTest {
 
         // change status of osd
         InetSocketAddress dirAddress = SetupUtils.getDIRAddr();
-        AdminClient adminClient = ClientFactory.createAdminClient(ClientType.JAVA, 
+        AdminClient adminClient = ClientFactory.createAdminClient(ClientType.NATIVE, 
                 dirAddress.getHostName() + ":" + dirAddress.getPort(), RPCAuthentication.userService, null,
                 new Options());
         adminClient.start();
