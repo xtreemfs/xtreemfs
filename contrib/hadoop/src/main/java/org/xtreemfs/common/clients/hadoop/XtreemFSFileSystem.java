@@ -290,7 +290,7 @@ public class XtreemFSFileSystem extends FileSystem {
                 xtreemfsOptions.setMaxWriteAhead(maxWriteAhead);
             }
         } else {
-            clientType = ClientFactory.ClientType.JAVA
+            clientType = ClientFactory.ClientType.JAVA;
         }
         
         // Initialize XtreemFS Client
