@@ -972,7 +972,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
             StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
             long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
-            long end = sp.getObjectStartOffset((stripeNo + 1) + sp.getWidth());
+            long end = sp.getObjectStartOffset((stripeNo + 1) * sp.getWidth());
 
             Interval reqInterval = worker.getRequestInterval();
             Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
@@ -1106,7 +1106,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             
             StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
             long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
-            long end = sp.getObjectStartOffset((stripeNo + 1) + sp.getWidth());
+            long end = sp.getObjectStartOffset((stripeNo + 1) * sp.getWidth());
             
             Interval reqInterval = worker.getRequestInterval();
             Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
