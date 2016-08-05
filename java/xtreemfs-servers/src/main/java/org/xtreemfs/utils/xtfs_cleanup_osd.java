@@ -192,7 +192,7 @@ public class xtfs_cleanup_osd {
         Options userOptions = new Options();
         UserCredentials userCredentials = UserCredentials.newBuilder().setUsername("root").addGroups("root")
                 .build();
-        client = ClientFactory.createAdminClient(ClientType.JAVA, dirAddrs, userCredentials, sslOptions, userOptions);
+        client = ClientFactory.createAdminClient(ClientType.NATIVE, dirAddrs, userCredentials, sslOptions, userOptions);
         try {
             client.start();
         } catch (Exception e) {

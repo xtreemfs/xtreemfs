@@ -36,7 +36,7 @@ public class xtfs_benchmark {
      */
     public static void main(String[] args) throws Exception {
 
-        Logging.start(Logging.LEVEL_DEBUG, Category.tool);
+        Logging.start(Logging.LEVEL_INFO, Category.tool);
         Logging.redirect(System.err);
 
         cliOptions.parseCLIOptions(args);
