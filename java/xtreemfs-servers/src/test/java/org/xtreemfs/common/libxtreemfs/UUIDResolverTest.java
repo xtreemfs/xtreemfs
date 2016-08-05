@@ -55,7 +55,7 @@ public class UUIDResolverTest {
 
         String dirAddress = testEnv.getDIRAddress().getHostName() + ":" + testEnv.getDIRAddress().getPort();
 
-        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.NATIVE, 
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
         		dirAddress, userCredentials, null, options);
         client.start();
 
@@ -117,7 +117,7 @@ public class UUIDResolverTest {
         // should throw an VolumeNotFoundException
         // Do not retry here to avoid unnecessary lengthy executions.
         options.setMaxTries(1);
-        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient(ClientType.NATIVE, 
+        ClientImplementation clientFail = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
         		"doesntexists:44444", userCredentials, null, options);
         clientFail.start();
         UUIDResolver resolverFail = clientFail;

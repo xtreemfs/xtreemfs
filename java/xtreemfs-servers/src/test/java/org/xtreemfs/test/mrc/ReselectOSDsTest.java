@@ -98,7 +98,7 @@ public class ReselectOSDsTest {
         String fileName = "testfile";
 
         Options options = new Options();
-        AdminClient client = ClientFactory.createAdminClient(ClientType.NATIVE, dirServiceAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddress, userCredentials, null, options);
         client.start();
 
         client.createVolume(mrcServiceAddress, auth, userCredentials, volumeName);
@@ -167,7 +167,7 @@ public class ReselectOSDsTest {
         String fileName = "testfile";
 
         Options options = new Options();
-        AdminClient client = ClientFactory.createAdminClient(ClientType.NATIVE, dirServiceAddress, userCredentials, null, options);
+        AdminClient client = ClientFactory.createAdminClient(ClientType.JAVA, dirServiceAddress, userCredentials, null, options);
         client.start();
 
         client.createVolume(mrcServiceAddress, auth, userCredentials, volumeName);

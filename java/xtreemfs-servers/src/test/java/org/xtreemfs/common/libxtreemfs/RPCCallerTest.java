@@ -106,7 +106,7 @@ public class RPCCallerTest {
         final int NUMBER_OF_REPLICAS = 2;
 
         Options options = new Options();
-        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.NATIVE, 
+        ClientImplementation client = (ClientImplementation) ClientFactory.createClient(ClientType.JAVA, 
         		dirServiceAddress, userCredentials, null, options);
         client.start();
         client.createVolume(mrcServiceAddress, auth, userCredentials, VOLUME_NAME);
