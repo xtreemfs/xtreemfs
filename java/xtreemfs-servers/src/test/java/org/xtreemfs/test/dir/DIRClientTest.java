@@ -118,11 +118,13 @@ public class DIRClientTest {
         dir1 = new DummyDir(1);
         dir2 = new DummyDir(2);
 
-        dummy1 = new RPCNIOSocketServer(PORT_DIR1, null, dir1, null);
+        // 7 bind retries to port because they might not be free
+        // exponential backoff, so wait at most 1 + 2 + 4 + 8 + 16 + 32 + 64 = 127s
+        dummy1 = new RPCNIOSocketServer(PORT_DIR1, null, dir1, null, 7);
         dummy1.start();
         dummy1.waitForStartup();
 
-        dummy2 = new RPCNIOSocketServer(PORT_DIR2, null, dir2, null);
+        dummy2 = new RPCNIOSocketServer(PORT_DIR2, null, dir2, null, 7);
         dummy2.start();
         dummy2.waitForStartup();
 
