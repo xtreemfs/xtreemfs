@@ -23,6 +23,7 @@ xtreemfs_release_names="
 1.3|Tasty Tartlet
 1.4|Salty Sticks
 1.5|Wonderful Waffles
+1.6|Phantastic Pancakes
 "
 
 function display_usage() {

@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.5.1
+Version 1.6.0
 \end{flushleft}
 
 
@@ -47,6 +47,39 @@ This document is \copyright{} 2009-\the\year{} by Bj\"orn Kolbeck, Jan Stender, 
 \tableofcontents
 
 \chapter*{Changes}
+
+Summary of important changes in release 1.6.0:
+
+\begin{itemize}
+  \item \textbf{Extended Quota implementation}\\
+      Previous quota implementation is superseded, hard quotas for volumes
+      and users and groups per volume have been added, quota information
+      import and export has been added. The MRC data version has been updated,
+      see section~\ref{sec:\ref{sec:mrcdbtools}} for how to update from
+      version 1.5.x to 1.6.0.
+  \item \textbf{Full support for /etc/fstab mounting}\\
+      All mount options can be passed to XtreemFS via /etc/fstab options.
+      This fixes the partial, previous implementation.
+  \item \textbf{Java library rebased on C++}\\
+      The Java library now consists of wrappers around the C++ library,
+      thus providing an identical feature set.
+  \item \textbf{Improved Hadoop support}\\
+      The Hadoop adapter works with a broader range of systems and versions.
+  \item \textbf{New startup option}\\
+      \texttt{listen.port.bind\_retries} configures exponential backoff during
+      service startup if the port is not free yet.
+  \item \textbf{New tracing policy}\\
+      Tracing data can be sent to RabbitMQ (ID 6003), queue "xtreemfs-trace".
+  \item \textbf{Maven conversion}\\
+      Java components have been converted from Ant to Maven and are available
+      as artifacts on GitHub.
+  \item \textbf{Codebase cleanup}\\
+      Generated code has been excluded from the repository, as well as previously
+      shipped binaries.
+  \item \textbf{Bugfixes and improvements}\\
+      Changes integrated into the unstable packages over time are now implemented
+      in this stable version.
+\end{itemize}
 
 Summary of important changes in release 1.5.1:
 
@@ -2626,6 +2659,8 @@ $> xtfsutil --enable-tracing-config=/tmp/file_access.log /path/to/mounted/volume
     the \emph{--trace-policy-config} option.
   \item \textbf{Socket-based tracing (policy ID 6002)} Writes access trace to a
     server socket, that is listening on each OSD. The listening port ist 9999.
+  \item \textbf{RabbitMQ tracing (policy ID 6003)} Writes access trace to a
+    RabbitMQ queue "xtreemfs-trace".
 \end{itemize}
 
 User defined tracing policies can be added by implementing the following Java

@@ -58,7 +58,7 @@ In your `pom.xml` add:
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-hadoop-client</artifactId>
-      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0</version>
       <!-- The shaded version bundles:                                                                   -->
       <!-- - com.google.protobuf:protobuf-java                                                           -->
       <!-- - org.xtreemfs.xtreemfs:xtreemfs-foundation                                                   -->

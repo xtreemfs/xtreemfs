@@ -50,7 +50,7 @@ if [ $CMD = "unstable" -o $CMD = "testing" ]; then
   SELECTED_PROJECT=$HOME_PROJECT_PREFIX":"$CMD
   SELECTED_PACKAGE="xtreemfs-testing"
 else
-  SELECTED_PROJECT=$HOME_PROJECT_PREFIX:"1.5.x"
+  SELECTED_PROJECT=$HOME_PROJECT_PREFIX:"1.6.x"
   SELECTED_PACKAGE="xtreemfs"
 fi
 
