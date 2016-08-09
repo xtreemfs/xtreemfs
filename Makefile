@@ -296,24 +296,9 @@ client_distclean: check_client client_thirdparty_distclean
 	@cd $(XTREEMFS_CLIENT_BUILD_DIR) &>/dev/null && { for i in *.xtreemfs xtfsutil; do [ -f $(XTREEMFS_BINARIES_DIR)/$$i ] && rm -f $(XTREEMFS_BINARIES_DIR)/$$i; done }; true
 	@rm -rf $(XTREEMFS_CLIENT_BUILD_DIR)
 
-CLIENT_PACKAGE_MACOSX_OUTPUT_DIR = XtreemFS_Client_MacOSX.mpkg
-CLIENT_PACKAGE_MACOSX_OUTPUT_FILE = XtreemFS_Client_MacOSX_installer.dmg
 client_package_macosx:
-ifeq ($(CMAKE_BOOST_ROOT),)
-	@echo No BOOST_ROOT environment variable is specified. This will probably fail. Please set it first.; exit 1
-endif
-	@./packaging/set_version.sh -i
-# Clean everything first to ensure we package a clean client.
-	@$(MAKE) client_distclean
-# We call $(MAKE) instead of specifying the targets as requirements as its not possible to define dependencies between these two and this breaks in case of parallel builds.
-	@$(MAKE) client SKIP_SET_SVN_VERSION=1
-	@echo "Running the Apple Packagemaker..."
-	@/Developer/usr/bin/packagemaker -d packaging/macosx/XtreemFS_MacOSX_Package.pmdoc/ -o $(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)
-	@echo "Creating a DMG file..."
-	@if [ -f "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)" ]; then echo "Removing previous file $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)."; rm "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"; fi
-	@hdiutil create -fs HFS+ -srcfolder "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" -volname "XtreemFS Client for MacOSX" "$(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
-	@if [ -d "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)" ]; then echo "Cleaning up temporary files..."; rm -r "$(CLIENT_PACKAGE_MACOSX_OUTPUT_DIR)"; fi
-	@echo "Package file created: $(CLIENT_PACKAGE_MACOSX_OUTPUT_FILE)"
+	@$(MAKE) client_distclean client
+	@./packaging/macosx/build_package.sh 1.6.0
 
 .PHONY: parent parent_clean parent_distclean
 parent:
