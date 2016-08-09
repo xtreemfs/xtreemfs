@@ -146,19 +146,6 @@ then
   usage
 fi
 
-# Set version in client and server version management files.
-set_version_output=$("$XTREEMFS_HOME_DIR/packaging/set_version.sh" -n "$VERSION")
-if [ "$(echo "$set_version_output" | cut -d' ' -f1)" != "OK" ]
-then
-  cat <<EOF
-Automatically setting the version was not successful.
-
-Output of $XTREEMFS_HOME_DIR/packaging/set_version.sh -n $VERSION:
-$set_version_output
-EOF
-  exit 1
-fi
-
 BUILD_FILES_DIR=$XTREEMFS_HOME_DIR/packaging/build-service
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
