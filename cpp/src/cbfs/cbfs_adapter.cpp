@@ -1052,6 +1052,9 @@ void CbFSAdapter::Start() {
 
   // Init CBFS.
   try {
+    // from the installer script
+    cbfs_.Initialize("EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA");
+
     cbfs_.CreateStorage();
     cbfs_.MountMedia(1000 * max(options_->request_timeout_s,
                                 options_->connect_timeout_s));
