@@ -66,6 +66,22 @@
     <site-maven-plugin.version>0.12</site-maven-plugin.version>
   </properties>
 
+  <!-- Provide alternative protoc location if on Windows -->
+  <profiles>
+    <profile>
+      <id>win</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/vsprojects/Release/protoc</protoc.bin>
+      </properties>
+    </profile>
+  </profiles>
+
   <distributionManagement>
     <repository>
       <id>xtreemfs-repository</id>
