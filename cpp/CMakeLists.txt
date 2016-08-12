@@ -110,8 +110,9 @@ IF(WIN32)
     #  CBFS_FOUND       - Output variable: CBFS was found.
     #  CBFS_INCLUDE_DIR - Output variable: Directory which contains the CbFS.h file.
     #  CBFS_LIBRARIES   - Output variable: Will be set to CbFS.lib location.
-    find_path(CBFS_INCLUDE_DIR CbFS.h PATHS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
-    find_library(CBFS_LIBRARY CbFS "$ENV{ProgramFiles}/EldoS/Callback File System/CPP/VC2010/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
+    set(PROGRAM_FILES_X86 "ProgramFiles(x86)")
+    find_path(CBFS_INCLUDE_DIR CbFS.h PATHS "$ENV{${PROGRAM_FILES_X86}}/EldoS/Callback File System/CPP/VC2015/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
+    find_library(CBFS_LIBRARY CbFS "$ENV{${PROGRAM_FILES_X86}}/EldoS/Callback File System/CPP/VC2015/32bit/dynamic_runtime(MD)" ${CBFS_ROOT})
 
     include(FindPackageHandleStandardArgs)
     FIND_PACKAGE_HANDLE_STANDARD_ARGS(CBFS DEFAULT_MSG CBFS_LIBRARY CBFS_INCLUDE_DIR)
