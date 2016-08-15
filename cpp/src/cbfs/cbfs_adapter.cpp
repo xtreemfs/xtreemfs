@@ -48,6 +48,12 @@ static xtreemfs::CbFSAdapter* Adapter(CallbackFileSystem* Sender) {
   return reinterpret_cast<xtreemfs::CbFSAdapter*>(Sender->GetTag());
 }
 
+/** Unimplemented. */
+static void DelegateMount(CallbackFileSystem* sender) {}
+
+/** Unimplemented. */
+static void DelegateUnmount(CallbackFileSystem* sender) {}
+
 static void DelegateGetVolumeSize(CallbackFileSystem* Sender,
                                   __int64* TotalNumberOfSectors,
                                   __int64* NumberOfFreeSectors) {
@@ -177,6 +183,11 @@ static void DelegateDeleteFile(CallbackFileSystem* Sender,
                                CbFsFileInfo* FileInfo) {
   Adapter(Sender)->DeleteFile(Sender, FileInfo);
 }
+
+/** Unimplemented. */
+static void DelegateSetAllocationSize(CallbackFileSystem* Sender,
+                                      CbFsFileInfo* FileInfo,
+                                      __int64 AllocationSize) {}
 
 static void DelegateSetEndOfFile(CallbackFileSystem* Sender,
                                  CbFsFileInfo* FileInfo,
@@ -937,6 +948,8 @@ CbFSAdapter::CbFSAdapter(CbFSOptions* options)
 
   cbfs_.SetChangeTimeAttributeSupported(false);
 
+  cbfs_.SetOnMount(DelegateMount);
+  cbfs_.SetOnUnmount(DelegateUnmount);
   cbfs_.SetOnGetVolumeSize(DelegateGetVolumeSize);
   cbfs_.SetOnGetVolumeLabel(DelegateGetVolumeLabel);
   cbfs_.SetOnSetVolumeLabel(DelegateSetVolumeLabel);
@@ -946,6 +959,7 @@ CbFSAdapter::CbFSAdapter(CbFSOptions* options)
   cbfs_.SetOnCloseFile(DelegateCloseFile);
   cbfs_.SetOnGetFileInfo(DelegateGetFileInfo);
   cbfs_.SetOnEnumerateDirectory(DelegateEnumerateDirectory);
+  cbfs_.SetOnSetAllocationSize(DelegateSetAllocationSize);
   cbfs_.SetOnCloseDirectoryEnumeration(DelegateCloseDirectoryEnumeration);
   cbfs_.SetOnSetEndOfFile(DelegateSetEndOfFile);
   cbfs_.SetOnSetFileAttributes(DelegateSetFileAttributes);
