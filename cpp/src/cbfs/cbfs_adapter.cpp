@@ -29,7 +29,7 @@ using namespace xtreemfs::util;
 namespace xtreemfs {
 
 #define DelegateCheckFlagExt(val, flag, pre, post) \
-    if ((val) & flag) { DbgPrint(L"%s" L#flag L"%s", (pre), (post)); }
+    if (((val) & flag) == flag) { DbgPrint(L"%s" L#flag L"%s", (pre), (post)); }
 
 #define DelegateCheckFlag(val, flag) \
     DelegateCheckFlagExt((val), ##flag, L"\t", L"\n")
