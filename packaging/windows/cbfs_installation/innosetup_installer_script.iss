@@ -8,7 +8,7 @@
 #define MyAppExeName "run_xtreemfs_client_command_line_prompt.bat"
 
 #define GitRoot "..\..\..\"
-#define CbFSAdapterBuildDir GitRoot + "cpp\build\Release\"
+#define CbFSAdapterBuildDir GitRoot + "cpp\build\Debug\"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -105,9 +105,10 @@ begin
   Log('Using CbFS archive: ' + ExpandConstant('{tmp}\cbfs.cab'));
   // Use AppId as ProductName, same as in cbfs_adapter.cpp
   // Empty InstallPath means install to Windows system folders.
-  // 196611 in decimal is 0x00000001 | 0x00000002 | 0x 00010000 | 0x00020000,
-  // see cbfsinst.h for the flags.
-  InstallerResult := RunCbFSInstaller(ExpandConstant('{tmp}\cbfs.cab'), 'EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA', '', 1, 196611, RebootNeeded);
+  // 196608 in decimal is 0x00010000 | 0x00020000, see cbfsinst.h for the flags.
+  // The other two flags are return codes in RebootNeeded to tell which module
+  // caused the need for a reboot.
+  InstallerResult := RunCbFSInstaller(ExpandConstant('{tmp}\cbfs.cab'), 'EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA', '', 1, 196608, RebootNeeded);
   if InstallerResult <> 1 then
   begin
     LastError := GetLastError() 
@@ -117,7 +118,7 @@ end;
 
 function NeedRestart(): Boolean;
 begin
-  If RebootNeeded = 1 then
+  If RebootNeeded <> 0 then
     Result := True
   else
     Result := False;
@@ -154,7 +155,7 @@ end;
 
 function UninstallNeedRestart(): Boolean;
 begin
-  If UninstallRebootNeeded = 1 then
+  If UninstallRebootNeeded <> 0 then
     Result := True
   else
     Result := False;
