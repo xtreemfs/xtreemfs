@@ -298,7 +298,7 @@ void CbFSAdapter::DebugPrintCreateFile(
     DWORD ShareMode,
     CbFsFileInfo* FileInfo,
     CbFsHandleInfo* HandleInfo) {
-  DbgPrint(L"%s : %s File : 0x%x Handle : 0x%x\n", OperationType, FileName, FileInfo->get_UserContext(), HandleInfo->get_UserContext());
+  DbgPrint(L"%s : %s File : 0x%x Handle : 0x%x\n", OperationType, FileName, FileInfo ? FileInfo->get_UserContext() : NULL, HandleInfo ? HandleInfo->get_UserContext() : NULL);
 
   DbgPrint(L"\tShareMode = 0x%x\n", ShareMode);
 
@@ -407,14 +407,9 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
           static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags),
           mode,
           FileAttributes);
-      HandleInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
+      FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
     } CATCH_AND_CONVERT_ERRORS
   }
-
-  // Remember creation file attributes
-  DWORD* file_attributes = new DWORD;
-  *file_attributes = FileAttributes;
-  FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_attributes));
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -453,13 +448,8 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
         ConvertFlagsWindowsToXtreemFS(DesiredAccess),
         mode,
         FileAttributes);
-    HandleInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
+    FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
   } CATCH_AND_CONVERT_ERRORS
-
-  // Remember opening file attributes
-  DWORD* file_attributes = new DWORD;
-  *file_attributes = FileAttributes;
-  FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_attributes));
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -467,7 +457,7 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
 void CbFSAdapter::CloseFile(CallbackFileSystem* Sender,
                             CbFsFileInfo* FileInfo,
                             CbFsHandleInfo* HandleInfo) {
-  FileHandle* file_handle = reinterpret_cast<FileHandle*>(HandleInfo->get_UserContext());
+  FileHandle* file_handle = reinterpret_cast<FileHandle*>(FileInfo->get_UserContext());
 
   if (file_handle == NULL) {
     return;
@@ -802,11 +792,7 @@ void CbFSAdapter::DeleteFile(CallbackFileSystem* Sender,
                              CbFsFileInfo* FileInfo) {
   string path(WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer()));
 
-  DWORD* file_attributes = reinterpret_cast<DWORD*>(FileInfo->get_UserContext());
-  BOOL is_directory = ((*file_attributes) & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
-  delete file_attributes;
-
-  if (is_directory) {
+  if (IsDirectory(path)) {
     try {
       volume_->DeleteDirectory(user_credentials_, path);
     } CATCH_AND_CONVERT_ERRORS
