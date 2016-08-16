@@ -28,8 +28,11 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
+#define DelegateCheckFlagExt(val, flag, pre, post) \
+    if ((val) & flag) { DbgPrint(L"%s" L#flag L"%s", (pre), (post)); }
+
 #define DelegateCheckFlag(val, flag) \
-    if (val & flag) { DbgPrint(L"\t" L#flag L"\n"); }
+    DelegateCheckFlagExt((val), ##flag, L"\t", L"\n")
 
 #define CATCH_AND_CONVERT_ERRORS \
 catch (const PosixErrorException& e) { \
@@ -1052,6 +1055,65 @@ void CbFSAdapter::Start() {
 
   // Init CBFS.
   try {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      DWORD modules[] = { CBFS_MODULE_DRIVER, CBFS_MODULE_NET_REDIRECTOR_DLL, CBFS_MODULE_MOUNT_NOTIFIER_DLL };
+      for (int i = 0; i < 3; ++i) {
+        BOOL Installed = false;
+        INT FileVersionHigh = 0, FileVersionLow = 0;
+        SERVICE_STATUS ServiceStatus;
+        CallbackFileSystem::GetModuleStatus(
+            "EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA", modules[i],
+            &Installed, &FileVersionHigh, &FileVersionLow, &ServiceStatus);
+
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_DRIVER,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_NET_REDIRECTOR_DLL,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_MOUNT_NOTIFIER_DLL,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+
+        if (Installed) {
+          DbgPrint(L"FileVersionHigh:         %d.%d\n", FileVersionHigh >> 16, FileVersionHigh & 0xFFFF);
+          DbgPrint(L"FileVersionLow:          %d.%d\n", FileVersionLow >> 16, FileVersionLow & 0xFFFF);
+
+          DbgPrint(L"ServiceType:             0x%x\n", ServiceStatus.dwServiceType);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_FILE_SYSTEM_DRIVER);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_KERNEL_DRIVER);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_WIN32_OWN_PROCESS);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_WIN32_SHARE_PROCESS);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_INTERACTIVE_PROCESS);
+
+          DbgPrint(L"CurrentState:            0x%x\n", ServiceStatus.dwCurrentState);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_CONTINUE_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_PAUSE_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_PAUSED);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_RUNNING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_START_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_STOP_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_STOPPED);
+
+          DbgPrint(L"ConrolIsAccepted:        0x%x\n", ServiceStatus.dwControlsAccepted);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_NETBINDCHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PARAMCHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PAUSE_CONTINUE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PRESHUTDOWN);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_SHUTDOWN);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_STOP);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_HARDWAREPROFILECHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_POWEREVENT);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_SESSIONCHANGE);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_TIMECHANGE);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_TRIGGEREVENT);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_USERMODEREBOOT);
+
+          DbgPrint(L"Win32ExitCode:           0x%x\n", ServiceStatus.dwWin32ExitCode);
+          DbgPrint(L"ServiceSpecificExitCode: 0x%x\n", ServiceStatus.dwServiceSpecificExitCode);
+          DbgPrint(L"CheckPoint:              0x%x\n", ServiceStatus.dwCheckPoint);
+          DbgPrint(L"WaitHint:                0x%x\n", ServiceStatus.dwWaitHint);
+        }
+      }
+    }
+
     // from the installer script
     CallbackFileSystem::Initialize("EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA");
 
