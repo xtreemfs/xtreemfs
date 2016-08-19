@@ -205,8 +205,8 @@ public class HashStorageLayout extends StorageLayout {
         }
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "initialized with checksums=%s prefixLen=%d",
-                    this.checksumsEnabled, this.prefixLength);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "initialized with checksums=%s prefixLen=%d", this.checksumsEnabled, this.prefixLength);
         }
 
         _stat_fileInfoLoads = 0;
@@ -444,7 +444,7 @@ public class HashStorageLayout extends StorageLayout {
         final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion,
                 newChecksum);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file (COW): %s", newFilename);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing to file (COW): %s", newFilename);
         }
         File file = new File(newFilename);
         String mode = sync ? "rwd" : "rw";
@@ -485,7 +485,7 @@ public class HashStorageLayout extends StorageLayout {
         final long oldVersion = md.getLatestObjectVersion(objNo);
         final String filename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion, 0l);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file: %s", filename);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing to file: %s", filename);
         }
         File file = new File(filename);
         String mode = sync ? "rwd" : "rw";
@@ -512,7 +512,7 @@ public class HashStorageLayout extends StorageLayout {
             String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion, 0l);
             file.renameTo(new File(newFilename));
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "renamed to: %s", newFilename);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "renamed to: %s", newFilename);
             }
             md.updateObjectVersion(objNo, newVersion);
         }
@@ -534,7 +534,7 @@ public class HashStorageLayout extends StorageLayout {
         final String newFilename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, newVersion,
                 newChecksum);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file: %s", newFilename);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this, "writing to file: %s", newFilename);
         }
         File file = new File(newFilename);
         String mode = sync ? "rwd" : "rw";
@@ -1620,8 +1620,8 @@ public class HashStorageLayout extends StorageLayout {
         File vectorFile = next ? new File(fileDir, EC_VERSIONS_NEXT) : new File(fileDir, EC_VERSIONS_CUR);
 
         if (!fileDir.exists() || !vectorFile.exists()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Could not get %s IntervalVector for fileId %s",
-                    (next ? "next" : "current"), fileId);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.storage, this,
+                    "Could not get %s IntervalVector for fileId %s", (next ? "next" : "current"), fileId);
             return false;
             // throw new FileNotFoundException()
         }

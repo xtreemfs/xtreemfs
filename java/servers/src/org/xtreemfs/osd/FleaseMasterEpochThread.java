@@ -13,6 +13,7 @@ import java.io.IOException;
 import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
 import org.xtreemfs.foundation.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.StorageLayout;
 
@@ -42,7 +43,8 @@ public class FleaseMasterEpochThread extends Stage implements MasterEpochHandler
                 try {
                     message.setMasterEpochNumber(layout.getMasterEpoch(fileId));
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "fetched master epoch for %s: %d", fileId, message.getMasterEpochNumber());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "fetched master epoch for %s: %d",
+                            fileId, message.getMasterEpochNumber());
                     }
                 } catch (IOException ex) {
                     Logging.logError(Logging.LEVEL_ERROR, this, ex);
@@ -55,7 +57,8 @@ public class FleaseMasterEpochThread extends Stage implements MasterEpochHandler
                 try {
                     layout.setMasterEpoch(fileId, (int)message.getMasterEpochNumber());
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, this, "set master epoch for %s: %d", fileId, message.getMasterEpochNumber());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.flease, this, "set master epoch for %s: %d",
+                            fileId, message.getMasterEpochNumber());
                     }
                     callback.processingFinished();
                 } catch (IOException ex) {

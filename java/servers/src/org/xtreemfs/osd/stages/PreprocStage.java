@@ -154,7 +154,7 @@ public class PreprocStage extends Stage {
             if (err != null) {
                 callback.parseComplete(request, err);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this,
                         "authentication of request failed: %s", ErrorUtils.formatError(err));
                 }
                 return;
@@ -169,7 +169,7 @@ public class PreprocStage extends Stage {
             if (error != null) {
                 callback.parseComplete(request, error);
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this,
                             "request failed with an invalid view: %s", ErrorUtils.formatError(error));
                 }
                 return;
@@ -620,7 +620,8 @@ public class PreprocStage extends Stage {
         final Capability rqCap = rq.getCapability();
         
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "capability: %s", rqCap.getXCap().toString().replace('\n', '/'));
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this, "capability: %s",
+                    rqCap.getXCap().toString().replace('\n', '/'));
         }
         
         // check if the capability has valid arguments
@@ -643,8 +644,8 @@ public class PreprocStage extends Stage {
             final Capability cap = cachedCaps.get(rqCap.getSignature());
             if (cap != null) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this, "using cached cap: %s %s", cap.getFileId(),
-                        cap.getSignature());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "using cached cap: %s %s",
+                            cap.getFileId(), cap.getSignature());
                 }
                 isValid = !cap.hasExpired();
             }

@@ -229,7 +229,10 @@ public class ECFileState {
 
         for (Interval interval : overlapping) {
             if (!interval.isEmpty() && !interval.equalsVersionId(reqInterval)) {
-                System.out.println(overlapping + " <- " + reqInterval);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "%s Overlapping write request %s <- %s",
+                            this, overlapping, reqInterval);
+                }
                 return true;
             }
         }

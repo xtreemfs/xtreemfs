@@ -115,12 +115,10 @@ public class ECStorage {
 
                 if (failed) {
                     Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
-                            "OSD %d needs reconstruction for fileId=%s.", sp.getRelativeOSDPosition(), fileId);
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                                "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals,
-                                fi.getECCurVector().serialize(), fi.getECNextVector().serialize());
-                    }
+                            "OSD %d needs reconstruction for fileId=%s.%s", sp.getRelativeOSDPosition(), fileId,
+                            (Logging.isDebug() ? String.format("\n\tcommit=%s\n\tcur   =%s\n\tnext  =%s",
+                                    commitIntervals, fi.getECCurVector().serialize(), fi.getECNextVector().serialize())
+                                    : ""));
                     needsRecontruction = true;
                 }
 
@@ -302,13 +300,11 @@ public class ECStorage {
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
-                        sp.getRelativeOSDPosition(), fileId);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                            "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals, curVecIntervals,
-                            nextVecIntervals);
-                }
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                        "OSD %d needs reconstruction for fileId=%s.%s", sp.getRelativeOSDPosition(), fileId,
+                        (Logging.isDebug() ? String.format("\n\tcommit=%s\n\tcur   =%s\n\tnext  =%s",
+                                commitIntervals, fi.getECCurVector().serialize(), fi.getECNextVector().serialize())
+                                : ""));
 
                 callback.ecWriteIntervalComplete(null, true, null);
                 return;
@@ -425,13 +421,11 @@ public class ECStorage {
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
-                        sp.getRelativeOSDPosition(), fileId);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                            "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals, curVecIntervals,
-                            nextVecIntervals);
-                }
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                        "OSD %d needs reconstruction for fileId=%s.%s", sp.getRelativeOSDPosition(), fileId,
+                        (Logging.isDebug() ? String.format("\n\tcommit=%s\n\tcur   =%s\n\tnext  =%s",
+                                commitIntervals, fi.getECCurVector().serialize(), fi.getECNextVector().serialize())
+                                : ""));
                 callback.ecWriteDiffComplete(false, true, null);
                 return;
             }
@@ -546,13 +540,10 @@ public class ECStorage {
             // the current object read range. But to keep it simple and uniform we require the whole commit interval to
             // be present. This (faulty) behavior is also present in the commit vector routines.
             if (failed) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
-                        sp.getRelativeOSDPosition(), fileId);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                            "commitInterval=%s\ncurVector=%s\nextVector=%s", intervals, curOverlapping,
-                            nextOverlapping);
-                }
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                        "OSD %d needs reconstruction for fileId=%s.%s", sp.getRelativeOSDPosition(), fileId,
+                        (Logging.isDebug() ? String.format("\n\tcommit=%s\n\tcur   =%s\n\tnext  =%s", 
+                                intervals, curOverlapping, nextOverlapping) : ""));
 
                 callback.ecReadDataComplete(null, true, null);
                 return;
@@ -632,13 +623,10 @@ public class ECStorage {
             // the current object read range. But to keep it simple and uniform we require the whole commit interval to
             // be present. This (faulty) behavior is also present in the commit vector routines.
             if (failed) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
-                        sp.getRelativeOSDPosition(), fileId);
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                            "commitInterval=%s\ncurVector=%s\nextVector=%s", intervals, curOverlapping,
-                            nextOverlapping);
-                }
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                        "OSD %d needs reconstruction for fileId=%s.%s", sp.getRelativeOSDPosition(), fileId,
+                        (Logging.isDebug() ? String.format("\n\tcommit=%s\n\tcur   =%s\n\tnext  =%s", 
+                                intervals, curOverlapping, nextOverlapping) : ""));
                 callback.ecReadParityComplete(null, true, null);
                 return;
             }
