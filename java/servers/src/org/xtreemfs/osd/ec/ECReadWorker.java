@@ -24,7 +24,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
@@ -203,14 +202,13 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                     // make local request
                     handler.addLocal(chunkState);
                     ECReadOperation readOp = (ECReadOperation) master.getOperation(ECReadOperation.PROC_ID);
-                    readOp.startLocalRequest(fileId, sp, objNo, objOffset, objLength, commitIntervalMsgs, false,
-                            handler);
+                    readOp.startLocalRequest(fileId, sp, objNo, objOffset, objLength, commitIntervalMsgs, handler);
                 } else {
                     try {
                         ServiceUUID server = getRemote(osdNo);
                         RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read(
                                 server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                                fileCredentials, fileId, objNo, objOffset, objLength, commitIntervalMsgs, false);
+                                fileCredentials, fileId, objNo, objOffset, objLength, commitIntervalMsgs);
                         handler.addRemote(rpcResponse, chunkState);
 
                     } catch (IOException ex) {

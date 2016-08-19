@@ -63,9 +63,6 @@ public class ECReadOperation extends OSDOperation {
         final int offset = args.getOffset();
         final int length = args.getLength();
 
-        final boolean ignoreAbort = args.getIgnoreAbort();
-
-
         // Create the IntervalVector from the message
         final List<Interval> intervals = new ArrayList<Interval>(args.getIntervalsCount());
         for (IntervalMsg msg : args.getIntervalsList()) {
@@ -86,7 +83,7 @@ public class ECReadOperation extends OSDOperation {
             // The objNo is the stripeNo in case of parity devices
             long stripeNo = objNo;
 
-            master.getStorageStage().ecReadParity(fileId, sp, stripeNo, offset, length, intervals, ignoreAbort, rq,
+            master.getStorageStage().ecReadParity(fileId, sp, stripeNo, offset, length, intervals, rq,
                     new ECReadParityCallback() {
 
                         @Override
@@ -109,7 +106,7 @@ public class ECReadOperation extends OSDOperation {
                         }
                     });
         } else {
-            master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, ignoreAbort, rq,
+            master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, rq,
                     new ECReadDataCallback() {
 
                         @Override
@@ -135,7 +132,7 @@ public class ECReadOperation extends OSDOperation {
     }
 
     public void startLocalRequest(final String fileId, final StripingPolicyImpl sp, final long objNo, final int offset,
-            final int length, final List<IntervalMsg> intervalMsgs, boolean ignoreAbort,
+            final int length, final List<IntervalMsg> intervalMsgs,
             final InternalOperationCallback<xtreemfs_ec_readResponse> callback) {
 
         // Create the IntervalVector from the message
@@ -158,7 +155,7 @@ public class ECReadOperation extends OSDOperation {
             // The objNo is the stripeNo in case of parity devices
             long stripeNo = objNo;
 
-            master.getStorageStage().ecReadParity(fileId, sp, stripeNo, offset, length, intervals, ignoreAbort, null,
+            master.getStorageStage().ecReadParity(fileId, sp, stripeNo, offset, length, intervals, null,
                     new ECReadParityCallback() {
 
                         @Override
@@ -179,7 +176,7 @@ public class ECReadOperation extends OSDOperation {
                         }
                     });
         } else {
-            master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, ignoreAbort, null,
+            master.getStorageStage().ecReadData(fileId, sp, objNo, offset, length, intervals, null,
                     new ECReadDataCallback() {
                         @Override
                         public void ecReadDataComplete(ObjectInformation result, boolean needsReconstruct,

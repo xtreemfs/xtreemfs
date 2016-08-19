@@ -21,18 +21,16 @@ import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.test.TestHelper;
 
-public class ECStorageTest extends ECTestCommon {
+public class ECPolicyTest extends ECTestCommon {
     @Rule
     public final TestRule testLog = TestHelper.testLog;
 
     @Test
-    public void testcalculateIntervalsToCommitAbort() throws Exception {
+    public void testcalculateIntervalsToCommit() throws Exception {
         LinkedList<Interval> expectedCommit = new LinkedList<Interval>();
-        LinkedList<Interval> expectedAbort = new LinkedList<Interval>();
 
         boolean failed;
         LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
-        LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
         LinkedList<Interval> reqVecIntervals = new LinkedList<Interval>();
         LinkedList<Interval> curVecIntervals = new LinkedList<Interval>();
         LinkedList<Interval> nextVecIntervals = new LinkedList<Interval>();
@@ -43,23 +41,22 @@ public class ECStorageTest extends ECTestCommon {
 
         // Commit to an empty cur vector
         // *****************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
         interval = new ObjectInterval(0, 12, 1, 1);
         nextVecIntervals.add(interval);
         reqVecIntervals.add(interval);
         expectedCommit.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
         
 
         // Abort failed op overlapping with two committed intervals
         // ********************************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
         
         interval = new ObjectInterval(0, 6, 1, 1);
@@ -70,18 +67,16 @@ public class ECStorageTest extends ECTestCommon {
         reqVecIntervals.add(interval);
         interval = new ObjectInterval(3, 9, 3, 3);
         nextVecIntervals.add(interval);
-        expectedAbort.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
 
 
         // Abort two failed ops overlapping with one larger committed interval
         // *******************************************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 12, 1, 1);
@@ -90,21 +85,18 @@ public class ECStorageTest extends ECTestCommon {
 
         interval = new ObjectInterval(3, 6, 2, 2);
         nextVecIntervals.add(interval);
-        expectedAbort.add(interval);
         interval = new ObjectInterval(6, 9, 2, 3);
         nextVecIntervals.add(interval);
-        expectedAbort.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
 
 
         // Commit with splitting op
         // *****************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 6, 1, 1);
@@ -123,16 +115,15 @@ public class ECStorageTest extends ECTestCommon {
         interval = new ObjectInterval(9, 12, 2, 2);
         reqVecIntervals.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
 
         
         // Ignore fragments of the commit interval
         // *****************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 6, 2, 2, 0, 12);
@@ -143,10 +134,9 @@ public class ECStorageTest extends ECTestCommon {
 
         reqInterval = new ObjectInterval(6, 12, 2, 2);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, reqInterval, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, reqInterval, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
 
         // Test if the actual commit loop is entered
@@ -155,29 +145,28 @@ public class ECStorageTest extends ECTestCommon {
         reqVecIntervals.clear();
         reqVecIntervals.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, reqInterval, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, reqInterval, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertFalse(failed);
-        assertEquals(expectedAbort, toAbortAcc);
         assertEquals(expectedCommit, toCommitAcc);
 
 
         // Test failure with missing interval
         // *****************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 12, 1, 2);
         reqVecIntervals.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertTrue(failed);
 
 
         // Test failure with incomplete write from the same version, but older id
         // **********************************************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 6, 1, 2);
@@ -190,14 +179,14 @@ public class ECStorageTest extends ECTestCommon {
         interval = new ObjectInterval(6, 12, 1, 1);
         nextVecIntervals.add(interval);
 
-        failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                nextVecIntervals, toCommitAcc, toAbortAcc);
+        failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                nextVecIntervals, toCommitAcc);
         assertTrue(failed);
 
 
         // Test IOError if reqVector is smaller then curVector
         // **********************************************************************
-        clearAll(expectedCommit, expectedAbort, toCommitAcc, toAbortAcc, reqVecIntervals, curVecIntervals,
+        clearAll(expectedCommit, toCommitAcc, reqVecIntervals, curVecIntervals,
                 nextVecIntervals);
 
         interval = new ObjectInterval(0, 12, 1, 1);
@@ -207,8 +196,8 @@ public class ECStorageTest extends ECTestCommon {
         curVecIntervals.add(interval);
 
         try {
-            failed = ECPolicy.calculateIntervalsToCommitAbort(reqVecIntervals, null, curVecIntervals,
-                    nextVecIntervals, toCommitAcc, toAbortAcc);
+            failed = ECPolicy.calculateIntervalsToCommit(reqVecIntervals, null, curVecIntervals,
+                    nextVecIntervals, toCommitAcc);
             fail();
         } catch (IOException ex) {
             // expected

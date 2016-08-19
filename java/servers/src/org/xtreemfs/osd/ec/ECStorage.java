@@ -105,13 +105,12 @@ public class ECStorage {
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
 
             List<Interval> toCommit = new LinkedList<Interval>();
-            List<Interval> toAbort = new LinkedList<Interval>();
             List<Interval> missing = new LinkedList<Interval>();
 
             boolean needsRecontruction = false;
             if (!commitIntervals.isEmpty()) {
-                boolean failed = ECPolicy.calculateIntervalsToCommitAbort(commitIntervals, null,
-                        fi.getECCurVector().serialize(), fi.getECNextVector().serialize(), toCommit, toAbort, missing);
+                boolean failed = ECPolicy.calculateIntervalsToCommit(commitIntervals, null,
+                        fi.getECCurVector().serialize(), fi.getECNextVector().serialize(), toCommit, missing);
 
                 if (failed) {
                     Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
@@ -132,7 +131,7 @@ public class ECStorage {
             }
 
             // Abort everything in the next vector
-            // FIXME (jdillmann): Also delete the EC data?
+            // FIXME (jdillmann): Also delete the EC data
             AVLTreeIntervalVector emptyNextVector = new AVLTreeIntervalVector();
             layout.setECIntervalVector(fileId, emptyNextVector.serialize(), true, false);
             fi.setECNextVector(emptyNextVector);
@@ -291,10 +290,9 @@ public class ECStorage {
             List<Interval> nextVecIntervals = nextVector.getOverlapping(commitStart, commitEnd);
 
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
-            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
 
-            boolean failed = ECPolicy.calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals,
-                    nextVecIntervals, toCommitAcc, toAbortAcc);
+            boolean failed = ECPolicy.calculateIntervalsToCommit(commitIntervals, reqInterval, curVecIntervals,
+                    nextVecIntervals, toCommitAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
@@ -311,9 +309,6 @@ public class ECStorage {
             // Commit or abort intervals from the next vector.
             for (Interval interval : toCommitAcc) {
                 commitECData(fileId, fi, interval);
-            }
-            for (Interval interval : toAbortAcc) {
-                abortECData(fileId, fi, interval);
             }
 
             if (data != null) {
@@ -412,10 +407,9 @@ public class ECStorage {
             List<Interval> nextVecIntervals = nextVector.getOverlapping(commitStart, commitEnd);
 
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
-            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
 
-            boolean failed = ECPolicy.calculateIntervalsToCommitAbort(commitIntervals, diffInterval, curVecIntervals,
-                    nextVecIntervals, toCommitAcc, toAbortAcc);
+            boolean failed = ECPolicy.calculateIntervalsToCommit(commitIntervals, diffInterval, curVecIntervals,
+                    nextVecIntervals, toCommitAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
@@ -431,9 +425,6 @@ public class ECStorage {
             // Commit or abort intervals from the next vector.
             for (Interval interval : toCommitAcc) {
                 commitECDelta(fileId, fi, interval);
-            }
-            for (Interval interval : toAbortAcc) {
-                abortECData(fileId, fi, interval);
             }
 
             // Check operation boundaries.
@@ -505,7 +496,6 @@ public class ECStorage {
         final int offset = (Integer) rq.getArgs()[3];
         final int length = (Integer) rq.getArgs()[4];
         final List<Interval> intervals = (List<Interval>) rq.getArgs()[5];
-        final boolean ignoreAbort = (Boolean) rq.getArgs()[6];
 
         assert (!intervals.isEmpty());
         assert (offset + length <= sp.getStripeSizeForObject(objNo));
@@ -529,9 +519,8 @@ public class ECStorage {
             List<Interval> nextOverlapping = nextVector.getOverlapping(commitStart, commitEnd);
 
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
-            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
-            boolean failed = ECPolicy.calculateIntervalsToCommitAbort(intervals, null, curOverlapping, nextOverlapping,
-                    toCommitAcc, toAbortAcc);
+            boolean failed = ECPolicy.calculateIntervalsToCommit(intervals, null, curOverlapping, nextOverlapping,
+                    toCommitAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             // Note: this is actually to rigorous, since we would only have to care about the overlapping intervals with
@@ -550,12 +539,6 @@ public class ECStorage {
             // Commit or abort intervals from the next vector.
             for (Interval interval : toCommitAcc) {
                 commitECData(fileId, fi, interval);
-            }
-
-            if (!ignoreAbort) {
-                for (Interval interval : toAbortAcc) {
-                    abortECData(fileId, fi, interval);
-                }
             }
 
             ObjectInformation result = layout.readObject(fileId, fi, objNo, offset, length, objVer);
@@ -586,7 +569,6 @@ public class ECStorage {
         final int offset = (Integer) rq.getArgs()[3];
         final int length = (Integer) rq.getArgs()[4];
         final List<Interval> intervals = (List<Interval>) rq.getArgs()[5];
-        final boolean ignoreAbort = (Boolean) rq.getArgs()[6];
 
         assert (!intervals.isEmpty());
         assert (offset + length <= sp.getStripeSizeForObject(0));
@@ -612,9 +594,8 @@ public class ECStorage {
             List<Interval> nextOverlapping = nextVector.getOverlapping(commitStart, commitEnd);
 
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
-            LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
-            boolean failed = ECPolicy.calculateIntervalsToCommitAbort(intervals, null, curOverlapping, nextOverlapping,
-                    toCommitAcc, toAbortAcc);
+            boolean failed = ECPolicy.calculateIntervalsToCommit(intervals, null, curOverlapping, nextOverlapping,
+                    toCommitAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             // Note: this is actually to rigorous, since we would only have to care about the overlapping intervals with
@@ -632,11 +613,6 @@ public class ECStorage {
             // Commit or abort intervals from the next vector.
             for (Interval interval : toCommitAcc) {
                 commitECDelta(fileId, fi, interval);
-            }
-            if (!ignoreAbort) {
-                for (Interval interval : toAbortAcc) {
-                    abortECDelta(fileId, fi, interval);
-                }
             }
 
             ObjectInformation result = layout.readObject(fileIdCode, fi, stripeNo, offset, length, objVer);

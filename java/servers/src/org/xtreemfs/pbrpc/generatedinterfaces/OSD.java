@@ -45010,26 +45010,6 @@ public final class OSD {
      */
     org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsgOrBuilder getIntervalsOrBuilder(
         int index);
-
-    // required bool ignore_abort = 7;
-    /**
-     * <code>required bool ignore_abort = 7;</code>
-     *
-     * <pre>
-     * If this flag is set, no data in the next or delta buffer is aborted.
-     * This is required for reading chunks during degraded writes.
-     * </pre>
-     */
-    boolean hasIgnoreAbort();
-    /**
-     * <code>required bool ignore_abort = 7;</code>
-     *
-     * <pre>
-     * If this flag is set, no data in the next or delta buffer is aborted.
-     * This is required for reading chunks during degraded writes.
-     * </pre>
-     */
-    boolean getIgnoreAbort();
   }
   /**
    * Protobuf type {@code xtreemfs.pbrpc.xtreemfs_ec_readRequest}
@@ -45125,11 +45105,6 @@ public final class OSD {
                 mutable_bitField0_ |= 0x00000020;
               }
               intervals_.add(input.readMessage(org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg.PARSER, extensionRegistry));
-              break;
-            }
-            case 56: {
-              bitField0_ |= 0x00000020;
-              ignoreAbort_ = input.readBool();
               break;
             }
           }
@@ -45357,32 +45332,6 @@ public final class OSD {
       return intervals_.get(index);
     }
 
-    // required bool ignore_abort = 7;
-    public static final int IGNORE_ABORT_FIELD_NUMBER = 7;
-    private boolean ignoreAbort_;
-    /**
-     * <code>required bool ignore_abort = 7;</code>
-     *
-     * <pre>
-     * If this flag is set, no data in the next or delta buffer is aborted.
-     * This is required for reading chunks during degraded writes.
-     * </pre>
-     */
-    public boolean hasIgnoreAbort() {
-      return ((bitField0_ & 0x00000020) == 0x00000020);
-    }
-    /**
-     * <code>required bool ignore_abort = 7;</code>
-     *
-     * <pre>
-     * If this flag is set, no data in the next or delta buffer is aborted.
-     * This is required for reading chunks during degraded writes.
-     * </pre>
-     */
-    public boolean getIgnoreAbort() {
-      return ignoreAbort_;
-    }
-
     private void initFields() {
       fileCredentials_ = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials.getDefaultInstance();
       fileId_ = "";
@@ -45390,7 +45339,6 @@ public final class OSD {
       offset_ = 0;
       length_ = 0;
       intervals_ = java.util.Collections.emptyList();
-      ignoreAbort_ = false;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -45414,10 +45362,6 @@ public final class OSD {
         return false;
       }
       if (!hasLength()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasIgnoreAbort()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -45456,9 +45400,6 @@ public final class OSD {
       for (int i = 0; i < intervals_.size(); i++) {
         output.writeMessage(6, intervals_.get(i));
       }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        output.writeBool(7, ignoreAbort_);
-      }
       getUnknownFields().writeTo(output);
     }
 
@@ -45491,10 +45432,6 @@ public final class OSD {
       for (int i = 0; i < intervals_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(6, intervals_.get(i));
-      }
-      if (((bitField0_ & 0x00000020) == 0x00000020)) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(7, ignoreAbort_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -45638,8 +45575,6 @@ public final class OSD {
         } else {
           intervalsBuilder_.clear();
         }
-        ignoreAbort_ = false;
-        bitField0_ = (bitField0_ & ~0x00000040);
         return this;
       }
 
@@ -45701,10 +45636,6 @@ public final class OSD {
         } else {
           result.intervals_ = intervalsBuilder_.build();
         }
-        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
-          to_bitField0_ |= 0x00000020;
-        }
-        result.ignoreAbort_ = ignoreAbort_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -45764,9 +45695,6 @@ public final class OSD {
             }
           }
         }
-        if (other.hasIgnoreAbort()) {
-          setIgnoreAbort(other.getIgnoreAbort());
-        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -45789,10 +45717,6 @@ public final class OSD {
           return false;
         }
         if (!hasLength()) {
-          
-          return false;
-        }
-        if (!hasIgnoreAbort()) {
           
           return false;
         }
@@ -46462,59 +46386,6 @@ public final class OSD {
           intervals_ = null;
         }
         return intervalsBuilder_;
-      }
-
-      // required bool ignore_abort = 7;
-      private boolean ignoreAbort_ ;
-      /**
-       * <code>required bool ignore_abort = 7;</code>
-       *
-       * <pre>
-       * If this flag is set, no data in the next or delta buffer is aborted.
-       * This is required for reading chunks during degraded writes.
-       * </pre>
-       */
-      public boolean hasIgnoreAbort() {
-        return ((bitField0_ & 0x00000040) == 0x00000040);
-      }
-      /**
-       * <code>required bool ignore_abort = 7;</code>
-       *
-       * <pre>
-       * If this flag is set, no data in the next or delta buffer is aborted.
-       * This is required for reading chunks during degraded writes.
-       * </pre>
-       */
-      public boolean getIgnoreAbort() {
-        return ignoreAbort_;
-      }
-      /**
-       * <code>required bool ignore_abort = 7;</code>
-       *
-       * <pre>
-       * If this flag is set, no data in the next or delta buffer is aborted.
-       * This is required for reading chunks during degraded writes.
-       * </pre>
-       */
-      public Builder setIgnoreAbort(boolean value) {
-        bitField0_ |= 0x00000040;
-        ignoreAbort_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>required bool ignore_abort = 7;</code>
-       *
-       * <pre>
-       * If this flag is set, no data in the next or delta buffer is aborted.
-       * This is required for reading chunks during degraded writes.
-       * </pre>
-       */
-      public Builder clearIgnoreAbort() {
-        bitField0_ = (bitField0_ & ~0x00000040);
-        ignoreAbort_ = false;
-        onChanged();
-        return this;
       }
 
       // @@protoc_insertion_point(builder_scope:xtreemfs.pbrpc.xtreemfs_ec_readRequest)
@@ -48395,151 +48266,151 @@ public final class OSD {
       " \002(\004\022\025\n\rstripe_number\030\004 \002(\004\022\022\n\nosd_numbe" +
       "r\030\005 \002(\r\022\034\n\024needs_reconstruction\030\006 \002(\010\0226\n" +
       "\005error\030\007 \001(\0132\'.xtreemfs.pbrpc.RPCHeader." +
-      "ErrorResponse\"\342\001\n\027xtreemfs_ec_readReques" +
+      "ErrorResponse\"\314\001\n\027xtreemfs_ec_readReques" +
       "t\0229\n\020file_credentials\030\001 \002(\0132\037.xtreemfs.p" +
       "brpc.FileCredentials\022\017\n\007file_id\030\002 \002(\t\022\025\n" +
       "\robject_number\030\003 \002(\004\022\016\n\006offset\030\004 \002(\r\022\016\n\006",
       "length\030\005 \002(\r\022.\n\tintervals\030\006 \003(\0132\033.xtreem" +
-      "fs.pbrpc.IntervalMsg\022\024\n\014ignore_abort\030\007 \002" +
-      "(\010\"i\n\030xtreemfs_ec_readResponse\022\034\n\024needs_" +
-      "reconstruction\030\001 \002(\010\022/\n\013object_data\030\002 \001(" +
-      "\0132\032.xtreemfs.pbrpc.ObjectData\"\213\001\n)xtreem" +
-      "fs_ec_trigger_reconstructionRequest\0229\n\020f" +
-      "ile_credentials\030\001 \002(\0132\037.xtreemfs.pbrpc.F" +
-      "ileCredentials\022\017\n\007file_id\030\002 \002(\t\022\022\n\nosd_n" +
-      "umber\030\003 \002(\r*\215\001\n\017OSDHealthResult\022\034\n\030OSD_H" +
-      "EALTH_RESULT_PASSED\020\000\022\035\n\031OSD_HEALTH_RESU",
-      "LT_WARNING\020\001\022\034\n\030OSD_HEALTH_RESULT_FAILED" +
-      "\020\002\022\037\n\033OSD_HEALTH_RESULT_NOT_AVAIL\020\0032\373\'\n\n" +
-      "OSDService\022L\n\004read\022\033.xtreemfs.pbrpc.read" +
-      "Request\032\032.xtreemfs.pbrpc.ObjectData\"\013\215\265\030" +
-      "\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037.xtreemfs.pbrpc.tr" +
-      "uncateRequest\032 .xtreemfs.pbrpc.OSDWriteR" +
-      "esponse\"\007\215\265\030\013\000\000\000\022T\n\006unlink\022\".xtreemfs.pb" +
-      "rpc.unlink_osd_Request\032\035.xtreemfs.pbrpc." +
-      "emptyResponse\"\007\215\265\030\014\000\000\000\022T\n\005write\022\034.xtreem" +
-      "fs.pbrpc.writeRequest\032 .xtreemfs.pbrpc.O",
-      "SDWriteResponse\"\013\215\265\030\r\000\000\000\240\265\030\001\022q\n\027xtreemfs" +
-      "_broadcast_gmax\022..xtreemfs.pbrpc.xtreemf" +
-      "s_broadcast_gmaxRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030\024\000\000\000\022j\n\025xtreemfs_chec" +
-      "k_object\022,.xtreemfs.pbrpc.xtreemfs_check" +
-      "_objectRequest\032\032.xtreemfs.pbrpc.ObjectDa" +
-      "ta\"\007\215\265\030\025\000\000\000\022{\n\034xtreemfs_cleanup_get_resu" +
-      "lts\022\034.xtreemfs.pbrpc.emptyRequest\0324.xtre" +
-      "emfs.pbrpc.xtreemfs_cleanup_get_resultsR" +
-      "esponse\"\007\215\265\030\036\000\000\000\022y\n\033xtreemfs_cleanup_is_",
-      "running\022\034.xtreemfs.pbrpc.emptyRequest\0323." +
-      "xtreemfs.pbrpc.xtreemfs_cleanup_is_runni" +
-      "ngResponse\"\007\215\265\030\037\000\000\000\022o\n\026xtreemfs_cleanup_" +
-      "start\022-.xtreemfs.pbrpc.xtreemfs_cleanup_" +
-      "startRequest\032\035.xtreemfs.pbrpc.emptyRespo" +
-      "nse\"\007\215\265\030 \000\000\000\022q\n\027xtreemfs_cleanup_status\022" +
-      "\034.xtreemfs.pbrpc.emptyRequest\032/.xtreemfs" +
-      ".pbrpc.xtreemfs_cleanup_statusResponse\"\007" +
-      "\215\265\030!\000\000\000\022]\n\025xtreemfs_cleanup_stop\022\034.xtree" +
-      "mfs.pbrpc.emptyRequest\032\035.xtreemfs.pbrpc.",
-      "emptyResponse\"\007\215\265\030\"\000\000\000\022g\n\037xtreemfs_clean" +
-      "up_versions_start\022\034.xtreemfs.pbrpc.empty" +
-      "Request\032\035.xtreemfs.pbrpc.emptyResponse\"\007" +
-      "\215\265\030#\000\000\000\022\205\001\n\032xtreemfs_finalize_vouchers\0221" +
-      ".xtreemfs.pbrpc.xtreemfs_finalize_vouche" +
-      "rsRequest\032+.xtreemfs.pbrpc.OSDFinalizeVo" +
-      "uchersResponse\"\007\215\265\030\026\000\000\000\022o\n\026xtreemfs_repa" +
-      "ir_object\022-.xtreemfs.pbrpc.xtreemfs_repa" +
-      "ir_objectRequest\032\035.xtreemfs.pbrpc.emptyR" +
-      "esponse\"\007\215\265\030$\000\000\000\022d\n\022xtreemfs_rwr_fetch\022)",
-      ".xtreemfs.pbrpc.xtreemfs_rwr_fetchReques" +
-      "t\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030I\000\000\000\022u" +
-      "\n\027xtreemfs_rwr_flease_msg\022..xtreemfs.pbr" +
-      "pc.xtreemfs_rwr_flease_msgRequest\032\035.xtre" +
-      "emfs.pbrpc.emptyResponse\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n" +
-      "\023xtreemfs_rwr_notify\022\037.xtreemfs.pbrpc.Fi" +
-      "leCredentials\032\035.xtreemfs.pbrpc.emptyResp" +
-      "onse\"\007\215\265\030K\000\000\000\022|\n\036xtreemfs_rwr_set_primar" +
-      "y_epoch\0225.xtreemfs.pbrpc.xtreemfs_rwr_se" +
-      "t_primary_epochRequest\032\032.xtreemfs.pbrpc.",
-      "ObjectData\"\007\215\265\030N\000\000\000\022i\n\023xtreemfs_rwr_stat" +
-      "us\022*.xtreemfs.pbrpc.xtreemfs_rwr_statusR" +
-      "equest\032\035.xtreemfs.pbrpc.ReplicaStatus\"\007\215" +
-      "\265\030L\000\000\000\022m\n\025xtreemfs_rwr_truncate\022,.xtreem" +
-      "fs.pbrpc.xtreemfs_rwr_truncateRequest\032\035." +
-      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\030J\000\000\000\022m\n" +
-      "\023xtreemfs_rwr_update\022*.xtreemfs.pbrpc.xt" +
-      "reemfs_rwr_updateRequest\032\035.xtreemfs.pbrp" +
-      "c.emptyResponse\"\013\215\265\030H\000\000\000\240\265\030\001\022q\n\027xtreemfs" +
-      "_rwr_auth_state\022..xtreemfs.pbrpc.xtreemf",
-      "s_rwr_auth_stateRequest\032\035.xtreemfs.pbrpc" +
-      ".emptyResponse\"\007\215\265\030O\000\000\000\022y\n\033xtreemfs_rwr_" +
-      "reset_complete\0222.xtreemfs.pbrpc.xtreemfs" +
-      "_rwr_reset_completeRequest\032\035.xtreemfs.pb" +
-      "rpc.emptyResponse\"\007\215\265\030P\000\000\000\022v\n\032xtreemfs_i" +
-      "nternal_get_gmax\0221.xtreemfs.pbrpc.xtreem" +
-      "fs_internal_get_gmaxRequest\032\034.xtreemfs.p" +
-      "brpc.InternalGmax\"\007\215\265\030(\000\000\000\022h\n\032xtreemfs_i" +
-      "nternal_truncate\022\037.xtreemfs.pbrpc.trunca" +
-      "teRequest\032 .xtreemfs.pbrpc.OSDWriteRespo",
-      "nse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtreemfs_internal_get_f" +
-      "ile_size\0226.xtreemfs.pbrpc.xtreemfs_inter" +
-      "nal_get_file_sizeRequest\0327.xtreemfs.pbrp" +
-      "c.xtreemfs_internal_get_file_sizeRespons" +
-      "e\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemfs_internal_read_lo" +
-      "cal\0223.xtreemfs.pbrpc.xtreemfs_internal_r" +
-      "ead_localRequest\032).xtreemfs.pbrpc.Intern" +
-      "alReadLocalResponse\"\007\215\265\030+\000\000\000\022\200\001\n xtreemf" +
-      "s_internal_get_object_set\0227.xtreemfs.pbr" +
-      "pc.xtreemfs_internal_get_object_setReque",
-      "st\032\032.xtreemfs.pbrpc.ObjectList\"\007\215\265\030,\000\000\000\022" +
-      "\205\001\n!xtreemfs_internal_get_fileid_list\022\034." +
-      "xtreemfs.pbrpc.emptyRequest\0329.xtreemfs.p" +
-      "brpc.xtreemfs_internal_get_fileid_listRe" +
-      "sponse\"\007\215\265\030-\000\000\000\022S\n\025xtreemfs_lock_acquire" +
-      "\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtreemfs" +
-      ".pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q\n\023xtreemfs_lock_ch" +
-      "eck\022\033.xtreemfs.pbrpc.lockRequest\032\024.xtree" +
-      "mfs.pbrpc.Lock\"\007\215\265\0303\000\000\000\022\\\n\025xtreemfs_lock" +
-      "_release\022\033.xtreemfs.pbrpc.lockRequest\032\035.",
-      "xtreemfs.pbrpc.emptyResponse\"\007\215\265\0304\000\000\000\022f\n" +
-      "\rxtreemfs_ping\022%.xtreemfs.pbrpc.xtreemfs" +
-      "_pingMesssage\032%.xtreemfs.pbrpc.xtreemfs_" +
-      "pingMesssage\"\007\215\265\030<\000\000\000\022Y\n\021xtreemfs_shutdo" +
-      "wn\022\034.xtreemfs.pbrpc.emptyRequest\032\035.xtree" +
-      "mfs.pbrpc.emptyResponse\"\007\215\265\030F\000\000\000\022\222\001\n\034xtr" +
-      "eemfs_xloc_set_invalidate\0223.xtreemfs.pbr" +
-      "pc.xtreemfs_xloc_set_invalidateRequest\0324" +
-      ".xtreemfs.pbrpc.xtreemfs_xloc_set_invali" +
-      "dateResponse\"\007\215\265\030Q\000\000\000\022\221\001\n#xtreemfs_rwr_a",
-      "uth_state_invalidated\022..xtreemfs.pbrpc.x" +
-      "treemfs_rwr_auth_stateRequest\0321.xtreemfs" +
-      ".pbrpc.xtreemfs_rwr_reset_statusResponse" +
-      "\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs_rwr_reset_status\022" +
-      "0.xtreemfs.pbrpc.xtreemfs_rwr_reset_stat" +
-      "usRequest\0321.xtreemfs.pbrpc.xtreemfs_rwr_" +
-      "reset_statusResponse\"\007\215\265\030S\000\000\000\022\203\001\n\027xtreem" +
-      "fs_ec_get_vectors\022..xtreemfs.pbrpc.xtree" +
-      "mfs_ec_get_vectorsRequest\032/.xtreemfs.pbr" +
-      "pc.xtreemfs_ec_get_vectorsResponse\"\007\215\265\030T",
-      "\000\000\000\022\211\001\n\031xtreemfs_ec_commit_vector\0220.xtre" +
-      "emfs.pbrpc.xtreemfs_ec_commit_vectorRequ" +
-      "est\0321.xtreemfs.pbrpc.xtreemfs_ec_commit_" +
-      "vectorResponse\"\007\215\265\030U\000\000\000\022\220\001\n\032xtreemfs_ec_" +
-      "write_interval\0221.xtreemfs.pbrpc.xtreemfs" +
-      "_ec_write_intervalRequest\0322.xtreemfs.pbr" +
-      "pc.xtreemfs_ec_write_intervalResponse\"\013\215" +
-      "\265\030V\000\000\000\240\265\030\001\022r\n\020xtreemfs_ec_read\022\'.xtreemf" +
-      "s.pbrpc.xtreemfs_ec_readRequest\032(.xtreem" +
-      "fs.pbrpc.xtreemfs_ec_readResponse\"\013\215\265\030W\000",
-      "\000\000\230\265\030\001\022s\n\026xtreemfs_ec_write_diff\022-.xtree" +
-      "mfs.pbrpc.xtreemfs_ec_write_diffRequest\032" +
-      "\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030X\000\000\000\240" +
-      "\265\030\001\022y\n\037xtreemfs_ec_write_diff_response\022." +
-      ".xtreemfs.pbrpc.xtreemfs_ec_write_diffRe" +
-      "sponse\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215" +
-      "\265\030Y\000\000\000\022\207\001\n\"xtreemfs_ec_trigger_reconstru" +
-      "ction\0229.xtreemfs.pbrpc.xtreemfs_ec_trigg" +
-      "er_reconstructionRequest\032\035.xtreemfs.pbrp" +
-      "c.emptyResponse\"\007\215\265\030Z\000\000\000\032\007\225\265\0301u\000\000B(\n&org",
-      ".xtreemfs.pbrpc.generatedinterfaces"
+      "fs.pbrpc.IntervalMsg\"i\n\030xtreemfs_ec_read" +
+      "Response\022\034\n\024needs_reconstruction\030\001 \002(\010\022/" +
+      "\n\013object_data\030\002 \001(\0132\032.xtreemfs.pbrpc.Obj" +
+      "ectData\"\213\001\n)xtreemfs_ec_trigger_reconstr" +
+      "uctionRequest\0229\n\020file_credentials\030\001 \002(\0132" +
+      "\037.xtreemfs.pbrpc.FileCredentials\022\017\n\007file" +
+      "_id\030\002 \002(\t\022\022\n\nosd_number\030\003 \002(\r*\215\001\n\017OSDHea" +
+      "lthResult\022\034\n\030OSD_HEALTH_RESULT_PASSED\020\000\022" +
+      "\035\n\031OSD_HEALTH_RESULT_WARNING\020\001\022\034\n\030OSD_HE",
+      "ALTH_RESULT_FAILED\020\002\022\037\n\033OSD_HEALTH_RESUL" +
+      "T_NOT_AVAIL\020\0032\373\'\n\nOSDService\022L\n\004read\022\033.x" +
+      "treemfs.pbrpc.readRequest\032\032.xtreemfs.pbr" +
+      "pc.ObjectData\"\013\215\265\030\n\000\000\000\230\265\030\001\022V\n\010truncate\022\037" +
+      ".xtreemfs.pbrpc.truncateRequest\032 .xtreem" +
+      "fs.pbrpc.OSDWriteResponse\"\007\215\265\030\013\000\000\000\022T\n\006un" +
+      "link\022\".xtreemfs.pbrpc.unlink_osd_Request" +
+      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\014\000\000\000" +
+      "\022T\n\005write\022\034.xtreemfs.pbrpc.writeRequest\032" +
+      " .xtreemfs.pbrpc.OSDWriteResponse\"\013\215\265\030\r\000",
+      "\000\000\240\265\030\001\022q\n\027xtreemfs_broadcast_gmax\022..xtre" +
+      "emfs.pbrpc.xtreemfs_broadcast_gmaxReques" +
+      "t\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\024\000\000" +
+      "\000\022j\n\025xtreemfs_check_object\022,.xtreemfs.pb" +
+      "rpc.xtreemfs_check_objectRequest\032\032.xtree" +
+      "mfs.pbrpc.ObjectData\"\007\215\265\030\025\000\000\000\022{\n\034xtreemf" +
+      "s_cleanup_get_results\022\034.xtreemfs.pbrpc.e" +
+      "mptyRequest\0324.xtreemfs.pbrpc.xtreemfs_cl" +
+      "eanup_get_resultsResponse\"\007\215\265\030\036\000\000\000\022y\n\033xt" +
+      "reemfs_cleanup_is_running\022\034.xtreemfs.pbr",
+      "pc.emptyRequest\0323.xtreemfs.pbrpc.xtreemf" +
+      "s_cleanup_is_runningResponse\"\007\215\265\030\037\000\000\000\022o\n" +
+      "\026xtreemfs_cleanup_start\022-.xtreemfs.pbrpc" +
+      ".xtreemfs_cleanup_startRequest\032\035.xtreemf" +
+      "s.pbrpc.emptyResponse\"\007\215\265\030 \000\000\000\022q\n\027xtreem" +
+      "fs_cleanup_status\022\034.xtreemfs.pbrpc.empty" +
+      "Request\032/.xtreemfs.pbrpc.xtreemfs_cleanu" +
+      "p_statusResponse\"\007\215\265\030!\000\000\000\022]\n\025xtreemfs_cl" +
+      "eanup_stop\022\034.xtreemfs.pbrpc.emptyRequest" +
+      "\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030\"\000\000\000",
+      "\022g\n\037xtreemfs_cleanup_versions_start\022\034.xt" +
+      "reemfs.pbrpc.emptyRequest\032\035.xtreemfs.pbr" +
+      "pc.emptyResponse\"\007\215\265\030#\000\000\000\022\205\001\n\032xtreemfs_f" +
+      "inalize_vouchers\0221.xtreemfs.pbrpc.xtreem" +
+      "fs_finalize_vouchersRequest\032+.xtreemfs.p" +
+      "brpc.OSDFinalizeVouchersResponse\"\007\215\265\030\026\000\000" +
+      "\000\022o\n\026xtreemfs_repair_object\022-.xtreemfs.p" +
+      "brpc.xtreemfs_repair_objectRequest\032\035.xtr" +
+      "eemfs.pbrpc.emptyResponse\"\007\215\265\030$\000\000\000\022d\n\022xt" +
+      "reemfs_rwr_fetch\022).xtreemfs.pbrpc.xtreem",
+      "fs_rwr_fetchRequest\032\032.xtreemfs.pbrpc.Obj" +
+      "ectData\"\007\215\265\030I\000\000\000\022u\n\027xtreemfs_rwr_flease_" +
+      "msg\022..xtreemfs.pbrpc.xtreemfs_rwr_flease" +
+      "_msgRequest\032\035.xtreemfs.pbrpc.emptyRespon" +
+      "se\"\013\215\265\030G\000\000\000\240\265\030\001\022^\n\023xtreemfs_rwr_notify\022\037" +
+      ".xtreemfs.pbrpc.FileCredentials\032\035.xtreem" +
+      "fs.pbrpc.emptyResponse\"\007\215\265\030K\000\000\000\022|\n\036xtree" +
+      "mfs_rwr_set_primary_epoch\0225.xtreemfs.pbr" +
+      "pc.xtreemfs_rwr_set_primary_epochRequest" +
+      "\032\032.xtreemfs.pbrpc.ObjectData\"\007\215\265\030N\000\000\000\022i\n",
+      "\023xtreemfs_rwr_status\022*.xtreemfs.pbrpc.xt" +
+      "reemfs_rwr_statusRequest\032\035.xtreemfs.pbrp" +
+      "c.ReplicaStatus\"\007\215\265\030L\000\000\000\022m\n\025xtreemfs_rwr" +
+      "_truncate\022,.xtreemfs.pbrpc.xtreemfs_rwr_" +
+      "truncateRequest\032\035.xtreemfs.pbrpc.emptyRe" +
+      "sponse\"\007\215\265\030J\000\000\000\022m\n\023xtreemfs_rwr_update\022*" +
+      ".xtreemfs.pbrpc.xtreemfs_rwr_updateReque" +
+      "st\032\035.xtreemfs.pbrpc.emptyResponse\"\013\215\265\030H\000" +
+      "\000\000\240\265\030\001\022q\n\027xtreemfs_rwr_auth_state\022..xtre" +
+      "emfs.pbrpc.xtreemfs_rwr_auth_stateReques",
+      "t\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030O\000\000" +
+      "\000\022y\n\033xtreemfs_rwr_reset_complete\0222.xtree" +
+      "mfs.pbrpc.xtreemfs_rwr_reset_completeReq" +
+      "uest\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030" +
+      "P\000\000\000\022v\n\032xtreemfs_internal_get_gmax\0221.xtr" +
+      "eemfs.pbrpc.xtreemfs_internal_get_gmaxRe" +
+      "quest\032\034.xtreemfs.pbrpc.InternalGmax\"\007\215\265\030" +
+      "(\000\000\000\022h\n\032xtreemfs_internal_truncate\022\037.xtr" +
+      "eemfs.pbrpc.truncateRequest\032 .xtreemfs.p" +
+      "brpc.OSDWriteResponse\"\007\215\265\030)\000\000\000\022\233\001\n\037xtree",
+      "mfs_internal_get_file_size\0226.xtreemfs.pb" +
+      "rpc.xtreemfs_internal_get_file_sizeReque" +
+      "st\0327.xtreemfs.pbrpc.xtreemfs_internal_ge" +
+      "t_file_sizeResponse\"\007\215\265\030*\000\000\000\022\207\001\n\034xtreemf" +
+      "s_internal_read_local\0223.xtreemfs.pbrpc.x" +
+      "treemfs_internal_read_localRequest\032).xtr" +
+      "eemfs.pbrpc.InternalReadLocalResponse\"\007\215" +
+      "\265\030+\000\000\000\022\200\001\n xtreemfs_internal_get_object_" +
+      "set\0227.xtreemfs.pbrpc.xtreemfs_internal_g" +
+      "et_object_setRequest\032\032.xtreemfs.pbrpc.Ob",
+      "jectList\"\007\215\265\030,\000\000\000\022\205\001\n!xtreemfs_internal_" +
+      "get_fileid_list\022\034.xtreemfs.pbrpc.emptyRe" +
+      "quest\0329.xtreemfs.pbrpc.xtreemfs_internal" +
+      "_get_fileid_listResponse\"\007\215\265\030-\000\000\000\022S\n\025xtr" +
+      "eemfs_lock_acquire\022\033.xtreemfs.pbrpc.lock" +
+      "Request\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0302\000\000\000\022Q" +
+      "\n\023xtreemfs_lock_check\022\033.xtreemfs.pbrpc.l" +
+      "ockRequest\032\024.xtreemfs.pbrpc.Lock\"\007\215\265\0303\000\000" +
+      "\000\022\\\n\025xtreemfs_lock_release\022\033.xtreemfs.pb" +
+      "rpc.lockRequest\032\035.xtreemfs.pbrpc.emptyRe",
+      "sponse\"\007\215\265\0304\000\000\000\022f\n\rxtreemfs_ping\022%.xtree" +
+      "mfs.pbrpc.xtreemfs_pingMesssage\032%.xtreem" +
+      "fs.pbrpc.xtreemfs_pingMesssage\"\007\215\265\030<\000\000\000\022" +
+      "Y\n\021xtreemfs_shutdown\022\034.xtreemfs.pbrpc.em" +
+      "ptyRequest\032\035.xtreemfs.pbrpc.emptyRespons" +
+      "e\"\007\215\265\030F\000\000\000\022\222\001\n\034xtreemfs_xloc_set_invalid" +
+      "ate\0223.xtreemfs.pbrpc.xtreemfs_xloc_set_i" +
+      "nvalidateRequest\0324.xtreemfs.pbrpc.xtreem" +
+      "fs_xloc_set_invalidateResponse\"\007\215\265\030Q\000\000\000\022" +
+      "\221\001\n#xtreemfs_rwr_auth_state_invalidated\022",
+      "..xtreemfs.pbrpc.xtreemfs_rwr_auth_state" +
+      "Request\0321.xtreemfs.pbrpc.xtreemfs_rwr_re" +
+      "set_statusResponse\"\007\215\265\030R\000\000\000\022\211\001\n\031xtreemfs" +
+      "_rwr_reset_status\0220.xtreemfs.pbrpc.xtree" +
+      "mfs_rwr_reset_statusRequest\0321.xtreemfs.p" +
+      "brpc.xtreemfs_rwr_reset_statusResponse\"\007" +
+      "\215\265\030S\000\000\000\022\203\001\n\027xtreemfs_ec_get_vectors\022..xt" +
+      "reemfs.pbrpc.xtreemfs_ec_get_vectorsRequ" +
+      "est\032/.xtreemfs.pbrpc.xtreemfs_ec_get_vec" +
+      "torsResponse\"\007\215\265\030T\000\000\000\022\211\001\n\031xtreemfs_ec_co",
+      "mmit_vector\0220.xtreemfs.pbrpc.xtreemfs_ec" +
+      "_commit_vectorRequest\0321.xtreemfs.pbrpc.x" +
+      "treemfs_ec_commit_vectorResponse\"\007\215\265\030U\000\000" +
+      "\000\022\220\001\n\032xtreemfs_ec_write_interval\0221.xtree" +
+      "mfs.pbrpc.xtreemfs_ec_write_intervalRequ" +
+      "est\0322.xtreemfs.pbrpc.xtreemfs_ec_write_i" +
+      "ntervalResponse\"\013\215\265\030V\000\000\000\240\265\030\001\022r\n\020xtreemfs" +
+      "_ec_read\022\'.xtreemfs.pbrpc.xtreemfs_ec_re" +
+      "adRequest\032(.xtreemfs.pbrpc.xtreemfs_ec_r" +
+      "eadResponse\"\013\215\265\030W\000\000\000\230\265\030\001\022s\n\026xtreemfs_ec_",
+      "write_diff\022-.xtreemfs.pbrpc.xtreemfs_ec_" +
+      "write_diffRequest\032\035.xtreemfs.pbrpc.empty" +
+      "Response\"\013\215\265\030X\000\000\000\240\265\030\001\022y\n\037xtreemfs_ec_wri" +
+      "te_diff_response\022..xtreemfs.pbrpc.xtreem" +
+      "fs_ec_write_diffResponse\032\035.xtreemfs.pbrp" +
+      "c.emptyResponse\"\007\215\265\030Y\000\000\000\022\207\001\n\"xtreemfs_ec" +
+      "_trigger_reconstruction\0229.xtreemfs.pbrpc" +
+      ".xtreemfs_ec_trigger_reconstructionReque" +
+      "st\032\035.xtreemfs.pbrpc.emptyResponse\"\007\215\265\030Z\000" +
+      "\000\000\032\007\225\265\0301u\000\000B(\n&org.xtreemfs.pbrpc.genera",
+      "tedinterfaces"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -48869,7 +48740,7 @@ public final class OSD {
           internal_static_xtreemfs_pbrpc_xtreemfs_ec_readRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_xtreemfs_pbrpc_xtreemfs_ec_readRequest_descriptor,
-              new java.lang.String[] { "FileCredentials", "FileId", "ObjectNumber", "Offset", "Length", "Intervals", "IgnoreAbort", });
+              new java.lang.String[] { "FileCredentials", "FileId", "ObjectNumber", "Offset", "Length", "Intervals", });
           internal_static_xtreemfs_pbrpc_xtreemfs_ec_readResponse_descriptor =
             getDescriptor().getMessageTypes().get(54);
           internal_static_xtreemfs_pbrpc_xtreemfs_ec_readResponse_fieldAccessorTable = new

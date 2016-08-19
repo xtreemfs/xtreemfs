@@ -387,16 +387,15 @@ public class ECPolicy {
     }
 
 
-    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, Interval reqInterval,
-            List<Interval> curVecIntervals, List<Interval> nextVecIntervals, List<Interval> toCommitAcc,
-            List<Interval> toAbortAcc) throws IOException {
-        return calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals, nextVecIntervals,
-                toCommitAcc, toAbortAcc, null);
+    static boolean calculateIntervalsToCommit(List<Interval> commitIntervals, Interval reqInterval,
+            List<Interval> curVecIntervals, List<Interval> nextVecIntervals, List<Interval> toCommitAcc)
+            throws IOException {
+        return calculateIntervalsToCommit(commitIntervals, reqInterval, curVecIntervals, nextVecIntervals,
+                toCommitAcc, null);
     }
 
     /**
      * Checks for each interval in commitIntervals if it is present in the curVecIntervals or the nextVecIntervals.<br>
-     * If it is present in curVecIntervals, overlapping intervals from nextVecIntervals will be added to toAbortAcc.<br>
      * If it is present in nextVecIntervals, it is added to the toCommitAcc accumulator.<br>
      * If it isn't present in neither, false is returned immediately.<br>
      * If it's version is lower then an overlapping one from curVecIntervals, an exception is thrown.
@@ -412,8 +411,6 @@ public class ECPolicy {
      *            List of intervals from the next buffer. Maybe sliced to the commitIntervals range.
      * @param toCommitAcc
      *            Accumulator used to return the intervals to be committed from the next buffer.
-     * @param toAbortAcc
-     *            Accumulator used to return the intervals to be aborted from the next buffer.
      * @param missingAcc
      *            Accumulator used to return the intervals that are missing.
      * @return true if an interval from commitIntervals can not be found. false otherwise.
@@ -421,9 +418,9 @@ public class ECPolicy {
      *             if an interval from commitIntervals contains a lower version version, then an overlapping interval
      *             from curVecIntervals.
      */
-    static boolean calculateIntervalsToCommitAbort(List<Interval> commitIntervals, Interval reqInterval,
+    static boolean calculateIntervalsToCommit(List<Interval> commitIntervals, Interval reqInterval,
             List<Interval> curVecIntervals, List<Interval> nextVecIntervals, List<Interval> toCommitAcc,
-            List<Interval> toAbortAcc, List<Interval> missingAcc) throws IOException {
+            List<Interval> missingAcc) throws IOException {
         assert (!commitIntervals.isEmpty());
 
         Interval emptyInterval = ObjectInterval.empty(commitIntervals.get(0).getOpStart(),
@@ -468,33 +465,16 @@ public class ECPolicy {
                 // If the version and the id match, they have to overlap
                 assert (commitInterval.overlaps(curInterval));
                 
-                if (commitInterval.getStart() != curInterval.getStart() || commitInterval.getEnd() != curInterval.getEnd()) {
-                    // During reconstruction partial intervals can end up in the curVector if the reconstruction failed
-                    // It is required to start the reconstruction again
-                    if (missingAcc != null) {
-                        missingAcc.add(commitInterval);
-                    } else {
-                        return true;
-                    }
-                }
-
-                // Since the commitInterval is already in the curVector, overlapping intervals from next have to be
-                // aborted.
-                while (commitInterval.overlaps(nextInterval)) {
-                    if (!nextInterval.isEmpty() && !nextInterval.equalsVersionId(reqInterval)) {
-                        // ABORT/INVALIDATE
-                        toAbortAcc.add(nextInterval);
-                    }
-
-                    // Advance the nextInterval iterator or set an empty interval as a placeholder and stop the loop
-                    if (nextIt.hasNext()) {
-                        nextInterval = nextIt.next();
-                    } else {
-                        nextInterval = emptyInterval;
-                        break;
-                    }
-                }
-
+                // if (commitInterval.getStart() != curInterval.getStart() || commitInterval.getEnd() !=
+                // curInterval.getEnd()) {
+                // // During reconstruction partial intervals can end up in the curVector if the reconstruction failed
+                // // It is required to start the reconstruction again
+                // if (missingAcc != null) {
+                // missingAcc.add(commitInterval);
+                // } else {
+                // return true;
+                // }
+                // }
 
             } else if (!commitInterval.isEmpty()) {
                 if (commitInterval.overlaps(curInterval) && commitInterval.getVersion() < curInterval.getVersion()) {

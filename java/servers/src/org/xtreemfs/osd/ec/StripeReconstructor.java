@@ -228,14 +228,14 @@ public class StripeReconstructor {
                     // make local request
                     handler.addLocal(chunk);
                     ECReadOperation readOp = (ECReadOperation) master.getOperation(ECReadOperation.PROC_ID);
-                    readOp.startLocalRequest(fileId, sp, chunk.objNo, objOffset, objLength, commitIntervalMsgs, true,
+                    readOp.startLocalRequest(fileId, sp, chunk.objNo, objOffset, objLength, commitIntervalMsgs,
                             handler);
                 } else {
                     try {
                         ServiceUUID server = replica.getOSDByPos(chunk.osdNo);
                         RPCResponse<xtreemfs_ec_readResponse> rpcResponse = osdClient.xtreemfs_ec_read(
                                 server.getAddress(), RPCAuthentication.authNone, RPCAuthentication.userService,
-                                fileCredentials, fileId, chunk.objNo, objOffset, objLength, commitIntervalMsgs, true);
+                                fileCredentials, fileId, chunk.objNo, objOffset, objLength, commitIntervalMsgs);
                         handler.addRemote(rpcResponse, chunk);
 
                     } catch (IOException ex) {

@@ -527,10 +527,6 @@ message xtreemfs_ec_readRequest {
   // Intervals this operation is based on.
   // Have to be committed to execute the operation.
   repeated IntervalMsg intervals = 6;
-
-  // If this flag is set, no data in the next or delta buffer is aborted.
-  // This is required for reading chunks during degraded writes.
-  required bool ignore_abort = 7;
 }
 
 // Response to a read request on a data device.

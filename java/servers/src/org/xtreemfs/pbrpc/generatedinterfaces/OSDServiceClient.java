@@ -1,4 +1,4 @@
-//automatically generated from OSD.proto at Wed Jul 20 20:12:07 CEST 2016
+//automatically generated from OSD.proto at Fri Aug 19 15:27:51 CEST 2016
 //(c) 2016. See LICENSE file for details.
 
 package org.xtreemfs.pbrpc.generatedinterfaces;
@@ -553,8 +553,8 @@ public class OSDServiceClient {
          return response;
     }
 
-    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, int offset, int length, List<OSD.IntervalMsg> intervals, boolean ignore_abort) throws IOException {
-         final OSD.xtreemfs_ec_readRequest msg = OSD.xtreemfs_ec_readRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setOffset(offset).setLength(length).addAllIntervals(intervals).setIgnoreAbort(ignore_abort).build();
+    public RPCResponse<OSD.xtreemfs_ec_readResponse> xtreemfs_ec_read(InetSocketAddress server, Auth authHeader, UserCredentials userCreds, GlobalTypes.FileCredentials file_credentials, String file_id, long object_number, int offset, int length, List<OSD.IntervalMsg> intervals) throws IOException {
+         final OSD.xtreemfs_ec_readRequest msg = OSD.xtreemfs_ec_readRequest.newBuilder().setFileCredentials(file_credentials).setFileId(file_id).setObjectNumber(object_number).setOffset(offset).setLength(length).addAllIntervals(intervals).build();
          return xtreemfs_ec_read(server, authHeader, userCreds,msg);
     }
 
