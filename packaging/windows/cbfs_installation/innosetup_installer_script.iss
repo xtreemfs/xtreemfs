@@ -8,7 +8,7 @@
 #define MyAppExeName "run_xtreemfs_client_command_line_prompt.bat"
 
 #define GitRoot "..\..\..\"
-#define CbFSAdapterBuildDir GitRoot + "cpp\build\Debug\"
+#define CbFSAdapterBuildDir GitRoot + "cpp\build\Release\"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
