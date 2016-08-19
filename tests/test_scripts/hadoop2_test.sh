@@ -169,8 +169,7 @@ for VERSION in $HADOOP_VERSIONS; do
    #prepare input
    mkdir input
 
-   wget -nv http://www.gutenberg.org/ebooks/76.txt.utf-8
-   iconv -c -f utf-8 -t ascii 76.txt.utf-8 > test.txt
+   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt
 
    #test hadoop fs shell
    if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop2_test | grep test.txt)" ]

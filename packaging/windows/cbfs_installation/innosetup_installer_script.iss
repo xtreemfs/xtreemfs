@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "XtreemFS Windows Client"
-#define MyAppVersion "1.5"
+#define MyAppVersion "1.6"
 #define MyAppPublisher "XtreemFS Project"
 #define MyAppURL "http://www.XtreemFS.org/"
 #define MyAppExeName "run_xtreemfs_client_command_line_prompt.bat"
