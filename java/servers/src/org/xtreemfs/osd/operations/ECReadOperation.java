@@ -14,7 +14,6 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
@@ -97,7 +96,6 @@ public class ECReadOperation extends OSDOperation {
                                 rq.sendError(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                BufferPool.free(result.getData());
                                 rq.sendSuccess(buildResponse(false, null), null);
                             } else {
                                 master.objectSent();
@@ -121,7 +119,6 @@ public class ECReadOperation extends OSDOperation {
                                 rq.sendError(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                BufferPool.free(result.getData());
                                 rq.sendSuccess(buildResponse(false, null), null);
                             } else {
                                 master.objectSent();
@@ -171,9 +168,6 @@ public class ECReadOperation extends OSDOperation {
                                 callback.localRequestFailed(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                if (result != null) {
-                                    BufferPool.free(result.getData());
-                                }
                                 callback.localResultAvailable(buildResponse(true, null), null);
                             } else {
                                 // FIXME (jdillmann): Could it make sense to set isLastObj?
@@ -194,9 +188,6 @@ public class ECReadOperation extends OSDOperation {
                                 callback.localRequestFailed(error);
                             } else if (needsReconstruct) {
                                 // FIXME (jdillmann): Trigger reconstruction if not complete.
-                                if (result != null) {
-                                    BufferPool.free(result.getData());
-                                }
                                 callback.localResultAvailable(buildResponse(true, null), null);
                             } else {
                                 // FIXME (jdillmann): Could it make sense to set isLastObj?

@@ -23,7 +23,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
-import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
@@ -324,18 +323,25 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     }
 
     private void processFinished(WriteEvent event) {
+        if (finished) {
+            return;
+        }
         waitForActiveHandlers();
+
         finished = true;
         freeBuffers();
     }
 
     @Override
-    public void abort(ErrorResponse error) {
+    public void abort(WriteEvent event) {
         timeoutTimer.cancel();
-        if (finishedSignaled.compareAndSet(false, true)) {
-            this.error = error;
-            processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
-        }
+        finishedSignaled.set(true);
+
+        // Mark the Worker as failed and clean everything up
+        processFailed(event);
+
+        // We still have to process the event to clear possible buffers
+        processEvent(event);
     }
 
     private void failed() {
@@ -346,12 +352,17 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     }
 
     private void processFailed(WriteEvent event) {
+        if (finished) {
+            return;
+        }
         waitForActiveHandlers();
         
         finished = true;
         failed = true;
 
-        freeBuffers();
+        for (StripeState stripeState : stripeStates) {
+            stripeState.abort();
+        }
 
         if (error == null) {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -359,17 +370,16 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         }
         // String.format("Request failed. Could not write to stripe %d ([%d:%d]).", event.stripeNo,
         // errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
+
+        freeBuffers();
     }
 
     private void freeBuffers() {
         BufferPool.free(data);
 
         for (StripeState stripeState : stripeStates) {
-            if (stripeState.reconstructor != null) {
-                stripeState.reconstructor.abort();
-            }
+            stripeState.freeBuffers();
         }
-
     }
 
     private void startReconstruction(StripeState stripeState) {
@@ -383,11 +393,19 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         assert (event.stripeInterval != null);
 
         StripeState stripeState = event.stripeState;
-        StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
-        stripeState.markForReconstruction(reconstructor);
+        synchronized (stripeState) {
+            if (stripeState.reconstructor == null) {
+                // This is the first chunk that failed => start the reconstruction
+                StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
+                        stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
+                stripeState.markForReconstruction(reconstructor);
+                reconstructor.start();
 
-        reconstructor.start();
+            } else if (stripeState.reconstructor.isComplete()) {
+                // The reconstruction did already finish => send diff for failed data nodes
+                sendDiffsForFailedChunks(stripeState);
+            }
+        }
     }
 
     private void reconstructionFinished(long stripeNo) {
@@ -403,10 +421,15 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = stripeState.reconstructor;
         assert (reconstructor.isComplete());
-        stripeState.reconstructor.decode(false);
+        reconstructor.decode(false);
 
+        sendDiffsForFailedChunks(stripeState);
+    }
+
+    private void sendDiffsForFailedChunks(StripeState stripeState) {
         long stripeNo = stripeState.stripeNo;
         Interval stripeInterval = stripeState.interval;
+        StripeReconstructor reconstructor = stripeState.reconstructor;
 
         // long firstStripeObjNo = stripeNo * dataWidth;
         // long lastStripeObjNo = (stripeNo + 1) * dataWidth - 1;
@@ -420,12 +443,11 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         for (long objNo = firstStripeObjWithData; objNo <= lastStripeObjWithData; objNo++) {
 
             int osdNo = sp.getOSDforObject(objNo);
-            
+
             if (!stripeState.hasFailed(osdNo)) {
                 continue;
             }
-            
-            
+
             // relative offset to the current object
             int objOffset = getObjOffset(objNo);
             // length of the data to write off the current object
@@ -439,7 +461,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
             ReusableBuffer prevData = reconstructor.getObject(osdNo);
             prevData.range(objOffset, objLength);
-            
+
             ReusableBuffer diff = BufferPool.allocate(objLength);
 
             ECHelper.xor(diff, reqData, prevData);
@@ -462,9 +484,10 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
                     synchronized (stripeState) {
                         stripeState.responseStates[parityOsdNo] = ResponseState.REQ_DIFF;
+                        stripeState.responseStates[osdNo] = ResponseState.RECONSTRUCTED;
                     }
+
                     ServiceUUID parityOSD = getRemote(parityOsdNo);
-                    
                     try {
                         @SuppressWarnings("unchecked")
                         RPCResponse<emptyResponse> response = osdClient.xtreemfs_ec_write_diff(parityOSD.getAddress(),
@@ -473,6 +496,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                                 ProtoInterval.toProto(stripeInterval), commitIntervalMsgs, diff.createViewBuffer());
                         response.registerListener(ECHelper.emptyResponseListener);
                     } catch (IOException ex) {
+                        // TODO (jdillmann): Maybe mark parityOSD as failed
                         Logging.logError(Logging.LEVEL_WARN, this, ex);
                     }
 
@@ -505,7 +529,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         NONE, 
         REQ_INTERVAL, REQ_DATA, REQ_DIFF,
         FAILED, NEEDS_RECONSTRUCTION,
-        SUCCESS,
+        SUCCESS, RECONSTRUCTED
     }
 
     private class StripeState {
@@ -584,6 +608,24 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                     || responseStates[osdNo] == ResponseState.NEEDS_RECONSTRUCTION);
         }
 
+        synchronized void abort() {
+            finished = true;
+
+            // Abort any reconstruction
+            if (reconstructor != null) {
+                reconstructor.abort();
+            }
+
+            // Free the buffers
+            freeBuffers();
+        }
+
+        synchronized void freeBuffers() {
+            if (reconstructor != null) {
+                reconstructor.abort();
+            }
+        }
+        
         @Override
         public String toString() {
             return String.format(

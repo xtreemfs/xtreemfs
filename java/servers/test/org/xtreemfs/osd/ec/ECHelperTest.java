@@ -64,14 +64,16 @@ public class ECHelperTest extends ECTestCommon {
         // Test different size buffers
         length = 64 * 2;
         a = SetupUtils.generateData(64, (byte) 1);
+        a.position(0);
         for (int i = 0; i < 32; i++) {
-            a.put(i, (byte) 8);
+            a.put((byte) 8);
         }
         a.position(32);
 
         b = SetupUtils.generateData(length, (byte) 2);
+        b.position(0);
         for (int i = 0; i < 64; i++) {
-            b.put(i, (byte) 16);
+            b.put((byte) 16);
         }
         b.position(64);
 

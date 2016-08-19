@@ -163,6 +163,10 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     @Override
     public void start() {
         timer.schedule(timeoutTimer, timeoutMS);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Start fileId=%s, interval=%s",
+                    fileId, reqInterval);
+        }
 
         for (Stripe stripe : Stripe.getIterable(reqInterval, sp)) {
             // boolean localIsParity = localOsdNo > dataWidth;
@@ -240,21 +244,13 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
 
         synchronized (stripeState) {
-            if (stripeState.isInReconstruction() && chunkState.partial) {
-                // Ignore
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
-                        "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
-                        chunkState.osdNo, chunkState.objNo);
-                BufferPool.free(result.getData());
-                deregisterActiveHandler();
-                return;
-            }
-
             if (objFailed || needsReconstruction) {
-                boolean stripeFailed = stripeState.markFailed(chunkState, needsReconstruction);
-                if (stripeFailed) {
-                    failed(stripeState);
-                } else {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "ECReadWorker: Chunk %s failed for Stripe %s",
+                        chunkState, stripeState);
+
+                stripeState.markFailed(chunkState, needsReconstruction);
+
+                if (!stripeState.isInReconstruction()) {
                     startReconstruction(stripeState);
                 }
 
@@ -266,7 +262,6 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                     stripeComplete(stripeState);
                 }
             }
-
         }
 
         deregisterActiveHandler();
@@ -282,11 +277,19 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         }
         assert (event.stripeInterval != null);
 
+
         StripeState stripeState = event.stripeState;
-        StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
-                stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
-        stripeState.markForReconstruction(reconstructor);
-        reconstructor.start();
+        synchronized (stripeState) {
+            if (stripeState.isInReconstruction() || stripeState.hasFinished()) {
+                // Skip re-starting the reconstruction
+                return;
+            }
+
+            StripeReconstructor reconstructor = new StripeReconstructor(master, fileCredentials, xloc, fileId,
+                    stripeState.stripeNo, sp, event.stripeInterval, osdClient, stripeReconstructorCallback);
+            stripeState.markForReconstruction(reconstructor);
+            reconstructor.start();
+        }
         
         // FIXME (jdillmann): Only k chunks have to be fetched.
         // If we would have a better (non timeout) error detector we could just read one full chunk from a partial
@@ -308,7 +311,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = stripeState.reconstructor;
         assert (reconstructor.isComplete());
-        stripeState.reconstructor.decode(false);
+        reconstructor.decode(false);
 
         // absolute start and end to the whole file range
         long opStart = reqInterval.getOpStart();
@@ -318,13 +321,13 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         long lastStripeObjWithData = sp.getObjectNoForOffset(stripeState.interval.getEnd() - 1);
 
         synchronized (stripeState) {
+            if (stripeState.hasFinished()) {
+                return;
+            }
+
             for (long objNo = firstStripeObjWithData; objNo <= lastStripeObjWithData; objNo++) {
                 int osdNo = sp.getOSDforObject(objNo);
                 ChunkState chunkState = stripeState.chunkStates[osdNo];
-
-                if (chunkState.state == ResponseState.SUCCESS) {
-                    continue;
-                }
 
                 // relative offset to the current object
                 int objOffset = getObjOffset(objNo);
@@ -337,13 +340,15 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             }
 
             assert (stripeState.isComplete()) : "Stripe has to be complete after reconstruction.";
+            stripeComplete(stripeState);
         }
 
-        stripeComplete(stripeState);
     }
 
     private void stripeComplete(StripeState stripeState) {
         // processor.signal(this, new ReadEvent(ReadEventType.STRIPE_COMPLETE, stripeNo, osdPos));
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Completed Stripe %s", stripeState);
 
         int curStripesComplete = numStripesComplete.incrementAndGet();
         if (curStripesComplete == numStripes) {
@@ -359,6 +364,9 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void processFinished(ReadEvent event) {
+        if (finished) {
+            return;
+        }
         waitForActiveHandlers();
 
         // absolute start and end to the whole file range
@@ -388,14 +396,12 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                     // length of the data to read from the current object
                     int objLength = getObjLength(objNo);
 
-                    // TODO (jdillmann): viewBuf not necessarily needed.
                     ReusableBuffer viewBuf = buf.createViewBuffer();
                     if (buf.capacity() > objLength) { // remaining
                         viewBuf.range(objOffset, objLength);
                     }
 
-                    // TODO: This is probably very slow
-                    data.put(buf);
+                    data.put(viewBuf);
 
                     BufferPool.free(viewBuf);
                 }
@@ -436,12 +442,15 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     @Override
-    public void abort(ErrorResponse error) {
+    public void abort(ReadEvent event) {
         timeoutTimer.cancel();
-        if (finishedSignaled.compareAndSet(false, true)) {
-            this.error = error;
-            processor.signal(this, new ReadEvent(ReadEventType.FAILED, null));
-        }
+        finishedSignaled.set(true);
+
+        // Mark the Worker as failed and clean everything up
+        processFailed(event);
+
+        // We still have to process the event to clear possible buffers
+        processEvent(event);
     }
 
     private void failed(long stripeNo) {
@@ -456,17 +465,15 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void processFailed(ReadEvent event) {
+        if (finished) {
+            return;
+        }
         timeoutTimer.cancel();
         waitForActiveHandlers();
 
         BufferPool.free(data);
         for (StripeState stripeState : stripeStates) {
-            // Clear response buffers
-            for (ChunkState chunkState : stripeState.chunkStates) {
-                if (chunkState != null) {
-                    BufferPool.free(chunkState.buffer);
-                }
-            }
+            stripeState.abort();
         }
 
         if (error == null && event.stripeState != null) {
@@ -563,6 +570,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         }
 
         synchronized void markForReconstruction(StripeReconstructor reconstructor) {
+            assert (!reconstruction) : "Reconstruction may only started once.";
             reconstruction = true;
             
             this.reconstructor = reconstructor;
@@ -622,35 +630,31 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
 
         /**
-         * Sets the OSDs response to failed and returns true if the request can no longer be fullfilled <br>
-         * Note: Needs monitor on chunkState
-         * 
-         * @param osdNum
-         * @return
+         * Sets the OSDs response to failed
          */
-        synchronized boolean markFailed(ChunkState chunkState, boolean needsReconstruction) {
+        synchronized void markFailed(ChunkState chunkState, boolean needsReconstruction) {
             if (finished) {
-                return false;
+                return;
+            }
+
+            if (reconstruction) {
+                if (chunkState.partial) {
+                    // Ignore
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                            "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
+                            chunkState.osdNo, chunkState.objNo);
+                    return;
+                }
+
+                boolean reconstructionFailed = reconstructor.markFailed(chunkState.osdNo);
+                if (reconstructionFailed) {
+                    finished = true;
+                }
+                return;
             }
 
             numFailures++;
             chunkState.state = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION : ResponseState.FAILED;
-
-            if (stripeWidth - numFailures < dataWidth) {
-                // we can't fullfill the write quorum anymore
-                finished = true;
-                return true;
-            }
-
-            if (reconstruction && !chunkState.partial) {
-                boolean reconstructionFailed = reconstructor.markFailed(chunkState.osdNo);
-                if (reconstructionFailed) {
-                    finished = true;
-                    return true;
-                }
-            }
-
-            return false;
         }
 
 
@@ -668,25 +672,32 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                 return false;
             }
 
-            if (chunkState.osdNo >= firstOSDWithData && chunkState.osdNo <= lastOSDWithData) {
-                numDataAvailable++;
+            if (reconstruction) {
+                if (chunkState.partial) {
+                    // Ignore
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                            "Ignored response from data device %d for object %d because a full object was requested due to reconstruction",
+                            chunkState.osdNo, chunkState.objNo);
+                    BufferPool.free(buf);
+                    return false;
+                }
+
+                ReusableBuffer viewBuffer = ECHelper.zeroPad(buf, chunkSize);
+                reconstructor.addResult(chunkState.osdNo, viewBuffer);
             }
 
             chunkState.state = ResponseState.SUCCESS;
             chunkState.buffer = buf;
             chunkState.objData = response;
 
-            if (numDataAvailable == numDataRequired) {
-                finished = true;
-                return true;
+            if (chunkState.osdNo >= firstOSDWithData && chunkState.osdNo <= lastOSDWithData) {
+                numDataAvailable++;
             }
 
-            if (reconstruction && !chunkState.partial) {
-                ReusableBuffer viewBuffer = ECHelper.zeroPad(chunkState.buffer, chunkSize);
-                reconstructor.addResult(chunkState.osdNo, viewBuffer);
-
-                // even if enough chunks for reconstruction are available the StripeState is not finished yet.
-                return false;
+            // the stripe has to be finished by the reconstructor
+            if (!reconstruction && numDataAvailable == numDataRequired) {
+                finished = true;
+                return true;
             }
 
             return false;
@@ -694,6 +705,11 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         synchronized boolean reconstructedAvailable(ChunkState chunkState, ReusableBuffer buf) {
             if (finished) {
+                BufferPool.free(buf);
+                return false;
+            }
+
+            if (chunkState.state == ResponseState.SUCCESS) {
                 BufferPool.free(buf);
                 return false;
             }
@@ -715,14 +731,39 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             return false;
         }
 
+        synchronized void abort() {
+            finished = true;
+            
+            // Abort any reconstruction
+            if (reconstructor != null) {
+                reconstructor.abort();
+            }
+
+            // Free the buffers
+            freeBuffers();
+        }
+
+        synchronized void freeBuffers() {
+            // Clear response buffers
+            for (ChunkState chunkState : chunkStates) {
+                if (chunkState != null) {
+                    BufferPool.free(chunkState.buffer);
+                    chunkState.buffer = null;
+                }
+            }
+
+            // Clear the reconstruction buffers
+            if (reconstructor != null) {
+                reconstructor.freeBuffers();
+            }
+        }
+        
         @Override
         public String toString() {
             return String.format(
                     "StripeState [stripeNo=%s, interval=%s, numFailures=%s, numDataRequired=%s, numDataAvailable=%s, finished=%s, reconstruction=%s]",
                     stripeNo, interval, numFailures, numDataRequired, numDataAvailable, finished, reconstruction);
         }
-
-
     }
 
 }

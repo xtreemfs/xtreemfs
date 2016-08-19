@@ -293,10 +293,8 @@ public class ECStorage {
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
             LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
 
-            LinkedList<Interval> missing = new LinkedList<Interval>();
-
             boolean failed = ECPolicy.calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals,
-                    nextVecIntervals, toCommitAcc, toAbortAcc, missing);
+                    nextVecIntervals, toCommitAcc, toAbortAcc);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {

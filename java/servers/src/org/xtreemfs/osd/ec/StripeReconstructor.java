@@ -193,6 +193,7 @@ public class StripeReconstructor {
     public void freeBuffers() {
         for (Chunk chunk : chunks) {
             BufferPool.free(chunk.buffer);
+            chunk.buffer = null;
         }
     }
 

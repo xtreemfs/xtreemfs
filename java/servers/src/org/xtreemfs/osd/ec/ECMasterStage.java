@@ -574,32 +574,21 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
     }
 
-    boolean preparePrimary(StageRequest method, RedirectCallback callback, FileCredentials credentials, XLocations loc,
-            ReusableBuffer viewData) {
-        // final String fileId = credentials.getXcap().getFileId();
-        StripingPolicyImpl sp = loc.getLocalReplica().getStripingPolicy();
-        assert (sp.getPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE);
-
-        final ECFileState file = getFileState(credentials, loc, false);
-        // FIXME (jdillmann): Deadlock, falls bei doWaitingForLease Fehler auftreten.
-        // Dann bleibt der Zustand INIT, aber es wird nicht nochmal doWaiting aufgerufen
-        // Fehler auch bei RWR vorhanden, daher erstmal ignorieren
-
-        // if (!isInternal)
-        file.setCredentials(credentials);
-
-        switch (file.getState()) {
-
-        case INITIALIZING:
-        case WAITING_FOR_LEASE:
-        case VERSION_RESET:
-            addPendingRequest(file, method);
+    boolean preparePrimary(StageRequest method, RedirectCallback callback, FileCredentials credentials,
+            XLocations loc, ReusableBuffer viewData) {
+        
+        if (!prepare(method, credentials, loc)) {
             return false;
+        }
+        
+        final ECFileState file = getFileState(credentials, loc, false);
+        switch(file.getState()) {
+        case PRIMARY:
+            assert (file.isLocalIsPrimary());
+            return true;
 
         case BACKUP:
             assert (!file.isLocalIsPrimary());
-            // if (!isInternal)
-
             BufferPool.free(viewData);
 
             Flease lease = file.getLease();
@@ -617,17 +606,16 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             callback.redirect(lease.getLeaseHolder().toString());
             return false;
 
-        case PRIMARY:
-            assert (file.isLocalIsPrimary());
-            return true;
-
         case INVALIDATED:
-        default:
-            BufferPool.free(viewData);
             // TODO (jdillmann): Handle INVALIDATED errors
+            BufferPool.free(viewData);
+            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INVALID_VIEW,
+                    POSIXErrno.POSIX_ERROR_NONE, "file has been invalidated"));
+            return false;
+
+        default:
             return false;
         }
-
     }
     
 
@@ -955,15 +943,26 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         final OSDRequest rq = method.getRequest();
         final String fileId = rq.getFileId();
 
-        final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
-            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                    "file is not open!"));
+        final ECReadWorker worker = (ECReadWorker) method.getArgs()[0];
+        final ECReadWorker.ReadEvent event = (ECReadWorker.ReadEvent) method.getArgs()[1];
+
+        if (worker.hasFinished()) {
+            // Process the worker event event if the worker has been aborted or finished to enable the cleanup of
+            // buffers etc.
+            Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                    "Process worker event %s, which will be ignored because the worker has already finished.");
+            worker.processEvent(event);
             return;
         }
 
-        final ECReadWorker worker = (ECReadWorker) method.getArgs()[0];
-        final ECReadWorker.ReadEvent event = (ECReadWorker.ReadEvent) method.getArgs()[1];
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            worker.abort(event);
+            Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
+            callback.failed((ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!")));
+            return;
+        }
 
         // Try to get the full stripe interval
         if (event.needsStripeInterval()) {
@@ -973,19 +972,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
             long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
             long end = sp.getObjectStartOffset((stripeNo + 1) * sp.getWidth());
-
-            Interval reqInterval = worker.getRequestInterval();
-            Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
-                    reqInterval.getId());
-
-            if (file.overlapsActiveWriteRequest(stripeRangeInterval)) {
-                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
-                        "stripe " + stripeNo + " can not be restored, because it is currently written at an overlapping range by another process.");
-
-                worker.abort(error);
-                callback.failed(error);
-                return;
-            }
 
             List<Interval> stripeInterval = file.getCurVector().getOverlapping(start, end);
             event.setStripeInterval(stripeInterval);
@@ -1037,6 +1023,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         final ECFileState file = fileStates.get(fileId);
         if (file == null) {
+            BufferPool.free(data);
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                     "file is not open!"));
             return;
@@ -1068,6 +1055,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         // Prevent concurrent writes
         if (file.overlapsActiveWriteRequest(reqInterval)) {
+            BufferPool.free(data);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
                     "The file is currently written at an overlapping range by another process.");
             callback.failed(error);
@@ -1089,15 +1077,27 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         final OSDRequest rq = method.getRequest();
         final String fileId = rq.getFileId();
 
-        final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
-            callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                    "file is not open!"));
+        final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
+        final ECWriteWorker.WriteEvent event = (ECWriteWorker.WriteEvent) method.getArgs()[1];
+
+        if (worker.hasFinished()) {
+            // Process the worker event event if the worker has been aborted or finished to enable the cleanup of
+            // buffers etc.
+            Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                    "Process worker event %s, which will be ignored because the worker has already finished.");
+            worker.processEvent(event);
             return;
         }
 
-        final ECWriteWorker worker = (ECWriteWorker) method.getArgs()[0];
-        final ECWriteWorker.WriteEvent event = (ECWriteWorker.WriteEvent) method.getArgs()[1];
+        final ECFileState file = fileStates.get(fileId);
+        if (file == null) {
+            worker.abort(event);
+
+            Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
+            callback.failed((ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
+                    "file is not open!")));
+            return;
+        }
 
         // Try to get the full stripe interval
         if (event.needsStripeInterval()) {
@@ -1107,21 +1107,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
             long start = sp.getObjectStartOffset(stripeNo * sp.getWidth());
             long end = sp.getObjectStartOffset((stripeNo + 1) * sp.getWidth());
-            
-            Interval reqInterval = worker.getRequestInterval();
-            Interval stripeRangeInterval = new ObjectInterval(start, end, reqInterval.getVersion(),
-                    reqInterval.getId());
 
-            
-            if (file.overlapsActiveWriteRequest(stripeRangeInterval)) {
-                ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
-                        "stripe " + stripeNo + " can not be restored, because it is currently written at an overlapping range by another process.");
-                
-                worker.abort(error);
-                callback.failed(error);
-                return;
-            }
-            
             List<Interval> stripeInterval = file.getCurVector().getOverlapping(start, end);
             event.setStripeInterval(stripeInterval);
         }

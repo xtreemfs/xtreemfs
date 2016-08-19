@@ -88,7 +88,7 @@ public final class WriteOperation extends OSDOperation {
 
             } else if (ReplicaUpdatePolicies.isEC(replicaUpdatePolicy)) {
 
-                ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
+                final ReusableBuffer viewBuffer = rq.getRPCRequest().getData().createViewBuffer();
                 master.getECMasterStage().write(rq, viewBuffer, new WriteCallback() {
                     @Override
                     public void success(OSDWriteResponse response) {
