@@ -125,7 +125,7 @@ begin
 end;
 
 // Uninstall CbFS
-function RunCbFSUninstaller(CabPathName, ProductName: String; var RebootNeeded: DWORD) : Integer;
+function RunCbFSUninstaller(CabPathName, ProductName: String; InstalledPath: String; var RebootNeeded: DWORD) : Integer;
 external 'Uninstall{#AW}@{app}\cbfsinst.dll stdcall uninstallonly';
 
 procedure UninstallCbFS();
@@ -134,7 +134,7 @@ var
   LastError: Integer;
 begin
   Log('Using CbFS archive: ' + ExpandConstant('{app}\cbfs.cab'));
-  InstallerResult := RunCbFSUninstaller(ExpandConstant('{app}\cbfs.cab'), 'EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA', RebootNeeded);
+  InstallerResult := RunCbFSUninstaller(ExpandConstant('{app}\cbfs.cab'), 'EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA', '', RebootNeeded);
   if InstallerResult <> 1 then
   begin
     LastError := GetLastError()
