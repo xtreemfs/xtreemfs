@@ -82,6 +82,11 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         public void setStripeInterval(List<Interval> stripeInterval) {
             this.stripeInterval = stripeInterval;
         }
+
+        @Override
+        public String toString() {
+            return String.format("ReadEvent [type=%s, stripeNo=%d]", type, stripeState.stripeNo);
+        }
     }
 
     final ECWorkerEventProcessor<ReadEvent> processor;
@@ -96,7 +101,6 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     final StripeReconstructorCallback       stripeReconstructorCallback;
 
     // State Stuff
-    // FIXME (jdillmann): Decide how the worker should be run and if sync is needed
     final StripeState[]                     stripeStates;
     AtomicInteger                           numStripesComplete;
     ObjectInformation                       result;
@@ -521,6 +525,13 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         public boolean hasFailed() {
             return (state == ResponseState.FAILED || state == ResponseState.NEEDS_RECONSTRUCTION);
         }
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "ChunkState [osdNo=%s, objNo=%s, stripeNo=%s, partial=%s, state=%s]", 
+                    osdNo, objNo, stripeNo, partial, state);
+        }
     }
 
     private class StripeState {
@@ -703,6 +714,15 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
             return false;
         }
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "StripeState [stripeNo=%s, interval=%s, numFailures=%s, numDataRequired=%s, numDataAvailable=%s, finished=%s, reconstruction=%s]",
+                    stripeNo, interval, numFailures, numDataRequired, numDataAvailable, finished, reconstruction);
+        }
+
+
     }
 
 }

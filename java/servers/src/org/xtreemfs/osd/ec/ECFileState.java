@@ -261,4 +261,11 @@ public class ECFileState {
         activeWriteRequests = new AVLTreeIntervalVector();
         activeRequests.clear();
     }
+
+    @Override
+    public String toString() {
+        return String.format("ECFileState [fileId=%s, state=%s, lease=%s, policy=%s]", fileId, state, lease, policy);
+    }
+
+
 }

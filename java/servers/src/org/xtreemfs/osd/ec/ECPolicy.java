@@ -521,6 +521,10 @@ public class ECPolicy {
         return (missingAcc != null && !missingAcc.isEmpty());
     }
 
+    @Override
+    public String toString() {
+        return String.format("ECPolicy [n=%s, k=%s, m=%s, qw=%s, qr=%s]", n, k, (n - k), qw, qr);
+    }
 
     /**
      * The MutableInterval allows the modification of the intervals members. It is used solely for the vector recovery

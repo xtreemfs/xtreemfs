@@ -28,7 +28,7 @@ public class ECHelper {
             try {
                 r.get();
             } catch (Exception ex) {
-                Logging.logUserError(Logging.LEVEL_NOTICE, Category.ec, this, ex);
+                Logging.logUserError(Logging.LEVEL_DEBUG, Category.ec, this, ex);
             } finally {
                 // Free the allocated buffers
                 r.freeBuffers();

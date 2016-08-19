@@ -78,6 +78,11 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         public void setStripeInterval(List<Interval> stripeInterval) {
             this.stripeInterval = stripeInterval;
         }
+
+        @Override
+        public String toString() {
+            return String.format("WriteEvent [type=%s, stripeNo=%d]", type, stripeState.stripeNo);
+        }
     }
 
     final ECWorkerEventProcessor<WriteEvent> processor;
@@ -578,6 +583,15 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             return (responseStates[osdNo] == ResponseState.FAILED
                     || responseStates[osdNo] == ResponseState.NEEDS_RECONSTRUCTION);
         }
+
+        @Override
+        public String toString() {
+            return String.format(
+                    "StripeState [stripeNo=%s, interval=%s, acks=%s, nacks=%s, finished=%s, reconstruction=%s]",
+                    stripeNo, interval, acks, nacks, finished, (reconstructor != null));
+        }
+
+
     }
 
 }

@@ -21,6 +21,7 @@ import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -84,6 +85,7 @@ public class ECStorage {
                 callback.ecGetVectorsComplete(curVector, nextVector, null);
 
             } catch (Exception ex) {
+                Logging.logError(Logging.LEVEL_CRIT, this, ex);
                 callback.ecGetVectorsComplete(null, null,
                         ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO, ex.toString()));
             }
@@ -112,6 +114,13 @@ public class ECStorage {
                         fi.getECCurVector().serialize(), fi.getECNextVector().serialize(), toCommit, toAbort, missing);
 
                 if (failed) {
+                    Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
+                            "OSD %d needs reconstruction for fileId=%s.", sp.getRelativeOSDPosition(), fileId);
+                    if (Logging.isDebug()) {
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                                "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals,
+                                fi.getECCurVector().serialize(), fi.getECNextVector().serialize());
+                    }
                     needsRecontruction = true;
                 }
 
@@ -134,6 +143,7 @@ public class ECStorage {
             callback.ecCommitVectorComplete(missing, needsRecontruction, null);
 
         } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_CRIT, this, ex);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
             callback.ecCommitVectorComplete(null, false, error);
@@ -237,9 +247,9 @@ public class ECStorage {
             callback.ecReconstructStripeComplete(fileId, stripeNo, null);
 
         } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_CRIT, this, ex);
             if (!consistent) {
                 // FIXME (jdillmann): Inform in detail about critical error
-                Logging.logError(Logging.LEVEL_CRIT, this, ex);
             }
 
             callback.ecReconstructStripeComplete(fileId, stripeNo, ErrorUtils.getInternalServerError(ex));
@@ -285,11 +295,21 @@ public class ECStorage {
             LinkedList<Interval> toCommitAcc = new LinkedList<Interval>();
             LinkedList<Interval> toAbortAcc = new LinkedList<Interval>();
 
+            LinkedList<Interval> missing = new LinkedList<Interval>();
+
             boolean failed = ECPolicy.calculateIntervalsToCommitAbort(commitIntervals, reqInterval, curVecIntervals,
-                    nextVecIntervals, toCommitAcc, toAbortAcc);
+                    nextVecIntervals, toCommitAcc, toAbortAcc, missing);
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
+                        sp.getRelativeOSDPosition(), fileId);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals, curVecIntervals,
+                            nextVecIntervals);
+                }
+
                 callback.ecWriteIntervalComplete(null, true, null);
                 return;
             }
@@ -347,9 +367,9 @@ public class ECStorage {
             }
 
         } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_CRIT, this, ex);
             if (!consistent) {
                 // FIXME (jdillmann): Inform in detail about critical error
-                Logging.logError(Logging.LEVEL_CRIT, this, ex);
             }
 
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -405,6 +425,13 @@ public class ECStorage {
 
             // Signal to go to reconstruct if the vector can not be fully committed.
             if (failed) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
+                        sp.getRelativeOSDPosition(), fileId);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "commitInterval=%s\ncurVector=%s\nextVector=%s", commitIntervals, curVecIntervals,
+                            nextVecIntervals);
+                }
                 callback.ecWriteDiffComplete(false, true, null);
                 return;
             }
@@ -465,9 +492,9 @@ public class ECStorage {
             callback.ecWriteDiffComplete(stripeComplete, false, null);
 
         } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_CRIT, this, ex);
             if (!consistent) {
                 // FIXME (jdillmann): Inform in detail about critical error
-                Logging.logError(Logging.LEVEL_CRIT, this, ex);
             }
 
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
@@ -519,6 +546,14 @@ public class ECStorage {
             // the current object read range. But to keep it simple and uniform we require the whole commit interval to
             // be present. This (faulty) behavior is also present in the commit vector routines.
             if (failed) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
+                        sp.getRelativeOSDPosition(), fileId);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "commitInterval=%s\ncurVector=%s\nextVector=%s", intervals, curOverlapping,
+                            nextOverlapping);
+                }
+
                 callback.ecReadDataComplete(null, true, null);
                 return;
             }
@@ -544,76 +579,8 @@ public class ECStorage {
 
             // FIXME (jdillmann): Won't return the correct error if the read is outdated.
 
-            //
-            // Interval emptyInterval = ObjectInterval.empty(commitStart, commitEnd);
-            //
-            // Iterator<Interval> curIt = curOverlapping.iterator();
-            // Iterator<Interval> nextIt = nextOverlapping.iterator();
-            // Interval curInterval = curIt.hasNext() ? curIt.next() : emptyInterval;
-            // Interval nextInterval = nextIt.hasNext() ? nextIt.next() : emptyInterval;
-            //
-            //
-            // for (Interval interval : intervals) {
-            // int iOffset = ECHelper.safeLongToInt(interval.getStart() - objOffset);
-            // int iLength = ECHelper.safeLongToInt(interval.getEnd() - interval.getStart());
-            // int version = 1;
-            //
-            // // Advance to the next interval that could be a possible match
-            // // or set an empty interval as a placeholder
-            // while (curInterval.getEnd() <= interval.getStart() && curIt.hasNext()) {
-            // curInterval = curIt.next();
-            // }
-            // if (curInterval.getEnd() <= interval.getStart()) {
-            // curInterval = emptyInterval;
-            // }
-            //
-            // // Advance to the next interval that could be a possible match
-            // // or set an empty interval as a placeholder
-            // while (nextInterval.getEnd() <= interval.getStart() && nextIt.hasNext()) {
-            // nextInterval = nextIt.next();
-            // }
-            // if (nextInterval.getEnd() <= interval.getStart()) {
-            // nextInterval = emptyInterval;
-            // }
-            //
-            // // equals: start, end, version, id
-            // // Note: not opStart/opEnd
-            // if (interval.equals(curInterval)) {
-            // // FINE: do something
-            // readToBuf(fileId, fi, objNo, iOffset, iLength, version, data);
-            //
-            // } else {
-            // if (interval.overlaps(curInterval)
-            // && interval.getVersion() < curInterval.getVersion()) {
-            // // ERROR => non fatal, read request has to be retried or just abort
-            // String errorMsg = String
-            // .format("Could not read fileId '%s' due to a concurrent write operation.", fileId);
-            // ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO,
-            // POSIXErrno.POSIX_ERROR_EAGAIN, errorMsg);
-            // callback.ecReadDataComplete(null, false, error);
-            // return;
-            // }
-            //
-            // if (interval.equals(nextInterval)) {
-            // // FINE
-            // readToBuf(fileIdNext, fi, objNo, iOffset, iLength, version, data);
-            // } else {
-            // // NOT FOUND! => reconstruction required
-            // callback.ecReadDataComplete(null, true, null);
-            // return;
-            // }
-            // }
-            // }
-            //
-            // data.position(0);
-            // ObjectInformation result = new ObjectInformation(ObjectStatus.EXISTS, data, 0);
-            // // TODO (jdillmann): Add Metadata?
-            // // result.setChecksumInvalidOnOSD(checksumInvalidOnOSD);
-            // // result.setLastLocalObjectNo(lastLocalObjectNo);
-            // // result.setGlobalLastObjectNo(globalLastObjectNo);
-            // callback.ecReadDataComplete(result, false, null);
-
         } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_CRIT, this, ex);
             // BufferPool.free(data);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
@@ -665,6 +632,13 @@ public class ECStorage {
             // the current object read range. But to keep it simple and uniform we require the whole commit interval to
             // be present. This (faulty) behavior is also present in the commit vector routines.
             if (failed) {
+                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "OSD %d needs reconstruction for fileId=%s.",
+                        sp.getRelativeOSDPosition(), fileId);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "commitInterval=%s\ncurVector=%s\nextVector=%s", intervals, curOverlapping,
+                            nextOverlapping);
+                }
                 callback.ecReadParityComplete(null, true, null);
                 return;
             }

@@ -9,6 +9,7 @@ package org.xtreemfs.osd.ec;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -20,6 +21,7 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -103,7 +105,6 @@ public class StripeReconstructor {
 
         chunks = new Chunk[stripeWidth];
         for (int osdNo = 0; osdNo < stripeWidth; osdNo++) {
-            // FIXME (jdillmann): Maybe send stripeNo to parity devices
             long objNo = osdNo < dataWidth ? firstObjNo + osdNo : stripeNo;
             Chunk chunk = new Chunk(osdNo, objNo, ChunkState.NONE);
             chunks[osdNo] = chunk;
@@ -196,6 +197,9 @@ public class StripeReconstructor {
     }
 
     public void start() {
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                "StripeReconstructor[fileId=%s, stripeNo=%d]: Starting", fileId, stripeNo);
+
         int numResponses = 0;
         for (Chunk chunk : chunks) {
             if (chunk.state == ChunkState.NONE) {
@@ -249,6 +253,9 @@ public class StripeReconstructor {
             int numErrors, int numQuickFail) {
 
         if (aborted || reconstructed) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "StripeReconstructor[fileId=%s, stripeNo=%d]: Ignored result for chunk=%s ", fileId, stripeNo,
+                    result.getMappedObject());
             BufferPool.free(result.getData());
             return;
         }
@@ -258,6 +265,10 @@ public class StripeReconstructor {
         boolean objFailed = result.hasFailed();
         boolean needsReconstruction = !objFailed && result.getResult().getNeedsReconstruction();
 
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                "StripeReconstructor[fileId=%s, stripeNo=%d]: Received result for chunk=%s [failed=%s, needsReconstruction=%s]",
+                fileId, stripeNo, chunk, objFailed, needsReconstruction);
 
         if (objFailed || needsReconstruction) {
             if (markFailed(chunk)) {
@@ -301,6 +312,12 @@ public class StripeReconstructor {
                 shards[chunk.osdNo] = chunk.buffer.getBuffer().slice();
             }
 
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                        "StripeReconstructor[fileId=%s, stripeNo=%d]: Decode with present=%s", fileId, stripeNo,
+                        Arrays.toString(present));
+            }
+
             // FIXME (jdillmann): optimize
             codec.decodeMissing(shards, present, 0, chunkSize, recreateParity);
 
@@ -341,6 +358,13 @@ public class StripeReconstructor {
         return chunks[osdNum].buffer.createViewBuffer();
     }
 
+    @Override
+    public String toString() {
+        return String.format(
+                "StripeReconstructor [fileId=%s, stripeNo=%s, complete=%s, reconstructed=%s, aborted=%s, chunksComplete=%s, chunksFailed=%s]",
+                fileId, stripeNo, complete, reconstructed, aborted, chunksComplete, chunksFailed);
+    }
+
 
     enum ChunkState {
         NONE, FAILED, COMPLETE, REQUESTED, EXTERNAL, RECONSTRUCTED
@@ -356,6 +380,11 @@ public class StripeReconstructor {
             this.osdNo = osdNo;
             this.objNo = objNo;
             this.state = state;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Chunk [osdNo=%s, objNo=%s, state=%s]", osdNo, objNo, state);
         }
     }
 
