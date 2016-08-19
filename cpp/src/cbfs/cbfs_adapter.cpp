@@ -1132,7 +1132,7 @@ void CbFSAdapter::Start() {
                 first_dir_replica.find_last_of(":"))
             + ";"
             + options_->volume_name).c_str(),
-        CBFS_SYMLINK_NETWORK | CBFS_SYMLINK_NETWORK_ALLOW_MAP_AS_DRIVE,
+        CBFS_SYMLINK_NETWORK | CBFS_SYMLINK_NETWORK_ALLOW_MAP_AS_DRIVE | CBFS_SYMLINK_LOCAL,
         NULL);
   } catch (ECBFSError e) {
     string error = "Failed to mount the volume: " + ECBFSErrorToString(e);
@@ -1164,6 +1164,10 @@ void CbFSAdapter::StopWithoutUnmount() {
 
   }
 
+  StopWithoutUnmountAndWithoutDelete();
+}
+
+void CbFSAdapter::StopWithoutUnmountAndWithoutDelete() {
   // Shutdown() Client. That does also invoke a volume->Close().
   if (client_.get()) {
     client_->Shutdown();
