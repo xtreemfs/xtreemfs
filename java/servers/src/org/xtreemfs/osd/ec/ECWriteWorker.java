@@ -7,6 +7,7 @@
 package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -19,10 +20,12 @@ import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.intervals.Interval;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECWriteWorker.WriteEvent;
@@ -135,7 +138,8 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
             @Override
             public void failed(long stripeNo) {
-                ECWriteWorker.this.failed();
+                ECWriteWorker.this.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                        "Request failed. StripeReconstruction could not be completed."));
             }
         };
     }
@@ -161,6 +165,9 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
     @Override
     public void start() {
         timer.schedule(timeoutTimer, timeoutMS);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECWriteWorker: Start %s", this);
+        }
 
         for (Stripe stripe : Stripe.getIterable(reqInterval, sp)) {
             // We will always write the version to the full stripe
@@ -224,7 +231,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_WARN, this, ex);
-                        failed();
+                        failed(ErrorUtils.getInternalServerError(ex));
                         return;
                     }
                 }
@@ -248,13 +255,21 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
         long stripeNo = sp.getRow(objNo);
         StripeState stripeState = getStripeStateForStripe(stripeNo);
-        Interval stripeInterval = stripeState.interval;
 
         int osdNo = sp.getOSDforObject(objNo);
 
         if (objFailed || needsReconstruction) {
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                        "ECWriteWorker: OSD=%d [data] failed [fileId=%s, interval=%s, needsReconstruction=%s, error=%s]",
+                        osdNo, fileId, reqInterval, needsReconstruction, result.getError());
+            }
+
             if (stripeState.markFailed(osdNo, needsReconstruction)) {
-                failed();
+                failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                        "Request failed. Could not write enough chunks because too many OSDs did fail. Policy requires "
+                                + this.qw + "OSDs to be written, only " + stripeState.acks + " succeded."));
             } else {
                 // If this device would have been written, the data has to be reconstructed.
                 if (osdNo >= stripeState.firstOSDWithData && osdNo <= stripeState.lastOSDWithData) {
@@ -284,17 +299,25 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         boolean needsReconstruction = !objFailed && response.getNeedsReconstruction();
 
         long stripeNo = response.getStripeNumber();
-        StripeState stripeStatus = getStripeStateForStripe(stripeNo);
-        Interval stripeInterval = stripeStatus.interval;
+        StripeState stripeState = getStripeStateForStripe(stripeNo);
 
-        int osdPos = response.getOsdNumber();
+        int osdNo = response.getOsdNumber();
 
         if (objFailed || needsReconstruction) {
-            if (stripeStatus.markFailed(osdPos, needsReconstruction)) {
-                failed();
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                        "ECWriteWorker: OSD=%d [parity] failed [fileId=%s, interval=%s, needsReconstruction=%s, error=%s]",
+                        osdNo, fileId, reqInterval, needsReconstruction,
+                        response.hasError() ? response.getError() : "");
+            }
+
+            if (stripeState.markFailed(osdNo, needsReconstruction)) {
+                failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                        "Request failed. Could not write enough chunks because too many OSDs did fail. Policy requires "
+                                + this.qw + "OSDs to be written, only " + stripeState.acks + " succeded."));
             }
         } else {
-            if (stripeStatus.markSuccess(osdPos)) {
+            if (stripeState.markSuccess(osdNo)) {
                 int curNumStripesComplete = numStripesComplete.incrementAndGet();
                 if (curNumStripesComplete == numStripes) {
                     finished();
@@ -310,7 +333,6 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         if (finishedSignaled.compareAndSet(false, true)) {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "Request failed due to a timeout.");
-            // FIXME (jdillmann): check for concurrency!!!
             processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
         }
     }
@@ -338,15 +360,18 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         finishedSignaled.set(true);
 
         // Mark the Worker as failed and clean everything up
+        error = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                "ECWriteWorker: Aborted from ECMasterStage.");
         processFailed(event);
 
         // We still have to process the event to clear possible buffers
         processEvent(event);
     }
 
-    private void failed() {
+    private void failed(ErrorResponse error) {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
+            this.error = error;
             processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
         }
     }
@@ -357,19 +382,18 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         }
         waitForActiveHandlers();
         
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "ECReadWorker: Failure [OSD=%s, fileId=%s, Interval=%s]\n%s", localOsdNo, fileId, reqInterval,
+                    Arrays.toString(stripeStates));
+        }
+
         finished = true;
         failed = true;
 
         for (StripeState stripeState : stripeStates) {
             stripeState.abort();
         }
-
-        if (error == null) {
-            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    "Request failed. Could not write enough chunks.");
-        }
-        // String.format("Request failed. Could not write to stripe %d ([%d:%d]).", event.stripeNo,
-        // errorStripeState.interval.getStart(), errorStripeState.interval.getEnd()));
 
         freeBuffers();
     }
@@ -566,7 +590,6 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             }
             nacks++;
             responseStates[osdPos] = needsReconstruction ? ResponseState.NEEDS_RECONSTRUCTION : ResponseState.FAILED;
-
 
             if (stripeWidth - nacks < qw) {
                 // we can't fullfill the write quorum anymore

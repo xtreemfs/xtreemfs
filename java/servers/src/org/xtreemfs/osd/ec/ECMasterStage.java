@@ -202,7 +202,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             otherRq.sendInternalServerError(
                     new IllegalStateException("internal queue overflow, cannot enqueue operation for processing."));
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
-                    "Dropping request from rwre queue due to overload");
+                    "Dropping request from ECMaster queue due to overload");
         }
     }
 
@@ -922,13 +922,13 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         Interval reqInterval = ObjectInterval.empty(start, end);
         ReusableBuffer data = BufferPool.allocate(reqSize);
 
-        // Prevent reads concurrent to writes?
-        if (file.overlapsActiveWriteRequest(reqInterval)) {
-            ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
-                    "The file is currently written at an overlapping range by another process.");
-            callback.failed(error);
-            return;
-        }
+        // // Prevent reads concurrent to writes?
+        // if (file.overlapsActiveWriteRequest(reqInterval)) {
+        // ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.IO_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+        // "The file is currently written at an overlapping range by another process.");
+        // callback.failed(error);
+        // return;
+        // }
 
         List<Interval> commitIntervals = file.getCurVector().getOverlapping(start, end);
         ECReadWorker worker = new ECReadWorker(master, credentials, loc, fileId, sp, reqInterval,
@@ -985,6 +985,10 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             file.removeActiveRequest(worker);
 
             if (worker.hasFailed()) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "ECMasterStage: Read %s failed [error=%s]", worker.getRequestInterval(), worker.getError());
+                }
                 callback.failed(worker.getError());
             } else {
                 callback.success(worker.getResult());
@@ -1120,6 +1124,11 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             file.removeActiveRequest(worker);
 
             if (worker.hasFailed()) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "ECMasterStage: Write %s failed [error=%s]", worker.getRequestInterval(),
+                            worker.getError());
+                }
                 callback.failed(worker.getError());
             } else {
                 file.getCurVector().insert(worker.getRequestInterval());
@@ -1237,7 +1246,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
        }
 
        if (worker == null) {
-           Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
+            Logging.logMessage(Logging.LEVEL_NOTICE, Category.ec, this,
                     "Received diff response for unkown operation %d of file %s", args.getOpId(), file.getFileId());
            return;
        }

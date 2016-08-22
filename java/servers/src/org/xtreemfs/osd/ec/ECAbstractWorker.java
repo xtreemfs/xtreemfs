@@ -200,4 +200,10 @@ public abstract class ECAbstractWorker<EVENT extends ECWorkerEvent> implements E
     public StageRequest getRequest() {
         return request;
     }
+
+    @Override
+    public String toString() {
+        return String.format("[fileId=%s, reqInterval=%s, commitIntervals=%s, finished=%s, failed=%s, error=%s]",
+                fileId, reqInterval, commitIntervals, finished, failed, error);
+    }
 }

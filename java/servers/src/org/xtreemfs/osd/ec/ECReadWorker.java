@@ -7,6 +7,7 @@
 package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -24,6 +25,7 @@ import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECReadWorker.ReadEvent;
@@ -136,7 +138,8 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
             @Override
             public void failed(long stripeNo) {
-                ECReadWorker.this.failed(stripeNo);
+                ECReadWorker.this.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
+                        "Request failed. StripeReconstruction could not be completed."));
             }
         };
     }
@@ -163,8 +166,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     public void start() {
         timer.schedule(timeoutTimer, timeoutMS);
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Start fileId=%s, interval=%s",
-                    fileId, reqInterval);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Start %s", this);
         }
 
         for (Stripe stripe : Stripe.getIterable(reqInterval, sp)) {
@@ -213,7 +215,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_WARN, this, ex);
-                        failed(stripeState);
+                        failed(ErrorUtils.getInternalServerError(ex));
                         return;
                     }
                 }
@@ -243,8 +245,11 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         synchronized (stripeState) {
             if (objFailed || needsReconstruction) {
-                Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this, "ECReadWorker: Chunk %s failed for Stripe %s",
-                        chunkState, stripeState);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                            "ECReadWorker: OSD=%d [data] failed [needsReconstruction=%s, error=%s]", chunkState.osdNo,
+                            needsReconstruction, result.getError());
+                }
 
                 stripeState.markFailed(chunkState, needsReconstruction);
 
@@ -344,9 +349,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
     }
 
     private void stripeComplete(StripeState stripeState) {
-        // processor.signal(this, new ReadEvent(ReadEventType.STRIPE_COMPLETE, stripeNo, osdPos));
-
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Completed Stripe %s", stripeState);
+        // Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECReadWorker: Completed Stripe %s", stripeState);
 
         int curStripesComplete = numStripesComplete.incrementAndGet();
         if (curStripesComplete == numStripes) {
@@ -445,20 +448,19 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         finishedSignaled.set(true);
 
         // Mark the Worker as failed and clean everything up
+        error = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                "ECReadWorker: Aborted from ECMasterStage.");
         processFailed(event);
 
         // We still have to process the event to clear possible buffers
         processEvent(event);
     }
 
-    private void failed(long stripeNo) {
-        failed(getStripeStateForStripe(stripeNo));
-    }
-
-    private void failed(StripeState stripeState) {
+    private void failed(ErrorResponse error) {
         timeoutTimer.cancel();
         if (finishedSignaled.compareAndSet(false, true)) {
-            processor.signal(this, new ReadEvent(ReadEventType.FAILED, stripeState));
+            this.error = error;
+            processor.signal(this, new ReadEvent(ReadEventType.FAILED, null));
         }
     }
 
@@ -468,18 +470,16 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
         }
         timeoutTimer.cancel();
         waitForActiveHandlers();
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "ECReadWorker: Failure [OSD=%s, fileId=%s, Interval=%s]\n%s", localOsdNo, fileId, reqInterval,
+                    Arrays.toString(stripeStates));
+        }
 
         BufferPool.free(data);
         for (StripeState stripeState : stripeStates) {
             stripeState.abort();
-        }
-
-        if (error == null && event.stripeState != null) {
-            error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
-                    String.format("Request failed. Could not read from stripe %d ([%d:%d]).",
-                            event.stripeState.stripeNo,
-                            event.stripeState.interval.getStart(),
-                            event.stripeState.interval.getEnd()));
         }
 
         finished = true;
