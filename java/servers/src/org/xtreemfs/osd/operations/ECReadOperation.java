@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECReconstructionStage;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECReadDataCallback;
@@ -63,6 +64,13 @@ public class ECReadOperation extends OSDOperation {
         final int offset = args.getOffset();
         final int length = args.getLength();
 
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            rq.sendError(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "File is in reconstruction"));
+            return;
+        }
+
         // Create the IntervalVector from the message
         final List<Interval> intervals = new ArrayList<Interval>(args.getIntervalsCount());
         for (IntervalMsg msg : args.getIntervalsList()) {
@@ -92,7 +100,6 @@ public class ECReadOperation extends OSDOperation {
                             if (error != null) {
                                 rq.sendError(error);
                             } else if (needsReconstruct) {
-                                // FIXME (jdillmann): Trigger reconstruction if not complete.
                                 rq.sendSuccess(buildResponse(false, null), null);
                             } else {
                                 master.objectSent();

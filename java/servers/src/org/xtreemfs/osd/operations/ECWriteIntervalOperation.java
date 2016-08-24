@@ -30,6 +30,7 @@ import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.ec.ECHelper;
+import org.xtreemfs.osd.ec.ECReconstructionStage;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteIntervalCallback;
@@ -75,6 +76,13 @@ public class ECWriteIntervalOperation extends OSDOperation {
 
         final Interval stripeInterval = new ProtoInterval(args.getStripeInterval());
         
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            rq.sendError(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "File is in reconstruction"));
+            return;
+        }
+
         // Create the IntervalVector from the message
         final List<Interval> commitIntervals = new ArrayList<Interval>(args.getCommitIntervalsCount());
         for (IntervalMsg msg : args.getCommitIntervalsList()) {
@@ -86,8 +94,6 @@ public class ECWriteIntervalOperation extends OSDOperation {
             commitIntervals.add(interval);
         }
 
-        // FIXME (jdillmann): Distinguish data from coding devices by the OSDs relative position.
-
         master.getStorageStage().ecWriteInterval(fileId, sp, objNo, offset, stripeInterval,
                 commitIntervals, viewBuffer, rq, new ECWriteIntervalCallback() {
 
@@ -98,8 +104,6 @@ public class ECWriteIntervalOperation extends OSDOperation {
                             rq.sendError(error);
                             BufferPool.free(diff);
                         } else if (needsReconstruct) {
-                            // FIXME (jdillmann): Trigger reconstruction if not complete.
-                            // FIXME (jdillmann): Add response field = needReconstruction or error message type
                             rq.sendSuccess(buildResponse(false), null);
                             BufferPool.free(diff);
                         } else {
@@ -122,6 +126,12 @@ public class ECWriteIntervalOperation extends OSDOperation {
 
         final ReusableBuffer viewBuffer = (data != null) ? data.createViewBuffer() : null;
 
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            callback.localRequestFailed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                    POSIXErrno.POSIX_ERROR_EAGAIN, "File is in reconstruction"));
+            return;
+        }
 
         // Create Interval Objects from the message
         final Interval stripeInterval = new ProtoInterval(stripeIntervalMsg);

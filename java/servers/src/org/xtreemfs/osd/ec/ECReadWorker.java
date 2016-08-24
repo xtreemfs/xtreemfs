@@ -141,6 +141,11 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                 ECReadWorker.this.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                         "Request failed. StripeReconstruction could not be completed."));
             }
+
+            @Override
+            public void markForReconstruction(int osdNo) {
+                ECReadWorker.this.markForReconstruction(osdNo);
+            }
         };
     }
 
@@ -249,6 +254,10 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                             "ECReadWorker: OSD=%d [data] failed [needsReconstruction=%s, error=%s]", chunkState.osdNo,
                             needsReconstruction, result.getError());
+                }
+
+                if (needsReconstruction) {
+                    markForReconstruction(chunkState.osdNo);
                 }
 
                 stripeState.markFailed(chunkState, needsReconstruction);

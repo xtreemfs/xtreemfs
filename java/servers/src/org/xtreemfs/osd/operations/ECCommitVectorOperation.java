@@ -21,6 +21,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECReconstructionStage;
 import org.xtreemfs.osd.ec.InternalOperationCallback;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECCommitVectorCallback;
@@ -31,14 +32,14 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_ec_commit_vectorRespo
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
 
 /** FIXME (jdillmann): DOC */
-public class ECCommitVector extends OSDOperation {
+public class ECCommitVectorOperation extends OSDOperation {
     final static public int PROC_ID = OSDServiceConstants.PROC_ID_XTREEMFS_EC_COMMIT_VECTOR;
 
     // FIXME (jdillmann): Is it required to check the cap?
     final String      sharedSecret;
     final ServiceUUID localUUID;
 
-    public ECCommitVector(OSDRequestDispatcher master) {
+    public ECCommitVectorOperation(OSDRequestDispatcher master) {
         super(master);
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
@@ -57,6 +58,13 @@ public class ECCommitVector extends OSDOperation {
         final String fileId = args.getFileId();
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
 
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            rq.sendError(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "File is in reconstruction"));
+            return;
+        }
+
         // Create the IntervalVector from the message
         final List<Interval> commitIntervals = new ArrayList<Interval>(args.getIntervalsCount());
         for (IntervalMsg msg : args.getIntervalsList()) {
@@ -70,8 +78,8 @@ public class ECCommitVector extends OSDOperation {
                 if (error != null) {
                     rq.sendError(error);
                 } else if (needsReconstruct) {
-                    master.getEcReconstructionStage().startReconstruction(fileId, args.getFileCredentials(),
-                            rq.getCapability(), rq.getLocationList(), commitIntervals, missingIntervals);
+                    reconstructor.startReconstruction(fileId, args.getFileCredentials(), rq.getCapability(),
+                            rq.getLocationList(), commitIntervals, missingIntervals);
                     rq.sendSuccess(buildResponse(true), null);
                 } else {
                     rq.sendSuccess(buildResponse(false), null);
@@ -83,6 +91,14 @@ public class ECCommitVector extends OSDOperation {
     public void startLocalRequest(final String fileId, final FileCredentials fileCredentials, final XLocations xloc,
             final StripingPolicyImpl sp, final List<Interval> commitIntervals,
             final InternalOperationCallback<xtreemfs_ec_commit_vectorResponse> callback) {
+
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            callback.localRequestFailed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR,
+                    POSIXErrno.POSIX_ERROR_EAGAIN, "File is in reconstruction"));
+            return;
+        }
+
         master.getStorageStage().ecCommitVector(fileId, sp, commitIntervals, null, new ECCommitVectorCallback() {
             @Override
             public void ecCommitVectorComplete(List<Interval> missingIntervals, boolean needsReconstruct,
@@ -91,8 +107,8 @@ public class ECCommitVector extends OSDOperation {
                     callback.localRequestFailed(error);
                 } else if (needsReconstruct) {
                     Capability cap = new Capability(fileCredentials.getXcap(), sharedSecret);
-                    master.getEcReconstructionStage().startReconstruction(fileId, fileCredentials, cap, xloc,
-                            commitIntervals, missingIntervals);
+                    reconstructor.startReconstruction(fileId, fileCredentials, cap, xloc, commitIntervals,
+                            missingIntervals);
                     callback.localResultAvailable(buildResponse(true), null);
                 } else {
                     callback.localResultAvailable(buildResponse(false), null);

@@ -62,6 +62,9 @@ public abstract class ECAbstractWorker<EVENT extends ECWorkerEvent> implements E
     final AtomicBoolean               finishedSignaled;
     final AtomicInteger               activeHandlers;
 
+    boolean                           hasMarkedForReconstruction;
+    final boolean[]                   markedForReconstruction;
+
     public ECAbstractWorker(OSDRequestDispatcher master, OSDServiceClient osdClient, FileCredentials fileCredentials,
             XLocations xloc, String fileId, StripingPolicyImpl sp, Interval reqInterval,
             List<Interval> commitIntervals, StageRequest request) {
@@ -86,6 +89,9 @@ public abstract class ECAbstractWorker<EVENT extends ECWorkerEvent> implements E
         stripeWidth = sp.getWidth() + sp.getParityWidth();
         chunkSize = sp.getPolicy().getStripeSize() * 1024;
         localOsdNo = sp.getRelativeOSDPosition();
+
+        hasMarkedForReconstruction = false;
+        markedForReconstruction = new boolean[stripeWidth];
 
         // absolute start and end to the whole file range
         final long opStart = reqInterval.getOpStart();
@@ -199,6 +205,25 @@ public abstract class ECAbstractWorker<EVENT extends ECWorkerEvent> implements E
     @Override
     public StageRequest getRequest() {
         return request;
+    }
+
+    void markForReconstruction(int osdNo) {
+        hasMarkedForReconstruction = true;
+        markedForReconstruction[osdNo] = true;
+    }
+
+    public boolean hasMarkedForReconstruction() {
+        return hasMarkedForReconstruction;
+    }
+
+    public List<Integer> getMarkedForReconstruction() {
+        List<Integer> marked = new ArrayList<Integer>(markedForReconstruction.length);
+        for (int osdNo = 0; osdNo < markedForReconstruction.length; osdNo++) {
+            if (markedForReconstruction[osdNo]) {
+                marked.add(osdNo);
+            }
+        }
+        return marked;
     }
 
     @Override

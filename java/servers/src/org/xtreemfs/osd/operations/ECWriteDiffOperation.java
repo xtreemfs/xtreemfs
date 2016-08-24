@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResp
 import org.xtreemfs.foundation.pbrpc.utils.ErrorUtils;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.ec.ECReconstructionStage;
 import org.xtreemfs.osd.ec.ProtoInterval;
 import org.xtreemfs.osd.stages.StorageStage.ECWriteDiffCallback;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.IntervalMsg;
@@ -66,6 +67,13 @@ public class ECWriteDiffOperation extends OSDOperation {
 
         ReusableBuffer data = rq.getRPCRequest().getData();
         assert (data != null);
+
+        final ECReconstructionStage reconstructor = master.getEcReconstructionStage();
+        if (reconstructor.isInReconstruction(fileId)) {
+            rq.sendError(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EAGAIN,
+                    "File is in reconstruction"));
+            return;
+        }
 
         Interval diffInterval = new ProtoInterval(args.getDiffInterval());
         Interval stripeInterval = new ProtoInterval(args.getStripeInterval());

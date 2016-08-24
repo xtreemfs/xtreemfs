@@ -11,6 +11,7 @@ package org.xtreemfs.osd.ec;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ import org.xtreemfs.osd.ec.ECWorker.ECWorkerEventProcessor;
 import org.xtreemfs.osd.ec.ECWorker.TYPE;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.LocalRPCResponseQuorumListener;
 import org.xtreemfs.osd.ec.LocalRPCResponseHandler.ResponseResult;
-import org.xtreemfs.osd.operations.ECCommitVector;
+import org.xtreemfs.osd.operations.ECCommitVectorOperation;
 import org.xtreemfs.osd.operations.ECGetIntervalVectors;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -820,7 +821,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         handler.addLocal(-1);
 
         // Wait for the local result
-        ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
+        ECCommitVectorOperation getVectorOp = (ECCommitVectorOperation) master.getOperation(ECCommitVectorOperation.PROC_ID);
         getVectorOp.startLocalRequest(fileId, file.getCredentials(), file.getLocations(),
                 file.getPolicy().getStripingPolicy(), resultIntervals, handler);
 
@@ -993,6 +994,11 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             } else {
                 callback.success(worker.getResult());
             }
+
+            // Trigger reconstruction if required
+            if (worker.hasMarkedForReconstruction()) {
+                triggerReconstruction(file, worker.getMarkedForReconstruction());
+            }
         }
     }
 
@@ -1140,6 +1146,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                         .setTruncateEpoch(truncateEpoch).build();
 
                 callback.success(response);
+
+            }
+
+            // Trigger reconstruction if required
+            if (worker.hasMarkedForReconstruction()) {
+                triggerReconstruction(file, worker.getMarkedForReconstruction());
             }
         }
     }
@@ -1254,10 +1266,9 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
        worker.handleParityResponse(args);
     }
 
-
     public void triggerReconstruction(String fileId, FileCredentials fileCredentials, XLocations xloc, int osdNumber) {
-        this.enqueueOperation(STAGE_OP.TRIGGER_RECONSTRUCTION, new Object[] { fileId, fileCredentials, xloc, osdNumber },
-                null, null, null);
+        this.enqueueOperation(STAGE_OP.TRIGGER_RECONSTRUCTION,
+                new Object[] { fileId, fileCredentials, xloc, osdNumber }, null, null, null);
     }
 
     void processTriggerReconstruction(StageRequest method) {
@@ -1279,60 +1290,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         if (file.isLocalIsPrimary()) {
-            // The primary has to send a commit request to the OSD
-
-            final StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
-            int localOsdPos = sp.getRelativeOSDPosition();
-            
-            List<Interval> commitIntervals = file.getCurVector().serialize();
-            
-            if (localOsdPos == osdNumber) {
-                // Send local commit
-                ECCommitVector getVectorOp = (ECCommitVector) master.getOperation(ECCommitVector.PROC_ID);
-                getVectorOp.startLocalRequest(fileId, file.getCredentials(), file.getLocations(),
-                        sp, commitIntervals, 
-                        new InternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
-                            
-                            @Override
-                            public void localResultAvailable(xtreemfs_ec_commit_vectorResponse result, ReusableBuffer data) {
-                                // Ignore
-                            }
-                            
-                            @Override
-                            public void localRequestFailed(ErrorResponse error) {
-                                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, ErrorUtils.formatError(error));
-                            }
-                        });
-
-                
-            } else {
-                // Send remote commit
-                List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
-                ServiceUUID remote = remoteUUIDs.get((localOsdPos <= osdNumber) ? osdNumber - 1 : osdNumber);
-    
-                xtreemfs_ec_commit_vectorRequest.Builder reqBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder();
-                reqBuilder.setFileId(fileId).setFileCredentials(file.getCredentials());
-    
-                for (Interval interval : file.getCurVector().serialize()) {
-                    reqBuilder.addIntervals(ProtoInterval.toProto(interval));
-                }
-    
-                RPCResponse<xtreemfs_ec_commit_vectorResponse> response = null;
-                try {
-                    response = osdClient.xtreemfs_ec_commit_vector(remote.getAddress(), RPCAuthentication.authNone,
-                            RPCAuthentication.userService, reqBuilder.build());
-                    xtreemfs_ec_commit_vectorResponse responseMsg = response.get();
-
-                } catch (Exception ex) {
-                    Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
-
-                } finally {
-                    if (response != null) {
-                        response.freeBuffers();
-                    }
-                }
-            }
-
+            triggerReconstruction(file, Collections.singletonList(osdNumber));
 
         } else {
             // The backup has to relay the trigger to the master, which will then send a commit to the OSD
@@ -1355,6 +1313,66 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
             }
         }
+    }
+
+    private void triggerReconstruction(ECFileState file, List<Integer> markedForReconstruction) {
+        final String fileId = file.getFileId();
+        final StripingPolicyImpl sp = file.getPolicy().getStripingPolicy();
+        final int localOsdPos = sp.getRelativeOSDPosition();
+
+        List<Interval> commitIntervals = file.getCurVector().serialize();
+
+        for (int osdNo : markedForReconstruction) {
+            if (localOsdPos == osdNo) {
+                // Send local commit
+                ECCommitVectorOperation getVectorOp = (ECCommitVectorOperation) master
+                        .getOperation(ECCommitVectorOperation.PROC_ID);
+                getVectorOp.startLocalRequest(fileId, file.getCredentials(), file.getLocations(), sp, commitIntervals,
+                        new InternalOperationCallback<xtreemfs_ec_commit_vectorResponse>() {
+
+                            @Override
+                            public void localResultAvailable(xtreemfs_ec_commit_vectorResponse result,
+                                    ReusableBuffer data) {
+                                // Ignore
+                            }
+
+                            @Override
+                            public void localRequestFailed(ErrorResponse error) {
+                                Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this,
+                                        ErrorUtils.formatError(error));
+                            }
+                        });
+
+
+            } else {
+                // Send remote commit
+                List<ServiceUUID> remoteUUIDs = file.getRemoteOSDs();
+                ServiceUUID remote = remoteUUIDs.get((localOsdPos <= osdNo) ? osdNo - 1 : osdNo);
+
+                xtreemfs_ec_commit_vectorRequest.Builder reqBuilder = xtreemfs_ec_commit_vectorRequest.newBuilder();
+                reqBuilder.setFileId(fileId).setFileCredentials(file.getCredentials());
+
+                for (Interval interval : file.getCurVector().serialize()) {
+                    reqBuilder.addIntervals(ProtoInterval.toProto(interval));
+                }
+
+                RPCResponse<xtreemfs_ec_commit_vectorResponse> response = null;
+                try {
+                    response = osdClient.xtreemfs_ec_commit_vector(remote.getAddress(), RPCAuthentication.authNone,
+                            RPCAuthentication.userService, reqBuilder.build());
+                    xtreemfs_ec_commit_vectorResponse responseMsg = response.get();
+
+                } catch (Exception ex) {
+                    Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
+
+                } finally {
+                    if (response != null) {
+                        response.freeBuffers();
+                    }
+                }
+            }
+        }
+
     }
 
 

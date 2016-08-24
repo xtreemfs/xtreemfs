@@ -271,6 +271,10 @@ public class StripeReconstructor {
                 "StripeReconstructor[fileId=%s, stripeNo=%d]: Received result for chunk=%s [failed=%s, needsReconstruction=%s]",
                 fileId, stripeNo, chunk, objFailed, needsReconstruction);
 
+        if (needsReconstruction) {
+            callback.markForReconstruction(chunk.osdNo);
+        }
+
         if (objFailed || needsReconstruction) {
             if (markFailed(chunk)) {
                 return;
@@ -285,15 +289,15 @@ public class StripeReconstructor {
     }
 
     public void decode(boolean recreateParity) {
-        boolean needsReconstruction;
+        boolean needsDecode;
         synchronized (this) {
-            needsReconstruction = !reconstructed;
+            needsDecode = !reconstructed;
             reconstructed = true;
         }
 
         // VORSICHT MIT ABORT
 
-        if (needsReconstruction) {
+        if (needsDecode) {
             ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
             boolean[] present = new boolean[stripeWidth];
             ByteBuffer[] shards = new ByteBuffer[stripeWidth];
@@ -393,5 +397,7 @@ public class StripeReconstructor {
         public void success(long stripeNo);
 
         public void failed(long stripeNo);
+
+        public void markForReconstruction(int osdNo);
     }
 }

@@ -141,6 +141,11 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                 ECWriteWorker.this.failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                         "Request failed. StripeReconstruction could not be completed."));
             }
+
+            @Override
+            public void markForReconstruction(int osdNo) {
+                ECWriteWorker.this.markForReconstruction(osdNo);
+            }
         };
     }
 
@@ -266,6 +271,10 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                         osdNo, fileId, reqInterval, needsReconstruction, result.getError());
             }
 
+            if (needsReconstruction) {
+                markForReconstruction(osdNo);
+            }
+
             if (stripeState.markFailed(osdNo, needsReconstruction)) {
                 failed(ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                         "Request failed. Could not write enough chunks because too many OSDs did fail. Policy requires "
@@ -309,6 +318,10 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
                         "ECWriteWorker: OSD=%d [parity] failed [fileId=%s, interval=%s, needsReconstruction=%s, error=%s]",
                         osdNo, fileId, reqInterval, needsReconstruction,
                         response.hasError() ? response.getError() : "");
+            }
+
+            if (needsReconstruction) {
+                markForReconstruction(osdNo);
             }
 
             if (stripeState.markFailed(osdNo, needsReconstruction)) {

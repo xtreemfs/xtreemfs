@@ -84,7 +84,7 @@ public class ECReconstructionStage extends Stage {
     }
 
     private static enum STAGE_OP {
-        START_RECONSTRUCTION, REQUEST_RECONSTRUCTION, EVENT_STRIPE_STORED, EVENT_STRIPE_RECONSTRUCTED;
+        START_RECONSTRUCTION, EVENT_STRIPE_STORED, EVENT_STRIPE_RECONSTRUCTED;
 
         private static STAGE_OP[] values_ = values();
 
@@ -122,22 +122,7 @@ public class ECReconstructionStage extends Stage {
         // Relay the request to the master
         int osdNumber = xloc.getLocalReplica().getStripingPolicy().getRelativeOSDPosition();
         master.getECMasterStage().triggerReconstruction(fileId, fileCreds, xloc, osdNumber);
-
-        // this.enqueueOperation(STAGE_OP.REQUEST_RECONSTRUCTION, new Object[] { fileId, fileCreds, capability, xloc },
-        // null, null, null);
     }
-
-
-    // public void processRequestReconstruction(StageRequest rq) {
-    // final String fileId = (String) rq.getArgs()[0];
-    // final FileCredentials fileCredentials = (FileCredentials) rq.getArgs()[1];
-    // final Capability capability = (Capability) rq.getArgs()[2];
-    // final XLocations xloc = (XLocations) rq.getArgs()[3];
-    //
-    // int osdNumber = xloc.getLocalReplica().getStripingPolicy().getRelativeOSDPosition();
-    // master.getECMasterStage().triggerReconstruction(fileId, fileCredentials, xloc, osdNumber);
-    // }
-
     public void startReconstruction(String fileId, FileCredentials fileCreds, Capability capability, XLocations xloc,
             List<Interval> commitIntervals, List<Interval> missingIntervals) {
         this.enqueueOperation(STAGE_OP.START_RECONSTRUCTION,
@@ -269,8 +254,12 @@ public class ECReconstructionStage extends Stage {
 
                         @Override
                         public void failed(long stripeNo) {
-                            // TODO Auto-generated method stub
-                            Logging.logMessage(Logging.LEVEL_CRIT, this, "Could not reconstruct");
+                            Logging.logMessage(Logging.LEVEL_CRIT, Category.ec, this, "Could not reconstruct");
+                        }
+
+                        @Override
+                        public void markForReconstruction(int osdNo) {
+                            // Ignore signaled need for reconstructions by other OSDs during reconstruction.
                         }
                     });
 
