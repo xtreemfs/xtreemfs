@@ -118,6 +118,7 @@ public class ECReadWriteTest extends ECTestCommon {
             // Stop the OSD
             testEnv.stopOSD(configs[i].getUUID().toString());
             // Run the tests
+            System.out.println("Failing no " + i);
             testWriteRead(fileId, fc, 3, 1024);
             // Restart the OSD
             testEnv.startOSD(configs[i].getUUID().toString());
@@ -128,12 +129,13 @@ public class ECReadWriteTest extends ECTestCommon {
     @Test
     public void testWriteReadDegraded32Manual() throws Exception {
         int i = 1;
-        String fileId = "WriteParityDegraded32:" + i;
+        String fileId = "WriteParityDegraded32Manual:" + i;
         FileCredentials fc = getFileCredentials(fileId, 3, 2, 1, 4, osdUUIDs.subList(0, 5));
 
         // Stop the OSD
         testEnv.stopOSD(configs[i].getUUID().toString());
         // Run the tests
+        System.out.println("Failing no " + i);
         testWriteRead(fileId, fc, 3, 1024);
         // Restart the OSD
         testEnv.startOSD(configs[i].getUUID().toString());

@@ -159,6 +159,7 @@ public class ECReconstructionStage extends Stage {
 
         StripingPolicyImpl sp = file.getPolicy();
         int localOsdNo = sp.getRelativeOSDPosition();
+        boolean isParity = localOsdNo >= sp.getWidth();
 
         // Find all the Stripes from the missing intervals
         long missingStart = missingIntervals.get(0).getStart();
@@ -188,7 +189,7 @@ public class ECReconstructionStage extends Stage {
                 continue;
             }
 
-            boolean needsData = false; // FIXME: true if to restore osd isparity
+            boolean needsData = isParity;
 
             // Add all missing intervals overlapping with this stripe
             List<Interval> missingStripeIntervals = new LinkedList<Interval>();
@@ -518,6 +519,10 @@ public class ECReconstructionStage extends Stage {
             return (activeStripe != null);
         }
 
+        @Override
+        public String toString() {
+            return String.format("FileState [fileId=%s, state=%s, activeStripe=%s]", fileId, state, activeStripe);
+        }
     }
 
 

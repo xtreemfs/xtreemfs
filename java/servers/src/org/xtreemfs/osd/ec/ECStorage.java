@@ -192,7 +192,7 @@ public class ECStorage {
                 if (last != null && last.getEnd() < interval.getStart()) {
                     throw new XtreemFSException("stripeIntervals may not have gaps");
                 }
-                if (interval.overlaps(dataOsdStart, dataOsdEnd)) {
+                if (interval.overlaps(dataOsdStart, dataOsdEnd) && !interval.isEmpty()) {
                     needsData = true;
                 }
                 last = interval;
@@ -901,7 +901,7 @@ public class ECStorage {
 
             // Remove the interval by overwriting it with an empty interval
             Interval empty = ObjectInterval.empty(interval);
-            layout.setECIntervalVector(fileId, Arrays.asList(interval), true, true);
+            layout.setECIntervalVector(fileId, Arrays.asList(empty), true, true);
             fi.getECNextVector().insert(empty);
             // FIXME (jdillmann): Truncate the next vector if the interval start = 0 and end >= lastEnd
             // layout.setECIntervalVector(fileId, Collections.<Interval> emptyList(), true, false);

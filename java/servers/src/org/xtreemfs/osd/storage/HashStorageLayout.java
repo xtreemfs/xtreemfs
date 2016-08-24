@@ -809,8 +809,11 @@ public class HashStorageLayout extends StorageLayout {
                 return (ofd.objNo == objNo) && (ofd.objVersion == verToDel);
             }
         });
-        for (File obj : objs) {
-            obj.delete();
+
+        if (objs != null) {
+            for (File obj : objs) {
+                obj.delete();
+            }
         }
     }
 
