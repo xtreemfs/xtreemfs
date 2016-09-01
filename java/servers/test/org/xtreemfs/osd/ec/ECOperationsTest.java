@@ -675,7 +675,7 @@ public class ECOperationsTest extends ECTestCommon {
 
         StripingPolicyImpl sp = getStripingPolicyImplementation(fileCredentials);
 
-        ReedSolomon codec = ReedSolomon.create(2, 1);
+        ReedSolomon codec = ECPolicy.createRSCodec(2, 1);
 
         int chunkSize = sp.getPolicy().getStripeSize() * 1024;
         byte[] byteOut;

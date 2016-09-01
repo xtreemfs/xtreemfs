@@ -450,7 +450,7 @@ public class ECReconstructionTest extends ECTestCommon {
         assertEquals(commitIntervals, fi.getECCurVector().serialize());
 
         // Test reconstructed data
-        ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
+        ReedSolomon codec = ECPolicy.createRSCodec(dataWidth, parityWidth);
         byte[][] shards = new byte[stripeWidth][chunkSize];
         boolean[] present = new boolean[stripeWidth];
         for (int i = 0; i < dataWidth; i++) {
@@ -597,7 +597,7 @@ public class ECReconstructionTest extends ECTestCommon {
         assertEquals(commitIntervals, fi.getECCurVector().serialize());
 
         // Test reconstructed data
-        ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
+        ReedSolomon codec = ECPolicy.createRSCodec(dataWidth, parityWidth);
         byte[][] shards = new byte[stripeWidth][chunkSize];
         boolean[] present = new boolean[stripeWidth];
         for (int i = 0; i < dataWidth; i++) {

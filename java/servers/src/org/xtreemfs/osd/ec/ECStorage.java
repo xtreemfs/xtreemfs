@@ -447,7 +447,7 @@ public class ECStorage {
             // codec.encodeDiffParity(dataArray, deltaArray, chunkOSDNoOff, parityOSDNoOff, offset, data.capacity());
             // ReusableBuffer deltaBuf = ReusableBuffer.wrap(deltaArray);
 
-            ReedSolomon codec = ReedSolomon.create(sp.getWidth(), sp.getParityWidth());
+            ReedSolomon codec = ECPolicy.createRSCodec(sp.getWidth(), sp.getParityWidth());
             ReusableBuffer deltaBuf = BufferPool.allocate(data.capacity());
             int chunkOSDNoOff = sp.getOSDforObject(objectNo);
             int parityOSDNoOff = sp.getRelativeOSDPosition() - sp.getWidth();

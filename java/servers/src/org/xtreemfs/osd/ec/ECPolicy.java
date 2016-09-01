@@ -19,7 +19,20 @@ import org.xtreemfs.foundation.intervals.IntervalVector;
 import org.xtreemfs.foundation.intervals.ObjectInterval;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
+import com.backblaze.erasure.CodingLoop;
+import com.backblaze.erasure.OutputInputByteTableCodingLoop;
+import com.backblaze.erasure.ReedSolomon;
+
 public class ECPolicy {
+    // Non-Configurable Factory for the Reed-Solomon encoding
+    final static CodingLoop RS_CODING_LOOP = new OutputInputByteTableCodingLoop();
+
+    public static ReedSolomon createRSCodec(int dataShardCount, int parityShardCount) {
+        return new ReedSolomon(dataShardCount, parityShardCount, RS_CODING_LOOP);
+    }
+
+
+    // Actual EC Policy configuration and methods
     final static WriteQuorumConfig DEFAULT_WRITE_QUORUM = WriteQuorumConfig.MAX;
 
     enum WriteQuorumConfig {

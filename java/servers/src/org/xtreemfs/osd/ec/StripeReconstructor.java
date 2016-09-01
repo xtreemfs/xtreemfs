@@ -298,7 +298,7 @@ public class StripeReconstructor {
         // VORSICHT MIT ABORT
 
         if (needsDecode) {
-            ReedSolomon codec = ReedSolomon.create(dataWidth, parityWidth);
+            ReedSolomon codec = ECPolicy.createRSCodec(dataWidth, parityWidth);
             boolean[] present = new boolean[stripeWidth];
             ByteBuffer[] shards = new ByteBuffer[stripeWidth];
 
