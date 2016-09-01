@@ -6,8 +6,12 @@
  */
 package org.xtreemfs.osd.ec;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.After;
@@ -19,9 +23,13 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.foundation.logging.Logging.Category;
+import org.xtreemfs.foundation.pbrpc.client.PBRPCException;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDWriteResponse;
@@ -58,7 +66,8 @@ public class ECReadWriteTest extends ECTestCommon {
                 TestEnvironment.Services.OSD,
                 TestEnvironment.Services.OSD,
                 TestEnvironment.Services.OSD,
-                TestEnvironment.Services.OSD });
+                TestEnvironment.Services.OSD,
+                TestEnvironment.Services.MOCKUP_OSD});
         testEnv.start();
         
         configs = testEnv.getOSDConfigs();
@@ -335,6 +344,53 @@ public class ECReadWriteTest extends ECTestCommon {
 
 
     }
+
+    @Test
+    public void testWorkerTimeout() throws Exception {
+        List<String> osdUUIDs = new LinkedList<String>(this.osdUUIDs.subList(0, 2));
+        osdUUIDs.add("mockUpOSD");
+        FileCredentials fc = getFileCredentials(fileId, 2, 1, 1, 3, osdUUIDs);
+        int chunkSize = 1024;
+
+        InetSocketAddress masterAddress = electMaster(fileId, fc);
+
+        long objNumber = 0;
+        long objVersion = -1;
+        int offset = 0;
+        int length = 1;
+        long lease_timeout = 0;
+
+        RPCResponse<ObjectData> RPCReadResponse = null;
+        ObjectData readResponse;
+
+        RPCResponse<OSDWriteResponse> RPCWriteResponse;
+        OSDWriteResponse writeResponse;
+        ObjectData objData = ObjectData.newBuilder().setChecksum(0).setZeroPadding(0).setInvalidChecksumOnOsd(false)
+                .build();
+        ReusableBuffer data, dout;
+
+        // Provoke a timeout while writing with a wq=3 and mockup redundancy device
+        // ************************************************************************
+        objNumber = 0;
+        length = chunkSize;
+        data = SetupUtils.generateData(length);
+        RPCWriteResponse = osdClient.write(masterAddress, RPCAuthentication.authNone, RPCAuthentication.userService, fc,
+                fileId, objNumber, objVersion, offset, lease_timeout, objData, data.createViewBuffer());
+
+        try {
+            writeResponse = RPCWriteResponse.get();
+            RPCWriteResponse.freeBuffers();
+            fail("Expected timeout exception");
+        } catch (PBRPCException e) {
+            // @see ECWriteWorker#timeout() for the corresponding error
+            assertEquals(ErrorType.ERRNO, e.getErrorType());
+            assertEquals(POSIXErrno.POSIX_ERROR_EIO, e.getPOSIXErrno());
+            assertEquals("Request failed due to a timeout.", e.getErrorMessage());
+        }
+
+        BufferPool.free(data);
+    }
+
 
     InetSocketAddress electMaster(String fileId, FileCredentials fc) throws Exception {
         return electMaster(fileId, fc, 0);
