@@ -36,6 +36,22 @@ public class ECHelper {
         }
     };
 
+
+    @SuppressWarnings("rawtypes")
+    public final static RPCResponseAvailableListener ignoringResponseListener = new RPCResponseAvailableListener() {
+         @Override
+         public void responseAvailable(RPCResponse r) {
+             try {
+                 r.get();
+             } catch (Exception ex) {
+                 Logging.logUserError(Logging.LEVEL_DEBUG, Category.ec, this, ex);
+             } finally {
+                 // Free the allocated buffers
+                 r.freeBuffers();
+             }
+         }
+     };
+
     /*
      * public static void xor(byte[] target, byte[] a, byte[] b) { // xor(ReusableBuffer.wrap(target),
      * ReusableBuffer.wrap(a), ReusableBuffer.wrap(b)); assert (target.length == a.length); assert (target.length ==

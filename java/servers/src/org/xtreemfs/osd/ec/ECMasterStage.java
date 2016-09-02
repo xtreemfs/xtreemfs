@@ -77,8 +77,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
     private static final String            FLEASE_PREFIX              = "/ec/";
 
-    private static final long              WRITE_WORKER_TIMEOUT_MS    = 30 * 1000;
-    private static final long              READ_WORKER_TIMEOUT_MS     = 30 * 1000;
+    private static final long              WRITE_WORKER_TIMEOUT_MS    = 2 * 2 * 30 * 1000;
+    private static final long              READ_WORKER_TIMEOUT_MS     = 2 * 2 * 30 * 1000;
 
     private final ServiceUUID              localUUID;
     private final ASCIIString              localID;
@@ -354,6 +354,8 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             if (callback != null && callback instanceof FallibleCallback) {
                 ((FallibleCallback) callback).failed(error);
             }
+
+            worker.abort();
         }
         file.clearActiveRequests();
 
@@ -1091,7 +1093,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         final ECWriteWorker.WriteEvent event = (ECWriteWorker.WriteEvent) method.getArgs()[1];
 
         if (worker.hasFinished()) {
-            // Process the worker event event if the worker has been aborted or finished to enable the cleanup of
+            // Process the worker event even if the worker has been aborted or finished to enable the cleanup of
             // buffers etc.
             Logging.logMessage(Logging.LEVEL_INFO, Category.ec, this,
                     "Process worker event %s, which will be ignored because the worker has already finished.");
@@ -1108,6 +1110,10 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                     "file is not open!")));
             return;
         }
+
+        // Refresh the open file table
+        // TODO (jdillmann): Maybe move to Worker
+        master.getPreprocStage().pingFile(fileId);
 
         // Try to get the full stripe interval
         if (event.needsStripeInterval()) {
@@ -1360,15 +1366,13 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
                 try {
                     response = osdClient.xtreemfs_ec_commit_vector(remote.getAddress(), RPCAuthentication.authNone,
                             RPCAuthentication.userService, reqBuilder.build());
-                    xtreemfs_ec_commit_vectorResponse responseMsg = response.get();
-
+                    response.registerListener(ECHelper.ignoringResponseListener);
                 } catch (Exception ex) {
                     Logging.logUserError(Logging.LEVEL_WARN, Category.ec, this, ex);
-
-                } finally {
                     if (response != null) {
                         response.freeBuffers();
                     }
+
                 }
             }
         }

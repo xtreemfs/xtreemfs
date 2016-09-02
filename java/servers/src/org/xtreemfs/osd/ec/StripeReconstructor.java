@@ -201,6 +201,9 @@ public class StripeReconstructor {
         Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                 "StripeReconstructor[fileId=%s, stripeNo=%d]: Starting", fileId, stripeNo);
 
+        // TODO (jdillmann): Decide when to ping the file. Pinging too often (each Chunk?) could reduce performance.
+        master.getPreprocStage().pingFile(fileId);
+
         int numResponses = 0;
         for (Chunk chunk : chunks) {
             if (chunk.state == ChunkState.NONE) {
@@ -260,7 +263,7 @@ public class StripeReconstructor {
             BufferPool.free(result.getData());
             return;
         }
-
+        
         Chunk chunk = result.getMappedObject();
 
         boolean objFailed = result.hasFailed();

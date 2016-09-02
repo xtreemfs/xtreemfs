@@ -26,6 +26,8 @@ public interface ECWorker<EVENT extends ECWorkerEvent> {
 
     void start();
 
+    void abort();
+
     void abort(EVENT event);
 
     void processEvent(EVENT event);

@@ -288,10 +288,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
         } else {
             if (stripeState.markSuccess(osdNo)) {
-                int curNumStripesComplete = numStripesComplete.incrementAndGet();
-                if (curNumStripesComplete == numStripes) {
-                    finished();
-                }
+                stripeComplete(stripeState);
             }
         }
        
@@ -331,10 +328,7 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             }
         } else {
             if (stripeState.markSuccess(osdNo)) {
-                int curNumStripesComplete = numStripesComplete.incrementAndGet();
-                if (curNumStripesComplete == numStripes) {
-                    finished();
-                }
+                stripeComplete(stripeState);
             }
         }
 
@@ -347,6 +341,19 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
             error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     "Request failed due to a timeout.");
             processor.signal(this, new WriteEvent(WriteEventType.FAILED, null));
+        }
+    }
+
+    private void stripeComplete(StripeState stripeState) {
+        // Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "ECWriteWorker: Completed Stripe %s",
+        // stripeState);
+
+        // TODO (jdillmann): Decide when to ping the file. Pinging too often (each Chunk?) could reduce performance.
+        master.getPreprocStage().pingFile(fileId);
+
+        int curStripesComplete = numStripesComplete.incrementAndGet();
+        if (curStripesComplete == numStripes) {
+            finished();
         }
     }
 
@@ -365,6 +372,16 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
 
         finished = true;
         freeBuffers();
+    }
+
+    @Override
+    public void abort() {
+        timeoutTimer.cancel();
+        if (finishedSignaled.compareAndSet(false, true)) {
+            error = ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_NONE,
+                    "ECWriteWorker: Aborted from ECMasterStage.");
+            processFailed(new WriteEvent(WriteEventType.FAILED, null));
+        }
     }
 
     @Override
