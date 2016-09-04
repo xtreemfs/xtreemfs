@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" name="XtreemFSAsync">
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="[ %level{EMERG=E, ALERT=E, CRIT=E, ERROR=E, WARN=W, NOTICE=I, INFO=I, DEBUG=D, TRACE=D, length=1} | %-6.-6markerSimpleName | %-20maxLength{%c{1}}{20} | %-15maxLength{%t}{15} | %3tid | %d{MMM dd HH:mm:ss} ] %m%n%notEmpty{%ex}" />
+    </Console>
+  </Appenders>
+  <Loggers>
+    <AsyncRoot level="INFO">
+      <AppenderRef ref="STDOUT"/>
+
+      <Filters>
+        <!-- <MarkerFilter marker="babudb" onMatch="DENY" onMismatch="NEUTRAL" /> -->
+        <!-- <MarkerFilter marker="buffer" onMatch="ACCEPT" onMismatch="NEUTRAL" /> -->
+        <!-- <MarkerFilter marker="all" onMatch="ACCEPT" onMismatch="DENY" /> -->
+      </Filters>
+    </AsyncRoot>
+  </Loggers>
+
+</Configuration>

@@ -9,8 +9,7 @@
 package org.xtreemfs.foundation.logging;
 
 import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+
 
 /**
  * 
@@ -78,146 +77,35 @@ public class Logging {
 
     }
     
-    protected static final char      ABBREV_LEVEL_INFO  = 'I';
-    
-    protected static final char      ABBREV_LEVEL_DEBUG = 'D';
-    
-    protected static final char      ABBREV_LEVEL_WARN  = 'W';
-    
-    protected static final char      ABBREV_LEVEL_ERROR = 'E';
-    
-    protected static final char      ABBREV_LEVEL_TRACE = 'T';
-    
-    public static final int          LEVEL_EMERG        = 0;
-    
-    public static final int          LEVEL_ALERT        = 1;
-    
-    public static final int          LEVEL_CRIT         = 2;
-    
-    public static final int          LEVEL_ERROR        = 3;
-    
-    public static final int          LEVEL_WARN         = 4;
-    
-    public static final int          LEVEL_NOTICE       = 5;
-    
-    public static final int          LEVEL_INFO         = 6;
-    
-    public static final int          LEVEL_DEBUG        = 7;
-    
-    public static final String       FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %15s ] %s";
-    
-    private static PrintStream out                = System.out;
-    
-    protected static Logging         instance;
-    
-    protected static boolean         tracingEnabled     = false;
-    
-    private final int                level;
-    
-    private final int                catMask;
-    
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd HH:mm:ss");
-    
-    /**
-     * Creates a new instance of Logging
-     */
-    private Logging(int level, int catMask) {
-        
-        if (level < 0)
-            this.level = 0;
-        else
-            this.level = level;
-        
-        this.catMask = catMask;
-        
-        instance = this;
-        
-        System.currentTimeMillis();
-    }
+    protected static final char           ABBREV_LEVEL_INFO  = 'I';
 
-    public static void redirect(PrintStream out) {
-        Logging.out = out;
-    }
+    protected static final char           ABBREV_LEVEL_DEBUG = 'D';
+
+    protected static final char           ABBREV_LEVEL_WARN  = 'W';
+
+    protected static final char           ABBREV_LEVEL_ERROR = 'E';
+
+    protected static final char           ABBREV_LEVEL_TRACE = 'T';
+
+    public static final int               LEVEL_EMERG        = 0;
+
+    public static final int               LEVEL_ALERT        = 1;
+
+    public static final int               LEVEL_CRIT         = 2;
+
+    public static final int               LEVEL_ERROR        = 3;
+
+    public static final int               LEVEL_WARN         = 4;
+
+    public static final int               LEVEL_NOTICE       = 5;
+
+    public static final int               LEVEL_INFO         = 6;
+
+    public static final int               LEVEL_DEBUG        = 7;
+
+    private static LoggingInterface       instance;
     
-    public static String truncateString(String string, int maxLength) {
-        return (string.length() > maxLength) ? 
-                (string.substring(0, maxLength - 3) + "...") : string;
-    }
-    
-    public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {
-        checkIfInitializedOrThrow();
-
-        // if the level is appropriate as well as the category, or the category
-        // is 'all', log the message
-        if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
-            
-            char levelName = getLevelName(level);
-                 
-            out.println(String.format(FORMAT_PATTERN, levelName,
-                    me == null ? "-" : truncateString(me instanceof Class ? ((Class) me).getSimpleName(): me.getClass().getSimpleName(), 20),
-                    truncateString(Thread.currentThread().getName(), 15),
-                    Thread.currentThread().getId(),
-                    getTimeStamp(), 
-                    String.format(formatPattern, args)));
-        }
-    }
-
-    private static void checkIfInitializedOrThrow() {
-        if (instance == null) {
-            throw new RuntimeException(
-                    "Cannot log message because the logging is not initialized yet. Did you forget to call Logging.start(...) in your code?");
-        }
-    }
-    
-    public static void logMessage(int level, Object me, String formatPattern, Object... args) {
-        logMessage(level, Category.all, me, formatPattern, args);
-    }
-    
-    public static void logError(int level, Object me, Throwable msg) {
-        checkIfInitializedOrThrow();
-
-        // if the level is appropriate, log the message
-        if (level <= instance.level) {
-            
-            char levelName = getLevelName(level);
-
-            out.println(String.format(FORMAT_PATTERN, levelName,
-                    me == null ? "-" : (me instanceof Class ? ((Class) me).getSimpleName(): me.getClass().getSimpleName()),
-                    Thread.currentThread().getName(), Thread.currentThread().getId(),
-                getTimeStamp(), msg.toString()));
-            for (StackTraceElement elem : msg.getStackTrace()) {
-                out.println(" ...                                           " + elem.toString());
-            }
-            if (msg.getCause() != null) {
-                out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
-                        .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
-                    getTimeStamp(), "root cause: " + msg.getCause()));
-                for (StackTraceElement elem : msg.getCause().getStackTrace()) {
-                    out.println(" ...                                           " + elem.toString());
-                }
-            }
-        }
-    }
-    
-    public static void logUserError(int level, Category cat, Object me, Throwable msg) {
-        checkIfInitializedOrThrow();
-
-        // if the level is appropriate as well as the category, or the category
-        // is 'all', log the message
-        if (level <= instance.level && (cat == Category.all || (2 << cat.ordinal() & instance.catMask) > 0)) {
-            
-            char levelName = getLevelName(level);
-            
-            out.println(String.format(FORMAT_PATTERN, levelName, me == null ? "-" : me.getClass()
-                    .getSimpleName(), Thread.currentThread().getName(), Thread.currentThread().getId(),
-                getTimeStamp(), msg.toString()));
-            for (StackTraceElement elem : msg.getStackTrace()) {
-                out.println(" ...                                           " + elem.toString());
-            }
-        }
-    }
-
-    public static char getLevelName(int level) {
+    static char getLevelName(int level) {
         switch (level) {
         case LEVEL_EMERG:
         case LEVEL_ALERT:
@@ -235,26 +123,65 @@ public class Logging {
             return '?';
         }
     }
+
+    private Logging() {
+    }
+
     
     public synchronized static void start(int level, Category... categories) {
         if (instance == null) {
-            
-            int catMask = 0;
-            for (Category cat : categories) {
-                
-                if (cat == Category.all)
-                    catMask = -1;
-                
-                catMask |= 2 << cat.ordinal();
+
+
+            String logImplClass = System.getProperty("org.xtreemfs.foundation.logging.LoggingImpl");
+            if (logImplClass != null) {
+                try {
+                    Class<? extends LoggingInterface> clazz = Class.forName(logImplClass)
+                            .asSubclass(LoggingInterface.class);
+                    instance = clazz.newInstance();
+                } catch (ReflectiveOperationException ex) {
+                    throw new RuntimeException(ex);
+                }
+            } else {
+                instance = new LoggingImpl();
             }
-            
-            if(categories.length == 0)
-                catMask = -1;
-            
-            instance = new Logging(level, catMask);
+
+            instance.start(level, categories);
+        }
+    }
+
+
+    private static void checkIfInitializedOrThrow() {
+        if (instance == null) {
+            throw new RuntimeException(
+                    "Cannot log message because the logging is not initialized yet. Did you forget to call Logging.start(...) in your code?");
         }
     }
     
+    public static void redirect(PrintStream out) {
+        checkIfInitializedOrThrow();
+        instance.redirect(out);
+    }
+
+    public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {
+        checkIfInitializedOrThrow();
+        instance.logMessage(level, cat, me, formatPattern, args);
+    }
+
+    public static void logMessage(int level, Object me, String formatPattern, Object... args) {
+        checkIfInitializedOrThrow();
+        instance.logMessage(level, Category.all, me, formatPattern, args);
+    }
+    
+    public static void logError(int level, Object me, Throwable msg) {
+        checkIfInitializedOrThrow();
+        instance.logError(level, me, msg);
+    }
+    
+    public static void logUserError(int level, Category cat, Object me, Throwable msg) {
+        checkIfInitializedOrThrow();
+        instance.logUserError(level, cat, me, msg);
+    }
+
     /**
      * Returns the current logging level if logging has been started or a negative value (-1) otherwise.
      * 
@@ -264,32 +191,50 @@ public class Logging {
         if (instance == null)
             return -1;
         else
-            return instance.level;
+            return instance.getLevel();
     }
 
     public static boolean isDebug() {
         if (instance == null)
             return false;
         else
-            return instance.level >= LEVEL_DEBUG;
+            return instance.isDebug();
     }
     
     public static boolean isInfo() {
         if (instance == null)
             return false;
         else
-            return instance.level >= LEVEL_INFO;
+            return instance.isInfo();
     }
     
     public static boolean isNotice() {
         if (instance == null)
             return false;
         else
-            return instance.level >= LEVEL_NOTICE;
+            return instance.isNotice();
     }
+
     
-    private static String getTimeStamp() {
-        return dateFormat.format(new Date());
+    public static interface LoggingInterface {
+        public void start(int level, Category[] categories);
+
+        public void redirect(PrintStream out);
+
+        public void logMessage(int level, Category cat, Object me, String formatPattern, Object[] args);
+
+        public void logMessage(int level, Object me, String formatPattern, Object[] args);
+
+        public void logError(int level, Object me, Throwable msg);
+
+        public void logUserError(int level, Category cat, Object me, Throwable msg);
+
+        public int getLevel();
+
+        public boolean isDebug();
+
+        public boolean isInfo();
+
+        public boolean isNotice();
     }
-    
 }
