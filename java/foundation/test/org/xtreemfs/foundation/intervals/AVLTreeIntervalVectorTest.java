@@ -48,6 +48,11 @@ public class AVLTreeIntervalVectorTest {
         expected.set(0, new ObjectInterval(0, 1024, 4));
         versions = tree.getOverlapping(0, 8192);
         assertEquals(expected, versions);
+
+        expected.clear();
+        expected.add(new ObjectInterval(2048, 4096, 3));
+        versions = tree.getOverlapping(2048, 4096);
+        assertEquals(expected, versions);
     }
 
     @Test

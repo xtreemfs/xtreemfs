@@ -233,7 +233,6 @@ public class ECReadWriteTest extends ECTestCommon {
         BufferPool.free(data);
         BufferPool.free(dout);
 
-        nowDebug = true;
         // Try reading from the gap
         objNumber = dataWidth - 2;
         length = chunkSize;

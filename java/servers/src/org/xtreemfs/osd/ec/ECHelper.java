@@ -75,7 +75,6 @@ public class ECHelper {
         }
 
         while (src.remaining() >= 8) {
-            // FIXME (jdillmann): Check endianess!
             dst.putLong(src.getLong() ^ cur.getLong());
         }
 

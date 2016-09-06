@@ -16,6 +16,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
     IntervalNode root;
     long         start;
     long         end;
+    boolean      endEmpty;
     long         maxVersion;
 
     /** Number of intervals (approximate) that have been overwritten by subsequent inserts. */
@@ -25,6 +26,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
         this.root = null;
         this.start = -1;
         this.end = 0;
+        this.endEmpty = false;
         this.maxVersion = -1;
     }
 
@@ -37,11 +39,9 @@ public class AVLTreeIntervalVector extends IntervalVector {
             maxVersion = interval.getVersion();
         }
 
-        if (interval.isEmpty() && interval.getEnd() >= end) {
-            end = findEnd(0, root);
-
-        } else if (interval.getEnd() > end) {
+        if (interval.getEnd() >= end) {
             end = interval.getEnd();
+            endEmpty = interval.isEmpty();
         }
     }
 
@@ -381,6 +381,10 @@ public class AVLTreeIntervalVector extends IntervalVector {
 
     @Override
     public long getEnd() {
+        if (endEmpty) {
+            end = findEnd(0, root);
+            endEmpty = false;
+        }
         return end;
     }
 

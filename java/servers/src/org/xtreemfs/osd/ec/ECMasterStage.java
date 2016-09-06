@@ -105,7 +105,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         this.master = master;
 
         // FIXME (jdillmann): Do i need my own RPC client? What should be the timeouts?
-        client = new RPCNIOSocketClient(sslOpts, 15 * 1000, 5 * 60 * 1000, "ECMasterStage");
+        client = new RPCNIOSocketClient(sslOpts, 15 * 1000, 5 * 60 * 1000, "ECMasterStage (RPC)");
         osdClient = new OSDServiceClient(client, null);
         externalRequestsInQueue = new AtomicInteger(0);
 
