@@ -26,6 +26,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
@@ -127,13 +128,20 @@ public class Helper {
     }
 
     /**
-     * Creates a list containing the UUIDs for the head OSD of every replica in the XLocSet.
+     * Creates a list containing the UUIDs for the head OSD of every replica,
+     * or all OSD UUIDS if EC is set in the XLocSet.
      */
     public static List<String> getOSDUUIDsFromXlocSet(XLocSet xlocs) {
         List<String> uuids = new ArrayList<String>(xlocs.getReplicasCount());
 
         for (int i = 0; i < xlocs.getReplicasCount(); i++) {
-            uuids.add(xlocs.getReplicas(i).getOsdUuids(0));
+            Replica replica = xlocs.getReplicas(i);
+
+            if (replica.getStripingPolicy().getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                uuids.addAll(replica.getOsdUuidsList());
+            } else {
+                uuids.add(xlocs.getReplicas(i).getOsdUuids(0));
+            }
         }
 
         return uuids;

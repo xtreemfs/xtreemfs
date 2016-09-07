@@ -77,7 +77,7 @@ void SimpleUUIDIterator::ClearAndGetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::X
   }
   uuids_.clear();
 
-  // Add the head OSD of each replica to the list.
+
   for (int replica_index = 0;
        replica_index < xlocs.replicas_size();
        ++replica_index) {
@@ -88,8 +88,17 @@ void SimpleUUIDIterator::ClearAndGetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::X
           "No head OSD available in XlocSet: " + xlocs.DebugString());
     }
 
-    UUIDItem* entry = new UUIDItem(replica.osd_uuids(0));
-    uuids_.push_back(entry);
+    if (replica.striping_policy().type() == xtreemfs::pbrpc::STRIPING_POLICY_ERASURECODE) {
+      // Add every OSD to the list if EC is enabled
+      for (int i = 0; i < replica.osd_uuids_size(); ++i) {
+        UUIDItem* entry = new UUIDItem(replica.osd_uuids(i));
+        uuids_.push_back(entry);
+      }
+    } else {
+      // Add the head OSD of each replica to the list.
+      UUIDItem* entry = new UUIDItem(replica.osd_uuids(0));
+      uuids_.push_back(entry);
+    }
   }
 
   // Set the current UUID to the first element.

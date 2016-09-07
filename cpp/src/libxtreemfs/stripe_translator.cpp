@@ -77,17 +77,21 @@ void StripeTranslatorRaid0::TranslateReadRequest(
 void StripeTranslatorEC::TranslateWriteRequest(
     const char* buf, size_t size, int64_t offset, PolicyContainer policies,
     std::vector<WriteOperation>* operations) const {
+  const StripingPolicy* policy = *policies.begin();
   // stripe size is stored in kB
-  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+  unsigned int stripe_size = policy->stripe_size() * 1024;
 
   size_t obj_number = static_cast<size_t>(offset) / stripe_size;
   size_t req_offset = static_cast<size_t>(offset) % stripe_size;
 
+  int stripe_width = policy->width();
+  if (policy->has_parity_width()) {
+    stripe_width += policy->parity_width();
+  }
+
   std::vector<size_t> osd_offsets;
-  for (PolicyContainer::iterator i = policies.begin();
-       i != policies.end();
-       ++i) {
-    osd_offsets.push_back(0);
+  for (int j = 0; j < stripe_width; ++j) {
+    osd_offsets.push_back(j);
   }
 
   operations->push_back(WriteOperation(obj_number, osd_offsets, size, req_offset, buf));
@@ -96,17 +100,21 @@ void StripeTranslatorEC::TranslateWriteRequest(
 void StripeTranslatorEC::TranslateReadRequest(
     char* buf, size_t size, int64_t offset, PolicyContainer policies,
     std::vector<ReadOperation>* operations) const {
+  const StripingPolicy* policy = *policies.begin();
   // stripe size is stored in kB
-  unsigned int stripe_size = (*policies.begin())->stripe_size() * 1024;
+  unsigned int stripe_size = policy->stripe_size() * 1024;
 
   size_t obj_number = static_cast<size_t>(offset) / stripe_size;
   size_t req_offset = static_cast<size_t>(offset) % stripe_size;
 
+  int stripe_width = policy->width();
+  if (policy->has_parity_width()) {
+    stripe_width += policy->parity_width();
+  }
+
   std::vector<size_t> osd_offsets;
-  for (PolicyContainer::iterator i = policies.begin();
-       i != policies.end();
-       ++i) {
-    osd_offsets.push_back(0);
+  for (int j = 0; j < stripe_width; ++j) {
+    osd_offsets.push_back(j);
   }
 
   operations->push_back(ReadOperation(obj_number, osd_offsets, size, req_offset, buf));

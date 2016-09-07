@@ -304,7 +304,11 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
             // Differ between striping and the rest (replication, no replication).
             UUIDIterator uuidIterator;
-            if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
+            if (policy.getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                // File is Erasure Coded. Use all UUIDs as already set in the osdUuidIterator
+                uuidIterator = osdUuidIterator;
+
+            } else if (readRqBuilder.getFileCredentials().getXlocs().getReplicas(0).getOsdUuidsCount() > 1) {
                 // Replica is striped. Pick UUID from xlocset.
                 tempUuidIteratorForStriping.clear();
                 
@@ -442,7 +446,11 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
                 // specific UUID).
                 AsyncWriteBuffer writeBuffer;
 
-                if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
+                if (stripingPolicy.getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                    // File is Erasure Coded. Use all UUIDs as already set in the osdUuidIterator
+                    writeBuffer = new AsyncWriteBuffer(request.build(), operations.get(j).getReqData(),
+                            operations.get(j).getReqSize(), this);
+                } else if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
                     // Replica is striped. Pick UUID from xlocset
                     writeBuffer = new AsyncWriteBuffer(request.build(), operations.get(j).getReqData(), operations.get(
                             j).getReqSize(), this, Helper.getOSDUUIDFromXlocSet(xlocs, 0, operations.get(j)
@@ -476,7 +484,10 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
 
                 // Differ between striping and the rest (replication, no replication).
                 UUIDIterator uuidIterator;
-                if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
+                if (stripingPolicy.getType() == StripingPolicyType.STRIPING_POLICY_ERASURECODE) {
+                    // File is Erasure Coded. Use all UUIDs as already set in the osdUuidIterator
+                    uuidIterator = osdUuidIterator;
+                } else if (xlocs.getReplicas(0).getOsdUuidsCount() > 1) {
                     // Replica is striped. Pick UUID from Xlocset. Use first and only replica.
                     osdUuid = Helper.getOSDUUIDFromXlocSet(xlocs, 0, operations.get(j).getOsdOffset());
                     uuidIterator = new UUIDIterator();

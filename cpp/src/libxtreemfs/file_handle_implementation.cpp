@@ -196,7 +196,10 @@ int FileHandleImplementation::DoRead(
   for (size_t j = 0; j < operations.size(); j++) {
     // Differ between striping and the rest (replication, no replication).
     UUIDIterator* uuid_iterator;
-    if (xlocs.replicas(0).osd_uuids_size() > 1) {
+    if (xlocs.replicas(0).striping_policy().type() == STRIPING_POLICY_ERASURECODE) {
+      // File is Erasure Coded. Use all UUIDs as already set in the osd_uuid_iterator_
+      uuid_iterator = osd_uuid_iterator_;
+    } else if (xlocs.replicas(0).osd_uuids_size() > 1) {
       // Replica is striped. Get a UUID iterator from OSD offsets
       temp_uuid_iterator_for_striping.reset(
           new ContainerUUIDIterator(osd_uuid_container,
@@ -331,7 +334,15 @@ int FileHandleImplementation::DoWrite(
       // Create new WriteBuffer and differ between striping and the rest (
       // (replication = use UUIDIterator, no replication = set specific UUID).
       AsyncWriteBuffer* write_buffer;
-      if (xlocs.replicas(0).osd_uuids_size() > 1) {
+      if (xlocs.replicas(0).striping_policy().type() == STRIPING_POLICY_ERASURECODE) {
+        // File is Erasure Coded. Use all UUIDs from the first and only replica
+        // as set in osd_offsets.
+        write_buffer = new AsyncWriteBuffer(write_request,
+                                            operations[j].data,
+                                            operations[j].req_size,
+                                            this,
+                                            &xcap_manager_);
+      } else if (xlocs.replicas(0).osd_uuids_size() > 1) {
         // Replica is striped. Pick UUID from xlocset.
         write_buffer = new AsyncWriteBuffer(
             write_request,
@@ -363,7 +374,10 @@ int FileHandleImplementation::DoWrite(
       // Differentiate between striping and the rest.
       UUIDIterator* uuid_iterator = NULL;
       SimpleUUIDIterator temp_uuid_iterator_for_striping;
-      if (xlocs.replicas(0).osd_uuids_size() > 1) {
+      if (xlocs.replicas(0).striping_policy().type() == STRIPING_POLICY_ERASURECODE) {
+        // File is Erasure Coded. Use all UUIDs as already set in the osd_uuid_iterator_
+        uuid_iterator = osd_uuid_iterator_;
+      } else if (xlocs.replicas(0).osd_uuids_size() > 1) {
         // Replica is striped. Pick UUID from xlocset.
         osd_uuid = GetOSDUUIDFromXlocSet(xlocs,
                                          0,  // Use first and only replica.

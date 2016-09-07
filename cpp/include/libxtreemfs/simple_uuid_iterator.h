@@ -36,7 +36,7 @@ class SimpleUUIDIterator : public UUIDIterator {
   /** Appends every "uuid" from service_addresses to the list of the UUIDs. Does not change the current UUID. */
   void AddUUIDs(const ServiceAddresses& service_addresses);
 
-  /** Clear the list and add the head OSD UUIDs of all replicas from the xLocSet. */
+  /** Clear the list and add the head OSD UUIDs of all replicas, or all OSD UUIDS if EC is set from the xLocSet. */
   void ClearAndGetOSDUUIDsFromXlocSet(const xtreemfs::pbrpc::XLocSet& xlocs);
 
 
