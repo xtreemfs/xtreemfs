@@ -572,14 +572,14 @@ class StripingPolicy : public ::google::protobuf::Message {
   inline ::google::protobuf::uint32 width() const;
   inline void set_width(::google::protobuf::uint32 value);
 
-  // optional fixed32 parity_width = 4;
+  // optional fixed32 parity_width = 4 [default = 0];
   inline bool has_parity_width() const;
   inline void clear_parity_width();
   static const int kParityWidthFieldNumber = 4;
   inline ::google::protobuf::uint32 parity_width() const;
   inline void set_parity_width(::google::protobuf::uint32 value);
 
-  // optional fixed32 ec_write_quorum = 5;
+  // optional fixed32 ec_write_quorum = 5 [default = 0];
   inline bool has_ec_write_quorum() const;
   inline void clear_ec_write_quorum();
   static const int kEcWriteQuorumFieldNumber = 5;
@@ -2038,7 +2038,7 @@ inline void StripingPolicy::set_width(::google::protobuf::uint32 value) {
   width_ = value;
 }
 
-// optional fixed32 parity_width = 4;
+// optional fixed32 parity_width = 4 [default = 0];
 inline bool StripingPolicy::has_parity_width() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
@@ -2060,7 +2060,7 @@ inline void StripingPolicy::set_parity_width(::google::protobuf::uint32 value) {
   parity_width_ = value;
 }
 
-// optional fixed32 ec_write_quorum = 5;
+// optional fixed32 ec_write_quorum = 5 [default = 0];
 inline bool StripingPolicy::has_ec_write_quorum() const {
   return (_has_bits_[0] & 0x00000010u) != 0;
 }

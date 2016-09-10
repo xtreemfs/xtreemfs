@@ -267,6 +267,8 @@ public class MRCHelper {
                     "could not assign OSDs to file " + path + ": not enough suitable OSDs available");
         }
 
+        int ec_quorum = stripingPolicy.getECWriteQuorum();
+
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
         int parity = stripingPolicy.getParityWidth();
@@ -280,7 +282,7 @@ public class MRCHelper {
 
         if (width != stripingPolicy.getWidth())
             stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy.getStripeSize(),
-                    width - parity, parity);
+                    width - parity, parity, ec_quorum);
 
         return sMan.createXLoc(stripingPolicy, osds, replFlags);
     }

@@ -127,6 +127,32 @@ string formatBytes(uint64_t bytes) {
   }
 }
 
+// Formats the striping policy in a human readable format
+std::string formatSP(Json::Value& sp) {
+  std::ostringstream out;
+
+  out << sp["pattern"].asString()
+      << " / ";
+
+  if (sp["pattern"] == "STRIPING_POLICY_ERASURECODE") {
+    out << sp["width"].asInt() << "," << sp["parity"].asInt();
+
+    int ec_quorum = sp["ec_quorum"].asInt();
+    if (ec_quorum == 0) {
+      ec_quorum = sp["width"].asInt() + sp["parity"].asInt();
+    }
+    out << " (" << ec_quorum << ")";
+  } else {
+    out  << sp["width"].asInt();
+  }
+
+  out << " / " << sp["size"].asInt() << "kB" << endl;
+
+  return out.str();
+}
+
+
+
 // checks whether the quota is unlimited and returns unlimted
 // or a formatted string
 string parseUnlimitedQuota(uint64_t quota){
@@ -232,11 +258,7 @@ bool getattr(const string& xctl_file,
           Json::Value& replica = stat["locations"]["replicas"][i];
           cout << "  Replica " << (i+1) << endl;
           cout << "     Striping policy     "
-              << replica["striping-policy"]["pattern"].asString()
-              << " / " << replica["striping-policy"]["width"].asInt()
-              << "," << replica["striping-policy"]["parity"].asInt()
-              << " / " <<replica["striping-policy"]["size"].asInt()
-              << "kB" << endl;
+               << formatSP(replica["striping-policy"]) << endl;
           if (is_ronly) {
             cout << "     Replication Flags   ";
             int repl_flags = replica["replication-flags"].asInt();
@@ -342,11 +364,7 @@ bool getattr(const string& xctl_file,
 
         cout << "Default Striping p.  ";
         if (stat.isMember("default_sp")) {
-          cout << stat["default_sp"]["pattern"].asString()
-              << " / " << stat["default_sp"]["width"].asInt()
-              << ","   << stat["default_sp"]["parity"].asInt()
-              << " / " << stat["default_sp"]["size"].asInt()
-              << "kB" << endl;
+          cout << formatSP(stat["default_sp"]) << endl;
         } else {
           cout << "not set" << endl;
         }
@@ -453,6 +471,7 @@ bool SetDefaultSP(const string& xctl_file,
   const int width = vm["striping-policy-width"].as<int>();
   const int size = vm["striping-policy-stripe-size"].as<int>();
   const int parity = vm["striping-policy-parity"].as<int>();
+  const int ec_quorum = vm["striping-policy-ec-quorum"].as<int>();
 
   Json::Value request(Json::objectValue);
   request["operation"] = "setDefaultSP";
@@ -468,12 +487,11 @@ bool SetDefaultSP(const string& xctl_file,
   request["width"] = width;
   request["size"] = size;
   request["parity"] = parity;
+  request["ec_quorum"] = ec_quorum;
   Json::Value response;
   if (executeOperation(xctl_file, request, &response)) {
     cout << "Updated default striping policy to: "
-        << request["pattern"].asString() << " / "
-        << width << "," << parity
-        << " / " << size << "kB" << endl;
+         << formatSP(request) << endl;
     return true;
   } else {
     cerr << "Setting Default Striping Policy FAILED" << endl;
@@ -1352,10 +1370,12 @@ int main(int argc, char **argv) {
        "striping policy (RAID0|EC)")
       ("striping-policy-width,w", value<int>(),
        "striping width (number of OSDs)")
-      ("striping-policy-parity", value<int>()->default_value(0),
-        "parity width (number of OSDs)")
       ("striping-policy-stripe-size,s", value<int>(),
        "stripe size in kB (object size)")
+      ("striping-policy-parity", value<int>()->default_value(0),
+        "parity width (number of OSDs)")
+      ("striping-policy-ec-quorum", value<int>()->default_value(0),
+         "EC write quorum required for a complete write (0 = all)")
       ("set-drp", "set (change) the default replication policy (volume)")
       ("replication-policy", value<string>(),
        "RONLY, WqRq, WaR1 or NONE to disable replication. The aliases"

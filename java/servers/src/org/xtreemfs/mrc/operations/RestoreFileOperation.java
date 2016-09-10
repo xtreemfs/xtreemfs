@@ -99,8 +99,7 @@ public class RestoreFileOperation extends MRCOperation {
                 .getStripeSize() / 1024 + 1 : rqArgs.getStripeSize() / 1024);
         
         // create and assign the new XLocList
-        StripingPolicy sp = sMan.createStripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0.name(), size,
-                1, 0);
+        StripingPolicy sp = sMan.createStripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0.name(), size, 1);
         XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsdUuid() }, 0);
         XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE, 0);
         

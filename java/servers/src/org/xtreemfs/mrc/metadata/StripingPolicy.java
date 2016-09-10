@@ -44,4 +44,10 @@ public interface StripingPolicy {
      */
     public int getParityWidth();
 
+    /**
+     * Returns the write quorum that has to be written to consider a read of an EC file to be complete.
+     * 
+     * @return the write quorum
+     */
+    public int getECWriteQuorum();
 }

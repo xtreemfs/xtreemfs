@@ -128,9 +128,10 @@ message StripingPolicy {
     // Number of OSDs to distribute data chunks on.
     required fixed32 width = 3;
     // Number of OSDs to distribute parity chunks on.
-    optional fixed32 parity_width = 4;
-    //
-    optional fixed32 ec_write_quorum = 5;
+    optional fixed32 parity_width = 4 [default = 0];
+    // Optional number of nodes that have to be written to consider a write of
+    // an EC file to be complete.
+    optional fixed32 ec_write_quorum = 5 [default = 0];
 }
 
 // Details for a file replica.

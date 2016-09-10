@@ -175,7 +175,7 @@ public class Converter {
 
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder sp = org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy
                     .newBuilder().setType(StripingPolicyType.valueOf(xSP.getPattern())).setStripeSize(
-                            xSP.getStripeSize()).setWidth(xSP.getWidth()).setParityWidth(xSP.getParityWidth());
+                            xSP.getStripeSize()).setWidth(xSP.getWidth()).setParityWidth(xSP.getParityWidth()).setEcWriteQuorum(xSP.getECWriteQuorum());
 
             Replica.Builder replBuilder = Replica.newBuilder().setReplicationFlags(
                     xRepl.getReplicationFlags()).setStripingPolicy(sp);
@@ -197,7 +197,6 @@ public class Converter {
      * @return the striping policy
      */
     public static StripingPolicy stringToStripingPolicy(StorageManager sMan, String spString) {
-
         StringTokenizer st = new StringTokenizer(spString, " ,\t");
         String policy = st.nextToken();
         if (policy.equals("RAID0"))
@@ -205,9 +204,10 @@ public class Converter {
 
         int size = Integer.parseInt(st.nextToken());
         int width = Integer.parseInt(st.nextToken());
-        int parity = Integer.parseInt(st.nextToken());
+        int parity = st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : 0;
+        int ec_qurorum = st.hasMoreTokens() ? Integer.parseInt(st.nextToken()) : 0;
 
-        return sMan.createStripingPolicy(policy, size, width, parity);
+        return sMan.createStripingPolicy(policy, size, width, parity, ec_qurorum);
     }
 
     /**
@@ -228,11 +228,16 @@ public class Converter {
         String pattern = (String) spMap.get("pattern");
         long size = (Long) spMap.get("size");
         long width = (Long) spMap.get("width");
-        long parity = (Long) spMap.get("parity");
+        Long parity_opt = (Long) spMap.get("parity");
+        Long ec_quorum_opt = (Long) spMap.get("ec_quorum");
+
+        int parity = parity_opt != null ? parity_opt.intValue() : 0;
+        int ec_quorum = ec_quorum_opt != null ? ec_quorum_opt.intValue() : 0;
+
 
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder().setType(
                 StripingPolicyType.valueOf(pattern)).setStripeSize((int) size).setWidth((int) width)
-                .setParityWidth((int) parity).build();
+                .setParityWidth(parity).setEcWriteQuorum(ec_quorum).build();
     }
 
     /**
@@ -242,7 +247,8 @@ public class Converter {
      * @return a string containing the striping policy information
      */
     public static String stripingPolicyToString(StripingPolicy sp) {
-        return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth() + ", " + sp.getParityWidth();
+        return sp.getPattern() + ", " + sp.getStripeSize() + ", " + sp.getWidth() + ", " + sp.getParityWidth() 
+                + ", " + sp.getECWriteQuorum();
     }
 
     /**
@@ -253,14 +259,16 @@ public class Converter {
      */
     public static String stripingPolicyToString(
             org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy sp) {
-        return sp.getType().toString() + ", " + sp.getStripeSize() + ", " + sp.getWidth() + ", " + sp.getParityWidth();
+        return sp.getType().toString() + ", " + sp.getStripeSize() + ", " + sp.getWidth() 
+                + ", " + (sp.hasParityWidth() ?  sp.getParityWidth() : 0) 
+                + ", " + (sp.hasEcWriteQuorum() ? sp.getEcWriteQuorum() : 0);
     }
 
     public static org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.Builder stripingPolicyToStripingPolicy(
             StripingPolicy sp) {
         return org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy.newBuilder()
                 .setType(StripingPolicyType.valueOf(sp.getPattern())).setStripeSize(sp.getStripeSize())
-                .setWidth(sp.getWidth()).setParityWidth(sp.getParityWidth());
+                .setWidth(sp.getWidth()).setParityWidth(sp.getParityWidth()).setEcWriteQuorum(sp.getECWriteQuorum());
     }
 
     public static String stripingPolicyToJSONString(StripingPolicy sp) throws JSONException {
@@ -273,6 +281,7 @@ public class Converter {
         spMap.put("size", sp.getStripeSize());
         spMap.put("width", sp.getWidth());
         spMap.put("parity", sp.getParityWidth());
+        spMap.put("ec_quorum", sp.getECWriteQuorum());
         return spMap;
     }
 

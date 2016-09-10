@@ -53,7 +53,7 @@ public class Replica {
     }
 
     public boolean isStriped() {
-        return getStripingPolicy().getWidth() > 1;
+        return (getStripingPolicy().getWidth() + getStripingPolicy().getParityWidth()) > 1;
     }
 
     public ServiceUUID getHeadOsd() {

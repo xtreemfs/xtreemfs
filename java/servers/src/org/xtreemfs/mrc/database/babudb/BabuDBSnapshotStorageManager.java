@@ -662,7 +662,12 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
 
     @Override
-    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width, int parity) {
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width) {
+        return null;
+    }
+
+    @Override
+    public StripingPolicy createStripingPolicy(String pattern, int stripeSize, int width, int parity, int ec_quorum) {
         return null;
     }
 

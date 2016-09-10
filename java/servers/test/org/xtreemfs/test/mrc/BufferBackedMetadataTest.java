@@ -91,12 +91,12 @@ public class BufferBackedMetadataTest {
             final int width = 5;
 
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
-            checkSP(pattern, stripeSize, width, 0, sp1);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0, 0);
+            checkSP(pattern, stripeSize, width, 0, 0, sp1);
 
             // copy striping policy
             BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
-            checkSP(pattern, stripeSize, width, 0, sp2);
+            checkSP(pattern, stripeSize, width, 0, 0, sp2);
         }
 
         {
@@ -105,12 +105,12 @@ public class BufferBackedMetadataTest {
             final int width = 1;
 
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0);
-            checkSP(pattern, stripeSize, width, 0, sp1);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, 0, 0);
+            checkSP(pattern, stripeSize, width, 0, 0, sp1);
 
             // copy striping policy
             BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
-            checkSP(pattern, stripeSize, width, 0, sp2);
+            checkSP(pattern, stripeSize, width, 0, 0, sp2);
         }
 
 
@@ -119,14 +119,15 @@ public class BufferBackedMetadataTest {
             final int stripeSize = 128;
             final int width = 3;
             final int parity = 2;
+            final int ec_quorum = 5;
 
             // create striping policy
-            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, parity);
-            checkSP(pattern, stripeSize, width, parity, sp1);
+            BufferBackedStripingPolicy sp1 = new BufferBackedStripingPolicy(pattern, stripeSize, width, parity, ec_quorum);
+            checkSP(pattern, stripeSize, width, parity, ec_quorum, sp1);
 
             // copy striping policy
             BufferBackedStripingPolicy sp2 = new BufferBackedStripingPolicy(sp1.getBuffer());
-            checkSP(pattern, stripeSize, width, parity, sp2);
+            checkSP(pattern, stripeSize, width, parity, ec_quorum, sp2);
         }
     }
 
@@ -206,7 +207,7 @@ public class BufferBackedMetadataTest {
 
         {
             final String[] osds = { "dataOSD0", "dataOSD1", "dataOSD2", "parityOSD0", "parityOSD1" };
-            final BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("EC", 1024, 3, 2);
+            final BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("EC", 1024, 3, 2, 5);
             final int replFlags = 0;
 
             // create XLoc
@@ -253,7 +254,7 @@ public class BufferBackedMetadataTest {
         }
 
         {
-            final List<BufferBackedStripingPolicy> sp = generateSPList(new BufferBackedStripingPolicy("EC", 5, 3, 2));
+            final List<BufferBackedStripingPolicy> sp = generateSPList(new BufferBackedStripingPolicy("EC", 5, 3, 2, 5));
 
             final List<BufferBackedXLoc> replicas = generateXLocList(
                     new BufferBackedXLoc(sp.get(0), new String[] { "11111", "22222", "33333", "44444", "55555" }, 0));
@@ -348,10 +349,11 @@ public class BufferBackedMetadataTest {
         assertEquals(rights, entry.getRights());
     }
 
-    private void checkSP(String pattern, int stripeSize, int width, int parity, BufferBackedStripingPolicy sp) {
+    private void checkSP(String pattern, int stripeSize, int width, int parity, int ec_quorum, BufferBackedStripingPolicy sp) {
         assertEquals(pattern, sp.getPattern().toString());
         assertEquals(width, sp.getWidth());
         assertEquals(parity, sp.getParityWidth());
+        assertEquals(ec_quorum, sp.getECWriteQuorum());
         assertEquals(stripeSize, sp.getStripeSize());
     }
 
