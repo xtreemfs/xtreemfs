@@ -963,8 +963,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         if (file == null || !file.isLocalIsPrimary()) {
             worker.abort(event);
             Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
-            callback.failed((ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                    "file is not open!")));
             return;
         }
 
@@ -1107,8 +1105,6 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
             worker.abort(event);
 
             Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
-            callback.failed((ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
-                    "file is not open!")));
             return;
         }
 
