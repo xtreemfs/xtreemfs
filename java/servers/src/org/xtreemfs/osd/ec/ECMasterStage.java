@@ -700,11 +700,12 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         final ECFileState file = fileStates.get(fileId);
 
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                     "Received LocalIntervalVectorAvailable event for non opened file (%s)", fileId);
             return;
         }
+
 
         if (error != null) {
             failed(file, error);
@@ -844,7 +845,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
 
         final ECFileState file = fileStates.get(fileId);
 
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
                     "Received eventCommitVectorComplete event for non opened file (%s)", fileId);
             return;
@@ -905,7 +906,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                     "file is not open!"));
             return;
@@ -959,7 +960,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             worker.abort(event);
             Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
             callback.failed((ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
@@ -1034,7 +1035,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             BufferPool.free(data);
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                     "file is not open!"));
@@ -1102,7 +1103,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             worker.abort(event);
 
             Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "file %s is not open", fileId);
@@ -1185,7 +1186,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
             return;
         }
@@ -1239,7 +1240,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.ec, this, "Received diff response for non open file %s",
                     fileId);
             return;
@@ -1290,7 +1291,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
             return;
         }
@@ -1404,7 +1405,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null) {
+        if (file == null || !file.isLocalIsPrimary()) {
             callback.failed(ErrorUtils.getErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, POSIXErrno.POSIX_ERROR_EIO,
                     "file is not open!"));
             return;
