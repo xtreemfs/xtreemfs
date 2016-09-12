@@ -288,6 +288,13 @@ public class ECReconstructionStage extends Stage {
         assert (stripeNo == stripe.getStripe().getStripeNo());
 
         StripeReconstructor reconstructor = stripe.getReconstructor();
+        if (reconstructor == null) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this,
+                    "Ignored already Event StripeReconstructed for file '%s' because it was already reconstructed.",
+                    fileId);
+            return;
+        }
+
 
         StripingPolicyImpl sp = file.getPolicy();
         

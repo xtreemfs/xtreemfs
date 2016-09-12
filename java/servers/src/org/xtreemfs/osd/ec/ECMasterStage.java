@@ -1182,7 +1182,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null || !file.isLocalIsPrimary()) {
+        if (file == null) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
             return;
         }
@@ -1287,7 +1287,7 @@ public class ECMasterStage extends Stage implements ECWorkerEventProcessor {
         }
 
         final ECFileState file = fileStates.get(fileId);
-        if (file == null || !file.isLocalIsPrimary()) {
+        if (file == null) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.ec, this, "file is not open!");
             return;
         }

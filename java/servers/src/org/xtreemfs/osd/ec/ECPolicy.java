@@ -54,7 +54,7 @@ public class ECPolicy {
         this.k = sp.getWidth();
         
         StripingPolicy spMsg = sp.getPolicy();
-        if (spMsg.hasEcWriteQuorum()) {
+        if (spMsg.hasEcWriteQuorum() && spMsg.getEcWriteQuorum() > 0) {
             qw = spMsg.getEcWriteQuorum();
             // FIXME (jdillmann): Check this!
             assert (qw >= k) : "Write Quorum has to be >=k";
