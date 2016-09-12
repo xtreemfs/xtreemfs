@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Queue;
 
 import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -178,8 +179,10 @@ public class ECPolicy {
         return needsCommit;
     }
 
+
     static List<MutableInterval> recoverVector(List<Interval>[] vectors, List<MutableInterval> existingResult) {
         LinkedList<MutableInterval> result = new LinkedList<MutableInterval>();
+        Queue<Interval> curSplitQueue = new LinkedList<Interval>();
 
         // Compare every vector with the current result and adapt it if necessary.
         for (int i = 0; i < vectors.length; i++) {
@@ -191,33 +194,29 @@ public class ECPolicy {
             // Iterator over the intervals from the result vector.
             ListIterator<MutableInterval> resIterator = result.listIterator();
             // The active interval in the result vector.
-            // If null, the next interval from the result vector will be processed.
             MutableInterval resInterval = null;
-
 
             // Iterator over the intervals from the currently processed vector.
             List<Interval> curIntervals = vectors[i];
             Iterator<Interval> curIt = curIntervals.iterator();
             // The active interval in the currently processed vector.
-            // If null, the next interval from the current vector will be processed.
             Interval curInterval = null;
 
             // Iterator over the active interval in the existing/previous result vector.
             Iterator<MutableInterval> exResIt = (existingResult != null) ? existingResult.iterator() : null;
             MutableInterval exResInterval = (existingResult != null && exResIt.hasNext()) ? exResIt.next() : null;
 
-            // The position of the last event and also the end of the last interval in the result vector.
-            long lastEnd = 0;
-
-            // Marks the curInterval if it has been found and counted in the existing result vector.
-            boolean curIntervalEx = false;
 
             // Loop as long as there are intervals from the current vector left.
-            while (curInterval != null || curIt.hasNext()) {
-                // Get the next interval from the current vector if the active one has been processed.
-                if (curInterval == null) {
+            while (curIt.hasNext() || !curSplitQueue.isEmpty()) {
+                // Get the next interval of the current vector.
+                // If the previous interval has been splitted, it has to be handled before
+                // getting the next interval from the original vector.
+                if (!curSplitQueue.isEmpty()) {
+                    curInterval = curSplitQueue.remove();
+                } else {
+                    assert (curIt.hasNext());
                     curInterval = curIt.next();
-                    curIntervalEx = false;
 
                     // Just ignore incomplete intervals by replacing them with empty ones
                     if (!curInterval.isOpComplete()) {
@@ -225,154 +224,91 @@ public class ECPolicy {
                     }
                 }
 
-                // Get the currently active interval in the result vector.
-                if (resInterval == null && resIterator.hasNext()) {
-                    resInterval = resIterator.next();
+                // Get the next interval in the result vector.
+                resInterval = resIterator.hasNext() ? resIterator.next() : null;
+
+
+                // Advance to the next possible match between the current interval and existing results
+                while (exResInterval != null && exResInterval.getEnd() <= curInterval.getStart()) {
+                    exResInterval = exResIt.hasNext() ? exResIt.next() : null;
                 }
 
-                // The position of the current event. Can be from the result or the current vector.
-                long eventEnd = (resInterval == null || curInterval.getEnd() < resInterval.getEnd())
-                        ? curInterval.getEnd() : resInterval.getEnd();
+                // If the current interval overlaps the existing, and has the same version,
+                // it has to be counted to the existing interval.
+                // If it has a lower version it will be ignored (and replaced by an empty one).
+                if (exResInterval != null && !curInterval.isEmpty() 
+                        && curInterval.overlaps(exResInterval)
+                        && curInterval.compareVersionId(exResInterval) <= 0) {
 
-                        
-                // Handle the aggregation of results to the existing results first
-                if (exResInterval != null && exResInterval.getEnd() <= eventEnd) {
-                    if (exResInterval.equalsVersionId(curInterval)) {
-                        // Add the current interval to the existing result segments counter
-                        int newCount = exResInterval.count + 1;
-                        exResInterval.count = newCount;
-                        // Mark the current interval as already existing
-                        curIntervalEx = true;
+                    // As intervals can be splitted in the existing vector,
+                    // advance the existing iterator to the end of the current interval
+                    // and increase the counter for each matching split
+                    while (exResInterval != null && exResInterval.overlaps(curInterval)) {
+                        if (exResInterval.equalsVersionId(curInterval)) {
+                            // Add the current interval to the existing result segments counter
+                            int newCount = exResInterval.count + 1;
+                            exResInterval.count = newCount;
+                        }
+                        exResInterval = exResIt.hasNext() ? exResIt.next() : null;
                     }
 
-                    // Move to the next existing result
-                    // Get the currently active interval in the existing result vector.
-                    exResInterval = exResIt.hasNext() ? exResIt.next() : null;
-                    continue;
+                    // Replace the current interval with an empty one,
+                    // as it has been fully counted to the existing result
+                    curInterval = ObjectInterval.empty(curInterval);
                 }
 
+                // Ensure the current and the result interval end at the same position
+                // and split the longer of both intervals.
+                if (resInterval != null && curInterval.getEnd() < resInterval.getEnd()) {
+                    // Add the right part as the next element to the result list.
+                    MutableInterval right = resInterval.clone();
+                    right.start = curInterval.getEnd();
+                    resIterator.add(right);
+                    // Fix the position of the iterator to return the right interval on next()
+                    resIterator.previous();
 
-                // Compare the current interval to the active result.
+                    // Adapt the existing result interval on the left side
+                    MutableInterval left = resInterval;
+                    left.end = curInterval.getEnd();
+                }
+                if (resInterval != null && curInterval.getEnd() > resInterval.getEnd()) {
+                    // Split the current interval and add the right part to the split queue.
+                    Interval left = new ObjectInterval(curInterval.getStart(), resInterval.getEnd(),
+                            curInterval.getVersion(), curInterval.getId(), curInterval.getOpStart(),
+                            curInterval.getOpEnd());
+                    Interval right = new ObjectInterval(resInterval.getEnd(), curInterval.getEnd(),
+                            curInterval.getVersion(), curInterval.getId(), curInterval.getOpStart(),
+                            curInterval.getOpEnd());
+                    curInterval = left;
+                    curSplitQueue.add(right);
+                }
+
+                // Compare the current interval with the active result.
                 int cmp = (resInterval != null) ? curInterval.compareVersionId(resInterval) : 1;
 
                 if (resInterval == null) { // end of result list
-                    assert (cmp > 0);
                     // If the result is null, the end of the result list is reached and the current interval can just be
                     // added to the result
-
                     int newCount = !curInterval.isEmpty() ? 1 : -1;
-                    
-
-                    MutableInterval newInterval;
-                    if (curIntervalEx || (exResInterval != null && curInterval.compareVersionId(exResInterval) <= 0)) {
-                        // If the current interval is already in the existing result, add only an empty interval
-                        Interval empty = ObjectInterval.empty(lastEnd, eventEnd);
-                        newInterval = new MutableInterval(empty, -1);
-                    } else {
-                        newInterval = new MutableInterval(lastEnd, eventEnd, curInterval.getVersion(),
-                                curInterval.getId(), newCount);
-                    }
-                    
+                    MutableInterval newInterval = new MutableInterval(curInterval, newCount);
                     result.add(newInterval);
                     resIterator = result.listIterator(result.size());
                 }
 
                 else if (cmp == 0) { // both are equal
-                    // Note: intervals that are in the result can not be in the existingResult
-                    assert (!curIntervalEx);
-
-                    // Split the active result at the current position and increase the counter for the active segment.
+                    // Increase the results counter
                     int newCount = resInterval.count >= 0 ? resInterval.count + 1 : -1;
-
-                    // Add a new element at the current position
-                    MutableInterval newInterval = new MutableInterval(resInterval.getStart(), eventEnd,
-                            curInterval.getVersion(), curInterval.getId(), newCount);
-
-                    if (resInterval.end > eventEnd) {
-                        // If the active result ends right of the event, it has to be shrinked but kept.
-                        resInterval.start = eventEnd;
-
-                        // Add the new interval before the currently active result.
-                        resIterator.previous();
-                        resIterator.add(newInterval);
-                        resIterator.next();
-
-                    } else {
-                        // Otherwise the intervals have to match and the current results count can be overwritten
-                        assert (resInterval.end == eventEnd);
-                        assert (resInterval.start == lastEnd);
-                        resInterval.count = newCount;
-                    }
-
+                    resInterval.count = newCount;
                 }
 
                 else if (cmp > 0) { // current is greater
-                    // Split the active result at the current position and increase the counter for the active segment.
-
-                    // Add the current interval or a gap (if it has already been counted to existing results)
-                    if (curIntervalEx || (exResInterval != null && curInterval.compareVersionId(exResInterval) <= 0)) {
-                        // Note: The current interval can only be <= to the active existing interval and > to the active
-                        // result interval if the result interval is an empty one.
-                        // If the current interval is greater then the result interval, it follows that it overwrote a
-                        // previous interval with a smaller version which has to be in the existing result, since only
-                        // complete intervals get committed when overlapping with a newer version.
-                        // Further it is assured, that only intervals which are greater then the related interval in the
-                        // existing result are added.
-                        assert (resInterval.version == -1);
-
-                        // Note: An interval with a newer version can never end before the current result, if it is
-                        // found in the existing result.
-                        // FIXME (jdillmann): Why?
-                        assert (resInterval.end >= eventEnd);
-
-                        // Since it is assured, that the result interval is already an empty one and it ends at or right
-                        // of the current event, the current interval can be ignored without the danger of creating
-                        // loops.
-
-                    } else {
-                        // Create the new result interval and add it at the current position.
-                        MutableInterval newInterval = new MutableInterval(lastEnd, eventEnd, curInterval.getVersion(),
-                                curInterval.getId(), 1);
-
-                        if (resInterval.end > eventEnd) {
-                            // If the active result ends right of the event, it has to be shrinked but kept.
-                            resInterval.start = eventEnd;
-
-                            // Add the new interval before the currently active result.
-                            resIterator.previous();
-                            resIterator.add(newInterval);
-                            resIterator.next();
-
-                        } else {
-                            // Otherwise the intervals have to match and the current result can be overwritten
-                            assert (resInterval.end == eventEnd);
-                            assert (resInterval.start == lastEnd);
-                            resIterator.set(newInterval);
-                        }
-                    }
-                    
-                    // TODO (jdillmann): Mark every j < i as outdated / missing
+                    // Replace the active result with the current interval and a count of 1
+                    int newCount = 1;
+                    resInterval.replace(curInterval, newCount);
                 }
-
                 else { // (cmp < 0) current is less
-                       // TODO (jdillmann): Mark this curInterval as missing
+                       // Ignore older intervals
                 }
-
-                // If the currently active interval ends on this events position,
-                // it has to be marked as done (null) to advance to the next interval.
-                if (curInterval.getEnd() == eventEnd) {
-                    curInterval = null;
-                }
-
-                // If the active result interval ends on this events position,
-                // advance to the the next result interval.
-                if (resInterval != null && resInterval.getEnd() == eventEnd) {
-                    resInterval = null;
-                }
-
-                // Set the marker of the processed range to the position of this event.
-                lastEnd = eventEnd;
-
             }
         }
 
@@ -530,10 +466,18 @@ public class ECPolicy {
         int  count;
 
         public MutableInterval(Interval interval, int count) {
-            this(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(), count);
+            replace(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(), count);
         }
 
         public MutableInterval(long start, long end, long version, long id, int count) {
+            replace(start, end, version, id, count);
+        }
+
+        public void replace(Interval interval, int count) {
+            replace(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(), count);
+        }
+
+        public void replace(long start, long end, long version, long id, int count) {
             this.start = start;
             this.end = end;
             this.version = version;
