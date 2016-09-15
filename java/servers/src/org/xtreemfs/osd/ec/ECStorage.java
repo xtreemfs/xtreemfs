@@ -717,11 +717,11 @@ public class ECStorage {
                 layout.writeObject(fileId, fi, buf, objNo, offset, objVer, sync, false);
                 consistent = false;
 
-                // Delete completely committed intervals.
-                if (intervalStartOffset <= sp.getObjectStartOffset(objNo)
-                        && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
-                    layout.deleteObject(fileIdNext, fi, objNo, objVer);
-                }
+                // // Delete completely committed intervals.
+                // if (intervalStartOffset <= sp.getObjectStartOffset(objNo)
+                // && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
+                // layout.deleteObject(fileIdNext, fi, objNo, objVer);
+                // }
             }
 
             // Finally append the interval to the cur vector and "remove" it from the next vector
@@ -837,13 +837,13 @@ public class ECStorage {
             }
         }
 
-        // Delete completely committed deltas.
-        for (long objNo = startObjNo; objNo <= endObjNo; objNo++) {
-            if (intervalStartOffset <= sp.getObjectStartOffset(objNo)
-                    && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
-                layout.deleteObject(fileIdDelta, fi, objNo, objVer);
-            }
-        }
+        // // Delete completely committed deltas.
+        // for (long objNo = startObjNo; objNo <= endObjNo; objNo++) {
+        // if (intervalStartOffset <= sp.getObjectStartOffset(objNo)
+        // && intervalEndOffset >= sp.getObjectEndOffset(objNo)) {
+        // layout.deleteObject(fileIdDelta, fi, objNo, objVer);
+        // }
+        // }
 
         // FIXME (jdillmann): truncate?
     }
