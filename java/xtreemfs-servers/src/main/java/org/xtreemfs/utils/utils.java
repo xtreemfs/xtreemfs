@@ -9,6 +9,7 @@
 package org.xtreemfs.utils;
 
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,9 +17,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import org.xtreemfs.foundation.util.CLIParser.CliOption;
 
@@ -166,7 +167,7 @@ public class utils {
             new CliOption(CliOption.OPTIONTYPE.SWITCH, "show usage information", ""));
         if (adminPass)
             options.put(OPTION_ADMIN_PASS, new CliOption(CliOption.OPTIONTYPE.STRING,
-                "administrator password to authorize operation", "<passphrase>"));
+                "administrator password to authorize operation. Set to '-' to prompt for the passphrase.", "<passphrase>"));
         
         return options;
     }
@@ -210,6 +211,26 @@ public class utils {
             System.out.println(line.toString());
             
             previous = next.getKey();
+        }
+    }
+
+    public static String readPassword(String format, Object... args) {
+        Console console = System.console();
+        if (console != null) {
+            return new String(console.readPassword(format, args));
+        } else {
+            // non-interactive console, e.g. from a cron
+            // this will not hide the typed characters though,
+            // so use as fallback only.
+            System.out.println(String.format(format, args));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            try {
+                String password = reader.readLine();
+                reader.close();
+                return password;
+            } catch (IOException e) {
+                return null;
+            }
         }
     }
 }
