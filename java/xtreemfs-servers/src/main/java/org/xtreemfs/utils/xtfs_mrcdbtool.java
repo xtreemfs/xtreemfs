@@ -92,12 +92,12 @@ public class xtfs_mrcdbtool {
         CliOption c = options.get(utils.OPTION_USER_CREDS_FILE);
         String cp = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
         if(cp != null && cp.equals("-")) {
-        	cp = new String(System.console().readPassword("Enter credentials password: "));
+            cp = utils.readPassword("Enter credentials password: ");
         }
         CliOption t = options.get(utils.OPTION_TRUSTSTORE_FILE);
         String tp = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
         if(tp != null && tp.equals("-")) {
-        	tp = new String(System.console().readPassword("Enter trust store password: "));
+            tp = utils.readPassword("Enter trust store password: ");
         }
         
         String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
@@ -134,9 +134,14 @@ public class xtfs_mrcdbtool {
             MRCServiceClient client = new MRCServiceClient(rpcClient, new InetSocketAddress(host, port));
             
             Auth passwdAuth = RPCAuthentication.authNone;
-            if (options.get(utils.OPTION_ADMIN_PASS).stringValue != null)
+            String adminPass = options.get(utils.OPTION_ADMIN_PASS).stringValue;
+            if (adminPass != null) {
+                if (adminPass.equals("-")) {
+                    adminPass = utils.readPassword("Enter admin password: ");
+                }
                 passwdAuth = Auth.newBuilder().setAuthType(AuthType.AUTH_PASSWORD).setAuthPasswd(
-                    AuthPassword.newBuilder().setPassword(options.get(utils.OPTION_ADMIN_PASS).stringValue)).build();
+                    AuthPassword.newBuilder().setPassword(adminPass)).build();
+            }
             
             if (op.equals("dump")) {
                 RPCResponse<?> r = null;
