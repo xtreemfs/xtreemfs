@@ -1,4 +1,4 @@
-09-AUG-2016: release 1.6.0 (Phantastic Pancakes)
+20-SEP-2016: release 1.6.0 (Phantastic Pancakes)
 
   Changes:
     * Extended volume quota implementation to OSDs. This requires dumping and reimporting the MRC database during upgrade (see 'MRC Database Backups and Conversion' in the user guide).
@@ -13,6 +13,7 @@
     * Slimmed down and updated Mac OS X installer with stricter dependency checking and SIP awareness.
     * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.
     * Cleanup of code base to exclude generated sources and previously shipped binaries.
+    * Add non-interactive console support to command line tools.
     * Many small stability improvements and fixes.
 
 12-MAR-2015: release 1.5.1
