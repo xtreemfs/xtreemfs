@@ -597,7 +597,7 @@ $> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
 		For the XtreemFS Client, leave the export password empty to avoid being asked for the password on mount. If you do not want to/cannot distribute the demo CA to the clients' trusted root CA paths (e.g. \path{/usr/share/ca-certificates/extra} on Linux machines), also include your demo CA in the PKCS\#12 file so the server certificates can be verified.
 		\begin{verbatim}
 $> openssl pkcs12 -export -in client.pem -inkey client.key \
-   -out client_ca.p12 -name "client_ca" -certfile ca.pem
+   -out client_ca.p12 -name "client_ca" -certfile ca/ca.pem
 		\end{verbatim}
 		Multiple CA's certificates (e.g. for using a certificate chain) can be specified by concatenating them and storing them in a new file which can then be used as argument to the \texttt{-certfile} option.
 
