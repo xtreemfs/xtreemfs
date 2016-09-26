@@ -54,6 +54,7 @@ public class DIRConfig extends ServiceConfig {
             Parameter.SNMP_ADDRESS,
             Parameter.SNMP_PORT,
             Parameter.SNMP_ACL,
+            Parameter.MAX_CLIENT_Q,
             Parameter.VIVALDI_MAX_CLIENTS,
             Parameter.VIVALDI_CLIENT_TIMEOUT
     };

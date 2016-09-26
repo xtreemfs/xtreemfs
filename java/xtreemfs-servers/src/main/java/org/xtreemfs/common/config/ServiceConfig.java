@@ -701,6 +701,10 @@ public class ServiceConfig extends Config {
     public Integer getFailoverWait() {
         return (Integer) parameter.get(Parameter.FAILOVER_WAIT);
     }
+    
+    public int getMaxClientQ() {
+        return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
+    }
 
     public InetSocketAddress getDirectoryService() {
         return (InetSocketAddress) parameter.get(Parameter.DIRECTORY_SERVICE);
