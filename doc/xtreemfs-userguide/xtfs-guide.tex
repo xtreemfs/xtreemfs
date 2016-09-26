@@ -1144,7 +1144,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{max\_client\_queue}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & DIR, MRC, OSD\\
  Values   & 1 .. N\\
  Default  & 100\\
  Description & To avoid overloading the server by a single client, the maximum number of pending requests per client is limited. Usually, this limit should not be exceeded unless you use Read/Write file replication in connection with asynchronous writes and a large number of allowed pending writes on the client side (see section~\ref{sec:async_writes}).
