@@ -59,7 +59,7 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
 XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
-TARGETS = client server foundation flease
+TARGETS = client server server-repl-plugin foundation flease
 .PHONY:	clean distclean
 
 all: check_server check_client check_test $(TARGETS)
