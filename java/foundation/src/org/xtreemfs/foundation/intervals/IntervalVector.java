@@ -202,6 +202,7 @@ public abstract class IntervalVector {
         if (last != null && interval.getStart() > last.getEnd()) {
             ObjectInterval gap = ObjectInterval.empty(last.getEnd(), interval.getStart());
             acc.add(gap);
+            last = gap;
         }
 
         if (last != null && interval.getStart() <= last.getEnd() && interval.equalsVersionId(last)) {
