@@ -463,25 +463,30 @@ public class ECPolicy {
         long end;
         long version;
         long id;
+        long opStart;
+        long opEnd;
         int  count;
 
         public MutableInterval(Interval interval, int count) {
-            replace(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(), count);
+            replace(interval, count);
         }
 
-        public MutableInterval(long start, long end, long version, long id, int count) {
-            replace(start, end, version, id, count);
+        public MutableInterval(long start, long end, long version, long id, long opStart, long opEnd, int count) {
+            replace(start, end, version, id, opStart, opEnd, count);
         }
 
         public void replace(Interval interval, int count) {
-            replace(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(), count);
+            replace(interval.getStart(), interval.getEnd(), interval.getVersion(), interval.getId(),
+                    interval.getOpStart(), interval.getOpEnd(), count);
         }
 
-        public void replace(long start, long end, long version, long id, int count) {
+        public void replace(long start, long end, long version, long id, long opStart, long opEnd, int count) {
             this.start = start;
             this.end = end;
             this.version = version;
             this.id = id;
+            this.opStart = opStart;
+            this.opEnd = opEnd;
             this.count = count;
         }
 
@@ -506,6 +511,16 @@ public class ECPolicy {
         }
 
         @Override
+        public long getOpStart() {
+            return opStart;
+        }
+
+        @Override
+        public long getOpEnd() {
+            return opEnd;
+        }
+
+        @Override
         public Object getAttachment() {
             return count;
         }
@@ -517,7 +532,7 @@ public class ECPolicy {
 
         @Override
         protected MutableInterval clone() {
-            return new MutableInterval(start, end, version, id, count);
+            return new MutableInterval(start, end, version, id, opStart, opEnd, count);
         }
     }
 }
