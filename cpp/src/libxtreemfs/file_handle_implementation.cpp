@@ -1332,7 +1332,9 @@ VoucherManager::VoucherManager(
       volume_options_(volume_options),
       auth_bogus_(auth_bogus),
       user_credentials_bogus_(user_credentials_bogus) {
+}
 
+VoucherManager::~VoucherManager() {
 }
 
 void VoucherManager::finalizeAndClear(){
@@ -1412,9 +1414,15 @@ void VoucherManager::finalizeAndClear(){
 
     boost::mutex::scoped_lock cond_lock(cond_mutex_);
 
-    finalizeVoucher(&finalizeVouchersRequest);
+    VoucherManagerCallback* callback = new VoucherManagerCallback(this, curTry, osdCount);
+
+    finalizeVoucher(&finalizeVouchersRequest, callback);
 
     osd_finalize_pending_cond.wait(cond_lock);
+
+    // The callback will be destroyed when every response has arrived.
+    callback->unregisterManager();
+    callback = NULL;
 
     consistentResponses = checkResponseConsistency();
 
@@ -1453,7 +1461,8 @@ void VoucherManager::finalizeAndClear(){
 }
 
 void VoucherManager::finalizeVoucher(
-    xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest) {
+    xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest,
+    VoucherManagerCallback* callback) {
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
     Logging::log->getLog(LEVEL_DEBUG)
@@ -1478,9 +1487,8 @@ void VoucherManager::finalizeVoucher(
       osd_service_client_->xtreemfs_finalize_vouchers(osd_address, auth_bogus_,
                                                       user_credentials_bogus_,
                                                       finalizeVouchersRequest,
-                                                      this,
+                                                      callback,
                                                       NULL);
-
     } catch (const XtreemFSException&) {
       // do nothing.
     }
@@ -1622,4 +1630,50 @@ void VoucherManager::CallFinished(
   }
 }
 
+VoucherManagerCallback::VoucherManagerCallback(
+    VoucherManager* voucherManager,
+    const int tryNo,
+    const int osdCount)
+    : voucherManager_(voucherManager),
+      tryNo_(tryNo),
+      osdCount_(osdCount),
+      respCount_(0){
+}
+
+VoucherManagerCallback::~VoucherManagerCallback() {
+}
+
+void VoucherManagerCallback::CallFinished(
+    xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message, char* data,
+    uint32_t data_length, pbrpc::RPCHeader::ErrorResponse* error,
+    void* context) {
+  ++respCount_;
+  if (voucherManager_) {
+    // Redirect the response to the VoucherManager
+    voucherManager_->CallFinished(response_message, data, data_length, error, context);
+
+  } else {
+    // Discard the response,
+    delete response_message;
+    delete error;
+    delete[] data;
+
+    // and self destruct if every response has arrived
+    if (respCount_ == osdCount_) {
+      delete this;
+    }
+  }
+}
+
+void VoucherManagerCallback::unregisterManager() {
+  voucherManager_ = NULL;
+
+  // Self destruct if every response has arrived
+  if (respCount_ == osdCount_) {
+    delete this;
+  }
+}
+
 }  // namespace xtreemfs
+
+
