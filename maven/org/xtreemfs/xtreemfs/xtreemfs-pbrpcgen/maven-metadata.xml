@@ -3,10 +3,10 @@
   <groupId>org.xtreemfs.xtreemfs</groupId>
   <artifactId>xtreemfs-pbrpcgen</artifactId>
   <versioning>
-    <release>1.6.0</release>
     <versions>
-      <version>1.6.0</version>
+      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20160926095611</lastUpdated>
+    <lastUpdated>20160929145026</lastUpdated>
   </versioning>
 </metadata>
