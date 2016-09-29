@@ -216,13 +216,12 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
     if (s == 0) {
       if (Logging::log->loggingActive(LEVEL_INFO)) {
         Logging::log->getLog(LEVEL_INFO)
-            << "no mapping for groupname: " << local_groupname
-            << " (getgrnam_r returned " << s << ")" << endl;
+            << "no mapping for groupname: " << local_groupname << endl;
       }
     } else {
       Logging::log->getLog(LEVEL_ERROR)
           << "failed to retrieve passwd entry for groupname: "
-          << local_groupname<< endl;
+          << local_groupname << " (getgrnam_r returned " << s << ")" << endl;
     }
     // Map reserved value -1 to nobody.
     if (local_groupname == "-1") {
