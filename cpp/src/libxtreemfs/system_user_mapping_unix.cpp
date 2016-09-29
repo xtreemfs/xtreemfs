@@ -206,7 +206,7 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
   size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1) {
     // Max size unknown, use safe value.
-    bufsize = 16384;
+    bufsize = 131072;
   }
   char* buf = new char[bufsize];
   struct group grp;
@@ -216,7 +216,8 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
     if (s == 0) {
       if (Logging::log->loggingActive(LEVEL_INFO)) {
         Logging::log->getLog(LEVEL_INFO)
-            << "no mapping for groupname: " << local_groupname << endl;
+            << "no mapping for groupname: " << local_groupname
+            << " (getgrnam_r returned " << s << ")" << endl;
       }
     } else {
       Logging::log->getLog(LEVEL_ERROR)
