@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-hadoop-client</artifactId>
+  <version>1.6.0-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20160929.145454</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <lastUpdated>20160929145454</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.6.0-20160929.145454-1</value>
+        <updated>20160929145454</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.6.0-20160929.145454-1</value>
+        <updated>20160929145454</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <classifier>shaded</classifier>
+        <extension>jar</extension>
+        <value>1.6.0-20160929.145454-1</value>
+        <updated>20160929145454</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
