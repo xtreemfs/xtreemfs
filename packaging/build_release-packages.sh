@@ -45,6 +45,16 @@ build_source_tarball() {
 
   echo "build source distribution"
 
+  # the OBS build VMs are offline, so copy necessary dependencies to distribution
+  mvn --settings $XTREEMFS_HOME_DIR/java/settings.xml --file $XTREEMFS_HOME_DIR/java/pom.xml --activate-profiles xtreemfs-dev --define skipTests \
+    org.apache.maven.plugins:maven-dependency-plugin:2.10:copy-dependencies \
+    --define mdep.useRepositoryLayout=true \
+    --define outputDirectory=$(cd $XTREEMFS_HOME_DIR && pwd)/repository
+  mvn --settings $XTREEMFS_HOME_DIR/contrib/server-repl-plugin/settings.xml --file $XTREEMFS_HOME_DIR/contrib/server-repl-plugin/pom.xml --activate-profiles xtreemfs-dev --define skipTests \
+    org.apache.maven.plugins:maven-dependency-plugin:2.10:copy-dependencies \
+    --define mdep.useRepositoryLayout=true \
+    --define outputDirectory=$(cd $XTREEMFS_HOME_DIR && pwd)/repository
+
   cleanup_client $PACKAGE_PATH
 
   # delete all from black-list in temporary dir
