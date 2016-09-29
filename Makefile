@@ -59,7 +59,7 @@ CLIENT_GOOGLE_TEST_CHECKFILE = .googletest_library_already_built
 
 XTREEMFS_JNI_LIBRARY = libjni-xtreemfs.so
 
-TARGETS = client server foundation flease
+TARGETS = client server server-repl-plugin foundation flease
 .PHONY:	clean distclean
 
 all: check_server check_client check_test $(TARGETS)
@@ -317,69 +317,69 @@ endif
 
 .PHONY: parent parent_clean parent_distclean
 parent:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml --define skipTests --non-recursive install
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml --define skipTests --non-recursive install
 parent_clean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
 parent_distclean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/pom.xml clean || exit 1;
 
 .PHONY: flease flease_clean flease_distclean
 flease: parent foundation
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml --define skipTests install
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml --define skipTests install
 flease_clean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 flease_distclean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-flease/pom.xml clean || exit 1;
 
 .PHONY: foundation foundation_clean foundation_distclean
 foundation: parent pbrpcgen
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml --define skipTests install
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml --define skipTests install
 foundation_clean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 foundation_distclean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-foundation/pom.xml clean || exit 1;
 
 pbrpcgen: parent $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml --define skipTests install
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml --define skipTests install
 pbrpcgen_clean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 pbrpcgen_distclean:
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-pbrpcgen/pom.xml clean || exit 1
 
 .PHONY: server server_clean server_distclean
 server: check_server parent flease foundation
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml --define skipTests install
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml --define skipTests install
 server_clean: check_server
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 server_distclean: check_server
-	$(MVN_BIN) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings java/settings.xml --activate-profiles xtreemfs-dev --file java/xtreemfs-servers/pom.xml clean || exit 1;
 
 .PHONY: server-repl-plugin server-repl-plugin_clean server-repl-plugin_distclean
 server-repl-plugin:
-	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml --define skipTests package
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml --define skipTests package
 server-repl-plugin_clean: check_server
-	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
 server-repl-plugin_distclean: check_server
-	$(MVN_BIN) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/server-repl-plugin/settings.xml --activate-profiles xtreemfs-dev --file contrib/server-repl-plugin/pom.xml clean || exit 1;
 
 .PHONY: hadoop-client hadoop-client_clean hadoop-client_distclean
 hadoop-client: parent foundation server
-	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml --define skipTests install
 	@echo -e "\n\nHadoop Client was successfully compiled. You can find it here:\n\n\tcontrib/hadoop/target/xtreemfs-hadoop-client.jar\n\nSee the XtreemFS User Guide how to add it in Hadoop.\n"
 hadoop-client_clean:
-	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
 hadoop-client_distclean:
-	$(MVN_BIN) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings contrib/hadoop/settings.xml --activate-profiles xtreemfs-hadoop-client-dev --file contrib/hadoop/pom.xml clean || exit 1
 
 test: check_test client server
 	python ./tests/xtestenv -c ./tests/test_config.py short
 
 interfaces: pbrpcgen client_thirdparty
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml generate-sources
+	$(MVN_BIN) $(MVN_OPTS) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml generate-sources
 interfaces_clean:
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
 interfaces_distclean:
-	$(MVN_BIN) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
+	$(MVN_BIN) $(MVN_OPTS) --settings interface/settings.xml --activate-profiles xtreemfs-interface-dev --file interface/pom.xml clean || exit 1
 
 .PHONY: jni-client-generate
 jni-client-generate: CMAKE_GENERATE_JNI = -DGENERATE_JNI=true
