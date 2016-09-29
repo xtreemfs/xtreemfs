@@ -12,3 +12,6 @@ cov-int/
 /out/
 *.directory
 .DS_Store
+
+# generated during build_release-packages.sh
+repository
