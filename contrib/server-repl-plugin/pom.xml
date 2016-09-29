@@ -4,7 +4,7 @@
 
   <groupId>org.xtreemfs.xtreemfs</groupId>
   <artifactId>xtreemfs-contrib-replication</artifactId>
-  <version>1.6.0</version>
+  <version>1.6.0-SNAPSHOT</version>
 
   <properties>
     <babudb-replication.version>0.5.6</babudb-replication.version>
