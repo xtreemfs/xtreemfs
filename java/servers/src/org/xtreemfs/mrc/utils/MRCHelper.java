@@ -258,7 +258,7 @@ public class MRCHelper {
                     + ": no feasible OSDs available");
         }
 
-        if (stripingPolicy.getPattern() == "STRIPING_POLICY_ERASURECODE"
+        if (stripingPolicy.getPattern().equals("STRIPING_POLICY_ERASURECODE")
                 && usableOSDs.getServicesCount() < fullWidth) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.all, (Object) null,
                     "not enough suitable OSDs available for file %s", path);
