@@ -1348,9 +1348,6 @@ VoucherManager::VoucherManager(
       user_credentials_bogus_(user_credentials_bogus) {
 }
 
-VoucherManager::~VoucherManager() {
-}
-
 void VoucherManager::finalizeAndClear(){
 
   if (Logging::log->loggingActive(LEVEL_DEBUG)) {
@@ -1654,13 +1651,12 @@ VoucherManagerCallback::VoucherManagerCallback(
       respCount_(0){
 }
 
-VoucherManagerCallback::~VoucherManagerCallback() {
-}
-
 void VoucherManagerCallback::CallFinished(
     xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message, char* data,
     uint32_t data_length, pbrpc::RPCHeader::ErrorResponse* error,
     void* context) {
+  boost::mutex::scoped_lock lock(mutex_);
+
   ++respCount_;
   if (voucherManager_) {
     // Redirect the response to the VoucherManager
@@ -1674,16 +1670,25 @@ void VoucherManagerCallback::CallFinished(
 
     // and self destruct if every response has arrived
     if (respCount_ == osdCount_) {
+      // Ensure the lock is unlocked and the mutex_ no longer referenced,
+      // as it will be destroyed by deleting this.
+      lock.unlock();
+      lock.release();
       delete this;
     }
   }
 }
 
 void VoucherManagerCallback::unregisterManager() {
+  boost::mutex::scoped_lock lock(mutex_);
   voucherManager_ = NULL;
 
   // Self destruct if every response has arrived
   if (respCount_ == osdCount_) {
+    // Ensure the lock is unlocked and the mutex_ no longer referenced,
+    // as it will be destroyed by deleting this.
+    lock.unlock();
+    lock.release();
     delete this;
   }
 }
