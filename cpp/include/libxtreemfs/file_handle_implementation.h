@@ -68,7 +68,6 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
                  const Options& volume_options,
                  const pbrpc::Auth& auth_bogus,
                  const pbrpc::UserCredentials& user_credentials_bogus);
-  ~VoucherManager();
 
   /** Handles the overall process of the finalize and clear voucher protocol. */
   void finalizeAndClear();
@@ -147,7 +146,6 @@ class VoucherManagerCallback : public rpc::CallbackInterface<xtreemfs::pbrpc::OS
   VoucherManagerCallback(VoucherManager* voucherManager,
                          const int tryNo,
                          const int osdCount);
-  ~VoucherManagerCallback();
 
   /** Unregisters the VoucherManager that created the Callback.
    * If there are finalize voucher requests in flight, the Callback
@@ -167,6 +165,8 @@ class VoucherManagerCallback : public rpc::CallbackInterface<xtreemfs::pbrpc::OS
                             pbrpc::RPCHeader::ErrorResponse* error,
                             void* context);
 
+  /** Use this mutex to guard changes/checks to voucherManager_. */
+  boost::mutex mutex_;
 
   /** The VoucherManager that created this Callback.
    * Or NULL if it has been unregistered. */
