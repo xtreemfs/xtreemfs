@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -63,6 +64,7 @@ public class StripeReconstructor {
     boolean                           aborted;
     boolean                           reconstructed;
     boolean                           complete;
+    boolean                           freed;
 
     public StripeReconstructor(OSDRequestDispatcher master, FileCredentials fileCredentials, XLocations xloc,
             String fileId, long stripeNo, StripingPolicyImpl sp, List<?> commitIntervals,
@@ -116,6 +118,7 @@ public class StripeReconstructor {
         aborted = false;
         reconstructed = false;
         complete = false;
+        freed = false;
     }
 
     synchronized boolean hasFinished() {
@@ -124,6 +127,10 @@ public class StripeReconstructor {
 
     synchronized boolean isComplete() {
         return complete;
+    }
+
+    synchronized boolean isReconstructed() {
+        return reconstructed;
     }
 
     synchronized boolean hasFailed() {
@@ -183,17 +190,18 @@ public class StripeReconstructor {
         chunks[osdNo].state = ChunkState.EXTERNAL;
     }
 
-    public void abort() {
-        synchronized (this) {
-            aborted = true;
-        }
+    synchronized public void abort() {
+        aborted = true;
         freeBuffers();
     }
 
-    public void freeBuffers() {
-        for (Chunk chunk : chunks) {
-            BufferPool.free(chunk.buffer);
-            chunk.buffer = null;
+    synchronized public void freeBuffers() {
+        if (!freed) {
+            for (Chunk chunk : chunks) {
+                BufferPool.free(chunk.buffer);
+                chunk.buffer = null;
+            }
+            freed = true;
         }
     }
 
@@ -291,14 +299,26 @@ public class StripeReconstructor {
         }
     }
 
-    public void decode(boolean recreateParity) {
+    public void decode(boolean recreateParity) throws XtreemFSException {
         boolean needsDecode;
         synchronized (this) {
+            if (aborted || freed) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.ec, this,
+                        "StripeReconstructor[fileId=%s, stripeNo=%d]: Can not decode, as the reconstruction has been aborted or already freed.",
+                        fileId, stripeNo);
+                throw new XtreemFSException("Can not decode %s, as the reconstruction has been aborted or already freed.");
+            }
+            
+            if (!complete) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.ec, this,
+                        "StripeReconstructor[fileId=%s, stripeNo=%d]: Can not decode, as chunks are missing.",
+                        fileId, stripeNo);
+                throw new  XtreemFSException("Can not decode %s, as the reconstruction has been aborted or already freed.");
+            }
+
             needsDecode = !reconstructed;
             reconstructed = true;
         }
-
-        // VORSICHT MIT ABORT
 
         if (needsDecode) {
             ReedSolomon codec = ECPolicy.createRSCodec(dataWidth, parityWidth);
@@ -358,9 +378,12 @@ public class StripeReconstructor {
         }
     }
 
-    public ReusableBuffer getObject(int osdNum) {
+    synchronized public ReusableBuffer getObject(int osdNum) {
         if (!reconstructed) {
-            // error!
+            throw new IllegalStateException("Stripe has not been reconstructed yet.");
+        }
+        if (freed) {
+            throw new IllegalStateException("Stripe has been already freed.");
         }
 
         return chunks[osdNum].buffer.createViewBuffer();

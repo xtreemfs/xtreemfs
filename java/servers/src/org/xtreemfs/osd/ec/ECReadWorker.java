@@ -13,6 +13,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -322,8 +323,12 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         StripeState stripeState = event.stripeState;
         StripeReconstructor reconstructor = stripeState.reconstructor;
-        assert (reconstructor.isComplete());
-        reconstructor.decode(false);
+        try {
+            reconstructor.decode(false);
+        } catch (XtreemFSException ex) {
+            failed(ErrorUtils.getInternalServerError(ex));
+            return;
+        }
 
         // absolute start and end to the whole file range
         long opStart = reqInterval.getOpStart();
@@ -334,6 +339,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
         synchronized (stripeState) {
             if (stripeState.hasFinished()) {
+                reconstructor.freeBuffers();
                 return;
             }
 
@@ -355,6 +361,7 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
             stripeComplete(stripeState);
         }
 
+        reconstructor.freeBuffers();
     }
 
     private void stripeComplete(StripeState stripeState) {
@@ -428,17 +435,13 @@ public class ECReadWorker extends ECAbstractWorker<ReadEvent> {
 
             }
 
-            // Clear response buffers
-            for (ChunkState chunkState : stripeState.chunkStates) {
-                if (chunkState != null) {
-                    BufferPool.free(chunkState.buffer);
-                }
-            }
+            // Clear the buffers
+            stripeState.freeBuffers();
         }
 
         assert (!data.hasRemaining()) : "Error while reading and copying read responses";
         
-        // TODO (jdillmann): Padding responses at the end could be merged and reflected int the objInfo
+        // TODO (jdillmann): Padding responses at the end could be merged and reflected in the objInfo
         data.position(0);
         result = new ObjectInformation(ObjectStatus.EXISTS, data, chunkSize);
 

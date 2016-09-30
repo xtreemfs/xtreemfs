@@ -18,6 +18,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -301,8 +302,13 @@ public class ECReconstructionStage extends Stage {
         int osdNum = sp.getRelativeOSDPosition();
         boolean isParity = osdNum >= sp.getWidth();
 
-        assert (reconstructor.hasFinished());
-        reconstructor.decode(isParity);
+        try {
+            reconstructor.decode(isParity);
+
+        } catch (XtreemFSException ex) {
+            failed(file, ErrorUtils.getInternalServerError(ex));
+            return;
+        }
 
         ReusableBuffer data = reconstructor.getObject(osdNum);
         master.getStorageStage().ecReconstructStripe(fileId, sp, stripe.getStripe().getStripeNo(),

@@ -13,6 +13,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.xtreemfs.common.libxtreemfs.exceptions.XtreemFSException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -473,10 +474,6 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         }
 
         StripeState stripeState = event.stripeState;
-        StripeReconstructor reconstructor = stripeState.reconstructor;
-        assert (reconstructor.isComplete());
-        reconstructor.decode(false);
-
         sendDiffsForFailedChunks(stripeState);
     }
 
@@ -484,6 +481,13 @@ public class ECWriteWorker extends ECAbstractWorker<WriteEvent> {
         long stripeNo = stripeState.stripeNo;
         Interval stripeInterval = stripeState.interval;
         StripeReconstructor reconstructor = stripeState.reconstructor;
+
+        try {
+            reconstructor.decode(false);
+        } catch (XtreemFSException ex) {
+            failed(ErrorUtils.getInternalServerError(ex));
+            return;
+        }
 
         // long firstStripeObjNo = stripeNo * dataWidth;
         // long lastStripeObjNo = (stripeNo + 1) * dataWidth - 1;
