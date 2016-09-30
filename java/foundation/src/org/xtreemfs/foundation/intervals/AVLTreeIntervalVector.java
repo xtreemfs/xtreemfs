@@ -69,7 +69,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // interval to the left
             node.left = insert(interval, node.left);
             node.interval = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
 
             // Special case to merge two intervals, if they are from the same operation
             // FIXME (jdillmann): Problem if vector is [-2-][-1-][-2-] and should become [----2----], then it would
@@ -85,14 +85,14 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // interval to the right
             node.right = insert(interval, node.right);
             node.interval = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
 
         } else if (start > node.interval.getStart() && end < node.interval.getEnd()) {
             // new interval fits into current interval
             ObjectInterval leftTail = new ObjectInterval(node.interval.getStart(), start, node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
             ObjectInterval rightTail = new ObjectInterval(end, node.interval.getEnd(), node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
 
             IntervalNode newNode = new IntervalNode(interval);
             newNode.left = insert(leftTail, node.left);
@@ -190,7 +190,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // Adjust it and drop its right subtree and return it.
             overwrites = overwrites + maxIntervals(node.right);
             ObjectInterval truncated = new ObjectInterval(node.interval.getStart(), max, node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
             node.interval = truncated;
             node.right = null;
             return rotate(node);
@@ -220,7 +220,7 @@ public class AVLTreeIntervalVector extends IntervalVector {
             // Adjust it and drop its left subtree and return it.
             overwrites = overwrites + maxIntervals(node.left);
             ObjectInterval truncated = new ObjectInterval(min, node.interval.getEnd(), node.interval.getVersion(),
-                    node.interval.getId());
+                    node.interval.getId(), node.interval.getOpStart(), node.interval.getOpEnd());
             node.interval = truncated;
             node.left = null;
             return rotate(node);

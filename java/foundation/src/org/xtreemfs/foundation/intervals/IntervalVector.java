@@ -209,7 +209,8 @@ public abstract class IntervalVector {
             // There is no gap between the last and current interval and their version and id match: Merge them!
             ObjectInterval merged;
             if (!interval.isEmpty()) {
-                assert (last.getOpStart() == interval.getOpStart() && last.getOpEnd() == interval.getOpEnd());
+                assert (last.getOpStart() == interval.getOpStart() && last.getOpEnd() == interval.getOpEnd()) :
+                    "MergeFailure " + last + " / "  + interval;
                 merged = new ObjectInterval(last.getStart(), interval.getEnd(), last.getVersion(), last.getId(),
                         last.getOpStart(), last.getOpEnd());
             } else {
