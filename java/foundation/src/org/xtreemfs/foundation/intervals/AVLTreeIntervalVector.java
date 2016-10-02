@@ -120,26 +120,19 @@ public class AVLTreeIntervalVector extends IntervalVector {
     IntervalNode rotate(IntervalNode node) {
         node.checkHeight();
 
-        if (node.balance == -2) {
-            if (node.right.balance == -1) {
-                // single (left) rotation
-                node = rotateLeft(node);
-
-            } else {
+        if (node.balance <= -2) {
+            if (node.right.balance >= 1) {
                 // double rotation on the right
                 node.right = rotateRight(node.right);
-                node = rotateLeft(node);
             }
+            node = rotateLeft(node);
 
-        } else if (node.balance == 2) {
-            if (node.left.balance == 1) {
-                // single (right) rotation
-                node = rotateRight(node);
-            } else {
+        } else if (node.balance >= 2) {
+            if (node.left.balance <= -1) {
                 // double rotation on the left
                 node.left = rotateLeft(node.left);
-                node = rotateRight(node);
             }
+            node = rotateRight(node);
         }
 
         return node;

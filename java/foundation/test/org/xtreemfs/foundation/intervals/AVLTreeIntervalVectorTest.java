@@ -549,6 +549,10 @@ public class AVLTreeIntervalVectorTest {
         return tree;
     }
 
+    public static void printTree(AVLTreeIntervalVector vector) {
+        printTree(vector.root);
+    }
+
     public static void printTree(IntervalNode root) {
         List<List<String>> lines = new ArrayList<List<String>>();
 
