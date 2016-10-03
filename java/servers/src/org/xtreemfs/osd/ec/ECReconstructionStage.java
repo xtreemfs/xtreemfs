@@ -9,6 +9,7 @@ package org.xtreemfs.osd.ec;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -504,8 +505,9 @@ public class ECReconstructionStage extends Stage {
         }
 
         List<Interval> getCommitStripeIntervals(Interval stripeInterval) {
-            List<Interval> commitStripeInterval = commitVector.getSlice(stripeInterval.getStart(),
-                    stripeInterval.getEnd());
+            List<Interval> commitStripeInterval = new ArrayList<Interval>(
+                    commitVector.getSlice(stripeInterval.getStart(), stripeInterval.getEnd()));
+
             // FIXME (jdilmann): Find a better way to handle truncated or non stripe aligned files
             while (commitStripeInterval.get(commitStripeInterval.size() - 1).isEmpty()) {
                 commitStripeInterval.remove(commitStripeInterval.size() - 1);
