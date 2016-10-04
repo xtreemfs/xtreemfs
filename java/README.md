@@ -31,6 +31,15 @@ In your `$HOME/.m2/settings.xml` add:
             <enabled>true</enabled>
           </snapshots>
         </repository>
+        
+        <!-- Needed only when releasing packages -->
+        <repository>
+          <id>xtreemfs-repository</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
       </repositories>
     </profile>
   
