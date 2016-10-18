@@ -50,6 +50,7 @@ build_source_tarball() {
     --file $XTREEMFS_HOME_DIR/java/pom.xml \
     --activate-profiles xtreemfs-dev \
     --global-settings=$HOME/.m2/settings.xml \
+    --update-snapshots \
     package org.apache.maven.plugins:maven-dependency-plugin:2.10:go-offline \
     --define maven.repo.local=$(cd $XTREEMFS_HOME_DIR && pwd)/repository \
     --define excludeArtifactIds=maven-deploy-plugin,site-maven-plugin \
@@ -58,6 +59,7 @@ build_source_tarball() {
     --file $XTREEMFS_HOME_DIR/contrib/server-repl-plugin/pom.xml \
     --activate-profiles xtreemfs-dev \
     --global-settings=$HOME/.m2/settings.xml \
+    --update-snapshots \
     package org.apache.maven.plugins:maven-dependency-plugin:2.10:go-offline \
     --define maven.repo.local=$(cd $XTREEMFS_HOME_DIR && pwd)/repository \
     --define excludeArtifactIds=maven-deploy-plugin,site-maven-plugin \

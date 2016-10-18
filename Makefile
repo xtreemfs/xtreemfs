@@ -128,7 +128,7 @@ install-server-repl-plugin:
 
 	@if [ ! -f contrib/server-repl-plugin/target/babudb-replication-plugin.jar ]; then echo "PLEASE RUN 'make server-repl-plugin' FIRST!"; exit 1; fi
 
-	@cp contrib/server/repl-plugin/target/babudb-replication-plugin.jar $(XTREEMFS_JAR_DIR)
+	@cp contrib/server-repl-plugin/target/babudb-replication-plugin.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(PLUGIN_CONFIG_DIR)
 	@cp contrib/server-repl-plugin/src/main/resources/config/dir.properties $(PLUGIN_CONFIG_DIR)
