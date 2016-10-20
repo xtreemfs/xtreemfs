@@ -206,7 +206,7 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
   size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
   if (bufsize == -1) {
     // Max size unknown, use safe value.
-    bufsize = 16384;
+    bufsize = 131072;
   }
   char* buf = new char[bufsize];
   struct group grp;
@@ -221,7 +221,7 @@ gid_t SystemUserMappingUnix::GroupnameToGID(const std::string& groupname) {
     } else {
       Logging::log->getLog(LEVEL_ERROR)
           << "failed to retrieve passwd entry for groupname: "
-          << local_groupname<< endl;
+          << local_groupname << " (getgrnam_r returned " << s << ")" << endl;
     }
     // Map reserved value -1 to nobody.
     if (local_groupname == "-1") {
