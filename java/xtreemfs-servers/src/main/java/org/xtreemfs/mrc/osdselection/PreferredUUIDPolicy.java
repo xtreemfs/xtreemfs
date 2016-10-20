@@ -43,11 +43,6 @@ public class PreferredUUIDPolicy implements OSDSelectionPolicy {
                                                   clientCoords,
                                           XLocList currentXLoc,
                                           int numOSDs) {
-        System.out.println("getOSDs parameters:");
-        System.out.println("clientIP: " + clientIP.toString());
-        System.out.println("clientCoords: " + clientCoords.toString());
-//        System.out.println("currentXLoc: " + currentXLoc.toString());
-        System.out.println(": getOSDs parameters.");
         return getOSDs(allOSDs);
     }
 
@@ -67,8 +62,6 @@ public class PreferredUUIDPolicy implements OSDSelectionPolicy {
             }
         }
 
-        Collections.shuffle(nonPreferredServices);
-
         List<DIR.Service> OSDsInCorrectOrder = new LinkedList<DIR.Service>();
 
         if (preferredService != null) {
@@ -82,7 +75,6 @@ public class PreferredUUIDPolicy implements OSDSelectionPolicy {
 
     @Override
     public void setAttribute(String key, String value) {
-
         if (key.equals(attributeKeyString)) {
             this.preferredUUID = value;
         }

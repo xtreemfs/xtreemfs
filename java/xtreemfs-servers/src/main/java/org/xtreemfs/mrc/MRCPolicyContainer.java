@@ -21,7 +21,20 @@ import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.database.VolumeManager;
-import org.xtreemfs.mrc.osdselection.*;
+import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
+import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.FilterUUIDPolicy;
+import org.xtreemfs.mrc.osdselection.GroupDCMapPolicy;
+import org.xtreemfs.mrc.osdselection.GroupFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
+import org.xtreemfs.mrc.osdselection.PreferredUUIDPolicy;
+import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
+import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.SortHostRoundRobinPolicy;
+import org.xtreemfs.mrc.osdselection.SortRandomPolicy;
+import org.xtreemfs.mrc.osdselection.SortReversePolicy;
+import org.xtreemfs.mrc.osdselection.SortUUIDPolicy;
+import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 
 public class MRCPolicyContainer extends PolicyContainer {
     

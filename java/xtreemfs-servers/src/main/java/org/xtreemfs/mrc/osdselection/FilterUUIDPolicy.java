@@ -9,7 +9,9 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.mrc.metadata.XLocList;
