@@ -87,7 +87,7 @@ public class GetSuitableOSDsOperation extends MRCOperation {
         
         // retrieve the set of OSDs for the new replica
         ServiceSet.Builder usableOSDs = master.getOSDStatusManager().getUsableOSDs(volumeId,
-            ((InetSocketAddress) rq.getRPCRequest().getSend       erAddress()).getAddress(), null,
+            ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(), null,
             file.getXLocList(), rqArgs.getNumOsds());
         
         xtreemfs_get_suitable_osdsResponse.Builder resp = xtreemfs_get_suitable_osdsResponse.newBuilder();
