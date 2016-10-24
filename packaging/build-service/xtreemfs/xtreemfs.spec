@@ -123,7 +123,9 @@ export CCFLAGS="$CCFLAGS -fPIC"
 export NO_BOOST_CMAKE=true
 %endif
 
-make %{?jobs:-j%jobs}
+# use previously copied repository because OBS build VMs are offline
+# see packaging/build_release-packages.sh
+make MVN_OPTS="--offline --define maven.repo.local=./repository" %{?jobs:-j%jobs}
 
 %install
 export NO_BRP_CHECK_BYTECODE_VERSION=true

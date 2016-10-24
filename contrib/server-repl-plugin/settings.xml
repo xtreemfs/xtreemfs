@@ -12,6 +12,14 @@
         </repository>
 
         <repository>
+          <id>xtreemfs-xtreemfs</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+
+        <repository>
           <id>xtreemfs-babudb</id>
           <url>https://xtreemfs.github.io/babudb/maven</url>
           <snapshots>

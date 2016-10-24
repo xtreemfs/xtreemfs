@@ -286,8 +286,12 @@ class CLIOptions {
 
     private void setOSDPassword() {
         String osdPassword = options.get(utils.OPTION_ADMIN_PASS).stringValue;
-        if (null != osdPassword)
+        if (null != osdPassword) {
+            if (osdPassword.equals("-")) {
+                osdPassword = utils.readPassword("Enter admin password: ");
+            }
             builder.setAdminPassword(osdPassword);
+        }
     }
 
     private void setSSLOptions() throws IOException {
