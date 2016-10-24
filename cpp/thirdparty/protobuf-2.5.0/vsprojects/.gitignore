@@ -3,4 +3,6 @@
 /Backup*/
 UpgradeLog*.htm
 *.VC.db
+*.VC.opendb
+/google/
 .vs/

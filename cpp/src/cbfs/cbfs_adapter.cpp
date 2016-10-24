@@ -28,8 +28,11 @@ using namespace xtreemfs::util;
 
 namespace xtreemfs {
 
+#define DelegateCheckFlagExt(val, flag, pre, post) \
+    if (((val) & flag) == flag) { DbgPrint(L"%s" L#flag L"%s", (pre), (post)); }
+
 #define DelegateCheckFlag(val, flag) \
-    if (val & flag) { DbgPrint(L"\t" L#flag L"\n"); }
+    DelegateCheckFlagExt((val), ##flag, L"\t", L"\n")
 
 #define CATCH_AND_CONVERT_ERRORS \
 catch (const PosixErrorException& e) { \
@@ -47,6 +50,12 @@ catch (const PosixErrorException& e) { \
 static xtreemfs::CbFSAdapter* Adapter(CallbackFileSystem* Sender) {
   return reinterpret_cast<xtreemfs::CbFSAdapter*>(Sender->GetTag());
 }
+
+/** Unimplemented. */
+static void DelegateMount(CallbackFileSystem* Sender) {}
+
+/** Unimplemented. */
+static void DelegateUnmount(CallbackFileSystem* Sender) {}
 
 static void DelegateGetVolumeSize(CallbackFileSystem* Sender,
                                   __int64* TotalNumberOfSectors,
@@ -178,6 +187,11 @@ static void DelegateDeleteFile(CallbackFileSystem* Sender,
   Adapter(Sender)->DeleteFile(Sender, FileInfo);
 }
 
+/** Unimplemented. */
+static void DelegateSetAllocationSize(CallbackFileSystem* Sender,
+                                      CbFsFileInfo* FileInfo,
+                                      __int64 AllocationSize) {}
+
 static void DelegateSetEndOfFile(CallbackFileSystem* Sender,
                                  CbFsFileInfo* FileInfo,
                                  __int64 EndOfFile) {
@@ -287,7 +301,7 @@ void CbFSAdapter::DebugPrintCreateFile(
     DWORD ShareMode,
     CbFsFileInfo* FileInfo,
     CbFsHandleInfo* HandleInfo) {
-  DbgPrint(L"%s : %s File : 0x%x Handle : 0x%x\n", OperationType, FileName, FileInfo->get_UserContext(), HandleInfo->get_UserContext());
+  DbgPrint(L"%s : %s File : 0x%x Handle : 0x%x\n", OperationType, FileName, FileInfo ? FileInfo->get_UserContext() : NULL, HandleInfo ? HandleInfo->get_UserContext() : NULL);
 
   DbgPrint(L"\tShareMode = 0x%x\n", ShareMode);
 
@@ -396,14 +410,9 @@ void CbFSAdapter::CreateFile(CallbackFileSystem* Sender,
           static_cast<xtreemfs::pbrpc::SYSTEM_V_FCNTL>(open_flags),
           mode,
           FileAttributes);
-      HandleInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
+      FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
     } CATCH_AND_CONVERT_ERRORS
   }
-
-  // Remember creation file attributes
-  DWORD* file_attributes = new DWORD;
-  *file_attributes = FileAttributes;
-  FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_attributes));
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -442,13 +451,8 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
         ConvertFlagsWindowsToXtreemFS(DesiredAccess),
         mode,
         FileAttributes);
-    HandleInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
+    FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_handle));
   } CATCH_AND_CONVERT_ERRORS
-
-  // Remember opening file attributes
-  DWORD* file_attributes = new DWORD;
-  *file_attributes = FileAttributes;
-  FileInfo->set_UserContext(reinterpret_cast<PVOID>(file_attributes));
 }
 
 //-----------------------------------------------------------------------------------------------------------
@@ -456,7 +460,7 @@ void CbFSAdapter::OpenFile(CallbackFileSystem* Sender,
 void CbFSAdapter::CloseFile(CallbackFileSystem* Sender,
                             CbFsFileInfo* FileInfo,
                             CbFsHandleInfo* HandleInfo) {
-  FileHandle* file_handle = reinterpret_cast<FileHandle*>(HandleInfo->get_UserContext());
+  FileHandle* file_handle = reinterpret_cast<FileHandle*>(FileInfo->get_UserContext());
 
   if (file_handle == NULL) {
     return;
@@ -791,11 +795,7 @@ void CbFSAdapter::DeleteFile(CallbackFileSystem* Sender,
                              CbFsFileInfo* FileInfo) {
   string path(WindowsPathToUTF8Unix(FileInfo->get_FileNameBuffer()));
 
-  DWORD* file_attributes = reinterpret_cast<DWORD*>(FileInfo->get_UserContext());
-  BOOL is_directory = ((*file_attributes) & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY;
-  delete file_attributes;
-
-  if (is_directory) {
+  if (IsDirectory(path)) {
     try {
       volume_->DeleteDirectory(user_credentials_, path);
     } CATCH_AND_CONVERT_ERRORS
@@ -937,6 +937,8 @@ CbFSAdapter::CbFSAdapter(CbFSOptions* options)
 
   cbfs_.SetChangeTimeAttributeSupported(false);
 
+  cbfs_.SetOnMount(DelegateMount);
+  cbfs_.SetOnUnmount(DelegateUnmount);
   cbfs_.SetOnGetVolumeSize(DelegateGetVolumeSize);
   cbfs_.SetOnGetVolumeLabel(DelegateGetVolumeLabel);
   cbfs_.SetOnSetVolumeLabel(DelegateSetVolumeLabel);
@@ -946,6 +948,7 @@ CbFSAdapter::CbFSAdapter(CbFSOptions* options)
   cbfs_.SetOnCloseFile(DelegateCloseFile);
   cbfs_.SetOnGetFileInfo(DelegateGetFileInfo);
   cbfs_.SetOnEnumerateDirectory(DelegateEnumerateDirectory);
+  cbfs_.SetOnSetAllocationSize(DelegateSetAllocationSize);
   cbfs_.SetOnCloseDirectoryEnumeration(DelegateCloseDirectoryEnumeration);
   cbfs_.SetOnSetEndOfFile(DelegateSetEndOfFile);
   cbfs_.SetOnSetFileAttributes(DelegateSetFileAttributes);
@@ -1052,6 +1055,68 @@ void CbFSAdapter::Start() {
 
   // Init CBFS.
   try {
+    if (Logging::log->loggingActive(LEVEL_DEBUG)) {
+      DWORD modules[] = { CBFS_MODULE_DRIVER, CBFS_MODULE_NET_REDIRECTOR_DLL, CBFS_MODULE_MOUNT_NOTIFIER_DLL };
+      for (int i = 0; i < 3; ++i) {
+        BOOL Installed = false;
+        INT FileVersionHigh = 0, FileVersionLow = 0;
+        SERVICE_STATUS ServiceStatus;
+        CallbackFileSystem::GetModuleStatus(
+            "EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA", modules[i],
+            &Installed, &FileVersionHigh, &FileVersionLow, &ServiceStatus);
+
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_DRIVER,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_NET_REDIRECTOR_DLL,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+        DelegateCheckFlagExt(modules[i], CBFS_MODULE_MOUNT_NOTIFIER_DLL,
+            L"Module ", Installed ? L" is installed.\n" : L" is not installed.\n");
+
+        if (Installed) {
+          DbgPrint(L"FileVersionHigh:         %d.%d\n", FileVersionHigh >> 16, FileVersionHigh & 0xFFFF);
+          DbgPrint(L"FileVersionLow:          %d.%d\n", FileVersionLow >> 16, FileVersionLow & 0xFFFF);
+
+          DbgPrint(L"ServiceType:             0x%x\n", ServiceStatus.dwServiceType);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_FILE_SYSTEM_DRIVER);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_KERNEL_DRIVER);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_WIN32_OWN_PROCESS);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_WIN32_SHARE_PROCESS);
+          DelegateCheckFlag(ServiceStatus.dwServiceType, SERVICE_INTERACTIVE_PROCESS);
+
+          DbgPrint(L"CurrentState:            0x%x\n", ServiceStatus.dwCurrentState);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_CONTINUE_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_PAUSE_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_PAUSED);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_RUNNING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_START_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_STOP_PENDING);
+          DelegateCheckFlag(ServiceStatus.dwCurrentState, SERVICE_STOPPED);
+
+          DbgPrint(L"ConrolIsAccepted:        0x%x\n", ServiceStatus.dwControlsAccepted);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_NETBINDCHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PARAMCHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PAUSE_CONTINUE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_PRESHUTDOWN);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_SHUTDOWN);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_STOP);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_HARDWAREPROFILECHANGE);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_POWEREVENT);
+          DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_SESSIONCHANGE);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_TIMECHANGE);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_TRIGGEREVENT);
+          // DelegateCheckFlag(ServiceStatus.dwControlsAccepted, SERVICE_ACCEPT_USERMODEREBOOT);
+
+          DbgPrint(L"Win32ExitCode:           0x%x\n", ServiceStatus.dwWin32ExitCode);
+          DbgPrint(L"ServiceSpecificExitCode: 0x%x\n", ServiceStatus.dwServiceSpecificExitCode);
+          DbgPrint(L"CheckPoint:              0x%x\n", ServiceStatus.dwCheckPoint);
+          DbgPrint(L"WaitHint:                0x%x\n", ServiceStatus.dwWaitHint);
+        }
+      }
+    }
+
+    // from the installer script
+    CallbackFileSystem::Initialize("EA8FA8CB-02C9-4028-8CBC-C109F9B8DFFA");
+
     cbfs_.CreateStorage();
     cbfs_.MountMedia(1000 * max(options_->request_timeout_s,
                                 options_->connect_timeout_s));
@@ -1067,7 +1132,7 @@ void CbFSAdapter::Start() {
                 first_dir_replica.find_last_of(":"))
             + ";"
             + options_->volume_name).c_str(),
-        CBFS_SYMLINK_NETWORK | CBFS_SYMLINK_NETWORK_ALLOW_MAP_AS_DRIVE,
+        CBFS_SYMLINK_NETWORK | CBFS_SYMLINK_NETWORK_ALLOW_MAP_AS_DRIVE | CBFS_SYMLINK_LOCAL,
         NULL);
   } catch (ECBFSError e) {
     string error = "Failed to mount the volume: " + ECBFSErrorToString(e);

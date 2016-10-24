@@ -64,6 +64,9 @@ class CbFSAdapter {
   /** Same as Stop(), but does not call cbfs_.UnmountMedia(). */
   void StopWithoutUnmount();
 
+  /** Same as StopWithoutUnmount, but does not call cbfs_.DeleteStorage(). */
+  void StopWithoutUnmountAndWithoutDelete();
+
   void GetVolumeSize(CallbackFileSystem* Sender,
                      __int64* TotalNumberOfSectors,
                      __int64* NumberOfFreeSectors);
