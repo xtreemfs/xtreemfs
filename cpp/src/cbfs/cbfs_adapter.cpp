@@ -54,9 +54,8 @@ static xtreemfs::CbFSAdapter* Adapter(CallbackFileSystem* Sender) {
 /** Unimplemented. */
 static void DelegateMount(CallbackFileSystem* Sender) {}
 
-static void DelegateUnmount(CallbackFileSystem* Sender) {
-  Adapter(Sender)->Unmount(Sender);
-}
+/** Unimplemented. */
+static void DelegateUnmount(CallbackFileSystem* Sender) {}
 
 static void DelegateGetVolumeSize(CallbackFileSystem* Sender,
                                   __int64* TotalNumberOfSectors,
@@ -889,27 +888,21 @@ void CbFSAdapter::IsDirectoryEmpty(CallbackFileSystem* Sender,
   } CATCH_AND_CONVERT_ERRORS
 }
 
-void CbFSAdapter::Unmount(CallbackFileSystem* Sender) {
-    boost::mutex::scoped_lock lock(device_unmounted_mutex_);
-    device_unmounted_ = true;
-    device_unmounted_or_ejected_cond_.notify_all();
-}
-
 void CbFSAdapter::StorageEjected(CallbackFileSystem* Sender) {
   boost::mutex::scoped_lock lock(device_ejected_mutex_);
   device_ejected_ = true;
-  device_unmounted_or_ejected_cond_.notify_all();
+  device_ejected_cond_.notify_all();
 }
 
 void CbFSAdapter::WaitForEjection() {
   boost::mutex::scoped_lock lock(device_ejected_mutex_);
-  while (!device_ejected_ && !device_unmounted_) {
-    device_unmounted_or_ejected_cond_.wait(lock);
+  while (!device_ejected_) {
+    device_ejected_cond_.wait(lock);
   }
 }
 
 CbFSAdapter::CbFSAdapter(CbFSOptions* options)
-    : options_(options), xctl_("/.xctl$$$"), device_unmounted_(false), device_ejected_(false) {
+    : options_(options), xctl_("/.xctl$$$"), device_ejected_(false) {
   wstring volume_label_prefix(L"XtreemFS (");
   wstring volume_label_suffix(L")");
   wstring volume_label_dots(L"...");
@@ -1171,10 +1164,6 @@ void CbFSAdapter::StopWithoutUnmount() {
 
   }
 
-  StopWithoutUnmountAndWithoutDelete();
-}
-
-void CbFSAdapter::StopWithoutUnmountAndWithoutDelete() {
   // Shutdown() Client. That does also invoke a volume->Close().
   if (client_.get()) {
     client_->Shutdown();

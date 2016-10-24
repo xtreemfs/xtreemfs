@@ -75,7 +75,7 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   
     cbfs_adapter->WaitForEjection();
 
-    cbfs_adapter->StopWithoutUnmountAndWithoutDelete();
+    cbfs_adapter->StopWithoutUnmount();
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG) << "Did shutdown the XtreemFS client." << endl;
     }

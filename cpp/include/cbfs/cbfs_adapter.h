@@ -184,8 +184,6 @@ class CbFSAdapter {
                         LPCWSTR FileName,
                         LPBOOL IsEmpty);
 
-  void Unmount(CallbackFileSystem* Sender);
-
   void StorageEjected(CallbackFileSystem* Sender);
 
   /** Blocks until device was ejected by user. */
@@ -276,20 +274,14 @@ class CbFSAdapter {
    *  file system interface. */
   CallbackFileSystem cbfs_;
 
-  /** True if device was unmounted by user. */
-  bool device_unmounted_;
-
   /** True if device was ejected by user. */
   bool device_ejected_;
-
-  /** Guards device_unmounted_. */
-  boost::mutex device_unmounted_mutex_;
 
   /** Guards device_ejected_. */
   boost::mutex device_ejected_mutex_;
 
-  /** Used when waiting for a change of device_ummounted_ and device_ejected_. */
-  boost::condition device_unmounted_or_ejected_cond_;
+  /** Used when waiting for a change of device_ejected_. */
+  boost::condition device_ejected_cond_;
 };
 
 }  // namespace xtreemfs
