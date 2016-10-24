@@ -1458,6 +1458,30 @@ int FuseAdapter::setxattr(
     
     return 0;
   }
+
+  // Ignore quota attributes to avoid warnings while copying files (e.g. on OS X)
+  if (string(name) == string("xtreemfs.blockedspace") ||
+      string(name) == string("xtreemfs.defaultgroupquota") ||
+      string(name) == string("xtreemfs.defaultuserquota") ||
+      string(name) == string("xtreemfs.groupblockedspace") ||
+      string(name) == string("xtreemfs.groupquota") ||
+      string(name) == string("xtreemfs.groupquotainfo") ||
+      string(name) == string("xtreemfs.groupusedspace") ||
+      string(name) == string("xtreemfs.quota") ||
+      string(name) == string("xtreemfs.usedspace") ||
+      string(name) == string("xtreemfs.userblockedspace") ||
+      string(name) == string("xtreemfs.userquota") ||
+      string(name) == string("xtreemfs.userquotainfo") ||
+      string(name) == string("xtreemfs.userusedspace") ||
+      string(name) == string("xtreemfs.vouchersize")) {
+    
+    if (Logging::log->loggingActive(LEVEL_WARN)) {
+      Logging::log->getLog(LEVEL_WARN)
+      << "Skipped setting immutable quota attribute " << name << endl;
+    }
+    
+    return 0;
+  }
     
   try {
     // Fuse reuses the value parameter. Therefore we may only use "size"

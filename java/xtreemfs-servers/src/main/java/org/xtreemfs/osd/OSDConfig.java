@@ -247,10 +247,6 @@ public class OSDConfig extends ServiceConfig {
         checkMultihomingConfiguration();
     }
 
-    public int getMaxClientQ() {
-        return (Integer) parameter.get(Parameter.MAX_CLIENT_Q);
-    }
-
     public int getMaxRequestsQueueLength() {
         return (Integer) parameter.get(Parameter.MAX_REQUEST_QUEUE_LENGTH);
     }

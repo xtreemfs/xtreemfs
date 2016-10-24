@@ -55,7 +55,7 @@ Summary of important changes in release 1.6.0:
       Previous quota implementation is superseded, hard quotas for volumes
       and users and groups per volume have been added, quota information
       import and export has been added. The MRC data version has been updated,
-      see section~\ref{sec:\ref{sec:mrcdbtools}} for how to update from
+      see section~\ref{sec:mrcdbtools} for how to update from
       version 1.5.x to 1.6.0.
   \item \textbf{Full support for /etc/fstab mounting}\\
       All mount options can be passed to XtreemFS via /etc/fstab options.
@@ -79,6 +79,9 @@ Summary of important changes in release 1.6.0:
   \item \textbf{Codebase cleanup}\\
       Generated code has been excluded from the repository, as well as previously
       shipped binaries.
+  \item \textbf{Command line improvements}\\
+      It is now possible to use the command line tools in a non-interactive
+      console, e.g. \texttt{cron}.
   \item \textbf{Bugfixes and improvements}\\
       Changes integrated into the unstable packages over time are now implemented
       in this stable version.
@@ -594,7 +597,7 @@ $> openssl pkcs12 -export -in SERVICE.pem -inkey SERVICE.key \
 		For the XtreemFS Client, leave the export password empty to avoid being asked for the password on mount. If you do not want to/cannot distribute the demo CA to the clients' trusted root CA paths (e.g. \path{/usr/share/ca-certificates/extra} on Linux machines), also include your demo CA in the PKCS\#12 file so the server certificates can be verified.
 		\begin{verbatim}
 $> openssl pkcs12 -export -in client.pem -inkey client.key \
-   -out client_ca.p12 -name "client_ca" -certfile ca.pem
+   -out client_ca.p12 -name "client_ca" -certfile ca/ca.pem
 		\end{verbatim}
 		Multiple CA's certificates (e.g. for using a certificate chain) can be specified by concatenating them and storing them in a new file which can then be used as argument to the \texttt{-certfile} option.
 
@@ -1141,7 +1144,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 \subsubsection{\texttt{max\_client\_queue}}
 \begin{tabular}{lp{10cm}}
- Services & OSD\\
+ Services & DIR, MRC, OSD\\
  Values   & 1 .. N\\
  Default  & 100\\
  Description & To avoid overloading the server by a single client, the maximum number of pending requests per client is limited. Usually, this limit should not be exceeded unless you use Read/Write file replication in connection with asynchronous writes and a large number of allowed pending writes on the client side (see section~\ref{sec:async_writes}).
@@ -2539,7 +2542,7 @@ An existing entry can be removed as follows:
  $> xtfsutil --del-acl u:someone /xtreemfs
 \end{verbatim}
 
-Please be aware that when files or directories are accessed, the actual evaluation of ACL entries depends upon the effective authorization policy on the volume (see Section \ref{sec:access_policies}). With a POSIX authorization policy, ACL entries will be evaluated as described at \href{http://www.suse.de/~agruen/acl/linux-acls/online}{http://www.suse.de/\~{}agruen/acl/linux-acls/online}.
+Please be aware that when files or directories are accessed, the actual evaluation of ACL entries depends upon the effective authorization policy on the volume (see Section \ref{sec:access_policies}). With a POSIX authorization policy, ACL entries will be evaluated as described at \href{http://www.vanemery.com/Linux/ACL/POSIX\_ACL\_on\_Linux.html}{http://www.vanemery.com/Linux/ACL/POSIX\_ACL\_on\_Linux.html}.
 
 \subsection{Snapshots}
 
