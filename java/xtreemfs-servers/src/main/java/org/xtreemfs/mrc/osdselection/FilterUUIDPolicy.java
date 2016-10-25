@@ -40,7 +40,7 @@ public class FilterUUIDPolicy implements OSDSelectionPolicy {
     /**
      * identifier for setting the allowedUUIDs attribute
      */
-    private static final String attributeKeyString = "allowedUUIDs";
+    private static final String attributeKeyString = "uuids";
 
     /**
      * set of possible UUIDs to be returned by getOSDs
