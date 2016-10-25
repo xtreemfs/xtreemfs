@@ -20,9 +20,9 @@ package org.xtreemfs.foundation;
  */
 public class VersionManagement {
 
-    public static final String RELEASE_VERSION   = "1.5.1-master";
+    public static final String RELEASE_VERSION   = "1.6.0-master";
 
-    private static final long  mrcDataVersion    = 10;
+    private static final long  mrcDataVersion    = 11;
 
     private static final long  osdDataVersion    = 1;
 

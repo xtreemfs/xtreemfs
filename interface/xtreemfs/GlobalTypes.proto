@@ -54,6 +54,9 @@ enum OSDSelectionPolicyType {
     OSD_SELECTION_POLICY_FILTER_FQDN = 1001;
     // Filter based on the UUID of OSDs.
     OSD_SELECTION_POLICY_FILTER_UUID = 1002;
+    // Set a preferred OSD to be first in the list, 
+    // the other OSDs are appended in random order.
+    OSD_SELECTION_POLICY_PREFERRED_UUID = 1003;
     // Groups OSDs according to their location in the
     // datacenter map.
     OSD_SELECTION_POLICY_GROUP_DCMAP = 2000;

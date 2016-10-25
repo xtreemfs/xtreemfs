@@ -31,6 +31,15 @@ In your `$HOME/.m2/settings.xml` add:
             <enabled>true</enabled>
           </snapshots>
         </repository>
+        
+        <!-- Needed only when releasing packages -->
+        <repository>
+          <id>xtreemfs-repository</id>
+          <url>https://xtreemfs.github.io/xtreemfs/maven</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
       </repositories>
     </profile>
   
@@ -50,25 +59,25 @@ In your `pom.xml` add:
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-flease</artifactId>
-      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-foundation</artifactId>
-      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-pbrpcgen</artifactId>
-      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0</version>
     </dependency>
 
     <dependency>
       <groupId>org.xtreemfs.xtreemfs</groupId>
       <artifactId>xtreemfs-servers</artifactId>
-      <version>1.5.1-SNAPSHOT</version>
+      <version>1.6.0</version>
       <!-- The shaded version bundles:                                                                   -->
       <!-- - com.google.protobuf:protobuf-java                                                           -->
       <!-- - commons-codec:commons-codec                                                                 -->

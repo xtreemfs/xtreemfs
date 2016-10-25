@@ -1,3 +1,21 @@
+20-SEP-2016: release 1.6.0 (Phantastic Pancakes)
+
+  Changes:
+    * Extended volume quota implementation to OSDs. This requires dumping and reimporting the MRC database during upgrade (see 'MRC Database Backups and Conversion' in the user guide).
+      * Implemented hard quotas for volumes and user and groups per volume.
+      * Added quota information to import and export function.
+      * These changes supersede the previous implementation.
+    * Fix for mount.xtreemfs to fully support mount options via /etc/fstab.
+    * Introduced Java wrappers for the C++ version of libxtreemfs and made it the default Java implementation.
+    * Improved Hadoop adapter to work with a broader range of systems and versions.
+    * Added 'listen.port.bind_retries' server option that implements exponential backoff during service startup if the port is not free yet.
+    * Added RabbitMQ OSD tracing policy (ID 6003).
+    * Slimmed down and updated Mac OS X installer with stricter dependency checking and SIP awareness.
+    * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.
+    * Cleanup of code base to exclude generated sources and previously shipped binaries.
+    * Add non-interactive console support to command line tools.
+    * Many small stability improvements and fixes.
+
 12-MAR-2015: release 1.5.1
 
   Changes:

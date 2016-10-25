@@ -21,7 +21,11 @@ build-stamp:
 	# Add here commands to compile the package.
 	#sed -i -e "s@.*policy_dir_paths\.push_back( \"src/policies/lib\" );.*@@g"\
 	#	   -e "s@/lib/xtreemfs/policies/@/usr/lib/xtreemfs/policies/@g" src/libxtreemfs/user_database.cpp
-	make
+
+	# use previously copied repository because OBS build VMs are offline
+	# see packaging/build_release-packages.sh
+	make MVN_OPTS="--offline --define maven.repo.local=./repository"
+
 	# python share/scons.py
 	# --- end custom part for compiling
 

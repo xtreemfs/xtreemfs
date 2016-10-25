@@ -101,6 +101,9 @@ public class xtfs_cleanup_osd {
 
         password = (options.get(utils.OPTION_ADMIN_PASS).stringValue != null) ? options
                 .get(utils.OPTION_ADMIN_PASS).stringValue : "";
+        if (password.equals("-")) {
+            password = utils.readPassword("Enter admin password: ");
+        }
 
         SSLOptions sslOptions = null;
         String[] dirAddrs = null;
@@ -125,12 +128,12 @@ public class xtfs_cleanup_osd {
                     String serviceCredsFile = options.get(utils.OPTION_USER_CREDS_FILE).stringValue;
                     String serviceCredsPass = options.get(utils.OPTION_USER_CREDS_PASS).stringValue;
                     if(serviceCredsPass != null && serviceCredsPass.equals("-")) {
-                    	serviceCredsPass = new String(System.console().readPassword("Enter credentials password: "));
+                    	serviceCredsPass = utils.readPassword("Enter credentials password: ");
                     }
                     String trustedCAsFile = options.get(utils.OPTION_TRUSTSTORE_FILE).stringValue;
                     String trustedCAsPass = options.get(utils.OPTION_TRUSTSTORE_PASS).stringValue;
                     if(trustedCAsPass != null && trustedCAsPass.equals("-")) {
-                    	trustedCAsPass = new String(System.console().readPassword("Enter trust store password: "));
+                    	trustedCAsPass = utils.readPassword("Enter trust store password: ");
                     }
                     String sslProtocolString = options.get(utils.OPTION_SSL_PROTOCOL).stringValue;
                     if (dirURL.contains(Schemes.SCHEME_PBRPCG + "://")) {

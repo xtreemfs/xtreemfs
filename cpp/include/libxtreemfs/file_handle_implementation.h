@@ -56,6 +56,7 @@ class UUIDResolver;
 class Volume;
 class XCapManager;
 class VoucherManager;
+class VoucherManagerCallback;
 
 class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse> {
  public:
@@ -72,7 +73,8 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
   void finalizeAndClear();
  private:
   /** Sends out the finalize voucher request in an asynchronous manner to all relevant OSDs. */
-  void finalizeVoucher(xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest);
+  void finalizeVoucher(xtreemfs::pbrpc::xtreemfs_finalize_vouchersRequest* finalizeVouchersRequest,
+                       VoucherManagerCallback* callback);
 
   /** Sends out the clear voucher request to the MRC containing all OSD responses. */
   void clearVoucher(xtreemfs::pbrpc::xtreemfs_clear_vouchersRequest* clearVouchersRequest);
@@ -139,6 +141,43 @@ class VoucherManager : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinaliz
   const pbrpc::UserCredentials& user_credentials_bogus_;
 };
 
+class VoucherManagerCallback : public rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse> {
+ public:
+  VoucherManagerCallback(VoucherManager* voucherManager,
+                         const int tryNo,
+                         const int osdCount);
+
+  /** Unregisters the VoucherManager that created the Callback.
+   * If there are finalize voucher requests in flight, the Callback
+   * will be kept in memory until every response has arrived.
+   * Otherwise the Callback will destroy itself. */
+  void unregisterManager();
+
+ private:
+  /** Implements callback for the finalize voucher requests from the OSDs.
+   * Redirects every response to the registered VoucherManager CallFinished.
+   * If no VoucherManager is registered the responses are discarded/freed.
+   * If no VoucherManager is registered and every finalize voucher response
+   * has arrived, the VoucherManagerCallback destroys itself. */
+  virtual void CallFinished(xtreemfs::pbrpc::OSDFinalizeVouchersResponse* response_message,
+                            char* data,
+                            uint32_t data_length,
+                            pbrpc::RPCHeader::ErrorResponse* error,
+                            void* context);
+
+  /** Use this mutex to guard changes/checks to voucherManager_. */
+  boost::mutex mutex_;
+
+  /** The VoucherManager that created this Callback.
+   * Or NULL if it has been unregistered. */
+  rpc::CallbackInterface<xtreemfs::pbrpc::OSDFinalizeVouchersResponse>* voucherManager_;
+  /** The number of the try on which this callback was created. */
+  const int tryNo_;
+  /** The number of OSDs and respective number of requests sent for this try. */
+  const int osdCount_;
+  /** The number of responses for this try. */
+  int respCount_;
+};
 
 class XCapManager :
     public rpc::CallbackInterface<xtreemfs::pbrpc::XCap>,
@@ -366,9 +405,6 @@ class FileHandleImplementation
 
   /** Actual implementation of Flush(). */
   void DoFlush(bool close_file);
-
-  /** Finalize Voucher Acitivites */
-  void ClearVoucher();
 
   /** Actual implementation of Read(). */
   int DoRead(
