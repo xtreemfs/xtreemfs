@@ -45,7 +45,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         STREET, // street address
         DC, // domain component
         UID, // user id
-        DN // distinguished name ()
+        DN // distinguished name (not part of RFC 2253)
     };
     
     private NullAuthProvider nullAuth;
