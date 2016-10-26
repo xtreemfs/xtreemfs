@@ -171,5 +171,10 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                 }
             }
         }
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Using a certificate's %s as user id, %s as group id.",
+                    dnElementMappings.get("uid").name(), dnElementMappings.get("gid").name());
+        }
     }
 }
