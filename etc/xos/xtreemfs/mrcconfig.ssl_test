@@ -83,7 +83,8 @@ database.checkpoint.logfile_size = 16384
 # The default provider is org.xtreemfs.mrc.auth.NullAuthProvider, which just
 # takes the information provided by the client. The name of a pluggable
 # provider can be used here.
-authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
+authentication_provider = org.xtreemfs.common.auth.SimpleX509AuthProvider
+#authentication_provider.properties = uid:DN,gid:OU
 
 # Optional directory containing deployable policy implementations.
 # Policies can be directly deployed as .java or .class files in this directory
