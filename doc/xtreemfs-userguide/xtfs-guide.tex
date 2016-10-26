@@ -70,6 +70,10 @@ Summary of important changes in release 1.6.0:
       service startup if the port is not free yet.
   \item \textbf{New tracing policy}\\
       Tracing data can be sent to RabbitMQ (ID 6003), queue "xtreemfs-trace".
+  \item \textbf{New OSD selection policy}\\
+      It is no possible to specify a preferred OSD via a UUID (ID 1003).
+  \item \textbf{More flexible X509 Authentication}\\
+      User and group can now be mapped a certificate's distinguished name elements.
   \item \textbf{Mac OS X installer}\\
       Slimmed down and updated Mac OS X installer with stricter dependency
       checking and System Integrity Protection awareness.
@@ -471,6 +475,12 @@ To set the authentication provider, it is necessary to set the following propert
 
 \begin{verbatim}
 authentication_provider = <classname>
+\end{verbatim}
+
+Authentication providers can be provided with a list of key-value pairs upon initialization like so:
+
+\begin{verbatim}
+authentication_provider.properties=key1:value1,key2:value2
 \end{verbatim}
 
 By default, the following class names can be used:
@@ -2846,7 +2856,33 @@ The second certificate type are regular user certificates. The MRC will only acc
 
 Both certificates are regular X.509 certificates. Service and host certificates are identified by a Common Name (\texttt{CN}) starting with \texttt{host/} or \texttt{xtreemfs-service/}, which can easily be used in existing security infrastructures. All other certificates are assumed to be user certificates.
 
-If a user certificate is used, XtreemFS will take the Distinguished Name (\texttt{DN}) as the user ID and the Organizational Unit (\texttt{OU}) as the group ID.
+If a user certificate is used, XtreemFS will take the Distinguished Name (\texttt{DN}) as the user ID and the Organizational Unit (\texttt{OU}) as the group ID in the default case.
+
+For this authentication provider, the corresponding \texttt{authentication\_provider.properties} initialization properties list can have zero, one or two of the following elements:
+\begin{itemize}
+  \item \texttt{uid}: The certificate's distinguished name element that identifies the user.
+  \item \texttt{gid}: The certificate's distinguished name element that identifies the group.
+\end{itemize}
+
+Allowed values for these two properties are (according to \href{http://www.ietf.org/rfc/rfc2253.txt}{RFC 2253}):
+\begin{itemize}
+  \item \texttt{CN}: common name
+  \item \texttt{L}: locality name
+  \item \texttt{ST}: state or province name
+  \item \texttt{O}: organization name
+  \item \texttt{OU}: organizational unit name
+  \item \texttt{C}: country name
+  \item \texttt{STREET}: street address
+  \item \texttt{DC}: domain component
+  \item \texttt{UID}: user id
+  \item \texttt{DN}: the entire distinguished name (not part of RFC 2253)
+\end{itemize}
+
+The default configuration for this provider is equivalent to the following MRC configuration property:
+
+\begin{verbatim}
+authentication_provider.properties=uid:DN,gid:OU
+\end{verbatim}
 
 Superusers must have \texttt{xtreemfs-admin} as part of their Organizational Unit (\texttt{OU}).
 

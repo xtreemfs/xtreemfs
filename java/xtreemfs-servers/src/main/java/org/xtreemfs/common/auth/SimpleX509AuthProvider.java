@@ -11,7 +11,11 @@ package org.xtreemfs.common.auth;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -24,7 +28,32 @@ import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
  */
 public class SimpleX509AuthProvider implements AuthenticationProvider {
     
+    /**
+     * Parts of a distinguished name according to <a
+     * href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>.
+     * 
+     * @author robert
+     *
+     */
+    public static enum X500DNElement {
+        CN, // common name
+        L, // locality name
+        ST, // state or province name
+        O, // organization name
+        OU, // organizational unit name
+        C, // country name
+        STREET, // street address
+        DC, // domain component
+        UID, // user id
+        DN // distinguished name ()
+    };
+    
     private NullAuthProvider nullAuth;
+    
+    /**
+     * Distinguished name elements from which the user id and the group is is inferred.
+     */
+    private Map<String, X500DNElement> dnElementMappings;
     
     @Override
     public UserCredentials getEffectiveCredentials(org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials ctx,
@@ -54,7 +83,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
             if (certs.length > 0) {
                 final X509Certificate cert = ((X509Certificate) certs[0]);
                 String fullDN = cert.getSubjectX500Principal().getName();
-                String commonName = getNameElement(cert.getSubjectX500Principal().getName(), "CN");
+                String commonName = getNameElement(fullDN, X500DNElement.CN);
                 
                 if (commonName.startsWith("host/") || commonName.startsWith("xtreemfs-service/")) {
                     if (Logging.isDebug())
@@ -64,9 +93,8 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                     // use NullAuth in this case to parse JSON header
                     return nullAuth.getEffectiveCredentials(ctx, null);
                 } else {
-                    
-                    final String globalUID = fullDN;
-                    final String globalGID = getNameElement(cert.getSubjectX500Principal().getName(), "OU");
+                    final String globalUID = getNameElement(fullDN, dnElementMappings.get("uid"));
+                    final String globalGID = getNameElement(fullDN, dnElementMappings.get("gid"));
                     List<String> gids = new ArrayList<String>(1);
                     gids.add(globalGID);
                     
@@ -89,23 +117,60 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         
     }
     
-    private String getNameElement(String principal, String element) {
+    private String getNameElement(String principal, X500DNElement element) {
+        // entire distinguished name is required
+        if (X500DNElement.DN.equals(element)) {
+            return principal;
+        }
+        
         String[] elems = principal.split(",");
         for (String elem : elems) {
             String[] kv = elem.split("=");
             if (kv.length != 2)
                 continue;
-            if (kv[0].equals(element))
+            if (X500DNElement.valueOf(kv[0]).equals(element))
                 return kv[1];
         }
         return null;
     }
     
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, Properties properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }
         nullAuth = new NullAuthProvider();
-        nullAuth.initialize(useSSL);
+        nullAuth.initialize(useSSL, properties);
+        
+        dnElementMappings = new HashMap<String, X500DNElement>();
+        dnElementMappings.put("uid", X500DNElement.DN);
+        dnElementMappings.put("gid", X500DNElement.OU);
+        
+        if (properties != null) {
+            if (properties.size() > 2) {
+                throw new IllegalArgumentException("Too many properties specified: '"
+                    + properties + "', expecting at most 2 ('uid' and 'gid').");
+            }
+            
+            for (Map.Entry<Object, Object> property : properties.entrySet()) {
+                String key = property.getKey().toString();
+                String value = property.getValue().toString();
+                if ("uid".equals(key) || "gid".equals(key)) {
+                    try {
+                        dnElementMappings.put(key, X500DNElement.valueOf(value));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid distinguished name element found: '"
+                            + value + "', expecting one of: " + Arrays.toString(X500DNElement.values()), e);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Invalid property found: '"
+                        + key + "', expecting either 'uid' or 'gid'.");
+                }
+            }
+        }
+        
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this, "Using a certificate's %s as user id, %s as group id.",
+                    dnElementMappings.get("uid").name(), dnElementMappings.get("gid").name());
+        }
     }
 }
