@@ -18,6 +18,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -129,7 +130,7 @@ public class FederationIdX509AuthProvider implements AuthenticationProvider {
         return elements;
     }
 
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, Properties properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }

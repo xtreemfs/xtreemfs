@@ -22,12 +22,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 
 /**
- * Filters all OSDs that have a matching UUID. attributeKeyString are
- * specified via an * extended attribute value, as defined in
- * attributeKeyString. Attribute * values may contain * '*'s to indicate that
- * parts of the UUID also match.
- * By default, the list of * attributeKeyString contains '*' to indicate that
- * any UUID matches.
+ * Filters all OSDs that have a matching UUID. UUIDs are specified via an
+ * extended attribute value, as defined in
+ * {@link FilterUUIDPolicy#attributeKeyString}. Attribute values may contain
+ * '*'s to indicate that parts of the UUID also match. By default, the list of
+ * UUIDs contains '*' to indicate that any UUID matches.
  *
  * @author stender, seibert
  */
@@ -40,7 +39,7 @@ public class FilterUUIDPolicy implements OSDSelectionPolicy {
     /**
      * identifier for setting the allowedUUIDs attribute
      */
-    private static final String attributeKeyString = "allowedUUIDs";
+    private static final String attributeKeyString = "uuids";
 
     /**
      * set of possible UUIDs to be returned by getOSDs
