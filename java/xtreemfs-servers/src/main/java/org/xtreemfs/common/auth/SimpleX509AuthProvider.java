@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
@@ -133,7 +134,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         return null;
     }
     
-    public void initialize(boolean useSSL, String properties) throws RuntimeException {
+    public void initialize(boolean useSSL, Properties properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }
@@ -145,29 +146,24 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         dnElementMappings.put("gid", X500DNElement.OU);
         
         if (properties != null) {
-            String[] dnElements = properties.split(",");
-            if (dnElements.length > 2) {
+            if (properties.size() > 2) {
                 throw new IllegalArgumentException("Too many properties specified: '"
-                    + Arrays.toString(dnElements) + "', expecting at most 2.");
+                    + properties + "', expecting at most 2.");
             }
             
-            for (String dnElement : dnElements) {
-                String[] mapping = dnElement.split(":");
-                if (mapping.length != 2) {
-                    throw new IllegalArgumentException("Malformed property found: '"
-                        + dnElement + "', expecting 'key:value'");
-                }
-                
-                if ("uid".equals(mapping[0]) || "gid".equals(mapping[0])) {
+            for (Map.Entry<Object, Object> property : properties.entrySet()) {
+                String key = property.getKey().toString();
+                String value = property.getValue().toString();
+                if ("uid".equals(key) || "gid".equals(key)) {
                     try {
-                        dnElementMappings.put(mapping[0], X500DNElement.valueOf(mapping[1]));
-                    } catch(IllegalArgumentException e) {
+                        dnElementMappings.put(key, X500DNElement.valueOf(value));
+                    } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("Invalid distinguished name element found: '"
-                            + mapping[1] + "', expecting one of: " + Arrays.toString(X500DNElement.values()), e);
+                            + value + "', expecting one of: " + Arrays.toString(X500DNElement.values()), e);
                     }
                 } else {
                     throw new IllegalArgumentException("Invalid property found: '"
-                        + mapping[0] + "', expecting either 'uid' or 'gid'.");
+                        + key + "', expecting either 'uid' or 'gid'.");
                 }
             }
         }

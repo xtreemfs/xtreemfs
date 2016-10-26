@@ -205,7 +205,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
 
         authProvider = policyContainer.getAuthenticationProvider();
-        authProvider.initialize(config.isUsingSSL(), config.getAuthenticationProviderProperties());
+        authProvider.initialize(config.isUsingSSL(), config.getAuthenticationProviderPropertiesAsProperties());
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, this, "using authentication provider '%s'",
                     authProvider.getClass().getName());

@@ -8,6 +8,8 @@
 
 package org.xtreemfs.common.auth;
 
+import java.util.Properties;
+
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
 
 /**
@@ -24,11 +26,11 @@ public interface AuthenticationProvider {
      * @param useSSL
      *            true, if SSL is enabled.
      * @param properties
-     *            key1=value1,key2=value2,... formatted list of properties
+     *            initialization properties
      * @throws java.lang.RuntimeException
      *             if the provider cannot be initialized.
      */
-    void initialize(boolean useSSL, String properties) throws RuntimeException;
+    void initialize(boolean useSSL, Properties properties) throws RuntimeException;
     
     /**
      * Get the effective credentials for an operation.

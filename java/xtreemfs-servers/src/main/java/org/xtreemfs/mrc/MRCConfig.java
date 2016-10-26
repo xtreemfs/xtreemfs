@@ -117,6 +117,21 @@ public class MRCConfig extends ServiceConfig {
     public String getAuthenticationProviderProperties() {
         return (String) parameter.get(Parameter.AUTHENTICATION_PROVIDER_PROPERTIES);
     }
+    
+    public Properties getAuthenticationProviderPropertiesAsProperties() {
+        String propertiesString = getAuthenticationProviderProperties();
+        Properties properties = new Properties();
+        if (propertiesString != null) {
+            String[] propertyStrings = propertiesString.split(",");
+            for (String propertyString : propertyStrings) {
+                String[] keyValue = propertyString.split(":");
+                if (keyValue.length == 2) {
+                    properties.setProperty(keyValue[0], keyValue[1]);
+                }
+            }
+        }
+        return properties;
+    }
 
     public String getCapabilitySecret() {
         return (String) parameter.get(Parameter.CAPABILITY_SECRET);
