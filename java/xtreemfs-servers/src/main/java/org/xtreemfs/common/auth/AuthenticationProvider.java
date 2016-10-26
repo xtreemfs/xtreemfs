@@ -23,10 +23,12 @@ public interface AuthenticationProvider {
      * 
      * @param useSSL
      *            true, if SSL is enabled.
+     * @param properties
+     *            key1=value1,key2=value2,... formatted list of properties
      * @throws java.lang.RuntimeException
      *             if the provider cannot be initialized.
      */
-    void initialize(boolean useSSL) throws RuntimeException;
+    void initialize(boolean useSSL, String properties) throws RuntimeException;
     
     /**
      * Get the effective credentials for an operation.

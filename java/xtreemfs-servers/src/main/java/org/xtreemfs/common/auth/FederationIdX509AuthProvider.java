@@ -129,7 +129,7 @@ public class FederationIdX509AuthProvider implements AuthenticationProvider {
         return elements;
     }
 
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, String properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }

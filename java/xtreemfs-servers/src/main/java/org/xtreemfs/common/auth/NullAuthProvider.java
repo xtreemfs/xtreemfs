@@ -26,7 +26,7 @@ public class NullAuthProvider implements AuthenticationProvider {
         return new UserCredentials(ctx.getUsername(), ctx.getGroupsList(), ctx.getUsername().equals("root"));
     }
     
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, String properties) throws RuntimeException {
     }
     
 }
