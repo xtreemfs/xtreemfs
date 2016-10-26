@@ -100,11 +100,11 @@ public class LocalX509AuthProvider implements AuthenticationProvider {
         return null;
     }
     
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, String properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }
         nullAuth = new NullAuthProvider();
-        nullAuth.initialize(useSSL);
+        nullAuth.initialize(useSSL, properties);
     }
 }
