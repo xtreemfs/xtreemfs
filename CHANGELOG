@@ -1,4 +1,4 @@
-20-SEP-2016: release 1.6.0 (Phantastic Pancakes)
+26-OCT-2016: release 1.6.0 (Phantastic Pancakes)
 
   Changes:
     * Extended volume quota implementation to OSDs. This requires dumping and reimporting the MRC database during upgrade (see 'MRC Database Backups and Conversion' in the user guide).
