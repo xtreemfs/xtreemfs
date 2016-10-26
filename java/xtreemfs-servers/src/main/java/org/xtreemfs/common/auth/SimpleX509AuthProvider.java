@@ -148,7 +148,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         if (properties != null) {
             if (properties.size() > 2) {
                 throw new IllegalArgumentException("Too many properties specified: '"
-                    + properties + "', expecting at most 2.");
+                    + properties + "', expecting at most 2 ('uid' and 'gid').");
             }
             
             for (Map.Entry<Object, Object> property : properties.entrySet()) {
