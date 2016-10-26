@@ -1,4 +1,4 @@
-20-SEP-2016: release 1.6.0 (Phantastic Pancakes)
+26-OCT-2016: release 1.6.0 (Phantastic Pancakes)
 
   Changes:
     * Extended volume quota implementation to OSDs. This requires dumping and reimporting the MRC database during upgrade (see 'MRC Database Backups and Conversion' in the user guide).
@@ -10,6 +10,8 @@
     * Improved Hadoop adapter to work with a broader range of systems and versions.
     * Added 'listen.port.bind_retries' server option that implements exponential backoff during service startup if the port is not free yet.
     * Added RabbitMQ OSD tracing policy (ID 6003).
+    * Added Preferred UUID OSD selection policy (ID 1003).
+    * Extended X509 authentication to allow user and group mapping.
     * Slimmed down and updated Mac OS X installer with stricter dependency checking and SIP awareness.
     * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.
     * Cleanup of code base to exclude generated sources and previously shipped binaries.
