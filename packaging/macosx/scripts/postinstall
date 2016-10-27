@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Create symlink "mount_xtreemfs" for Mac.
+# On recent versions of Mac OS X this requires System Integrity Protection to be disabled:
+# Boot into Recovery OS, in a terminal type 'csrutil disable', then reboot and run the installer.
+# After the installation, boot into Recovery OS, type 'csrutil enable' and reboot again.
+ln -s /usr/local/bin/mount.xtreemfs /sbin/mount_xtreemfs
+
+exit 0

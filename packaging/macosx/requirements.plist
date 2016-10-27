@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>bundle</key>
+    <array>
+      <dict>
+        <key>id</key>
+        <string>com.github.osxfuse.filesystems.osxfusefs</string>
+        <key>path</key>
+        <string>/Library/Filesystems/osxfusefs.fs</string>
+        <key>search</key>
+        <true/>
+      </dict>
+    </array>
+  </dict>
+</plist>
