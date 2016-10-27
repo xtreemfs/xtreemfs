@@ -648,7 +648,8 @@ public class XtreemFSFileSystem extends FileSystem {
                         .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(), stat
                         .getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             } else {
-                Replicas replicas = xtreemfsVolume.listReplicas(userCredentials, pathString);
+                Replicas replicas = xtreemfsVolume.listReplicas(userCredentials,
+                        pathString + "/" + entry.getName());
                 
                 // for files, set blocksize to stripeSize of the first replica
                 fileStatus.add(new FileStatus(stat.getSize(), false, replicas.getReplicasCount(),
