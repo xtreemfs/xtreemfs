@@ -21,8 +21,5 @@ do
   fi
 done
 
-# Create symlink "mount_xtreemfs" for Mac.
-ln -s /usr/local/bin/mount.xtreemfs /sbin/mount_xtreemfs
-
 # Exit succesfully.
 exit 0
