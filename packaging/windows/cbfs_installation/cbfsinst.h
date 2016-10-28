@@ -23,8 +23,8 @@ CBFSINST_API BOOL __stdcall InstallA(
     IN LPCSTR  CabPathName, 
     IN LPCSTR  ProductName,
     IN LPCSTR PathToInstall,
-	IN BOOL SupportPnP,
-	IN DWORD ModulesToInstall,
+    IN BOOL SupportPnP,
+    IN DWORD ModulesToInstall,
     OUT LPDWORD RebootNeeded
     );
 
@@ -32,7 +32,7 @@ CBFSINST_API BOOL __stdcall InstallW(
     IN LPCWSTR  CabPathName, 
     IN LPCWSTR ProductName,
     IN LPCWSTR PathToInstall,
-	IN BOOL SupportPnP,
+    IN BOOL SupportPnP,
     IN DWORD ModulesToInstall,
     OUT LPDWORD RebootNeeded
     );
@@ -68,27 +68,27 @@ CBFSINST_API BOOL __stdcall GetModuleStatusW(
     );
 
 CBFSINST_API BOOL __stdcall InstallIconA(
-	IN LPCSTR ProductName,
-	IN LPCSTR IconPath,
+    IN LPCSTR ProductName,
+    IN LPCSTR IconPath,
     IN LPCSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall InstallIconW(
-	IN LPCWSTR ProductName,
-	IN LPCWSTR IconPath,
+    IN LPCWSTR ProductName,
+    IN LPCWSTR IconPath,
     IN LPCWSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall UninstallIconA(
-	IN LPCSTR ProductName,
+    IN LPCSTR ProductName,
     IN LPCSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall UninstallIconW(
-	IN LPCWSTR ProductName,
+    IN LPCWSTR ProductName,
     IN LPCWSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
