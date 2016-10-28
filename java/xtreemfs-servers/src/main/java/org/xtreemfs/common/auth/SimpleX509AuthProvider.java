@@ -126,10 +126,15 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
         String[] elems = principal.split(",");
         for (String elem : elems) {
             String[] kv = elem.split("=");
-            if (kv.length != 2)
-                continue;
-            if (X500DNElement.valueOf(kv[0]).equals(element))
-                return kv[1];
+            if (kv.length == 2) {
+                try {
+                    if (X500DNElement.valueOf(kv[0]).equals(element)) {
+                        return kv[1];
+                    }
+                } catch (IllegalArgumentException e) {
+                    // not the name element we're looking for
+                }
+            }
         }
         return null;
     }
