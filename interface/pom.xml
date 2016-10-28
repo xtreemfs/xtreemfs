@@ -14,7 +14,53 @@
     <protobuf-java.version>2.5.0</protobuf-java.version>
     <protoc.bin>${project.basedir}/../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
     <protoc.include>${project.basedir}/../cpp/thirdparty/protobuf-${protobuf-java.version}/src</protoc.include>
+    <protoc-plugin.suffix></protoc-plugin.suffix>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>win</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+
+      <!-- Provide alternative protoc location if on Windows -->
+      <properties>
+        <protoc.bin>${project.basedir}/../cpp/thirdparty/protobuf-${protobuf-java.version}/vsprojects/Release/protoc</protoc.bin>
+        <protoc-plugin.suffix>.bat</protoc-plugin.suffix>
+      </properties>
+
+      <build>
+      <plugins>
+        <!-- Create Windows-specific plugin for protoc. -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin.version}</version>
+          <executions>
+            <execution>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>run</goal>
+              </goals>
+              <configuration>
+                <target>
+                  <echo file="${project.build.directory}/protoc-gen-pbrpccpp.bat" message="@java -cp" />
+                  <echo file="${project.build.directory}/protoc-gen-pbrpccpp.bat" append="true" message=" &quot;${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
+                  <echo file="${project.build.directory}/protoc-gen-pbrpccpp.bat" append="true" message="${path.separator}${maven.dependency.com.google.protobuf.protobuf-java.jar.path}&quot;" />
+                  <echo file="${project.build.directory}/protoc-gen-pbrpccpp.bat" append="true" message=" org.xtreemfs.pbrpcgen.RPCCPPSourceGenerator${line.separator}" />
+                </target>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <dependencies>
     <dependency>
@@ -48,8 +94,8 @@
                 <echo file="${project.build.directory}/protoc-gen-pbrpccpp" message="#!/bin/bash${line.separator}" />
                 <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message="java -cp" />
                 <!-- ${maven.dependency.groupId.artifactId.jar.path} is only available in maven-antrun-plugin -->
-                <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message=" ${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
-                <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message=":${maven.dependency.com.google.protobuf.protobuf-java.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message=" &quot;${maven.dependency.org.xtreemfs.xtreemfs.xtreemfs-pbrpcgen.jar.path}" />
+                <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message="${path.separator}${maven.dependency.com.google.protobuf.protobuf-java.jar.path}&quot;" />
                 <echo file="${project.build.directory}/protoc-gen-pbrpccpp" append="true" message=" org.xtreemfs.pbrpcgen.RPCCPPSourceGenerator${line.separator}" />
                 <chmod file="${project.build.directory}/protoc-gen-pbrpccpp" perm="a+x" />
               </target>
@@ -140,8 +186,8 @@
                 <argument>--proto_path=${project.basedir}/../interface</argument>
                 <argument>--proto_path=${project.basedir}/../interface/pbrpc</argument>
                 <argument>--proto_path=${protoc.include}</argument>
-                <argument>--pbrpccpp_out=${project.basedir}/../cpp/generated</argument>
-                <argument>--plugin=${project.build.directory}/protoc-gen-pbrpccpp</argument>
+                <argument>--pbrpccpp${protoc-plugin.suffix}_out=${project.basedir}/../cpp/generated</argument>
+                <argument>--plugin=${project.build.directory}/protoc-gen-pbrpccpp${protoc-plugin.suffix}</argument>
                 <argument>${project.basedir}/../interface/pbrpc/Ping.proto</argument>
                 <argument>${project.basedir}/../interface/pbrpc/RPC.proto</argument>
               </arguments>
@@ -161,8 +207,8 @@
                 <argument>--proto_path=${project.basedir}/../interface</argument>
                 <argument>--proto_path=${project.basedir}/../interface/xtreemfs</argument>
                 <argument>--proto_path=${protoc.include}</argument>
-                <argument>--pbrpccpp_out=${project.basedir}/../cpp/generated</argument>
-                <argument>--plugin=${project.build.directory}/protoc-gen-pbrpccpp</argument>
+                <argument>--pbrpccpp${protoc-plugin.suffix}_out=${project.basedir}/../cpp/generated</argument>
+                <argument>--plugin=${project.build.directory}/protoc-gen-pbrpccpp${protoc-plugin.suffix}</argument>
                 <argument>${project.basedir}/../interface/xtreemfs/GlobalTypes.proto</argument>
                 <argument>${project.basedir}/../interface/xtreemfs/DIR.proto</argument>
                 <argument>${project.basedir}/../interface/xtreemfs/MRC.proto</argument>
