@@ -95,6 +95,7 @@ public class ServiceConfig extends Config {
         OSD_CHECK_INTERVAL("osd_check_interval", null, Integer.class, true),
         NOATIME("no_atime", null, Boolean.class, true),
         AUTHENTICATION_PROVIDER("authentication_provider", null, String.class, true),
+        AUTHENTICATION_PROVIDER_PROPERTIES("authentication_provider.properties", null, String.class, false),
         CAPABILITY_SECRET("capability_secret", null, String.class, true),
         CAPABILITY_TIMEOUT("capability_timeout", 600, Integer.class, false),
         RENEW_TIMED_OUT_CAPS("renew_to_caps", false, Boolean.class, false),

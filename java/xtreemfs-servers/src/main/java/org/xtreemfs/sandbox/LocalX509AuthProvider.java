@@ -7,12 +7,16 @@
 
 package org.xtreemfs.sandbox;
 
-import org.xtreemfs.common.auth.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
+import org.xtreemfs.common.auth.AuthenticationException;
+import org.xtreemfs.common.auth.AuthenticationProvider;
+import org.xtreemfs.common.auth.NullAuthProvider;
+import org.xtreemfs.common.auth.UserCredentials;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
@@ -100,11 +104,11 @@ public class LocalX509AuthProvider implements AuthenticationProvider {
         return null;
     }
     
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, Properties properties) throws RuntimeException {
         if (!useSSL) {
             throw new RuntimeException(this.getClass().getName() + " can only be used if SSL is enabled!");
         }
         nullAuth = new NullAuthProvider();
-        nullAuth.initialize(useSSL);
+        nullAuth.initialize(useSSL, properties);
     }
 }

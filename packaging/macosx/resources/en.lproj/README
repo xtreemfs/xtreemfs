@@ -1,0 +1,1 @@
+XtreemFS for Mac OS X requires FUSE for OS X, so please be sure to install it first (http://osxfuse.github.io/). Otherwise the installer will fail with the message "The required software is not installed".

@@ -46,11 +46,11 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replicas;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC.StatVFS;
 
 /**
  * 
@@ -643,18 +643,17 @@ public class XtreemFSFileSystem extends FileSystem {
             final Stat stat = entry.getStbuf();
             final boolean isDir = isXtreemFSDirectory(stat);
             if (isDir) {
-                // for directories, set blocksize to 0
-                fileStatus.add(new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat
+                // for directories, set length, replication and blocksize to 0
+                fileStatus.add(new FileStatus(0, true, 0, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat
                         .getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(), stat
                         .getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             } else {
-                StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
-                if (statVFS == null) {
-                    throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
-                }
-                // for files, set blocksize to stripeSize of the volume
-                fileStatus.add(new FileStatus(stat.getSize(), isDir, 1, statVFS
-                        .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
+                Replicas replicas = xtreemfsVolume.listReplicas(userCredentials,
+                        pathString + "/" + entry.getName());
+                
+                // for files, set blocksize to stripeSize of the first replica
+                fileStatus.add(new FileStatus(stat.getSize(), false, replicas.getReplicasCount(),
+                        replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                         (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                         stat.getGroupId(), new Path(makeAbsolute(path), entry.getName())));
             }
@@ -756,17 +755,15 @@ public class XtreemFSFileSystem extends FileSystem {
         
         final boolean isDir = isXtreemFSDirectory(stat);
         if (isDir) {
-            // for directories, set blocksize to 0
-            return new FileStatus(0, isDir, 1, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
+            // for directories, set length, replication and blocksize to 0
+            return new FileStatus(0, true, 0, 0, (long) (stat.getMtimeNs() / 1e6), (long) (stat.getAtimeNs() / 1e6),
                     new FsPermission((short) stat.getMode()), stat.getUserId(), stat.getGroupId(), makeQualified(path));
         } else {
-            StatVFS statVFS = xtreemfsVolume.statFS(userCredentials);
-            if (statVFS == null) {
-                throw new IOException("Cannot stat XtreemFS volume '" + xtreemfsVolume.getVolumeName() + "'");
-            }
-            // for files, set blocksize to stripesize of the volume
-            return new FileStatus(stat.getSize(), isDir, 1, statVFS
-                    .getDefaultStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
+            Replicas replicas = xtreemfsVolume.listReplicas(userCredentials, pathString);
+            
+            // for files, set blocksize to stripeSize of the first replica
+            return new FileStatus(stat.getSize(), false, replicas.getReplicasCount(),
+                    replicas.getReplicas(0).getStripingPolicy().getStripeSize() * 1024, (long) (stat.getMtimeNs() / 1e6),
                     (long) (stat.getAtimeNs() / 1e6), new FsPermission((short) stat.getMode()), stat.getUserId(),
                     stat.getGroupId(), makeQualified(path));
         }

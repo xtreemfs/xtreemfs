@@ -8,6 +8,8 @@
 
 package org.xtreemfs.common.auth;
 
+import java.util.Properties;
+
 import org.xtreemfs.foundation.pbrpc.channels.ChannelIO;
 
 /**
@@ -26,7 +28,7 @@ public class NullAuthProvider implements AuthenticationProvider {
         return new UserCredentials(ctx.getUsername(), ctx.getGroupsList(), ctx.getUsername().equals("root"));
     }
     
-    public void initialize(boolean useSSL) throws RuntimeException {
+    public void initialize(boolean useSSL, Properties properties) throws RuntimeException {
     }
     
 }

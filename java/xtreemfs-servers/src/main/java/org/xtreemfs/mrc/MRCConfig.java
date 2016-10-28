@@ -51,6 +51,7 @@ public class MRCConfig extends ServiceConfig {
             Parameter.WAIT_FOR_DIR,
             Parameter.GEO_COORDINATES,
             Parameter.AUTHENTICATION_PROVIDER,
+            Parameter.AUTHENTICATION_PROVIDER_PROPERTIES,
             Parameter.POLICY_DIR,
             Parameter.CAPABILITY_SECRET,
             Parameter.CAPABILITY_TIMEOUT,
@@ -111,6 +112,25 @@ public class MRCConfig extends ServiceConfig {
 
     public String getAuthenticationProvider() {
         return (String) parameter.get(Parameter.AUTHENTICATION_PROVIDER);
+    }
+    
+    public String getAuthenticationProviderProperties() {
+        return (String) parameter.get(Parameter.AUTHENTICATION_PROVIDER_PROPERTIES);
+    }
+    
+    public Properties getAuthenticationProviderPropertiesAsProperties() {
+        String propertiesString = getAuthenticationProviderProperties();
+        Properties properties = new Properties();
+        if (propertiesString != null) {
+            String[] propertyStrings = propertiesString.split(",");
+            for (String propertyString : propertyStrings) {
+                String[] keyValue = propertyString.split(":");
+                if (keyValue.length == 2) {
+                    properties.setProperty(keyValue[0], keyValue[1]);
+                }
+            }
+        }
+        return properties;
     }
 
     public String getCapabilitySecret() {
