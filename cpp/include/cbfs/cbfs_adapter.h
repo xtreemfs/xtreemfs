@@ -41,7 +41,8 @@ class CbFSAdapter {
     ACCESS_MASK DesiredAccess,
     DWORD FileAttributes,
     DWORD ShareMode,
-    PVOID FileHandleContext);
+    CbFsFileInfo* FileInfo,
+    CbFsHandleInfo* HandleInfo);
 
   /** Creates a new instance of CbFSAdapter, but does not create any 
    *  libxtreemfs Client yet.
@@ -76,17 +77,20 @@ class CbFSAdapter {
                   ACCESS_MASK DesiredAccess,
                   DWORD FileAttributes,
                   DWORD ShareMode,
-                  PVOID* FileHandleContext);
+                  CbFsFileInfo* FileInfo,
+                  CbFsHandleInfo* HandleInfo);
 
   void OpenFile(CallbackFileSystem* Sender,
                 LPCTSTR FileName,
                 ACCESS_MASK DesiredAccess,
+                DWORD FileAttributes,
                 DWORD ShareMode,
-                PVOID* FileHandleContext);
+                CbFsFileInfo* FileInfo,
+                CbFsHandleInfo* HandleInfo);
 
   void CloseFile(CallbackFileSystem* Sender,
                  CbFsFileInfo* FileInfo,
-                 PVOID FileHandleContext);
+                 CbFsHandleInfo* HandleInfo);
 
   void GetFileInfo(CallbackFileSystem* Sender,
                    LPCTSTR FileName,
@@ -94,16 +98,20 @@ class CbFSAdapter {
                    PFILETIME CreationTime,
                    PFILETIME LastAccessTime,
                    PFILETIME LastWriteTime,
+                   PFILETIME ChangeTime,
                    __int64* EndOfFile,
                    __int64* AllocationSize,
                    __int64* FileId,
                    PDWORD FileAttributes,
-                   LPTSTR LongFileName OPTIONAL,
-                   PWORD LongFileNameLength OPTIONAL);
+                   LPTSTR ShortFileName OPTIONAL,
+                   PWORD ShortFileNameLength OPTIONAL,
+                   LPTSTR RealFileName OPTIONAL,
+                   PWORD RealFileNameLength OPTIONAL);
 
   void EnumerateDirectory(CallbackFileSystem* Sender,
                           CbFsFileInfo* DirectoryInfo,
-                          PVOID* EnumerationContext,
+                          CbFsHandleInfo* HandleInfo,
+                          CbFsDirectoryEnumerationInfo* EnumerationInfo,
                           LPCTSTR Mask,
                           INT Index,
                           BOOL Restart,
@@ -115,14 +123,15 @@ class CbFSAdapter {
                           PFILETIME CreationTime,
                           PFILETIME LastAccessTime,
                           PFILETIME LastWriteTime,
+                          PFILETIME ChangeTime,
                           __int64* EndOfFile,
                           __int64* AllocationSize,
                           __int64* FileId,
                           PDWORD FileAttributes);
     
-  void CloseEnumeration(CallbackFileSystem* Sender,
-                        CbFsFileInfo* DirectoryInfo,
-                        PVOID EnumerationContext);
+  void CloseDirectoryEnumeration(CallbackFileSystem* Sender,
+                                 CbFsFileInfo* DirectoryInfo,
+                                 CbFsDirectoryEnumerationInfo* EnumerationInfo);
 
   void SetAllocationSize(CallbackFileSystem* Sender,
                          CbFsFileInfo* FileInfo,
@@ -131,19 +140,20 @@ class CbFSAdapter {
 
   void SetEndOfFile(CallbackFileSystem* Sender,
                     CbFsFileInfo* FileInfo,
-                    PVOID FileHandleContext,
                     __int64 EndOfFile);
     
   void SetFileAttributes(CallbackFileSystem* Sender,
                          CbFsFileInfo* FileInfo,
-                         PVOID FileHandleContext,
+                         CbFsHandleInfo* HandleInfo,
                          PFILETIME CreationTime,
                          PFILETIME LastAccessTime,
                          PFILETIME LastWriteTime,
+                         PFILETIME ChangeTime,
                          DWORD FileAttributes);
   
   void CanFileBeDeleted(CallbackFileSystem* Sender,
                         CbFsFileInfo* FileInfo,
+                        CbFsHandleInfo* HandleInfo,
                         BOOL* CanBeDeleted);
 
   void DeleteFile(CallbackFileSystem* Sender, CbFsFileInfo* FileInfo);
@@ -154,7 +164,6 @@ class CbFSAdapter {
 
   void ReadFile(CallbackFileSystem* Sender,
                 CbFsFileInfo* FileInfo,
-                PVOID FileHandleContext,
                 __int64 Position,
                 PVOID Buffer, 
                 DWORD BytesToRead,
@@ -162,14 +171,14 @@ class CbFSAdapter {
     
   void WriteFile(CallbackFileSystem* Sender,
                  CbFsFileInfo* FileInfo,
-                 PVOID FileHandleContext,
                  __int64 Position,
                  PVOID Buffer, 
                  DWORD BytesToWrite,
                  PDWORD BytesWritten);
     
   void IsDirectoryEmpty(CallbackFileSystem* Sender,
-                        LPWSTR FileName,
+                        CbFsFileInfo* DirectoryInfo,
+                        LPCWSTR FileName,
                         LPBOOL IsEmpty);
 
   void StorageEjected(CallbackFileSystem* Sender);
@@ -224,12 +233,15 @@ class CbFSAdapter {
                                  PFILETIME CreationTime,
                                  PFILETIME LastAccessTime,
                                  PFILETIME LastWriteTime,
+                                 PFILETIME ChangeTime,
                                  __int64* EndOfFile,
                                  __int64* AllocationSize,
                                  __int64* FileId,
                                  PDWORD FileAttributes,
-                                 LPTSTR LongFileName OPTIONAL,
-                                 PWORD LongFileNameLength OPTIONAL);
+                                 LPTSTR ShortFileName OPTIONAL,
+                                 PWORD ShortFileNameLength OPTIONAL,
+                                 LPTSTR RealFileName OPTIONAL,
+                                 PWORD RealFileNameLength OPTIONAL);
 
   /** Contains all needed options to mount the requested volume. */
   CbFSOptions* options_;

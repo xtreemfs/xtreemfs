@@ -14,22 +14,25 @@
 #define CBFSINST_API __declspec(dllimport)
 #endif
 
-#define CBFS_MODULE_DRIVER                 0x00000001
+#define CBFS_MODULE_PNP_BUS                0x00000001
+#define CBFS_MODULE_DRIVER                 0x00000002
 #define CBFS_MODULE_NET_REDIRECTOR_DLL     0x00010000
 #define CBFS_MODULE_MOUNT_NOTIFIER_DLL     0x00020000
 
 CBFSINST_API BOOL __stdcall InstallA(
     IN LPCSTR  CabPathName, 
     IN LPCSTR  ProductName,
-		IN BOOL SupportPnP,
-		IN DWORD ModulesToInstall,
+    IN LPCSTR PathToInstall,
+    IN BOOL SupportPnP,
+    IN DWORD ModulesToInstall,
     OUT LPDWORD RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall InstallW(
     IN LPCWSTR  CabPathName, 
     IN LPCWSTR ProductName,
-		IN BOOL SupportPnP,
+    IN LPCWSTR PathToInstall,
+    IN BOOL SupportPnP,
     IN DWORD ModulesToInstall,
     OUT LPDWORD RebootNeeded
     );
@@ -37,12 +40,14 @@ CBFSINST_API BOOL __stdcall InstallW(
 CBFSINST_API BOOL __stdcall UninstallA(
     IN LPCSTR  CabPathName, 
     IN LPCSTR   ProductName,
+    IN LPCSTR InstalledPath OPTIONAL,
     OUT LPDWORD  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall UninstallW(
     IN LPCWSTR  CabPathName, 
     IN LPCWSTR  ProductName,
+    IN LPCWSTR InstalledPath OPTIONAL,
     OUT LPDWORD  RebootNeeded
     );
 
@@ -61,37 +66,29 @@ CBFSINST_API BOOL __stdcall GetModuleStatusW(
     OUT LPDWORD FileVersionHigh OPTIONAL,
     OUT LPDWORD FileVersionLow OPTIONAL
     );
-/*
-CBFSINST_API BOOL __stdcall GetDriverVersionA(
-    IN LPCSTR DriverFile,
-    OUT LPDWORD FileVersionHigh,
-    OUT LPDWORD FileVersionLow
-    );
 
-CBFSINST_API BOOL __stdcall GetDriverVersionW(
-    IN LPCWSTR DriverFile,
-    OUT LPDWORD FileVersionHigh,
-    OUT LPDWORD FileVersionLow
-    );
-*/
 CBFSINST_API BOOL __stdcall InstallIconA(
-		IN LPCSTR IconPath,
+    IN LPCSTR ProductName,
+    IN LPCSTR IconPath,
     IN LPCSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall InstallIconW(
-		IN LPCWSTR IconPath,
+    IN LPCWSTR ProductName,
+    IN LPCWSTR IconPath,
     IN LPCWSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall UninstallIconA(
+    IN LPCSTR ProductName,
     IN LPCSTR IconId,
     OUT LPBOOL  RebootNeeded
     );
 
 CBFSINST_API BOOL __stdcall UninstallIconW(
+    IN LPCWSTR ProductName,
     IN LPCWSTR IconId,
     OUT LPBOOL  RebootNeeded
     );

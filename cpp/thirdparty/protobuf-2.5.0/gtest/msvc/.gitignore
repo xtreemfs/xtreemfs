@@ -1,4 +1,5 @@
 /protobuf/
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
+/Backup*/
+UpgradeLog*.htm
+*.VC.db
+.vs/
