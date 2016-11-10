@@ -217,7 +217,7 @@ public class ECReconstructionStage extends Stage {
     }
 
 
-    void reconstructNextStripe(FileState file) {
+    void reconstructNextStripe(final FileState file) {
         if (!file.activateNextStripe()) {
             finished(file);
             return;
@@ -257,6 +257,7 @@ public class ECReconstructionStage extends Stage {
 
                         @Override
                         public void failed(long stripeNo) {
+                            // FIXME (jdillmann): eventStripeFailed
                             Logging.logMessage(Logging.LEVEL_CRIT, Category.ec, this, "Could not reconstruct");
                         }
 

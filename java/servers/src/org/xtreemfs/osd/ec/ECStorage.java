@@ -437,16 +437,6 @@ public class ECStorage {
 
 
             // Encode the data
-            // FIXME (jdillmann): Decide which is faster and which to use
-
-            // ReedSolomon codec = ReedSolomon.create(sp.getWidth(), sp.getParityWidth());
-            // byte[] dataArray = data.array();
-            // byte[] deltaArray = new byte[data.capacity()];
-            // int chunkOSDNoOff = sp.getOSDforObject(objectNo);
-            // int parityOSDNoOff = sp.getRelativeOSDPosition() - sp.getWidth();
-            // codec.encodeDiffParity(dataArray, deltaArray, chunkOSDNoOff, parityOSDNoOff, offset, data.capacity());
-            // ReusableBuffer deltaBuf = ReusableBuffer.wrap(deltaArray);
-
             ReedSolomon codec = ECPolicy.createRSCodec(sp.getWidth(), sp.getParityWidth());
             ReusableBuffer deltaBuf = BufferPool.allocate(data.capacity());
             int chunkOSDNoOff = sp.getOSDforObject(objectNo);
@@ -577,9 +567,6 @@ public class ECStorage {
 
         long objVer = 1;
 
-
-        // ReusableBuffer data = BufferPool.allocate(length);
-
         try {
 
 
@@ -625,7 +612,6 @@ public class ECStorage {
 
             // FIXME (jdillmann): Won't return the correct error if the read is outdated.
         } catch (IOException ex) {
-            // BufferPool.free(data);
             ErrorResponse error = ErrorUtils.getErrorResponse(ErrorType.ERRNO, POSIXErrno.POSIX_ERROR_EIO,
                     ex.toString(), ex);
             callback.ecReadParityComplete(null, false, error);

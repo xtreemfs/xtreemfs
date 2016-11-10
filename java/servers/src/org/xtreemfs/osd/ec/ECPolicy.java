@@ -219,6 +219,8 @@ public class ECPolicy {
                     curInterval = curIt.next();
 
                     // Just ignore incomplete intervals by replacing them with empty ones
+                    // FIXME (jdillmann): What if an interval in currentVector is splitted? then is has to be counted
+                    // even though it is not opComplete.
                     if (!curInterval.isOpComplete()) {
                         curInterval = ObjectInterval.empty(curInterval);
                     }
