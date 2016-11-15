@@ -241,6 +241,11 @@ class FileHandle {
    * @throws UnknownAddressSchemeException
    */
   virtual void Close() = 0;
+
+  /** Gets the address of the OSD that was last used for reading
+   * or writing.
+   */
+  virtual std::string GetLastOSDAddress() = 0;
 };
 
 }  // namespace xtreemfs

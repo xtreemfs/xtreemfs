@@ -340,6 +340,8 @@ class FileHandleImplementation
 
   virtual void Close();
 
+  virtual std::string GetLastOSDAddress();
+
   /** Returns the StripingPolicy object for a given type (e.g. Raid0).
    *
    *  @remark Ownership is NOT transferred to the caller.
@@ -514,6 +516,9 @@ class FileHandleImplementation
   const pbrpc::UserCredentials& user_credentials_bogus_;
 
   XCapManager xcap_manager_;
+
+  /** Address of the OSD that was last used for reading or writing. */
+  std::string last_osd_address_;
 
   FRIEND_TEST(VolumeImplementationTestFastPeriodicFileSizeUpdate,
               WorkingPendingFileSizeUpdates);
