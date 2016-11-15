@@ -211,6 +211,13 @@ int FileHandleImplementation::DoRead(
         ReadFromOSD(uuid_iterator, file_credentials, operations[j].obj_number,
         operations[j].data, operations[j].req_offset,
         operations[j].req_size);
+
+    std::string last_osd_uuid = "";
+    uuid_iterator->GetUUID(&last_osd_uuid);
+    uuid_resolver_->UUIDToAddressWithOptions(
+        last_osd_uuid, &last_osd_address_, RPCOptions(
+            volume_options_.max_read_tries, volume_options_.retry_delay_s,
+            false, volume_options_.was_interrupted_function));
   }
 
   return received_data;
@@ -378,6 +385,13 @@ int FileHandleImplementation::DoWrite(
       WriteToOSD(uuid_iterator, file_credentials,
                   operations[j].obj_number, operations[j].req_offset,
                   operations[j].data, operations[j].req_size);
+
+      std::string last_osd_uuid = "";
+      uuid_iterator->GetUUID(&last_osd_uuid);
+      uuid_resolver_->UUIDToAddressWithOptions(
+          last_osd_uuid, &last_osd_address_, RPCOptions(
+              volume_options_.max_read_tries, volume_options_.retry_delay_s,
+              false, volume_options_.was_interrupted_function));
     }
   }
 
@@ -909,6 +923,10 @@ void FileHandleImplementation::Close() {
     throw;
   }
   file_info_->CloseFileHandle(this);
+}
+
+string FileHandleImplementation::GetLastOSDAddress() {
+  return last_osd_address_;
 }
 
 const StripeTranslator* FileHandleImplementation::GetStripeTranslator(

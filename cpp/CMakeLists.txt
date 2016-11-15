@@ -356,7 +356,7 @@ if (GENERATE_JNI OR NOT SKIP_JNI)
 
   set(JNI_LIB_NAME "jni-xtreemfs")
   set(JNI_GEN_JAVA_PKG "org.xtreemfs.common.libxtreemfs.jni.generated")
-  set(JNI_GEN_JAVA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../java/servers/src/org/xtreemfs/common/libxtreemfs/jni/generated")
+  set(JNI_GEN_JAVA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../java/xtreemfs-servers/src/main/java/org/xtreemfs/common/libxtreemfs/jni/generated")
   set(JNI_GEN_C_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated/swig")
   set(JNI_GEN_C_FILE "${JNI_GEN_C_DIR}/xtreemfsJAVA_wrap.cpp")
 
