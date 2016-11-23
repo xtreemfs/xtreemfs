@@ -333,3 +333,11 @@
    obj:/lib/x86_64-linux-gnu/libssl.so.1.0.0
    fun:_ZN5boost4asio3ssl6detail6engine7do_readEPvm
 }
+{
+   OpenSSL leak in init
+   Memcheck:Leak
+   ...
+   obj:/lib64/libcrypto.so.1.0.0
+   ...
+   fun:OPENSSL_init_library
+}
