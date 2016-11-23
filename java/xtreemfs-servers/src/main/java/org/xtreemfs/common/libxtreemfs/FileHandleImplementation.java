@@ -1466,4 +1466,9 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
             }
         }
     }
+
+    @Override
+    public String getLastOSDAddress() {
+        throw new UnsupportedOperationException("getLastOSDAddress not supported in Java Client");
+    }
 }

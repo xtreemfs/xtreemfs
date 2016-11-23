@@ -139,6 +139,12 @@ public class XtreemFSInputStream extends FSInputStream {
         fileHandle.close();
         closed = true;
     }
+    
+    // For use by external systems, such as the StatisticsFileSystem
+    // https://github.com/robert-schmidtke/hdfs-statistics-adapter
+    public String getCurrentDatanodeHostName() {
+        return fileHandle.getLastOSDAddress();
+    }
 
     private int readFromBuffer(byte[] bytes, int offset, int length) throws IOException {
         if (EOF || length == 0) {

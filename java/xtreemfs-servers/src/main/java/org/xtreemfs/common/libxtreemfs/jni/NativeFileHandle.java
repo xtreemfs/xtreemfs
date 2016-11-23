@@ -141,4 +141,9 @@ public class NativeFileHandle implements FileHandle {
         proxy.close();
     }
 
+    @Override
+    public String getLastOSDAddress() {
+        return proxy.getLastOSDAddress();
+    }
+
 }
