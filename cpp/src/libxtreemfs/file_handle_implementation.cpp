@@ -82,7 +82,8 @@ FileHandleImplementation::FileHandleImplementation(
                     uuid_resolver,
                     mrc_uuid_iterator,
                     auth_bogus_,
-                    user_credentials_bogus_) {
+                    user_credentials_bogus_),
+      last_osd_address_("") {
 }
 
 FileHandleImplementation::~FileHandleImplementation() {}
@@ -212,12 +213,12 @@ int FileHandleImplementation::DoRead(
         operations[j].data, operations[j].req_offset,
         operations[j].req_size);
 
-    std::string last_osd_uuid = "";
-    uuid_iterator->GetUUID(&last_osd_uuid);
-    uuid_resolver_->UUIDToAddressWithOptions(
-        last_osd_uuid, &last_osd_address_, RPCOptions(
-            volume_options_.max_read_tries, volume_options_.retry_delay_s,
-            false, volume_options_.was_interrupted_function));
+    // std::string last_osd_uuid = "";
+    // uuid_iterator->GetUUID(&last_osd_uuid);
+    // uuid_resolver_->UUIDToAddressWithOptions(
+    //     last_osd_uuid, &last_osd_address_, RPCOptions(
+    //         volume_options_.max_read_tries, volume_options_.retry_delay_s,
+    //         false, volume_options_.was_interrupted_function));
   }
 
   return received_data;
@@ -386,12 +387,12 @@ int FileHandleImplementation::DoWrite(
                   operations[j].obj_number, operations[j].req_offset,
                   operations[j].data, operations[j].req_size);
 
-      std::string last_osd_uuid = "";
-      uuid_iterator->GetUUID(&last_osd_uuid);
-      uuid_resolver_->UUIDToAddressWithOptions(
-          last_osd_uuid, &last_osd_address_, RPCOptions(
-              volume_options_.max_read_tries, volume_options_.retry_delay_s,
-              false, volume_options_.was_interrupted_function));
+      // std::string last_osd_uuid = "";
+      // uuid_iterator->GetUUID(&last_osd_uuid);
+      // uuid_resolver_->UUIDToAddressWithOptions(
+      //     last_osd_uuid, &last_osd_address_, RPCOptions(
+      //         volume_options_.max_read_tries, volume_options_.retry_delay_s,
+      //         false, volume_options_.was_interrupted_function));
     }
   }
 
