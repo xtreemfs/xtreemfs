@@ -334,6 +334,13 @@
    fun:_ZN5boost4asio3ssl6detail6engine7do_readEPvm
 }
 {
+   OpenSSL read, jump depends on uninitialized values for some methods
+   Memcheck:Cond
+   ...
+   obj:/lib64/libssl.so.1.0.0
+   fun:_ZN5boost4asio3ssl6detail6engine7do_readEPvm
+}
+{
    OpenSSL leak in init
    Memcheck:Leak
    ...
