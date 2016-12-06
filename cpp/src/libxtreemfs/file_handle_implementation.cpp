@@ -214,7 +214,7 @@ int FileHandleImplementation::DoRead(
         operations[j].req_size);
 
 
-    boost::mutex::scoped_lock last_osd_lock(last_osd_mutex_, boost::try_to_lock_t());
+    boost::mutex::scoped_try_lock last_osd_lock(last_osd_mutex_);
     if (last_osd_lock.owns_lock()) {
      std::string last_osd_uuid = "";
      uuid_iterator->GetUUID(&last_osd_uuid);
@@ -392,7 +392,7 @@ int FileHandleImplementation::DoWrite(
                   operations[j].data, operations[j].req_size);
 
 
-      boost::mutex::scoped_lock last_osd_lock(last_osd_mutex_, boost::try_to_lock_t());
+      boost::mutex::scoped_try_lock last_osd_lock(last_osd_mutex_);
       if (last_osd_lock.owns_lock()) {
        std::string last_osd_uuid = "";
        uuid_iterator->GetUUID(&last_osd_uuid);

@@ -14,7 +14,6 @@
 
 #include <boost/function.hpp>
 #include <boost/thread/condition.hpp>
-#include <boost/thread/lock_options.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <gtest/gtest_prod.h>
