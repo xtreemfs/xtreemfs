@@ -517,6 +517,9 @@ class FileHandleImplementation
 
   XCapManager xcap_manager_;
 
+  /** Mutex used for writing last OSD address. */
+  boost::mutex last_osd_mutex_;
+
   /** Address of the OSD that was last used for reading or writing. */
   std::string last_osd_address_;
 

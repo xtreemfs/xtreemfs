@@ -213,12 +213,16 @@ int FileHandleImplementation::DoRead(
         operations[j].data, operations[j].req_offset,
         operations[j].req_size);
 
-    // std::string last_osd_uuid = "";
-    // uuid_iterator->GetUUID(&last_osd_uuid);
-    // uuid_resolver_->UUIDToAddressWithOptions(
-    //     last_osd_uuid, &last_osd_address_, RPCOptions(
-    //         volume_options_.max_read_tries, volume_options_.retry_delay_s,
-    //         false, volume_options_.was_interrupted_function));
+
+    boost::mutex::scoped_try_lock last_osd_lock(last_osd_mutex_);
+    if (last_osd_lock.owns_lock()) {
+     std::string last_osd_uuid = "";
+     uuid_iterator->GetUUID(&last_osd_uuid);
+     uuid_resolver_->UUIDToAddressWithOptions(
+         last_osd_uuid, &last_osd_address_, RPCOptions(
+             volume_options_.max_read_tries, volume_options_.retry_delay_s,
+             false, volume_options_.was_interrupted_function));
+     }
   }
 
   return received_data;
@@ -387,12 +391,16 @@ int FileHandleImplementation::DoWrite(
                   operations[j].obj_number, operations[j].req_offset,
                   operations[j].data, operations[j].req_size);
 
-      // std::string last_osd_uuid = "";
-      // uuid_iterator->GetUUID(&last_osd_uuid);
-      // uuid_resolver_->UUIDToAddressWithOptions(
-      //     last_osd_uuid, &last_osd_address_, RPCOptions(
-      //         volume_options_.max_read_tries, volume_options_.retry_delay_s,
-      //         false, volume_options_.was_interrupted_function));
+
+      boost::mutex::scoped_try_lock last_osd_lock(last_osd_mutex_);
+      if (last_osd_lock.owns_lock()) {
+       std::string last_osd_uuid = "";
+       uuid_iterator->GetUUID(&last_osd_uuid);
+       uuid_resolver_->UUIDToAddressWithOptions(
+           last_osd_uuid, &last_osd_address_, RPCOptions(
+               volume_options_.max_read_tries, volume_options_.retry_delay_s,
+               false, volume_options_.was_interrupted_function));
+       }
     }
   }
 
