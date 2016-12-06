@@ -14,6 +14,7 @@
 
 #include <boost/function.hpp>
 #include <boost/thread/condition.hpp>
+#include <boost/thread/lock_options.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <gtest/gtest_prod.h>
@@ -516,6 +517,9 @@ class FileHandleImplementation
   const pbrpc::UserCredentials& user_credentials_bogus_;
 
   XCapManager xcap_manager_;
+
+  /** Mutex used for writing last OSD address. */
+  boost::mutex last_osd_mutex_;
 
   /** Address of the OSD that was last used for reading or writing. */
   std::string last_osd_address_;
