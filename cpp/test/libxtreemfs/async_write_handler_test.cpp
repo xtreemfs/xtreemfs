@@ -5,10 +5,6 @@
  *
  */
 
-// FIXME hack to work around occasional failing assert
-// during mutex unlocking in debug mode
-#define BOOST_DISABLE_ASSERTS
-
 #include <gtest/gtest.h>
 
 #include <algorithm>
