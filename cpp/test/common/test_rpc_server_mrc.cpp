@@ -22,7 +22,7 @@ TestRPCServerMRC::TestRPCServerMRC() : file_size_(1024 * 1024) {
   interface_id_ = INTERFACE_ID_MRC;
   // Register available operations.
   operations_[PROC_ID_OPEN] = Op(this, &TestRPCServerMRC::OpenOperation);
-  operations_[PROC_ID_XTREEMFS_RENEW_CAPABILITY] =
+  operations_[PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER] =
       Op(this, &TestRPCServerMRC::RenewCapabilityOperation);
   operations_[PROC_ID_XTREEMFS_UPDATE_FILE_SIZE] =
       Op(this, &TestRPCServerMRC::UpdateFileSizeOperation);
