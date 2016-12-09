@@ -1166,6 +1166,22 @@ XCapManager::XCapManager(
         auth_bogus_(auth_bogus),
         user_credentials_bogus_(user_credentials_bogus){}
 
+XCapManager::~XCapManager() {
+  // Get locks on the mutexes to prevent pthread errors that occur
+  // if a to be deleted mutex is still locked.
+
+  boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(
+      xcap_renewal_error_writebacks_mutex_);
+  boost::mutex::scoped_lock lock(mutex_);
+
+  // FIXME: timeouts are only working with "timed_mutex"
+  // boost::system_time const timeout =
+  //     boost::get_system_time() + boost::posix_time::milliseconds(50);
+  // boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(
+  //     xcap_renewal_error_writebacks_mutex_, timeout);
+  // boost::mutex::scoped_lock lock(mutex_, timeout);
+}
+
 void XCapManager::WaitForPendingXCapRenewal() {
   boost::mutex::scoped_lock lock(mutex_);
   while (xcap_renewal_pending_) {
