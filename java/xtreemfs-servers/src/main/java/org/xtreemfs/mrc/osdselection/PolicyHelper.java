@@ -9,12 +9,10 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -67,20 +65,13 @@ public class PolicyHelper {
         return ServiceSet.newBuilder().addAllServices(list);
     }
     
-    public static ServiceSet.Builder shuffleServiceSet(ServiceSet.Builder set,
-                                                       Random random) {
+    public static ServiceSet.Builder shuffleServiceSet(ServiceSet.Builder set) {
+        
         List<Service> immutableList = set.getServicesList();
         List<Service> list = new ArrayList<Service>(immutableList);
-        if (random == null) {
-            Collections.shuffle(list);
-        } else {
-            Collections.shuffle(list, random);
-        }
+        Collections.shuffle(list);
+        
         return ServiceSet.newBuilder().addAllServices(list);
-    }
-
-    public static ServiceSet.Builder shuffleServiceSet(ServiceSet.Builder set) {
-        return shuffleServiceSet(set, null);
     }
 
     public static ServiceSet.Builder reverseServiceSet(ServiceSet.Builder set) {
