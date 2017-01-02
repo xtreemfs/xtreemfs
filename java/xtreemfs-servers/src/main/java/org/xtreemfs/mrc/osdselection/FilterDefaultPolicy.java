@@ -57,8 +57,12 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     private HashMap<String, String> customNotFilter     = new HashMap<String, String>();
     
     @Override
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
-            VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs,
+                                      InetAddress clientIP,
+                                      VivaldiCoordinates clientCoords,
+                                      XLocList currentXLoc,
+                                      int numOSDs,
+                                      String path) {
         
         if (allOSDs == null)
             return null;

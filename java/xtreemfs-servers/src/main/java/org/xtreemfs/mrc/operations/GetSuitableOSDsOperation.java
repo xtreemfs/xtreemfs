@@ -84,11 +84,16 @@ public class GetSuitableOSDsOperation extends MRCOperation {
         if (file.isDirectory())
             throw new UserException(POSIXErrno.POSIX_ERROR_EISDIR,
                     "xtreemfs_get_suitable_osds must be invoked on a file");
+
+        String path = null;
+        if (rqArgs.hasPath()) {
+            path = rqArgs.getPath();
+        }
         
         // retrieve the set of OSDs for the new replica
         ServiceSet.Builder usableOSDs = master.getOSDStatusManager().getUsableOSDs(volumeId,
             ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(), null,
-            file.getXLocList(), rqArgs.getNumOsds());
+            file.getXLocList(), rqArgs.getNumOsds(), path);
         
         xtreemfs_get_suitable_osdsResponse.Builder resp = xtreemfs_get_suitable_osdsResponse.newBuilder();
         for (int i = 0; i < usableOSDs.getServicesCount(); i++)

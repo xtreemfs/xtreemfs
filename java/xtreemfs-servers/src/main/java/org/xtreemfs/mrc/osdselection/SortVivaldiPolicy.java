@@ -30,8 +30,12 @@ public class SortVivaldiPolicy implements OSDSelectionPolicy {
     public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI
                                                 .getNumber();
     
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
-        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs,
+                                      InetAddress clientIP,
+                                      VivaldiCoordinates clientCoords,
+                                      XLocList currentXLoc,
+                                      int numOSDs,
+                                      String path) {
         
         if (allOSDs == null)
             return null;

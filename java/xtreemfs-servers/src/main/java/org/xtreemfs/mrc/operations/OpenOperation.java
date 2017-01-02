@@ -75,10 +75,10 @@ public class OpenOperation extends MRCOperation {
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
         
-        Path p = new Path(rqArgs.getVolumeName(), rqArgs.getPath());
+        Path path = new Path(rqArgs.getVolumeName(), rqArgs.getPath());
         
-        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
-        PathResolver res = new PathResolver(sMan, p);
+        StorageManager sMan = vMan.getStorageManagerByName(path.getComp(0));
+        PathResolver res = new PathResolver(sMan, path);
         VolumeInfo volume = sMan.getVolumeInfo();
         
         // check whether the path prefix is searchable
@@ -231,7 +231,7 @@ public class OpenOperation extends MRCOperation {
                 // create a replica with the default striping policy together
                 // with a set of feasible OSDs from the OSD status manager
                 XLoc replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
-                        .getParentDirId(), p.toString(), ((InetSocketAddress) rq.getRPCRequest()
+                        .getParentDirId(), path.toString(), ((InetSocketAddress) rq.getRPCRequest()
                         .getSenderAddress()).getAddress(), rqArgs.getCoordinates(), xLocList, 0);
                 
                 // integrate the new replica in the XLoc list
@@ -266,7 +266,7 @@ public class OpenOperation extends MRCOperation {
                     // together
                     // with a set of feasible OSDs from the OSD status manager
                     XLoc replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume,
-                        res.getParentDirId(), p.toString(), ((InetSocketAddress) rq.getRPCRequest()
+                        res.getParentDirId(), path.toString(), ((InetSocketAddress) rq.getRPCRequest()
                                 .getSenderAddress()).getAddress(), rqArgs.getCoordinates(), xLocList,
                         defaultReplPolicy != null ? defaultReplPolicy.getFlags() : 0);
                     
@@ -304,7 +304,7 @@ public class OpenOperation extends MRCOperation {
         // re-order the replica list, based on the replica selection policy
         List<Replica> sortedReplList = master.getOSDStatusManager().getSortedReplicaList(volume.getId(),
             ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(),
-            rqArgs.getCoordinates(), xLocSet.getReplicasList(), xLocList).getReplicasList();
+            rqArgs.getCoordinates(), xLocSet.getReplicasList(), xLocList, path.toString()).getReplicasList();
         xLocSet.clearReplicas();
         xLocSet.addAllReplicas(sortedReplList);
         xLocSet.setReadOnlyFileSize(file.getSize());

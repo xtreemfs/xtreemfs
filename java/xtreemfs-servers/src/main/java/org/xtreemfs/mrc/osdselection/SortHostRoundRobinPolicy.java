@@ -19,8 +19,12 @@ public class SortHostRoundRobinPolicy implements OSDSelectionPolicy {
     public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN
                                                 .getNumber();
     @Override
-    public Builder getOSDs(Builder allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
-            XLocList currentXLoc, int numOSDs) {
+    public Builder getOSDs(Builder allOSDs,
+                           InetAddress clientIP,
+                           VivaldiCoordinates clientCoords,
+                           XLocList currentXLoc,
+                           int numOSDs,
+                           String path) {
         return getOSDs(allOSDs);
     }
 

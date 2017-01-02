@@ -119,12 +119,17 @@ public class GetXLocSetOperation extends MRCOperation {
         XLocList xLocList = file.getXLocList();
         assert (xLocList != null);
         XLocSet.Builder xLocSetBuilder = Converter.xLocListToXLocSet(xLocList);
+
+        String path = null;
+        if (rqArgs.hasPath()) {
+            path = rqArgs.getPath();
+        }
         
         // Sort the XLocSet according to the policy.
         List<Replica> sortedReplList = master.getOSDStatusManager()
                 .getSortedReplicaList(volume.getId(),
                         ((InetSocketAddress) rq.getRPCRequest().getSenderAddress()).getAddress(),
-                        rqArgs.getCoordinates(), xLocSetBuilder.getReplicasList(), xLocList)
+                        rqArgs.getCoordinates(), xLocSetBuilder.getReplicasList(), xLocList, path)
                 .getReplicasList();
         xLocSetBuilder.clearReplicas();
         xLocSetBuilder.addAllReplicas(sortedReplList);

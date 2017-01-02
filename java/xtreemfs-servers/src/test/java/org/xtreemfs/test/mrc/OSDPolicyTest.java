@@ -339,14 +339,14 @@ public class OSDPolicyTest {
         
         InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
         ServiceSet.Builder sortedList = policy.getOSDs(osds.toBuilder(), clientAddr, null, null,
-            Integer.MAX_VALUE);
+            Integer.MAX_VALUE, null);
         assertEquals("osd1", sortedList.getServices(0).getUuid());
         assertEquals("osd4", sortedList.getServices(1).getUuid());
         assertEquals("osd2", sortedList.getServices(2).getUuid());
         assertEquals("osd3", sortedList.getServices(3).getUuid());
         
         clientAddr = InetAddress.getByName("192.168.3.100");
-        sortedList = policy.getOSDs(osds.toBuilder(), clientAddr, null, null, Integer.MAX_VALUE);
+        sortedList = policy.getOSDs(osds.toBuilder(), clientAddr, null, null, Integer.MAX_VALUE, null);
         assertEquals("osd2", sortedList.getServices(0).getUuid());
         assertEquals("osd1", sortedList.getServices(1).getUuid());
         assertEquals("osd4", sortedList.getServices(2).getUuid());
@@ -385,7 +385,7 @@ public class OSDPolicyTest {
         // get two OSDs from one data center
         InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
         ServiceSet.Builder sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(
-            osds.getServicesList()), clientAddr, null, null, 2);
+            osds.getServicesList()), clientAddr, null, null, 2, null);
         assertEquals(2, sortedList.getServicesCount());
         assertEquals("osd1", sortedList.getServices(0).getUuid());
         assertEquals("osd4", sortedList.getServices(1).getUuid());
@@ -393,12 +393,12 @@ public class OSDPolicyTest {
         // request too many OSDs
         clientAddr = InetAddress.getByName("192.168.2.100");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, 3);
+            clientAddr, null, null, 3, null);
         assertEquals(0, sortedList.getServicesCount());
         
         clientAddr = InetAddress.getByName("192.168.3.100");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, 1);
+            clientAddr, null, null, 1, null);
         assertEquals(1, sortedList.getServicesCount());
         assertEquals("osd2", sortedList.getServices(0).getUuid());
         
@@ -429,7 +429,7 @@ public class OSDPolicyTest {
         
         InetAddress clientAddr = InetAddress.getByName("xtreem.zib.de");
         ServiceSet.Builder sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(
-            osds.getServicesList()), clientAddr, null, null, Integer.MAX_VALUE);
+            osds.getServicesList()), clientAddr, null, null, Integer.MAX_VALUE, null);
         assertEquals("osd1", sortedList.getServices(0).getUuid());
         assertEquals("osd3", sortedList.getServices(1).getUuid());
         assertEquals("osd4", sortedList.getServices(2).getUuid());
@@ -438,7 +438,7 @@ public class OSDPolicyTest {
         
         clientAddr = InetAddress.getByName("www.berlin.de");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, Integer.MAX_VALUE);
+            clientAddr, null, null, Integer.MAX_VALUE, null);
         
         assertEquals("osd2", sortedList.getServices(0).getUuid());
     }
@@ -468,23 +468,23 @@ public class OSDPolicyTest {
         
         InetAddress clientAddr = InetAddress.getByName("xtreem.zib.de");
         ServiceSet.Builder sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(
-            osds.getServicesList()), clientAddr, null, null, 1);
+            osds.getServicesList()), clientAddr, null, null, 1, null);
         assertEquals(1, sortedList.getServicesCount());
         assertEquals("osd1", sortedList.getServices(0).getUuid());
         
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, 2);
+            clientAddr, null, null, 2, null);
         assertEquals(2, sortedList.getServicesCount());
         assertEquals("osd1", sortedList.getServices(0).getUuid());
         assertEquals("osd3", sortedList.getServices(1).getUuid());
         
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, 4);
+            clientAddr, null, null, 4, null);
         assertEquals(0, sortedList.getServicesCount());
         
         clientAddr = InetAddress.getByName("www.berlin.de");
         sortedList = policy.getOSDs(ServiceSet.newBuilder().addAllServices(osds.getServicesList()),
-            clientAddr, null, null, 1);
+            clientAddr, null, null, 1, null);
         assertEquals(1, sortedList.getServicesCount());
         assertEquals("osd2", sortedList.getServices(0).getUuid());
         
@@ -553,7 +553,7 @@ public class OSDPolicyTest {
         VivaldiCoordinates clientCoordinates = VivaldiCoordinates.newBuilder().setXCoordinate(0.0)
                 .setYCoordinate(0.0).setLocalError(0.1).build();
         
-        ServiceSet.Builder sortedList = policy.getOSDs(osds, clientAddr, clientCoordinates, null, 0);
+        ServiceSet.Builder sortedList = policy.getOSDs(osds, clientAddr, clientCoordinates, null, 0, null);
         
         assertEquals("osd3", sortedList.getServices(0).getUuid());
         assertEquals("osd2", sortedList.getServices(1).getUuid());

@@ -152,7 +152,7 @@ public class VolumeOSDFilter {
     }
 
     public ServiceSet.Builder filterByOSDSelectionPolicy(ServiceSet.Builder knownOSDs, InetAddress clientIP,
-            VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+            VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs, String path) {
 
         ServiceSet.Builder result = ServiceSet.newBuilder().addAllServices(knownOSDs.getServicesList());
         for (short id : osdPolicy) {
@@ -163,7 +163,8 @@ public class VolumeOSDFilter {
                 continue;
             }
 
-            result = policy.getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
+            result = policy.getOSDs(result, clientIP, clientCoords,
+                                    currentXLoc, numOSDs, path);
         }
 
         return result;
@@ -189,7 +190,7 @@ public class VolumeOSDFilter {
     }
 
     public Replicas sortByReplicaSelectionPolicy(InetAddress clientIP, VivaldiCoordinates clientCoords,
-            List<Replica> unsortedRepls, XLocList xLocList) {
+            List<Replica> unsortedRepls, XLocList xLocList, String path) {
 
         // head OSD -> replica
         Map<String, Replica> replMap = new HashMap<String, Replica>();
@@ -230,7 +231,7 @@ public class VolumeOSDFilter {
             }
 
             headOSDServiceSetBuilder = policy.getOSDs(headOSDServiceSetBuilder, clientIP, clientCoords,
-                    xLocList, headOSDServiceSetBuilder.getServicesCount());
+                    xLocList, headOSDServiceSetBuilder.getServicesCount(), path);
         }
 
         // arrange the resulting list of replicas in the same order as the list

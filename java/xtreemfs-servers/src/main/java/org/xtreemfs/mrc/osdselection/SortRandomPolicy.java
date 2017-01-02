@@ -39,10 +39,12 @@ public class SortRandomPolicy implements OSDSelectionPolicy {
     private Random random = null;
 
     @Override
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress
-            clientIP,
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs,
+                                      InetAddress clientIP,
                                       VivaldiCoordinates clientCoords,
-                                      XLocList currentXLoc, int numOSDs) {
+                                      XLocList currentXLoc,
+                                      int numOSDs,
+                                      String path) {
         return getOSDs(allOSDs);
     }
 
