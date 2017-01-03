@@ -121,8 +121,8 @@ public class GetXLocSetOperation extends MRCOperation {
         XLocSet.Builder xLocSetBuilder = Converter.xLocListToXLocSet(xLocList);
 
         String path = null;
-        if (rqArgs.hasPath()) {
-            path = rqArgs.getPath();
+        if (rqArgs.hasVolumeName() && rqArgs.hasPath()) {
+            path = new Path(rqArgs.getVolumeName(), rqArgs.getPath()).toString();
         }
         
         // Sort the XLocSet according to the policy.

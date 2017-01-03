@@ -86,8 +86,8 @@ public class GetSuitableOSDsOperation extends MRCOperation {
                     "xtreemfs_get_suitable_osds must be invoked on a file");
 
         String path = null;
-        if (rqArgs.hasPath()) {
-            path = rqArgs.getPath();
+        if (rqArgs.hasVolumeName() && rqArgs.hasPath()) {
+            path = new Path(rqArgs.getVolumeName(), rqArgs.getPath()).toString();
         }
         
         // retrieve the set of OSDs for the new replica
