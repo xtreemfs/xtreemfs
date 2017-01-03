@@ -31,6 +31,7 @@ import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.logging.Logging;
+import org.xtreemfs.mrc.osdselection.FileNamePrefixPolicy;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
 import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.GroupDCMapPolicy;
@@ -599,12 +600,85 @@ public class OSDPolicyTest {
         }
     }
 
+    @Test
+    public void testFileNamePrefixPolicy() throws Exception {
+        ServiceDataMap.Builder sdm1 = ServiceDataMap.newBuilder();
+        ServiceDataMap.Builder sdm2 = ServiceDataMap.newBuilder();
+        ServiceDataMap.Builder sdm3 = ServiceDataMap.newBuilder();
+
+        ServiceSet.Builder servicesBuilder = ServiceSet.newBuilder();
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType
+                                                                         .SERVICE_TYPE_OSD)
+                                            .setLastUpdatedS(0).setName
+                        ("osd1").setVersion(1).setUuid("osd1").setData(sdm1));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType
+                                                                         .SERVICE_TYPE_OSD)
+                                            .setLastUpdatedS(0).setName
+                        ("osd2").setVersion(1).setUuid("osd2").setData(sdm2));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType
+                                                                         .SERVICE_TYPE_OSD)
+                                            .setLastUpdatedS(0).setName
+                        ("osd3").setVersion(1).setUuid("osd3").setData(sdm3));
+        ServiceSet services = servicesBuilder.build();
+
+
+        FileNamePrefixPolicy pol = new FileNamePrefixPolicy();
+
+        pol.setAttribute("filenamePrefix", "add /volume/dir1 osd2");
+        ServiceSet.Builder selectedOSD = pol.getOSDs(services.toBuilder(),
+                                                     null,
+                                                     null,
+                                                     null,
+                                                     0,
+                                                     "volume/dir1/file");
+
+        assertEquals(1, selectedOSD.getServicesCount());
+        assertEquals("osd2", selectedOSD.getServices(0).getUuid());
+
+        pol.setAttribute("filenamePrefix", "remove /volume/dir1 osd2");
+
+        selectedOSD = pol.getOSDs(services.toBuilder(),
+                                                     null,
+                                                     null,
+                                                     null,
+                                                     0,
+                                                     "volume/dir1/file");
+
+        assertEquals(3, selectedOSD.getServicesCount());
+
+        pol.setAttribute("filenamePrefix", "add /volume/dir1 osd1");
+        selectedOSD = pol.getOSDs(services.toBuilder(),
+                                  null,
+                                  null,
+                                  null,
+                                  0,
+                                  "volume/dir1/dirx/file");
+
+        assertEquals(1, selectedOSD.getServicesCount());
+        assertEquals("osd1", selectedOSD.getServices(0).getUuid());
+
+        pol.setAttribute("filenamePrefix", "clear");
+        pol.setAttribute("filenamePrefix", "add  /volume/dir1/   osd2");
+
+        selectedOSD = pol.getOSDs(services.toBuilder(),
+                                  null,
+                                  null,
+                                  null,
+                                  0,
+                                  "volume/dir1/file");
+
+        // no value is expected to be set
+        assertEquals(3, selectedOSD.getServicesCount());
+
+    }
+
     private static ServiceDataMap getDefaultServiceDataMap() {
         return ServiceDataMap.newBuilder().build();
     }
     
     private static ServiceDataMap getServiceDataMap(ServiceStatus status) {
-        ServiceDataMap sdm = ServiceDataMap.newBuilder().addData(KeyValuePair.newBuilder()
+        ServiceDataMap sdm = ServiceDataMap.newBuilder().addData(KeyValuePair
+                                                                         .newBuilder()
                 .setKey(HeartbeatThread.STATUS_ATTR)
                 .setValue(String.valueOf(status.getNumber())).build()).build();
         return sdm;

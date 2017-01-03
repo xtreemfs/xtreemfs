@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2009-2011 by Jan Stender, Bjoern Kolbeck,
+ *               Zuse Institute Berlin
+ *
+ * Licensed under the BSD License, see LICENSE file for details.
+ *
+ */
+
 package org.xtreemfs.mrc.osdselection;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -12,7 +20,9 @@ import java.util.List;
 
 /**
  * OSDSelectionPolicy that allows to choose an OSD based on the path of the
- * currently handled file.
+ * currently handled file. You may set an OSD explicitly for a directory into an
+ * xtreemfs volume (using volume_name/.../some_dir); xtreemfs will then choose
+ * the given OSD for all files in some_dir or subdirectories of some_dir.
  */
 public class FileNamePrefixPolicy implements OSDSelectionPolicy {
 
@@ -41,22 +51,26 @@ public class FileNamePrefixPolicy implements OSDSelectionPolicy {
                                           int numOSDs,
                                           String path) {
 
+        if (path == null) {
+            return allOSDs;
+        }
+
         List<DIR.Service> allServices = allOSDs.getServicesList();
         List<DIR.Service> returnList = new LinkedList<DIR.Service>();
 
         if (!this.prefixToOSDMap.isEmpty()) {
-            int prefixLength = path.lastIndexOf("/");
-            String filePrefix = path.substring(0, prefixLength);
+            int locationLength = path.lastIndexOf("/");
+            String fileLocationOnVolume = path.substring(0, locationLength);
 
             // check whether the prefix map has an entry for the file,
             // and if yes, whether the corresponding OSD exists
             for (String prefix : this.prefixToOSDMap.keySet()) {
-                // maybe this is not strict enough?
-                if (prefix.endsWith(filePrefix) || filePrefix.endsWith(prefix)) {
+                if (fileLocationOnVolume.startsWith(prefix)) {
                     for (DIR.Service osd : allServices) {
                         String currentUUID =
                                 new ServiceUUID(osd.getUuid()).toString();
-                        if (currentUUID.equals(this.prefixToOSDMap.get(prefix))) {
+                        if (currentUUID.equals(this.prefixToOSDMap.get
+                                (prefix))) {
                             returnList.add(osd);
                             break;
                         }
@@ -83,15 +97,26 @@ public class FileNamePrefixPolicy implements OSDSelectionPolicy {
         if (key.equals(attributeKeyString)) {
             String command[] = value.split(" ");
             if (command.length == 3 && command[0].equals("add")) {
-                while (command[1].charAt(command[1].length() - 1) == '/') {
-                    command[1] = command[1].substring(0, command[1].length() - 1);
+                if (!(command[1].length() == 0 || command[2].length() == 0)) {
+                    this.prefixToOSDMap.put(removeLeadingTrailingSlashes(command[1]),
+                                            command[2]);
                 }
-                this.prefixToOSDMap.put(command[1], command[2]);
             } else if (command.length >= 2 && command[0].equals("remove")) {
-                this.prefixToOSDMap.remove(command[1]);
+                this.prefixToOSDMap.remove(removeLeadingTrailingSlashes
+                                                   (command[1]));
             } else if (command.length == 1 && command[0].equals("clear")) {
                 this.prefixToOSDMap.clear();
             }
         }
+    }
+
+    private static String removeLeadingTrailingSlashes(String path) {
+        while (path.charAt(path.length() - 1) == '/') {
+            path = path.substring(0, path.length() - 1);
+        }
+        while (path.charAt(0) == '/') {
+            path = path.substring(1);
+        }
+        return path;
     }
 }
