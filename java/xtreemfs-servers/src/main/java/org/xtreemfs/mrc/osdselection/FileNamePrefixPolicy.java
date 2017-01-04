@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2011 by Jan Stender, Bjoern Kolbeck,
+ * Copyright (c) 2017 by Felix Seibert,
  *               Zuse Institute Berlin
  *
  * Licensed under the BSD License, see LICENSE file for details.
