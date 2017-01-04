@@ -244,7 +244,7 @@ public class MRCHelper {
 
         // determine the set of OSDs to be assigned to the replica
         ServiceSet.Builder usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, clientCoordinates,
-                currentXLoc, stripingPolicy.getWidth());
+                currentXLoc, stripingPolicy.getWidth(), path);
 
         if (usableOSDs == null || usableOSDs.getServicesCount() == 0) {
 

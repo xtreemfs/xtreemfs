@@ -207,7 +207,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
      * @return a list of feasible OSDs
      */
     public synchronized ServiceSet.Builder getUsableOSDs(String volumeId, InetAddress clientIP,
-        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs, String path) {
         
         VolumeOSDFilter vol = volumeMap.get(volumeId);
         if (vol == null) {
@@ -217,8 +217,12 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         
         // return a set of OSDs
-        ServiceSet.Builder result = vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, clientCoords,
-            currentXLoc, numOSDs);
+        ServiceSet.Builder result = vol.filterByOSDSelectionPolicy(knownOSDs,
+                                                                   clientIP,
+                                                                   clientCoords,
+                                                                   currentXLoc,
+                                                                   numOSDs,
+                                                                   path);
         
         return result;
     }
@@ -237,7 +241,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     }
     
     public synchronized Replicas getSortedReplicaList(String volumeId, InetAddress clientIP,
-        VivaldiCoordinates clientCoords, List<Replica> repls, XLocList xLocList) {
+        VivaldiCoordinates clientCoords, List<Replica> repls, XLocList xLocList, String path) {
         
         VolumeOSDFilter vol = volumeMap.get(volumeId);
         if (vol == null) {
@@ -247,7 +251,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         
         // return a sorted set of replicas
-        return vol.sortByReplicaSelectionPolicy(clientIP, clientCoords, repls, xLocList);
+        return vol.sortByReplicaSelectionPolicy(clientIP, clientCoords,
+                                                repls, xLocList, path);
         
     }
     

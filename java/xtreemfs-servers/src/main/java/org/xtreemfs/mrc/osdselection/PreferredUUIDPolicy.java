@@ -42,7 +42,8 @@ public class PreferredUUIDPolicy implements OSDSelectionPolicy {
                                           GlobalTypes.VivaldiCoordinates
                                                   clientCoords,
                                           XLocList currentXLoc,
-                                          int numOSDs) {
+                                          int numOSDs,
+                                          String path) {
         return getOSDs(allOSDs);
     }
 

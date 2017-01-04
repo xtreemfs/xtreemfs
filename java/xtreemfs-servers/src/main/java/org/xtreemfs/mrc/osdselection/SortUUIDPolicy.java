@@ -24,8 +24,12 @@ public class SortUUIDPolicy implements OSDSelectionPolicy {
     public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_UUID.getNumber();
 
     @Override
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, final InetAddress clientIP,
-            VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs,
+                                      final InetAddress clientIP,
+                                      VivaldiCoordinates clientCoords,
+                                      XLocList currentXLoc,
+                                      int numOSDs,
+                                      String path) {
 
         if (allOSDs == null) {
             return null;

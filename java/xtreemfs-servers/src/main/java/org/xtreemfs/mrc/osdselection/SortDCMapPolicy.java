@@ -43,8 +43,12 @@ public class SortDCMapPolicy extends DCMapPolicyBase {
     }
     
     @Override
-    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs, InetAddress clientIP,
-        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet.Builder getOSDs(ServiceSet.Builder allOSDs,
+                                      InetAddress clientIP,
+                                      VivaldiCoordinates clientCoords,
+                                      XLocList currentXLoc,
+                                      int numOSDs,
+                                      String path) {
         
         final Inet4Address cAddr = (Inet4Address) clientIP;
         

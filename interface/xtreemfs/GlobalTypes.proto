@@ -57,6 +57,9 @@ enum OSDSelectionPolicyType {
     // Set a preferred OSD to be first in the list, 
     // the other OSDs are appended in random order.
     OSD_SELECTION_POLICY_PREFERRED_UUID = 1003;
+    // Select an OSD based on the path of the handled file
+    // and user selected prefixes.
+    OSD_SELECTION_POLICY_FILENAME_PREFIX = 1004;
     // Groups OSDs according to their location in the
     // datacenter map.
     OSD_SELECTION_POLICY_GROUP_DCMAP = 2000;
