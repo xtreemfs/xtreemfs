@@ -21,6 +21,7 @@ import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.osdselection.FileNamePrefixPolicy;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
 import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.FilterUUIDPolicy;
@@ -47,7 +48,7 @@ public class MRCPolicyContainer extends PolicyContainer {
             GroupDCMapPolicy.class.getName(), GroupFQDNPolicy.class.getName(), SortDCMapPolicy.class.getName(),
             SortFQDNPolicy.class.getName(), SortRandomPolicy.class.getName(), SortVivaldiPolicy.class.getName(),
             SortUUIDPolicy.class.getName(), SortReversePolicy.class.getName(), SortHostRoundRobinPolicy.class.getName(),
-            PreferredUUIDPolicy.class.getName()
+            PreferredUUIDPolicy.class.getName(), FileNamePrefixPolicy.class.getName()
     };
     
     private final MRCConfig             config;
