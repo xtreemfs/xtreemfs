@@ -433,8 +433,9 @@ public class ControllerIntegrationTest {
         Volume volumeA = performBenchmark(10L * BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String default_rp = volumeA.getXAttr(userCredentials, "", "xtreemfs.default_rp");
-        assertEquals("replication-factor:3", default_rp.split(",")[0].replace("\"", "").replace("{", ""));
-        assertEquals("update-policy:WqRq", default_rp.split(",")[2].replace("\"", "").replace("}", ""));
+        String stripped_rp = default_rp.replace("{", "").replace("}", "").replace("\"", "");
+        assertTrue(stripped_rp.contains("replication-factor:3"));
+        assertTrue(stripped_rp.contains("update-policy:WqRq"));
         deleteVolumes("BenchVolA");
     }
 
