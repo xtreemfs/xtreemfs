@@ -292,7 +292,8 @@ public class ControllerIntegrationTest {
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
-        assertEquals("size:64", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+        String stripped_sp = sp_values.replace("{", "").replace("}", "").replace("\"", "");
+        assertTrue(stripped_sp.contains("size:64"));
 
         deleteVolumes("BenchVolA");
     }
@@ -303,7 +304,8 @@ public class ControllerIntegrationTest {
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
 
-        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
+        String stripped_sp = sp_values.replace("{", "").replace("}", "").replace("\"", "");
+        assertTrue(stripped_sp.contains("width:2"));
 
         deleteVolumes("BenchVolA");
     }
@@ -321,8 +323,9 @@ public class ControllerIntegrationTest {
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
-        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
-        assertEquals("size:1024", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+        String stripped_sp = sp_values.replace("{", "").replace("}", "").replace("\"", "");
+        assertTrue(stripped_sp.contains("width:2"));
+        assertTrue(stripped_sp.contains("size:1024"));
 
         deleteVolumes("BenchVolA");
     }
@@ -340,8 +343,9 @@ public class ControllerIntegrationTest {
         Volume volume = performBenchmark(10L*BenchmarkUtils.MiB_IN_BYTES, configBuilder, BenchmarkType.SEQ_WRITE);
 
         String sp_values = volume.getXAttr(userCredentials, "", "xtreemfs.default_sp");
-        assertEquals("width:2", sp_values.split(",")[1].replace("\"", ""));
-        assertEquals("size:256", sp_values.split(",")[2].replace("\"", "").replace("}", ""));
+        String stripped_sp = sp_values.replace("{", "").replace("}", "").replace("\"", "");
+        assertTrue(stripped_sp.contains("width:2"));
+        assertTrue(stripped_sp.contains("size:256"));
 
         deleteVolumes("BenchVolA");
     }
