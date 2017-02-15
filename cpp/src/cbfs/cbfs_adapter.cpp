@@ -1282,6 +1282,7 @@ xtreemfs::pbrpc::SYSTEM_V_FCNTL CbFSAdapter::ConvertFlagsWindowsToXtreemFS(
   write |= (desired_access & FILE_WRITE_ATTRIBUTES) != 0;
   write |= (desired_access & FILE_WRITE_DATA) != 0;
   write |= (desired_access & FILE_WRITE_EA) != 0;
+  write |= (desired_access & DELETE) != 0;
 
   // STANDARD_RIGHTS_WRITE is equal to STANDARD_RIGHTS_READ, therefore not
   // distinguishable from read-only access. The application will need to request
