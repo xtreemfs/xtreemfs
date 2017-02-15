@@ -632,7 +632,6 @@ public class OSDPolicyTest {
                                                      0,
                                                      "volume/dir1/file");
 
-        assertEquals(1, selectedOSD.getServicesCount());
         assertEquals("osd2", selectedOSD.getServices(0).getUuid());
 
         pol.setAttribute("filenamePrefix", "remove /volume/dir1 osd2");
@@ -654,7 +653,6 @@ public class OSDPolicyTest {
                                   0,
                                   "volume/dir1/dirx/file");
 
-        assertEquals(1, selectedOSD.getServicesCount());
         assertEquals("osd1", selectedOSD.getServices(0).getUuid());
 
         pol.setAttribute("filenamePrefix", "clear");
@@ -670,6 +668,17 @@ public class OSDPolicyTest {
         // no value is expected to be set
         assertEquals(3, selectedOSD.getServicesCount());
 
+        pol.setAttribute("filenamePrefix", "clear");
+        pol.setAttribute("filenamePrefix", "add /volume/dir1 osdX");
+
+        selectedOSD = pol.getOSDs(services.toBuilder(),
+                                  null,
+                                  null,
+                                  null,
+                                  0,
+                                  "volume/dir1/file");
+
+        assertEquals(3, selectedOSD.getServicesCount());
     }
 
     private static ServiceDataMap getDefaultServiceDataMap() {
