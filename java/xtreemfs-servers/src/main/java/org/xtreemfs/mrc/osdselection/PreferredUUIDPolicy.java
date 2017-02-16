@@ -68,7 +68,8 @@ public class PreferredUUIDPolicy implements OSDSelectionPolicy {
         if (preferredService != null) {
             OSDsInCorrectOrder.add(0, preferredService);
         }
-
+        
+        Collections.shuffle(nonPreferredServices);
         OSDsInCorrectOrder.addAll(nonPreferredServices);
 
         return DIR.ServiceSet.newBuilder().addAllServices(OSDsInCorrectOrder);

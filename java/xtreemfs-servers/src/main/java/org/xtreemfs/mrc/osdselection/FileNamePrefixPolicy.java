@@ -14,6 +14,7 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 
 import java.net.InetAddress;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +24,8 @@ import java.util.List;
  * currently handled file. You may set an OSD explicitly for a directory into an
  * xtreemfs volume (using volume_name/.../some_dir); xtreemfs will then choose
  * the given OSD for all files in some_dir or subdirectories of some_dir.
+ *
+ * For any file that has no prefix-specified OSD, an random OSD is selected.
  */
 public class FileNamePrefixPolicy implements OSDSelectionPolicy {
 
@@ -56,7 +59,8 @@ public class FileNamePrefixPolicy implements OSDSelectionPolicy {
         }
 
         List<DIR.Service> allServices = allOSDs.getServicesList();
-        List<DIR.Service> returnList = new LinkedList<DIR.Service>();
+        DIR.Service prefixMatchingOSD = null;
+        List<DIR.Service> nonMatchingOSDs = new LinkedList<DIR.Service>();
 
         if (!this.prefixToOSDMap.isEmpty()) {
             int locationLength = path.lastIndexOf("/");
@@ -71,17 +75,26 @@ public class FileNamePrefixPolicy implements OSDSelectionPolicy {
                                 new ServiceUUID(osd.getUuid()).toString();
                         if (currentUUID.equals(this.prefixToOSDMap.get
                                 (prefix))) {
-                            returnList.add(osd);
-                            break;
+                            prefixMatchingOSD = osd;
+                        } else {
+                            nonMatchingOSDs.add(osd);
                         }
                     }
-                    break;
                 }
             }
         }
 
-        if (returnList.isEmpty()) {
-            returnList.addAll(allServices);
+        List<DIR.Service> returnList = new LinkedList<DIR.Service>();
+
+        if (prefixMatchingOSD != null) {
+            returnList.add(prefixMatchingOSD);
+            Collections.shuffle(nonMatchingOSDs);
+            returnList.addAll(nonMatchingOSDs);
+        } else {
+            nonMatchingOSDs.clear();
+            nonMatchingOSDs.addAll(allServices);
+            Collections.shuffle(nonMatchingOSDs);
+            returnList.addAll(nonMatchingOSDs);
         }
 
         return DIR.ServiceSet.newBuilder().addAllServices(returnList);
