@@ -51,7 +51,7 @@ build_source_tarball() {
     --activate-profiles xtreemfs-dev \
     --global-settings=$HOME/.m2/settings.xml \
     --update-snapshots \
-    package org.apache.maven.plugins:maven-dependency-plugin:2.10:go-offline \
+    package org.apache.maven.plugins:maven-dependency-plugin:3.0.1:go-offline \
     --define maven.repo.local=$(cd $XTREEMFS_HOME_DIR && pwd)/repository \
     --define excludeArtifactIds=maven-deploy-plugin,site-maven-plugin \
     --define skipTests=true
@@ -60,7 +60,7 @@ build_source_tarball() {
     --activate-profiles xtreemfs-dev \
     --global-settings=$HOME/.m2/settings.xml \
     --update-snapshots \
-    package org.apache.maven.plugins:maven-dependency-plugin:2.10:go-offline \
+    package org.apache.maven.plugins:maven-dependency-plugin:3.0.1:go-offline \
     --define maven.repo.local=$(cd $XTREEMFS_HOME_DIR && pwd)/repository \
     --define excludeArtifactIds=maven-deploy-plugin,site-maven-plugin \
     --define skipTests=true
