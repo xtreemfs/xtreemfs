@@ -40,8 +40,10 @@
 
     <!-- Plugin configurations -->
     <github.global.server>github</github.global.server>
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <site-maven-plugin.version>0.12</site-maven-plugin.version>
@@ -106,6 +108,22 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
