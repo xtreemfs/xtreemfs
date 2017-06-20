@@ -38,6 +38,8 @@ class ClientTest : public ::testing::Test {
 
   virtual void TearDown() {
     test_env.Stop();
+
+    shutdown_logger();
   }
 
   TestEnvironment test_env;

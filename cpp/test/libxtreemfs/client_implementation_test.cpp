@@ -94,6 +94,8 @@ class ClientImplementationTest : public ::testing::Test {
     if (dir_.get()) {
       dir_->Stop();
     }
+
+    shutdown_logger();
   }
 
   void AddAddressMapping(const std::string& match_network,
