@@ -12,6 +12,7 @@ env:
     - TEST_SUITE=travis-deploy
 
 sudo: false
+dist: trusty
 
 addons:
   apt:
