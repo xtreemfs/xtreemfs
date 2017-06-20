@@ -385,6 +385,31 @@
 {
    Uninitialized value from boost asio ssl
    Memcheck:Cond
-   fun:_ZN5boost*
+   fun:*boost*
+   ...
+}
+{
+   Some debug level logging flush issue in the client
+   Memcheck:Value8
+   ...
+   fun:*VolumeNameToMRCUUID*
+   ...
+}
+{
+   Protobuf parsing
+   Memcheck:Cond
+   ...
+   fun:InlineMergeFromCodedStream
+   fun:InlineParseFromCodedStream
+   fun:InlineParseFromArray
+   ...
+}
+{
+   Protobuf parsing
+   Memcheck:Value8
+   ...
+   fun:InlineMergeFromCodedStream
+   fun:InlineParseFromCodedStream
+   fun:InlineParseFromArray
    ...
 }
