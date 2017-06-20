@@ -405,7 +405,15 @@
 {
    Some debug level logging flush issue in the client
    Memcheck:Param
-   *
+   write(buf)
+   ...
+   fun:*VolumeNameToMRCUUID*
+   ...
+}
+{
+   Some debug level logging flush issue in the client
+   Memcheck:Param
+   write(count)
    ...
    fun:*VolumeNameToMRCUUID*
    ...
@@ -426,5 +434,13 @@
    fun:InlineMergeFromCodedStream
    fun:InlineParseFromCodedStream
    fun:InlineParseFromArray
+   ...
+}
+{
+   Uninitialized value from boost asio ssl
+   Memcheck:Param
+   sendmsg(msg.msg_iov[0])
+   obj:/lib/x86_64-linux-gnu/libpthread-2.19.so
+   fun:*boost*
    ...
 }
