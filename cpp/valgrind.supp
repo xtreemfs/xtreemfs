@@ -399,3 +399,19 @@
    obj:/lib/x86_64-linux-gnu/libssl.so.1.0.0
    ...
 }
+{
+   Uninitialized value from boost asio ssl
+   Memcheck:Cond
+   fun:memcpy@@GLIBC_*
+   fun:SHA1_Update
+   obj:/lib/x86_64-linux-gnu/libssl.so.1.0.0
+   ...
+}
+{
+   Uninitialized value from boost asio ssl
+   Memcheck:Cond
+   fun:memcpy@@GLIBC_*
+   fun:MD5_Update
+   obj:/lib/x86_64-linux-gnu/libssl.so.1.0.0
+   ...
+}
