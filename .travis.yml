@@ -1,14 +1,15 @@
-language: java
+# container based image
+sudo: false
+dist: trusty
 
-jdk: openjdk7
+language: java
+jdk: openjdk8
 
 env:
   global:
     # encrypted COVERITY_SCAN_TOKEN
     - secure: "WkngHI6zO+6m8ZNqrbFZN+V8xCUxXVUMzLGBcOMa2/iiSDGxnRRpGU2jH+4Uf4ChCE4dXLrTXvs4vDjUT7aZ9KVFzcTo4HYejdLeMayFPLeztSYdFUG7EYtambZlh1Ldp67+ZBXLJ152iTWvCm5t/JXs3tA+Q5puZ24OO+U5xAE="
     - BUILD_CLIENT_TESTS=true
-
-sudo: false
 
 addons:
   apt:
