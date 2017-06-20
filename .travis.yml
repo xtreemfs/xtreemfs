@@ -28,7 +28,6 @@ addons:
       - python
       - valgrind
       - net-tools
-      - openjdk-7-jdk
 
 before_script:
   - TEST_DIR="/tmp/xtreemfs_xtestenv"
