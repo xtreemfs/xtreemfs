@@ -64,6 +64,8 @@ class AsyncWriteHandlerTest : public ::testing::Test {
   virtual void TearDown() {
     //volume->Close();
     test_env.Stop();
+
+    shutdown_logger();
   }
 
   TestEnvironment test_env;
