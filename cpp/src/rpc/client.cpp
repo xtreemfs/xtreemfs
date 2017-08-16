@@ -357,19 +357,20 @@ int verify_certificate_callback(int preverify_ok, X509_STORE_CTX *sctx) {
   }
 
   bool override = false;
-  if (sctx->error != 0) {
+  int sctx_error = X509_STORE_CTX_get_error(sctx);
+  if (sctx_error != 0) {
     if (Logging::log->loggingActive(LEVEL_DEBUG)) {
       Logging::log->getLog(LEVEL_DEBUG) << "OpenSSL verify error: "
-          << sctx->error << endl;
+          << sctx_error << endl;
     }
     
     // Ignore error if verification is turned off in general or the error has
     // been disabled specifically.
     if (!ssl_options->verify_certificates() ||
-        ssl_options->ignore_verify_error(sctx->error)) {
+        ssl_options->ignore_verify_error(sctx_error)) {
       if (Logging::log->loggingActive(LEVEL_WARN)) {
         Logging::log->getLog(LEVEL_WARN) << "Ignoring OpenSSL verify error: "
-            << sctx->error << " because of user settings." << endl;
+            << sctx_error << " because of user settings." << endl;
       }
       override = true;
     }
