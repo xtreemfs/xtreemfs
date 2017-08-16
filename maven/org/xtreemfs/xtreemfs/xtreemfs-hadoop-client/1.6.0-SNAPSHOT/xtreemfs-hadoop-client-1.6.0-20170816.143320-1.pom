@@ -1,0 +1,230 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-hadoop-client</artifactId>
+  <version>1.6.0-SNAPSHOT</version>
+
+  <name>xtreemfs-hadoop-client</name>
+  <packaging>jar</packaging>
+  <url>http://xtreemfs.org</url>
+  <inceptionYear>2006</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>The New BSD License</name>
+      <url>https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/xtreemfs/xtreemfs</url>
+    <connection>git@github.com:xtreemfs/xtreemfs.git</connection>
+    <developerConnection>scm:git:https://github.com/xtreemfs/xtreemfs.git</developerConnection>
+  </scm>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.source.version>1.6</java.source.version>
+    <java.target.version>1.6</java.target.version>
+
+    <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
+
+    <!-- Compile dependencies -->
+    <hadoop-common.version>2.6.4</hadoop-common.version>
+
+    <!-- Test dependencies -->
+    <junit.version>4.12</junit.version>
+
+    <!-- Plugin configurations -->
+    <github.global.server>github</github.global.server>
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+    <maven-surefire-plugin.version>2.20</maven-surefire-plugin.version>
+    <site-maven-plugin.version>0.12</site-maven-plugin.version>
+  </properties>
+
+  <distributionManagement>
+    <repository>
+      <id>xtreemfs-repository</id>
+      <url>file://${project.build.directory}/xtreemfs-repository</url>
+    </repository>
+  </distributionManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop-common.version}</version>
+      <!-- Depends on protobuf-java:2.4.0a which is not compatible -->
+      <!-- with what xtreemfs-* depends on (2.5.0), so exclude it. -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop-common.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+      <!-- Depends on protobuf-java:2.4.0a which is not compatible -->
+      <!-- with what xtreemfs-* depends on (2.5.0), so exclude it. -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-foundation</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xtreemfs.xtreemfs</groupId>
+      <artifactId>xtreemfs-servers</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>${java.source.version}</source>
+          <target>${java.target.version}</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <altDeploymentRepository>xtreemfs-repository::default::file://${project.build.directory}/xtreemfs-repository/maven</altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration combine.self="override">
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <finalName>${project.artifactId}</finalName>
+              <artifactSet>
+                <includes>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-foundation</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-pbrpcgen</include>
+                  <include>org.xtreemfs.xtreemfs:xtreemfs-servers</include>
+                </includes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>*</artifact>
+                  <excludes>
+                    <exclude>META-INF/maven/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.xtreemfs.xtreemfs:xtreemfs-pbrpcgen</artifact>
+                  <includes>
+                    <include>org/xtreemfs/foundation/pbrpc/generatedinterfaces/**</include>
+                  </includes>
+                </filter>
+                <filter>
+                  <artifact>org.xtreemfs.xtreemfs:xtreemfs-servers</artifact>
+                  <excludes>
+                    <exclude>xtreemfs-mib.txt</exclude>
+                    <exclude>mib_core.txt</exclude>
+                    <exclude>org/xtreemfs/dir/templates/**</exclude>
+                    <exclude>org/xtreemfs/mrc/templates/**</exclude>
+                    <exclude>org/xtreemfs/osd/templates/**</exclude>
+                    <exclude>org/xtreemfs/sandbox/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Djava.library.path=${libjni.directory}</argLine>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>${site-maven-plugin.version}</version>
+        <configuration>
+          <message>Maven artifacts for ${project.name}/${project.version}</message>
+          <noJekyll>true</noJekyll>
+          <outputDirectory>${project.build.directory}/xtreemfs-repository</outputDirectory>
+          <repositoryName>xtreemfs</repositoryName>
+          <repositoryOwner>xtreemfs</repositoryOwner>
+          <merge>true</merge>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
