@@ -15,6 +15,11 @@ BuildRequires:  maven >= 3.0.4 java-devel >= 1.6.0
 # Client dependencies.
 BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8 cmake >= 2.6 boost-devel >= 1.35 libattr-devel >= 2
 
+# CentOS >= 7
+%if 0%{?centos_version} >= 700
+BuildRequires: java-devel >= 1:1.8.0
+%endif
+
 # openSUSE >=10.2
 %if 0%{?suse_version} >= 1020
 PreReq:         /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /usr/bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
