@@ -20,6 +20,7 @@ BuildRequires:  gcc-c++ >= 4.1 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.
 PreReq:         /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /usr/bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
 #BuildRequires:  libopenssl-devel >= 0.8
 BuildRequires:  pwdutils >= 3
+Requires(post): %insserv_prereq  %fillup_prereq
 %endif
 
 # Mandriva >=2008
