@@ -744,11 +744,11 @@ protected:
         options_.log_file_path,
         "Ignoring OpenSSL verify error"));
 
-    ASSERT_EQ(3, count_occurrences_in_file(
+    ASSERT_EQ(total_errors / 2, count_occurrences_in_file(
         options_.log_file_path,
         "Verification of subject 'CN=MRC (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was unsuccessful. Overriding because of user settings."));
-    ASSERT_EQ(3, count_occurrences_in_file(
+    ASSERT_EQ(total_errors / 2, count_occurrences_in_file(
         options_.log_file_path,
         "Verification of subject 'CN=DIR (Leaf),O=ZIB,L=Berlin,ST=Berlin,C=DE' "
         "was unsuccessful. Overriding because of user settings."));
