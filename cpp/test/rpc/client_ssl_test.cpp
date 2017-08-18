@@ -707,11 +707,11 @@ protected:
     // The issuer certificate could not be found: this occurs if the issuer
     // certificate of an untrusted certificate cannot be found.
     options_.ssl_ignore_verify_errors.push_back(20);
-#if (OPENSSL_VERSION_NUMBER < 0x100020d0L)
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
     // The root CA is not marked as trusted for the specified purpose.
     // Seems to have vanished in OpenSSL 1.0.2+
     options_.ssl_ignore_verify_errors.push_back(27);
-#endif // OPENSSL_VERSION_NUMBER < 0x100020d0L
+#endif // OPENSSL_VERSION_NUMBER < 0x10002000L
     // No signatures could be verified because the chain contains only one
     // certificate and it is not self signed.
     options_.ssl_ignore_verify_errors.push_back(21);
@@ -728,13 +728,13 @@ protected:
         options_.log_file_path,
         "Ignoring OpenSSL verify error: 20 because of user settings."));
     total_errors += 2;
-#if (OPENSSL_VERSION_NUMBER < 0x100020d0L)
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
     // Only up to OpenSSL 1.0.1
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
         "Ignoring OpenSSL verify error: 27 because of user settings."));
     total_errors +=2;
-#endif // OPENSSL_VERSION_NUMBER < 0x100020d0L
+#endif // OPENSSL_VERSION_NUMBER < 0x10002000L
     ASSERT_EQ(2, count_occurrences_in_file(
         options_.log_file_path,
         "Ignoring OpenSSL verify error: 21 because of user settings."));
@@ -811,14 +811,14 @@ protected:
         "Ignoring OpenSSL verify error: 2 because of user settings."));
     total_errors += 2;
 
-#if (OPENSSL_VERSION_NUMBER < 0x100020d0L)
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
     // Only up to OpenSSL 1.0.1
     // Twice for MRC, twice for DIR.
     ASSERT_EQ(4, count_occurrences_in_file(
         options_.log_file_path,
         "Ignoring OpenSSL verify error: 27 because of user settings."));
     total_errors += 4;
-#endif // OPENSSL_VERSION_NUMBER < 0x100020d0L
+#endif // OPENSSL_VERSION_NUMBER < 0x10002000L
 
     ASSERT_EQ(total_errors, count_occurrences_in_file(
         options_.log_file_path,
