@@ -803,7 +803,8 @@ protected:
     CreateOpenDeleteVolume("test_ssl_no_verification");
 
     int total_errors = 0;
-  
+
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
     // The issuer certificate of a looked up certificate could not be found.
     // This normally means the list of trusted certificates is not complete.
     ASSERT_EQ(2, count_occurrences_in_file(
@@ -811,12 +812,19 @@ protected:
         "Ignoring OpenSSL verify error: 2 because of user settings."));
     total_errors += 2;
 
-#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
     // Only up to OpenSSL 1.0.1
     // Twice for MRC, twice for DIR.
     ASSERT_EQ(4, count_occurrences_in_file(
         options_.log_file_path,
         "Ignoring OpenSSL verify error: 27 because of user settings."));
+    total_errors += 4;
+#else // OPENSSL_VERSION_NUMBER < 0x10002000L
+    // The issuer certificate of a looked up certificate could not be found.
+    // This normally means the list of trusted certificates is not complete.
+    // Twice for MRC, twice for DIR.
+    ASSERT_EQ(4, count_occurrences_in_file(
+        options_.log_file_path,
+        "Ignoring OpenSSL verify error: 2 because of user settings."));
     total_errors += 4;
 #endif // OPENSSL_VERSION_NUMBER < 0x10002000L
 
