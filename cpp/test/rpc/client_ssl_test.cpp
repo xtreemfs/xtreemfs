@@ -876,7 +876,7 @@ public:
   
 protected:
   virtual void SetUp() {
-    ASSERT_GE(java_major_version_, 6);
+    ASSERT_GE(java_major_version_, 7);
     
     if (strcmp(server_ssl_method_string, "ssltls") == 0) {
       dir_config_file_ = config_path("dirconfig_ssl_version.test");
@@ -982,25 +982,10 @@ protected:
     
     if (strcmp(client_ssl_method_string, "tlsv1") == 0) {
       if (strcmp(server_ssl_method_string, "tlsv1") == 0 ||
-                 strcmp(server_ssl_method_string, "ssltls") == 0) {
+          strcmp(server_ssl_method_string, "ssltls") == 0) {
         assert_ssl_tls_in_log("TLSv1", ex);
       } else {
-        if (java_major_version_ == 6) {
-          if (strcmp(server_ssl_method_string, "tlsv11") == 0) {
-            assert_ssl_tls_in_log_or_nothing("TLSv1", ex);
-          } else if (strcmp(server_ssl_method_string, "tlsv12") == 0) {
-            assert_ssl_tls_in_log("TLSv1", ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
-        } else {
-          if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-              strcmp(server_ssl_method_string, "tlsv12") == 0) {
-            assert_no_ssl_tls_in_log(ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
-        }
+        FAIL() << "Unsupported server SSL method.";
       }
     } else {
 #if (OPENSSL_VERSION_NUMBER < 0x1000100fL)
@@ -1009,26 +994,17 @@ protected:
        * ssltls behavior in the client.
        */
 
-      if (strcmp(client_ssl_method_string, "tlsv11") == 0 ||
-          strcmp(client_ssl_method_string, "tlsv12") == 0 ||
+      if (strcmp(client_ssl_method_string, "tlsv1") == 0 ||
           strcmp(client_ssl_method_string, "ssltls") == 0) {
         if (strcmp(server_ssl_method_string, "tlsv1") == 0 ||
-                   strcmp(server_ssl_method_string, "ssltls") == 0) {
+            strcmp(server_ssl_method_string, "ssltls") == 0) {
           assert_ssl_tls_in_log("TLSv1", ex);
         } else {
-          if (java_major_version_ == 6) {
-            if (strcmp(server_ssl_method_string, "tlsv11") == 0) {
-              assert_ssl_tls_in_log_or_nothing("TLSv1", ex);
-            } else if (strcmp(server_ssl_method_string, "tlsv12") == 0) {
-              assert_ssl_tls_in_log("TLSv1", ex);
-            }
+          if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
+              strcmp(server_ssl_method_string, "tlsv12") == 0) {
+            assert_no_ssl_tls_in_log(ex);
           } else {
-            if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-                strcmp(server_ssl_method_string, "tlsv12") == 0) {
-              assert_no_ssl_tls_in_log(ex);
-            } else {
-              FAIL() << "Unsupported server SSL method.";
-            }
+            FAIL() << "Unsupported server SSL method.";
           }
         }
       } else {
@@ -1050,75 +1026,36 @@ protected:
 
       if (strcmp(client_ssl_method_string, "tlsv11") == 0 &&
           !ssltls_behavior) {
-        if (java_major_version_ == 6) {
-          if (strcmp(server_ssl_method_string, "tlsv1") == 0) {
-            assert_no_ssl_tls_in_log(ex);
-          } else if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-                     strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-                     strcmp(server_ssl_method_string, "ssltls") == 0) {
-            assert_ssl_tls_in_log_or_nothing("TLSv1.1", ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
+        if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
+            strcmp(server_ssl_method_string, "ssltls") == 0) {
+          assert_ssl_tls_in_log("TLSv1.1", ex);
         } else {
-          if (strcmp(server_ssl_method_string, "tlsv1") == 0 ||
-              strcmp(server_ssl_method_string, "tlsv12") == 0) {
-            assert_no_ssl_tls_in_log(ex);
-          } else if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-                     strcmp(server_ssl_method_string, "ssltls") == 0) {
-            assert_ssl_tls_in_log("TLSv1.1", ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
+          FAIL() << "Unsupported server SSL method.";
         }
       } else if (strcmp(client_ssl_method_string, "tlsv12") == 0 &&
                  !ssltls_behavior) {
-        if (java_major_version_ == 6) {
-          if (strcmp(server_ssl_method_string, "tlsv1") == 0 ||
-              strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-              strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-              strcmp(server_ssl_method_string, "ssltls") == 0) {
-            assert_no_ssl_tls_in_log(ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
+        if (strcmp(server_ssl_method_string, "tlsv12") == 0 ||
+            strcmp(server_ssl_method_string, "ssltls") == 0) {
+          assert_ssl_tls_in_log("TLSv1.2", ex);
         } else {
-          if (strcmp(server_ssl_method_string, "tlsv1") == 0 ||
-              strcmp(server_ssl_method_string, "tlsv11") == 0) {
-            assert_no_ssl_tls_in_log(ex);
-          } else if (strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-                     strcmp(server_ssl_method_string, "ssltls") == 0) {
-            assert_ssl_tls_in_log("TLSv1.2", ex);
-          } else {
-            FAIL() << "Unsupported server SSL method.";
-          }
+          FAIL() << "Unsupported server SSL method.";
         }
       } else if (strcmp(client_ssl_method_string, "ssltls") == 0 ||
                  ssltls_behavior) {
         if (strcmp(server_ssl_method_string, "tlsv1") == 0) {
           assert_ssl_tls_in_log("TLSv1", ex);
         } else {
-          if (java_major_version_ == 6) {
-            if (strcmp(server_ssl_method_string, "tlsv11") == 0 ||
-                strcmp(server_ssl_method_string, "tlsv12") == 0 ||
-                strcmp(server_ssl_method_string, "ssltls") == 0) {
-              assert_ssl_tls_in_log_or_other("TLSv1", "TLSv1.1", ex);
-            } else {
-              FAIL() << "Unsupported server SSL method.";
-            }
-          } else {
-            if (strcmp(server_ssl_method_string, "tlsv11") == 0) {
+          if (strcmp(server_ssl_method_string, "tlsv11") == 0) {
               assert_ssl_tls_in_log("TLSv1.1", ex);
-            } else if (strcmp(server_ssl_method_string, "tlsv12") == 0) {
-              // In Ubuntu 12.04 TLSv1.2 is disabled by default, so maybe
-              // expect a fail here.
-              assert_ssl_tls_in_log_or_nothing("TLSv1.2", ex);
-            } else if (strcmp(server_ssl_method_string, "ssltls") == 0) {
-              // Ubuntu 12.04 only goes up to TLSv1.1
-              assert_ssl_tls_in_log_or_other("TLSv1.2", "TLSv1.1", ex);
-            } else {
-              FAIL() << "Unsupported server SSL method.";
-            }
+          } else if (strcmp(server_ssl_method_string, "tlsv12") == 0) {
+            // In Ubuntu 12.04 TLSv1.2 is disabled by default, so maybe
+            // expect a fail here.
+            assert_ssl_tls_in_log_or_nothing("TLSv1.2", ex);
+          } else if (strcmp(server_ssl_method_string, "ssltls") == 0) {
+            // Ubuntu 12.04 only goes up to TLSv1.1
+            assert_ssl_tls_in_log_or_other("TLSv1.2", "TLSv1.1", ex);
+          } else {
+            FAIL() << "Unsupported server SSL method.";
           }
         }
       } else {
@@ -1208,17 +1145,11 @@ TEST_F(ClientSSLTestLongChainNoVerificationPEM, TestNoVerification) { DoTest(); 
 
 TEST_F(ClientSSLTestSSLVersionPKCS12_SSLTLS_TLSv1, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv1_TLSv1, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv11_TLSv1, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv12_TLSv1, TestSSLVersion) { DoTest(); }
 
 TEST_F(ClientSSLTestSSLVersionPKCS12_SSLTLS_TLSv11, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv1_TLSv11, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv11_TLSv11, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv12_TLSv11, TestSSLVersion) { DoTest(); }
 
 TEST_F(ClientSSLTestSSLVersionPKCS12_SSLTLS_TLSv12, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv1_TLSv12, TestSSLVersion) { DoTest(); }
-TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv11_TLSv12, TestSSLVersion) { DoTest(); }
 TEST_F(ClientSSLTestSSLVersionPKCS12_TLSv12_TLSv12, TestSSLVersion) { DoTest(); }
 
 TEST_F(ClientSSLTestSSLVersionPKCS12_SSLTLS_SSLTLS, TestSSLVersion) { DoTest(); }
