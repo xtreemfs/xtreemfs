@@ -501,8 +501,7 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
     // On some OpenSSL versions with SSLv3 connections, Valgrind reports the
     // marker buffer as not initialized.
     if (RUNNING_ON_VALGRIND > 0) {
-      VALGRIND_MAKE_MEM_DEFINED(receive_marker_buffer_,
-                                RecordMarker::get_size());
+      VALGRIND_MAKE_MEM_DEFINED(receive_hdr_, receive_marker_->header_len());
     }
 #endif // HAS_VALGRIND
     // Parse header.
