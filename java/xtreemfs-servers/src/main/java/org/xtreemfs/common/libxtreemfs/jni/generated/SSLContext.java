@@ -32,13 +32,7 @@ public class SSLContext {
   }
 
   public enum method {
-    sslv2,
-    sslv2_client,
-    sslv2_server,
-    sslv3,
-    sslv3_client,
-    sslv3_server,
-    tlsv1,
+    tlsv1(6),
     tlsv1_client,
     tlsv1_server,
     sslv23,
