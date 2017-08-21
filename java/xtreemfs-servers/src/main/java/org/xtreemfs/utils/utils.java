@@ -158,7 +158,7 @@ public class utils {
             "a pass phrase to decrypt the trusted CAs file (SSL/GridSSL only).  Set to '-' to prompt for the passphrase.",
             "<trusted_passphrase>"));
         options.put(OPTION_SSL_PROTOCOL, new CliOption(CliOption.OPTIONTYPE.STRING,
-            "SSL/TLS version to use: sslv3, ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
+            "SSL/TLS version to use: ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
             "the others accept only the exact version they name. 'tlsv12' is available in JDK 7+ only. " + 
             "'tlsv11' comes with JDK 6 or 7, depending on the vendor.",
             "<ssl_protocol>"));
