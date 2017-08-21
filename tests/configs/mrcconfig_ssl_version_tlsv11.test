@@ -51,7 +51,7 @@ remote_time_sync = 60000
 ssl.enabled = true
 
 # SSL/TLS version to use
-# in JDK 6: sslv3, ssltls, tlsv1
+# in JDK 6: ssltls, tlsv1
 # in JDK 7 additionally: tlsv12
 # tlsv11 comes with JDK 6 or 7, depending on the vendor
 # 'ssltls' (default) accepts all versions,

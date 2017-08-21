@@ -302,7 +302,6 @@ void Options::GenerateProgramOptionsDescriptions() {
     ("min-ssl-method",
         po::value(&ssl_method_string)->default_value(ssl_method_string),
         "SSL method that this client will accept:\n"
-        "  - sslv3 accepts SSLv3 only\n"
         "  - ssltls accepts SSLv3 and TLSv1.x\n"
         "  - tlsv1 accepts TLSv1 only"
 #if (BOOST_VERSION > 105300)

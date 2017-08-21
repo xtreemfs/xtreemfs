@@ -449,14 +449,6 @@ void ClientConnection::PostReadRecordMarker(
               "could not read record marker in response from '" + server_name_
                   + ":" + server_port_ + "': " + err.message());
   } else {
-#ifdef HAS_VALGRIND
-    // On some OpenSSL versions with SSLv3 connections, Valgrind reports the
-    // marker buffer as not initialized.
-    if (RUNNING_ON_VALGRIND > 0) {
-      VALGRIND_MAKE_MEM_DEFINED(receive_marker_buffer_,
-                                RecordMarker::get_size());
-    }
-#endif  // HAS_VALGRIND
     // Do read.
     receive_marker_ = new RecordMarker(receive_marker_buffer_);
 
@@ -497,13 +489,6 @@ void ClientConnection::PostReadMessage(const boost::system::error_code& err) {
               "could not read response from '" + server_name_ + ":"
                   + server_port_ + "': " + err.message());
   } else {
-#ifdef HAS_VALGRIND
-    // On some OpenSSL versions with SSLv3 connections, Valgrind reports the
-    // header buffer as not initialized.
-    if (RUNNING_ON_VALGRIND > 0) {
-      VALGRIND_MAKE_MEM_DEFINED(receive_hdr_, receive_marker_->header_len());
-    }
-#endif  // HAS_VALGRIND
     // Parse header.
     RPCHeader *respHdr = new RPCHeader();
     if (respHdr->ParseFromArray(receive_hdr_, receive_marker_->header_len())) {

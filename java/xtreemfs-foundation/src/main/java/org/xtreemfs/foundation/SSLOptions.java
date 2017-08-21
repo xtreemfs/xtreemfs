@@ -326,9 +326,7 @@ public class SSLOptions {
         // Additionally in JDK 7, 8: TLSv1.2
         // TLSv1.1 seems to depend on the vendor
         String sslProtocol = getSSLProtocol();
-        if ("SSLv3".equals(sslProtocol)) {
-            return "SSLv3".equals(sslEngineProtocol);
-        } else if ("TLS".equals(sslProtocol)) {
+        if ("TLS".equals(sslProtocol)) {
             return "SSLv3".equals(sslEngineProtocol) ||
                    "TLSv1".equals(sslEngineProtocol) ||
                    "TLSv1.1".equals(sslEngineProtocol) ||
@@ -349,9 +347,7 @@ public class SSLOptions {
         // JDK 6: SSL, SSLv2, SSLv3, TLS, TLSv1
         // additionally in JDK 7: TLSv1.2
         // TLSv1.1 seems to depend on the vendor
-        if ("sslv3".equals(sslProtocolString)) {
-            return  "SSLv3";
-        } else if ("ssltls".equals(sslProtocolString)) {
+        if ("ssltls".equals(sslProtocolString)) {
             return "TLS";
         } else if ("tlsv1".equals(sslProtocolString)) {
             return "TLSv1";
@@ -381,9 +377,7 @@ public class SSLOptions {
         }
         
         String[] entailedSupportedProtocols = new String[] {};
-        if ("SSLv3".equals(sslProtocol)) {
-            entailedSupportedProtocols = new String[] { "SSLv3" };
-        } else if ("TLS".equals(sslProtocol)) {
+        if ("TLS".equals(sslProtocol)) {
             entailedSupportedProtocols = new String[] { "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2" };
         } else if ("TLSv1".equals(sslProtocol)) {
             entailedSupportedProtocols = new String[] { "TLSv1" };
