@@ -61,7 +61,9 @@ namespace xtreemfs {
 // Ignore everything except the inner enums.
 %{ #include <boost/asio/ssl/context.hpp> %}
 %rename("SSLContext") boost::asio::ssl::context_base;
-%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^boost::asio::ssl::context_base::"; 
+%rename("$ignore", "not" %$isenum, "not" %$isenumitem, regextarget=1, fullname=1) "^boost::asio::ssl::context_base::";
+// Disable SSLv2 and SSLv3 options.
+%rename("$ignore", regextarget=1, fullname=1) "^boost::asio::ssl::context_base::sslv(2||3)((_client)||(_server))?$";
 %include <boost/asio/ssl/context_base.hpp>
 %import <boost/asio/detail/config.hpp>
 %import <boost/asio/ssl/context.hpp>

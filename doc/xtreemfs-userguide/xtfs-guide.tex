@@ -86,6 +86,10 @@ Summary of important changes in release 1.6.0:
   \item \textbf{Command line improvements}\\
       It is now possible to use the command line tools in a non-interactive
       console, e.g. \texttt{cron}.
+  \item \textbf{SSL/TLS}\\
+      Explicit support for SSLv3 was removed. It is still supported using the
+      \texttt{ssltls} protocol option, if, depending on your Boost, OpenSSL and Java
+      versions, SSLv3 is the most secure algorithm available (i.e. no TLS support).
   \item \textbf{Bugfixes and improvements}\\
       Changes integrated into the unstable packages over time are now implemented
       in this stable version.
@@ -3316,7 +3320,7 @@ Hint: If you use Hadoop 2.x and set Hadoop's classpath, you also have to set the
     <name>xtreemfs.ssl.protocol</name>
     <value>ssltls</value>
     <description>
-      Optional. SSL/TLS version to use: ssltls, sslv3,
+      Optional. SSL/TLS version to use: ssltls,
       tlsv1, tlsv11, tlsv12. ssltls (default) accepts
       all versions, the others accept only the exact
       version they name. tlsv12 is available in JDK 7+

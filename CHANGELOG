@@ -16,6 +16,7 @@
     * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.
     * Cleanup of code base to exclude generated sources and previously shipped binaries.
     * Add non-interactive console support to command line tools.
+    * Remove explicit support for SSLv3.
     * Many small stability improvements and fixes.
 
 12-MAR-2015: release 1.5.1

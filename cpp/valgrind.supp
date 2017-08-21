@@ -290,13 +290,6 @@
    obj:/lib*/libcrypto.so.1.0.0
    obj:/lib*/libcrypto.so.1.0.0
 }
-{
-   Bad request parsing on some OpenSSL versions when using SSLv3
-   Memcheck:Cond
-   ...
-   fun:ssl3_read_bytes
-   obj:/lib*/libssl.so.1.0.0
-}
 { 
    object caching for ipv6 addresses in glibc
    Memcheck:Leak 

@@ -66,7 +66,7 @@ public class TortureXtreemFS {
             CLOption.StringValue optPKCS12passphrase = (CLOption.StringValue) parser.addOption(new CLOption.StringValue(null, "pkcs12-passphrase", ""));
             CLOption.StringValue optSSLProtocol = (CLOption.StringValue) parser.addOption(
                     new CLOption.StringValue(null, "ssl-protocol",
-                                             "SSL/TLS version to use: sslv3, ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
+                                             "SSL/TLS version to use: ssltls, tlsv1, tlsv11, tlsv12. 'ssltls' (default) accepts all versions, " + 
                                              "the others accept only the exact version they name. 'tlsv12' is available in JDK 7+ only. " + 
                                              "'tlsv11' comes with JDK 6 or 7, depending on the vendor."));
             CLOption.Switch      optRandomOnly = (Switch) parser.addOption(new CLOption.Switch("r", "random", "execute only random test"));
