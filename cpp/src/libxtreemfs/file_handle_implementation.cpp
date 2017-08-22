@@ -1166,6 +1166,14 @@ XCapManager::XCapManager(
         auth_bogus_(auth_bogus),
         user_credentials_bogus_(user_credentials_bogus){}
 
+XCapManager::~XCapManager() {
+  // Lock and release all mutexes before destruction to avoid
+  // destroying locked mutexes.
+  boost::mutex::scoped_lock(xcap_renewal_error_writebacks_mutex_);
+  boost::mutex::scoped_lock(mutex_);
+  boost::mutex::scoped_lock(old_expire_times_mutex_);
+}
+
 void XCapManager::WaitForPendingXCapRenewal() {
   boost::mutex::scoped_lock lock(mutex_);
   while (xcap_renewal_pending_) {
