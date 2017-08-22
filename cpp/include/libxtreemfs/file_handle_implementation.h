@@ -191,6 +191,8 @@ class XCapManager :
       const pbrpc::Auth& auth_bogus,
       const pbrpc::UserCredentials& user_credentials_bogus);
 
+  virtual ~XCapManager();
+
   /** Renew xcap_ asynchronously. */
   void RenewXCapAsync(const RPCOptions& options);
 
