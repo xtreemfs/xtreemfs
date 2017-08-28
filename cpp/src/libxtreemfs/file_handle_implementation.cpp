@@ -1169,9 +1169,11 @@ XCapManager::XCapManager(
 XCapManager::~XCapManager() {
   // Lock and release all mutexes before destruction to avoid
   // destroying locked mutexes.
-  boost::mutex::scoped_lock(xcap_renewal_error_writebacks_mutex_);
-  boost::mutex::scoped_lock(mutex_);
-  boost::mutex::scoped_lock(old_expire_times_mutex_);
+  boost::mutex::scoped_lock xcap_renewal_error_writebacks_lock(
+      xcap_renewal_error_writebacks_mutex_);
+  boost::mutex::scoped_lock mutex_lock(mutex_);
+  boost::mutex::scoped_lock old_expire_times_lock(
+      old_expire_times_mutex_);
 }
 
 void XCapManager::WaitForPendingXCapRenewal() {
