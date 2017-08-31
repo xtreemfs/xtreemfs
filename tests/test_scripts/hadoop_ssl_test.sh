@@ -110,8 +110,18 @@ for VERSION in $HADOOP_VERSIONS; do
    </property>
 
    <property>
-     <name>xtreemfs.hadoop.version</name>
-     <value>$VERSION</value>
+    <name>xtreemfs.jni.enabled</name>
+    <value>true</value>
+   </property>
+
+   <property>
+    <name>xtreemfs.jni.libraryPath</name>
+    <value>$XTREEMFS/cpp/build</value>
+   </property>
+
+   <property>
+    <name>xtreemfs.hadoop.version</name>
+    <value>$VERSION</value>
    </property>
 
    </configuration>"
