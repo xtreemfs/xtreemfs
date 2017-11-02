@@ -86,6 +86,9 @@ Summary of important changes in release 1.6.0:
   \item \textbf{Command line improvements}\\
       It is now possible to use the command line tools in a non-interactive
       console, e.g. \texttt{cron}.
+  \item \textbf{BabuDB}\\
+      The database used by DIR and MRC might may have leaked disk space when using
+      memory-mapped files. This issue has been fixed.
   \item \textbf{SSL/TLS}\\
       Explicit support for SSLv3 was removed. It is still supported using the
       \texttt{ssltls} protocol option, if, depending on your Boost, OpenSSL and Java

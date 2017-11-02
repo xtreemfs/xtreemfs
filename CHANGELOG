@@ -17,6 +17,7 @@
     * Cleanup of code base to exclude generated sources and previously shipped binaries.
     * Add non-interactive console support to command line tools.
     * Remove explicit support for SSLv3.
+    * Fix potential disk space leak in BabuDB (for DIR and MRC)
     * Many small stability improvements and fixes.
 
 12-MAR-2015: release 1.5.1
