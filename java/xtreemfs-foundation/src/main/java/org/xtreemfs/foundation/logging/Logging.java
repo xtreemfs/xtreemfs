@@ -116,7 +116,7 @@ public class Logging {
     
     private final int                catMask;
     
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd HH:mm:ss");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     
     /**
      * Creates a new instance of Logging

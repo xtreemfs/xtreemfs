@@ -109,7 +109,6 @@ class ReplicatingFile {
          * is used for (complete) replicating an object which was previously
          * chosen to be replicated
          * 
-         * @param objectNo
          * @throws TransferStrategyException
          */
         public void replicateObject() throws TransferStrategyException {
@@ -545,11 +544,18 @@ class ReplicatingFile {
                 if (Logging.isDebug())
                     if (next.attachObjectSet)
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "%s:%d - fetch object from OSD %s with object set", fileID, next.objectNo,
-                            next.osd);
+                            "%s:%d - fetch object from OSD %s with object set of total size %s; " +
+                                    "number of objectsInProgress: %s",
+                                           fileID, next.objectNo, next.osd,
+                                           strategy.getObjectsCount(), this.getNumberOfObjectsInProgress());
                     else
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
+                            "%s:%d - fetch object from OSD %s (%s objects remain; " +
+                                    "number of objectsInProgress: %s; number of waitingObjects: %s)",
+                                           fileID, next.objectNo, next.osd,
+                                           strategy.getObjectsCount(),
+                                           getNumberOfObjectsInProgress(),
+                                           getNumberOfWaitingObjects());
                 
                 try {
                     sendFetchObjectRequest(next.objectNo, next.osd, next.attachObjectSet);
@@ -605,7 +611,12 @@ class ReplicatingFile {
     public void objectNotFetched(long objectNo, final ServiceUUID usedOSD, InternalObjectData data) {
         ReplicatingObject object = objectsInProgress.get(objectNo);
         assert (object != null);
-        
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                           "%s:%s - object not fetched",
+                           fileID, objectNo);
+
+
         try {
             boolean objectCompleted = object.objectNotFetched(data, usedOSD);
             if (objectCompleted) {
@@ -638,7 +649,11 @@ class ReplicatingFile {
     public void objectNotFetchedBecauseError(long objectNo, final ServiceUUID usedOSD, final ErrorResponse error) {
         ReplicatingObject object = objectsInProgress.get(objectNo);
         assert (object != null);
-        
+
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                           "%s:%s - object not fetched because of non-view error",
+                           fileID, objectNo);
+
         try {
             boolean objectCompleted = object.objectNotFetchedBecauseError(error, usedOSD);
             if (objectCompleted) {
@@ -664,6 +679,10 @@ class ReplicatingFile {
         ReplicatingObject object = objectsInProgress.get(objectNo);
         assert (object != null);
 
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                           "%s:%s - object not fetched because of view error",
+                           fileID, objectNo);
+
         // Remember the view error (used to deny future requests until a new view/xlocset is provided)
         viewOutdated = true;
 
@@ -686,6 +705,11 @@ class ReplicatingFile {
         // delete object in maps/lists
         strategy.removeObject(objectNo);
         ReplicatingObject replicatingObject = objectsInProgress.remove(objectNo);
+        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                           "%s:%s - object replication completed; " +
+                                   "removing object %s from objectsInProgress. " +
+                                   "New number of objectsInProgress: %s",
+                           fileID, objectNo, objectNo, this.getNumberOfObjectsInProgress());
         // free old data
         if (replicatingObject.hasDataFromEarlierResponses())
             BufferPool.free(replicatingObject.data.getData());
@@ -778,7 +802,6 @@ class ReplicatingFile {
      * necessary
      * 
      * @throws IOException
-     * @throws ONCRPCException
      */
     public void checkCap() throws IOException {
         try {

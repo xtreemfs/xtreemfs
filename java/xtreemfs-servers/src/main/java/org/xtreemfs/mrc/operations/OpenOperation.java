@@ -293,8 +293,9 @@ public class OpenOperation extends MRCOperation {
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "assigned the following XLoc list to file %s:%d: %s", volume.getId(), file.getId(),
-                    xLocList.toString());
+                    "assigned the following XLoc list to file %s:%d: %s (request %s)",
+                                   volume.getId(), file.getId(), xLocList.toString(),
+                                   rq.getRPCRequest().getHeader().getCallId());
         }
         
         // convert the XLocList to an XLocSet (necessary for later client
@@ -338,8 +339,9 @@ public class OpenOperation extends MRCOperation {
         if (Logging.isDebug())
             Logging
                     .logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                        "issued the following capability for %s:%d: %s", volume.getId(), file.getId(), cap
-                                .toString());
+                        "issued the following capability for %s:%d: %s (request %s)",
+                                volume.getId(), file.getId(), cap.toString(),
+                                rq.getRPCRequest().getHeader().getCallId());
         
         // update POSIX timestamps of file
         

@@ -584,8 +584,8 @@ public class PreprocStage extends Stage {
                 if (rq.getRPCRequest().getMessage() != null) {
                     rq.setRequestArgs(rqPrototype.newBuilderForType().mergeFrom(new ReusableBufferInputStream(rq.getRPCRequest().getMessage())).build());
                     if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "received request of type %s",
-                            rq.getRequestArgs().getClass().getName());
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "received request of type %s (request %s)",
+                            rq.getRequestArgs().getClass().getName(), rq.getRPCRequest().getHeader().getCallId());
                     }
                 } else {
                     rq.setRequestArgs(rqPrototype.getDefaultInstanceForType());
@@ -609,8 +609,10 @@ public class PreprocStage extends Stage {
             return false;
         }
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "request parsed: %d", rq
-                    .getRequestId());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "request parsed (request id: %d)",
+                               rq.getRequestId());
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "request parsed (request rpc call id: %d)",
+                               rq.getRPCRequest().getHeader().getCallId());
         }
         return true;
     }
