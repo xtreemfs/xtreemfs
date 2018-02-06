@@ -52,6 +52,7 @@ import org.xtreemfs.mrc.operations.GetXLocListOperation;
 import org.xtreemfs.mrc.operations.GetXLocSetOperation;
 import org.xtreemfs.mrc.operations.InternalDebugOperation;
 import org.xtreemfs.mrc.operations.MRCOperation;
+import org.xtreemfs.mrc.operations.MarkReplicaCompleteOperation;
 import org.xtreemfs.mrc.operations.MoveOperation;
 import org.xtreemfs.mrc.operations.OpenOperation;
 import org.xtreemfs.mrc.operations.ReadDirAndStatOperation;
@@ -128,6 +129,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_RENEW_CAPABILITY_AND_VOUCHER,
                 new RenewCapabilityAndVoucherOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_ADD, new AddReplicaOperation(master));
+        operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_MARK_COMPLETE, new MarkReplicaCompleteOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_REMOVE,
             new RemoveReplicaOperation(master));
         operations.put(MRCServiceConstants.PROC_ID_XTREEMFS_REPLICA_LIST, new GetXLocListOperation(master));

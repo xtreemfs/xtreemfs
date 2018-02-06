@@ -9,6 +9,7 @@
 package org.xtreemfs.osd.replication;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -21,6 +22,8 @@ import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.monitoring.Monitoring;
 import org.xtreemfs.foundation.monitoring.MonitoringLog;
 import org.xtreemfs.foundation.monitoring.NumberMonitoring;
+import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
+import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.ErrorType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.POSIXErrno;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
@@ -30,6 +33,8 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
+import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
  * Handles the fetching of replicas. <br>
@@ -89,14 +94,14 @@ public class ObjectDissemination {
 
         this.filesInProgress = new ConcurrentHashMap<String, ReplicatingFile>();
         this.lastCompletedFilesCache = new LRUCache<String, ReplicatingFile>(20);
-        
+
         // monitoring
         this.monitoring = new NumberMonitoring();
         this.monitoringReadDataSizeInLastXs = new AtomicLong(0);
         if (Monitoring.isEnabled()) {
             // enable stats on client (maybe stats is already enabled)
             //RPCNIOSocketClient.ENABLE_STATISTICS = true;
-            
+
             try {
                 MonitoringLog.initialize("");
             } catch (IOException e1) {
@@ -106,7 +111,7 @@ public class ObjectDissemination {
             MonitoringLog.registerFor(monitoring, MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS);
             // FIXME: debug stuff
 //            MonitoringLog.registerFor(monitoring, "StorageStage Queue");
-            
+
             // create new thread which monitors the average throughput of all active files in a given interval
             monitoringThread = new Thread(new Runnable() {
                 @Override
@@ -199,13 +204,13 @@ public class ObjectDissemination {
 
     /**
      * process all necessary actions if object was fetched correctly, otherwise triggers new fetch-attempt
-     * 
+     *
      * @param usedOSD
      */
     public void objectFetched(String fileID, long objectNo, final ServiceUUID usedOSD, InternalObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
-        
+
         // monitoring
         monitoringReadDataSizeInLastXs.addAndGet(data.getData().limit());
 
@@ -217,13 +222,13 @@ public class ObjectDissemination {
 
     /**
      * process all necessary actions, because object could not be fetched
-     * 
+     *
      * @param usedOSD
      */
     public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo, InternalObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
-        
+
 //        // monitoring
 //        if (Monitoring.isEnabled())
 //            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
@@ -237,7 +242,7 @@ public class ObjectDissemination {
     public void objectNotFetchedBecauseError(String fileID, final ServiceUUID usedOSD, long objectNo, final ErrorResponse error) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
-        
+
 //        // monitoring
 //        if (Monitoring.isEnabled())
 //            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
@@ -265,7 +270,7 @@ public class ObjectDissemination {
 
     /**
      * cleans up maps, lists, ...
-     * 
+     *
      * @param fileID
      */
     private void fileCompleted(String fileID) {
@@ -317,7 +322,51 @@ public class ObjectDissemination {
         else
             ReplicatingFile.setMaxObjectsInProgressPerFile(MAX_OBJECTS_IN_PROGRESS_OVERALL / filesInProgress.size());
 
-        // TODO: save persistent marker that all objects of file are completely replicated, if it is a full replica
+        // notifies the MRC that file replication is complete, e.g., replica
+        // on this OSD is now a complete replica. The MRC stores this
+        // information persistently in the metadata-database.
+        // (this enables save replica deletion in read-only replication mode)
+        try {
+            master.getMRCClient().
+                    xtreemfs_replica_mark_complete(getMRCAddress(),
+                                                   RPCAuthentication.authNone,
+                                                   RPCAuthentication.userService,
+                                                   fileID,
+                                                   master.getConfig().getUUID().toString());
+
+        } catch (IOException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                               "%s - failed to send notification on completed" +
+                                       " replica to MRC",
+                               fileID);
+        } catch (InterruptedException ie) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this,
+                               "%s - failed to retrieve MRC address from DIR",
+                               fileID);
+        }
+    }
+
+    private InetSocketAddress getMRCAddress()
+            throws IOException, InterruptedException {
+        DIR.ServiceSet mrcs = master.getDIRClient()
+                .xtreemfs_service_get_by_type(master.getConfig()
+                                                      .getDirectoryService(),
+                                              RPCAuthentication.authNone,
+                                              RPCAuthentication.userService,
+                                              DIR.ServiceType
+                                                      .SERVICE_TYPE_MRC);
+
+        String mrcUUID = mrcs.getServices(0).getUuid();
+        DIR.AddressMappingSet addressMappingSet =
+                master.getDIRClient().xtreemfs_address_mappings_get(
+                        master.getConfig().getDirectoryService(),
+                        RPCAuthentication.authNone,
+                        RPCAuthentication.userService,
+                        mrcUUID);
+        DIR.AddressMapping mrcAddressMapping = addressMappingSet
+                .getMappings(0);
+        return new InetSocketAddress(mrcAddressMapping.getAddress(),
+                                     mrcAddressMapping.getPort());
     }
 
     /**
@@ -337,14 +386,14 @@ public class ObjectDissemination {
 
     /**
      * @param objectSetBytes
-     * 
+     *
      */
     public void objectSetFetched(String fileID, ServiceUUID osd, ObjectSet objectSet, long objectSetBytes) {
         // TODO: find more handsome way for notifying about list-size
         ReplicatingFile file = filesInProgress.get(fileID);
         if (file != null) {
             file.objectSetFetched(osd, objectSet);
-            
+
 //            // monitoring
 //            if(Monitoring.isEnabled())
 //                monitoring.putIncreaseForLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD, objectSetBytes);
@@ -369,7 +418,7 @@ public class ObjectDissemination {
     }
 
     /**
-     * @param fileId
+     * @param fileID
      */
     public void startNewReplication(String fileID) {
         ReplicatingFile file = filesInProgress.get(fileID);

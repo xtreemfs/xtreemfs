@@ -534,6 +534,14 @@ message xtreemfs_replica_addResponse {
   required int32 expected_xlocset_version = 2;
 }
 
+// requests that a replica is marked as complete replica
+message xtreemfs_replica_mark_completeRequest {
+  // the file ID
+  optional string file_id = 1;
+  // the osd UUID
+  optional string osd_uuid = 2;
+}
+
 // requests a list of all replicas of a file (deprecated)
 message xtreemfs_replica_listRequest {
   // the file ID
@@ -816,6 +824,11 @@ service MRCService {
   // requests the addition of a replica to a file
   rpc xtreemfs_replica_add(xtreemfs_replica_addRequest) returns(xtreemfs_replica_addResponse) {
     option(proc_id)=39;
+  };
+
+  // marks a replica as complete (e.g., the osd has fetched all objects of the file)
+  rpc xtreemfs_replica_mark_complete(xtreemfs_replica_mark_completeRequest) returns(emptyResponse) {
+    option(proc_id)=49;
   };
 
   // lists all replicas of a file (deprecated)
