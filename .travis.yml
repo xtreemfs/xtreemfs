@@ -39,7 +39,11 @@ script: |
   if [[ $TEST_SUITE = "travis-deploy" ]]; then
     true
   else
-    make client_debug server hadoop-client -j2
+    if [[ $TEST_SUITE = "travis-junit" ]]; then
+      make server
+    else
+      make client_debug server hadoop-client -j2
+    fi
     ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
   fi
 
