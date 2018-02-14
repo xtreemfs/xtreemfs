@@ -46,7 +46,7 @@ script: |
   if [[ $TEST_SUITE = "travis-deploy" ]]; then
     true
   else
-    if [[ $TEST_SUITE = "travis-junit*" ]]; then
+    if [[ $TEST_SUITE = "travis-junit"* ]]; then
       make server
     else
       make client_debug server hadoop-client
