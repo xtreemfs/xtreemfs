@@ -62,6 +62,42 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False
     },
+    'travis-junit-common' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+    'travis-junit-dir' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+    'travis-junit-foundation' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+    'travis-junit-integration' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+    'travis-junit-mrc' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
+    'travis-junit-osd' : {
+                'ssl': False,
+                'mrc_repl': False,
+                'dir_repl': False,
+                'snmp': False
+    },
     'travis-junit' : {
                 'ssl': False,
                 'mrc_repl': False,
@@ -305,6 +341,42 @@ Tests = [
         'file': 'junit_tests.sh',
         'VolumeConfigs': [],
         'TestSets': [ 'full', 'short', 'short-ssl', 'travis-junit' ]
+    },
+    {
+        'name': 'JUnit server tests common',
+        'file': 'junit_tests_common.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-common' ]
+    },
+    {
+        'name': 'JUnit server tests dir',
+        'file': 'junit_tests_dir.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-dir' ]
+    },
+    {
+        'name': 'JUnit server tests foundation',
+        'file': 'junit_tests_foundation.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-foundation' ]
+    },
+    {
+        'name': 'JUnit server tests integration',
+        'file': 'junit_tests_integration.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-integration' ]
+    },
+    {
+        'name': 'JUnit server tests mrc',
+        'file': 'junit_tests_mrc.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-mrc' ]
+    },
+    {
+        'name': 'JUnit server tests osd',
+        'file': 'junit_tests_osd.sh',
+        'VolumeConfigs': [],
+        'TestSets': [ 'travis-junit-osd' ]
     },
     {
         'name': 'C++ Unit Tests',

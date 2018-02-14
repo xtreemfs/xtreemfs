@@ -10,7 +10,12 @@ env:
     - MAKEFLAGS="-j 2"
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit
+    - TEST_SUITE=travis-junit-common
+    - TEST_SUITE=travis-junit-dir
+    - TEST_SUITE=travis-junit-foundation
+    - TEST_SUITE=travis-junit-integration
+    - TEST_SUITE=travis-junit-mrc
+    - TEST_SUITE=travis-junit-osd
     - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-contrib
