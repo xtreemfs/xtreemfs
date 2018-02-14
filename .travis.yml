@@ -46,7 +46,7 @@ script: |
   if [[ $TEST_SUITE = "travis-deploy" ]]; then
     true
   else
-    if [[ $TEST_SUITE = "travis-junit-common" ]]; then
+    if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common" ]]; then
       make client server
     elif [[ $TEST_SUITE = "travis-junit"* ]]; then
       make server
