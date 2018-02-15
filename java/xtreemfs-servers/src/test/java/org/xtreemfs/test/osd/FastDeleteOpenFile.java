@@ -21,6 +21,7 @@ import org.xtreemfs.common.libxtreemfs.AdminVolume;
 import org.xtreemfs.common.libxtreemfs.ClientFactory;
 import org.xtreemfs.common.libxtreemfs.ClientFactory.ClientType;
 import org.xtreemfs.common.libxtreemfs.Options;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
@@ -59,6 +60,8 @@ public class FastDeleteOpenFile {
 
     @BeforeClass
     public static void initializeTest() throws Exception {
+        Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+        
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.DIR_CLIENT,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
                 TestEnvironment.Services.MRC, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD});
