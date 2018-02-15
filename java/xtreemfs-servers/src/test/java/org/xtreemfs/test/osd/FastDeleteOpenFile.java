@@ -122,7 +122,7 @@ public class FastDeleteOpenFile {
         String pathOnDisk = hsl.generateAbsoluteFilePath(globalFileId);
 
         // The file is deleted asynchronously by the DeletionStage in the OSD. Give it some time.
-        Thread.sleep(1 * 1000);
+        Thread.sleep(1 * 10000);
         assertFalse(new File(pathOnDisk).isDirectory());
 
         // Cleanup.
