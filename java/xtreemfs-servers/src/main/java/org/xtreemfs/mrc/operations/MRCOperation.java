@@ -64,7 +64,8 @@ public abstract class MRCOperation {
         try {
             
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments");
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments (request %s)",
+                                   rq.getRPCRequest().getHeader().getCallId());
             
             final Message rqPrototype = MRCServiceConstants.getRequestMessage(rq.getRPCRequest().getHeader()
                     .getRequestHeader().getProcId());
@@ -72,32 +73,38 @@ public abstract class MRCOperation {
                 rq.setRequestArgs(null);
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                        "received request with empty message");
+                        "received request with empty message (request %s)",
+                                       rq.getRPCRequest().getHeader().getCallId());
             } else {
                 if (rq.getRPCRequest().getMessage() != null) {
                     rq.setRequestArgs(rqPrototype.newBuilderForType().mergeFrom(
                         new ReusableBufferInputStream(rq.getRPCRequest().getMessage())).build());
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                            "received request of type %s", rq.getRequestArgs().getClass().getName());
+                            "received request of type %s (request %s)",
+                                           rq.getRequestArgs().getClass().getName(),
+                                           rq.getRPCRequest().getHeader().getCallId());
                     }
                 } else {
                     rq.setRequestArgs(rqPrototype.getDefaultInstanceForType());
                     if (Logging.isDebug()) {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                            "received request of type %s (empty message)", rq.getRequestArgs().getClass()
-                                    .getName());
+                            "received request of type %s (empty message) (request %s)",
+                                           rq.getRequestArgs().getClass().getName(),
+                                           rq.getRPCRequest().getHeader().getCallId());
                     }
                 }
             }
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s", rqPrototype);
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s (request %s)",
+                                   rqPrototype, rq.getRPCRequest().getHeader().getCallId());
             }
             
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                    "successfully parsed request arguments:");
+                    "successfully parsed request arguments: (request %s)",
+                                   rq.getRPCRequest().getHeader().getCallId());
             
             return null;
             

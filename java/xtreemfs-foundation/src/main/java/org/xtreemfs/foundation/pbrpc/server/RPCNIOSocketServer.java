@@ -221,7 +221,8 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
         assert (response != null);
 
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "response sent");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "response sent (request %s)",
+                               request.getHeader().getCallId());
         final RPCNIOSocketServerConnection connection = (RPCNIOSocketServerConnection) request.getConnection();
         try {
             request.freeBuffers();
@@ -484,7 +485,8 @@ public class RPCNIOSocketServer extends LifeCycleThread implements RPCServerInte
                         con.getOpenRequests().incrementAndGet();
                         if (Logging.isDebug())
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this,
-                                    "request received");
+                                    "request received (request %s)",
+                                               rq.getHeader().getCallId());
                         pendingRequests++;
                         if (!receiveRequest(rq, con)) {
                             closeConnection(key);

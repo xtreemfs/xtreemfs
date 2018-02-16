@@ -135,7 +135,7 @@ public class TracingTest {
         BufferedReader br = new BufferedReader(new InputStreamReader(fstream));
         String line;
         while ((line = br.readLine()) != null) {
-            System.out.println(line);
+//            System.out.println(line);
             lines++;
         }
 
