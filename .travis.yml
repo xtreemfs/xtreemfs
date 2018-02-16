@@ -47,11 +47,12 @@ script: |
     true
   else
     if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common" ]] || [[ $TEST_SUITE = "travis-junit-osd" ]]; then
-      make client server
+      make server
+      travis_wait 30 make client_debug
     elif [[ $TEST_SUITE = "travis-junit"* ]]; then
       make server
     else
-      make client_debug server hadoop-client
+      travis_wait 30 make client_debug server hadoop-client
     fi
     ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
   fi
