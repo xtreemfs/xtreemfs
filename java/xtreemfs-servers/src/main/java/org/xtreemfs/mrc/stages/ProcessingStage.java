@@ -303,8 +303,8 @@ public class ProcessingStage extends MRCStage {
                         i++;
                     }
                 }
-                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s (%s)\n",
-                        StatusPage.getOpName(rqHeader.getProcId()), params.toString());
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "parsed request: %s (%s) (request %s)\n",
+                        StatusPage.getOpName(rqHeader.getProcId()), params.toString(), rq.getRPCRequest().getHeader().getCallId());
             }
             
             op.startRequest(rq);
