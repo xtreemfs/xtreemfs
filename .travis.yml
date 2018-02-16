@@ -6,9 +6,16 @@ language: java
 jdk: openjdk8
 
 env:
+  global:
+    - MAKEFLAGS="-j 2"
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit
+    - TEST_SUITE=travis-junit-common
+    - TEST_SUITE=travis-junit-dir
+    - TEST_SUITE=travis-junit-foundation
+    - TEST_SUITE=travis-junit-integration
+    - TEST_SUITE=travis-junit-mrc
+    - TEST_SUITE=travis-junit-osd
     - TEST_SUITE=travis-cpp       BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-valgrind  BUILD_CLIENT_TESTS=true  SKIP_JNI=true
     - TEST_SUITE=travis-contrib
@@ -39,7 +46,14 @@ script: |
   if [[ $TEST_SUITE = "travis-deploy" ]]; then
     true
   else
-    make client_debug server hadoop-client -j2
+    if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common" ]] || [[ $TEST_SUITE = "travis-junit-osd" ]]; then
+      make server
+      travis_wait 30 make client_debug
+    elif [[ $TEST_SUITE = "travis-junit"* ]]; then
+      make server
+    else
+      travis_wait 30 make client_debug server hadoop-client
+    fi
     ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
   fi
 
