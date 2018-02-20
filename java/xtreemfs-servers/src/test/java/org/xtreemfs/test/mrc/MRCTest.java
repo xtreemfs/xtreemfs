@@ -49,15 +49,17 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
-import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.ACCESS_FLAGS;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -1316,7 +1318,7 @@ public class MRCTest {
                                0775, 0, getDefaultCoordinates()));
 
         // store the UUID of the OSD automatically assigned to the file
-        MRC.listxattrResponse listxattrResponse =
+        listxattrResponse listxattrResponse =
                 invokeSync(client.listxattr(mrcAddress, RPCAuthentication.authNone,
                                             uc, volumeName, fileName, false));
         String locations = null;
@@ -1345,7 +1347,7 @@ public class MRCTest {
                                                              RPCAuthentication.authNone,
                                                              uc, msg));
 
-        MRC.xtreemfs_get_suitable_osdsResponse suitable_osdsResponse =
+        xtreemfs_get_suitable_osdsResponse suitable_osdsResponse =
                 invokeSync(client.xtreemfs_get_suitable_osds(mrcAddress,
                                                              RPCAuthentication.authNone,
                                                             uc,
@@ -1361,8 +1363,8 @@ public class MRCTest {
                         .setStripingPolicy(sp)
                         .build();
 
-        MRC.xtreemfs_replica_addRequest xtreemfs_replica_addRequest =
-                MRC.xtreemfs_replica_addRequest.newBuilder()
+        xtreemfs_replica_addRequest xtreemfsReplicaAddRequest =
+                xtreemfs_replica_addRequest.newBuilder()
                         .setFileId(fileID)
                         .setNewReplica(replica)
                         .build();
@@ -1370,7 +1372,7 @@ public class MRCTest {
         invokeSync(client.xtreemfs_replica_add(mrcAddress,
                                                RPCAuthentication.authNone,
                                                uc,
-                                               xtreemfs_replica_addRequest));
+                                               xtreemfsReplicaAddRequest));
 
         // changes to the meta data database are performed in the background,
         // (the MRC sends the response before changes are made)
