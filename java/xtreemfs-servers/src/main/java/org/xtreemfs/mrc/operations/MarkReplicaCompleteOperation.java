@@ -141,6 +141,8 @@ public class MarkReplicaCompleteOperation extends MRCOperation implements
                                        storageManager,
                                        atomicDBUpdate);
 
+        rq.setResponse(emptyResponse.getDefaultInstance());
+
         atomicDBUpdate.execute();
 
         if (Logging.isDebug()) {
@@ -149,8 +151,6 @@ public class MarkReplicaCompleteOperation extends MRCOperation implements
                                        "marked as complete",
                                osdWithCompleteReplica, fileID);
         }
-
-        rq.setResponse(emptyResponse.getDefaultInstance());
     }
 
     @Override
