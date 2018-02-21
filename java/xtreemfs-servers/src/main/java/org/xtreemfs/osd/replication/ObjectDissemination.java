@@ -34,6 +34,7 @@ import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.Transfer
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
 
 /**
@@ -327,8 +328,9 @@ public class ObjectDissemination {
         // information persistently in the metadata-database.
         // (this enables save replica deletion in read-only replication mode)
         try {
+            String volumeUUID = fileID.substring(0, fileID.indexOf(':'));
             master.getMRCClient().
-                    xtreemfs_replica_mark_complete(getMRCAddress(),
+                    xtreemfs_replica_mark_complete(getMRCAddress(volumeUUID),
                                                    RPCAuthentication.authNone,
                                                    RPCAuthentication.userService,
                                                    fileID,
@@ -346,17 +348,22 @@ public class ObjectDissemination {
         }
     }
 
-    private InetSocketAddress getMRCAddress()
+    private InetSocketAddress getMRCAddress(String volumeUUID)
             throws IOException, InterruptedException {
-        DIR.ServiceSet mrcs = master.getDIRClient()
-                .xtreemfs_service_get_by_type(master.getConfig()
-                                                      .getDirectoryService(),
+
+        DIR.ServiceSet volumeServices = master.getDIRClient()
+                .xtreemfs_service_get_by_uuid(master.getConfig().getDirectoryService(),
                                               RPCAuthentication.authNone,
                                               RPCAuthentication.userService,
-                                              DIR.ServiceType
-                                                      .SERVICE_TYPE_MRC);
+                                              volumeUUID);
 
-        String mrcUUID = mrcs.getServices(0).getUuid();
+        String mrcUUID = "";
+        for (GlobalTypes.KeyValuePair keyValuePair:
+                volumeServices.getServices(0).getData().getDataList()) {
+            if (keyValuePair.getKey().equals("mrc")) {
+                mrcUUID = keyValuePair.getValue();
+            }
+        }
         DIR.AddressMappingSet addressMappingSet =
                 master.getDIRClient().xtreemfs_address_mappings_get(
                         master.getConfig().getDirectoryService(),
