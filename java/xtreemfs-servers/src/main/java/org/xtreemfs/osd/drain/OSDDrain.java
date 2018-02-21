@@ -63,6 +63,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
 /**
  * Class that provides function to remove a OSD by moving all his files to other OSDs.
+ *
+ * TODO this functionality should be handled by the MRC
  * 
  * @author bzcseife
  * 
