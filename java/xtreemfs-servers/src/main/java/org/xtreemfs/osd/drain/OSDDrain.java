@@ -32,7 +32,6 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.Auth;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.drain.OSDDrainException.ErrorState;
-import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -57,7 +56,6 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_removeRespons
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_internal_get_fileid_listResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
 
@@ -65,6 +63,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
  * Class that provides function to remove a OSD by moving all his files to other OSDs.
  *
  * TODO this functionality should be handled by the MRC
+ *
+ * TODO support striping
  * 
  * @author bzcseife
  * 
@@ -815,82 +815,81 @@ public class OSDDrain {
     }
 
     /**
-     * Polls OSDs regularly to discover if replication is complete. Blocks until this event happens.
-     *
-     * @param fileIDList
-     * @throws Exception
+     * Check whether the new replicas have fetched all objects, i.e., are
+     * complete replicas, at the MRC. Do so until all replicas are complete.
      */
-    public List<FileInformation> waitForReplicationToComplete(List<FileInformation> fileInfos)
-            throws OSDDrainException {
+    public List<FileInformation> waitForReplicationToComplete
+    (List<FileInformation> fileInfos) throws OSDDrainException {
 
-        List<FileInformation> finishedFileInfos = new LinkedList<FileInformation>();
-        List<FileInformation> toBeRemovedFileInfos = new LinkedList<FileInformation>();
+        List<FileInformation> finishedFileInfos =
+                new LinkedList<FileInformation>();
 
         while (!fileInfos.isEmpty()) {
-            for (FileInformation fileInfo : fileInfos) {
-                String fileID = fileInfo.fileID;
-                FileCredentials fc = fileInfo.fileCredentials;
-                Replica replica = fileInfo.newReplica;
+            List<FileInformation> toBeRemovedFileInfos =
+                    new LinkedList<FileInformation>();
+            for (FileInformation fileInformation : fileInfos) {
+                try {
+                    // query the MRC for up to date meta data
+                    xtreemfs_get_xlocsetRequest xlocReq =
+                            xtreemfs_get_xlocsetRequest.newBuilder()
+                                    .setFileId(fileInformation.fileID).build();
+                    RPCResponse<XLocSet> xlocsetResp = mrcClient
+                            .xtreemfs_get_xlocset(fileInformation.mrcAddress,
+                                                  password, userCreds, xlocReq);
+                    XLocSet xlocset = xlocsetResp.get();
 
-                boolean isReplicated = true;
-
-                StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(replica, 0);
-                long lastObjectNo = sp.getObjectNoForOffset(fc.getXlocs().getReadOnlyFileSize() - 1);
-
-                int osdRelPos = 0;
-                for (String osdUUID : replica.getOsdUuidsList()) {
-
-                    RPCResponse<ObjectList> r = null;
-                    ObjectSet oSet = null;
-                    try {
-                        InetSocketAddress osdAddress = new ServiceUUID(osdUUID, resolver).getAddress();
-
-                        r = osdClient.xtreemfs_internal_get_object_set(osdAddress, password, userCreds, fc,
-                                                                       fileID);
-                        ObjectList ol = r.get();
-
-                        byte[] serializedBitSet = ol.getSet().toByteArray();
-                        oSet = new ObjectSet(ol.getStripeWidth(), ol.getFirst(), serializedBitSet);
-                    } catch (Exception e) {
-                        if (Logging.isDebug()) {
-                            Logging.logError(Logging.LEVEL_WARN, this, e);
-                        }
-                        List<FileInformation> allInfos = new LinkedList<FileInformation>();
-                        allInfos.addAll(fileInfos);
-                        allInfos.addAll(finishedFileInfos);
-                        throw new OSDDrainException(e.getMessage(), ErrorState.WAIT_FOR_REPLICATION,
-                                                    finishedFileInfos, allInfos);
-                    } finally {
-                        if (r != null) {
-                            r.freeBuffers();
+                    // find the xlocset entry relevant for the new replica
+                    Replica newReplica = null;
+                    for (int i = 0; i < xlocset.getReplicasCount(); i++) {
+                        // as striping is not supported
+                        // (see createReplicaForFile),
+                        // it is sufficient to access index 0 in the OSD list
+                        // of the replica
+                        if (xlocset.getReplicas(i).getOsdUuids(0).
+                                equals(fileInformation.newReplica.getOsdUuids
+                                        (0))) {
+                            newReplica = xlocset.getReplicas(i);
+                            break;
                         }
                     }
-                    for (long objNo = osdRelPos; objNo <= lastObjectNo; objNo += sp.getWidth()) {
-                        if (oSet.contains(objNo) == false)
-                            isReplicated = false;
+
+                    assert newReplica != null;
+
+                    // check whether the current file is replicated already
+                    if (ReplicationFlags.isReplicaComplete(
+                            newReplica.getReplicationFlags())) {
+
+                        toBeRemovedFileInfos.add(fileInformation);
+                        finishedFileInfos.add(fileInformation);
+
                     }
-                }
 
-                // TODO: Set is replicated Flag if replication is complete
-                if (isReplicated) {
-                    toBeRemovedFileInfos.add(fileInfo);
-                    finishedFileInfos.add(fileInfo);
+                } catch (Exception e) {
+                    List<FileInformation> allInfos = new
+                            LinkedList<FileInformation>();
+                    allInfos.addAll(fileInfos);
+                    allInfos.addAll(finishedFileInfos);
+                    throw new OSDDrainException(e.getMessage(),
+                                                ErrorState.WAIT_FOR_REPLICATION,
+                                                finishedFileInfos, allInfos);
                 }
-
             }
 
             fileInfos.removeAll(toBeRemovedFileInfos);
             toBeRemovedFileInfos.clear();
 
-            if (fileInfos.isEmpty())
-                return finishedFileInfos;
+            if (fileInfos.isEmpty()) {
+                break;
+            }
 
             Logging.logMessage(Logging.LEVEL_INFO, Category.tool, this,
-                               "waiting %d secs for replication to be finished", WAIT_FOR_REPLICA_COMPLETE_DELAY_S);
+                               "waiting %d secs for replication of all files " +
+                                       "to complete",
+                               WAIT_FOR_REPLICA_COMPLETE_DELAY_S);
+
             try {
-                // wait until next poll
                 Thread.sleep(WAIT_FOR_REPLICA_COMPLETE_DELAY_S * 1000);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 // ignore
             }
         }
