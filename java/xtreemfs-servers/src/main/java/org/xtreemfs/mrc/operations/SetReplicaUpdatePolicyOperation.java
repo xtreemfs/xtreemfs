@@ -154,7 +154,7 @@ public class SetReplicaUpdatePolicyOperation extends MRCOperation {
             // if there is more than one replica, report an error
             if (curXLocList.getReplicaCount() > 1)
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
-                        "number of replicas has to be reduced 1 before replica update policy can be set to "
+                        "number of replicas has to be reduced to 1 before replica update policy can be set to "
                                 + ReplicaUpdatePolicies.REPL_UPDATE_PC_NONE + " (current replica count = "
                                 + curXLocList.getReplicaCount() + ")");
         }

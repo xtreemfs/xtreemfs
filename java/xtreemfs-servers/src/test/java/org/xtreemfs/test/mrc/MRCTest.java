@@ -9,6 +9,7 @@
 package org.xtreemfs.test.mrc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -37,6 +38,7 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.metadata.ReplicationPolicy;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.FileCredentials;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
@@ -53,8 +55,11 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Volumes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
@@ -91,8 +96,8 @@ public class MRCTest {
         // it to a new file on 'open')
         
         testEnv = new TestEnvironment(Services.DIR_CLIENT, Services.TIME_SYNC, Services.UUID_RESOLVER,
-            Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC, Services.MOCKUP_OSD,
-            Services.MOCKUP_OSD2, Services.MOCKUP_OSD3);
+                                      Services.MRC_CLIENT, Services.DIR_SERVICE, Services.MRC,
+                                      Services.OSD, Services.OSD, Services.OSD);
         testEnv.start();
         
         client = testEnv.getMrcClient();
@@ -1288,6 +1293,147 @@ public class MRCTest {
         assertEquals(rp.getName(), xLoc.getReplicaUpdatePolicy());
         assertEquals(rp.getFactor(), xLoc.getReplicasCount());
     }
+
+    @Test
+    public void testMarkReplicaComplete() throws Exception {
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final String volumeName = "testVolume";
+        final UserCredentials uc = createUserCredentials(uid, gids);
+
+        final String fileName = "testFile";
+
+        // create volume and file
+        final StripingPolicy sp = StripingPolicy.newBuilder().setType(
+                StripingPolicyType.STRIPING_POLICY_RAID0).setStripeSize(64).setWidth(1).build();
+
+        invokeSync(client.xtreemfs_mkvol(mrcAddress, RPCAuthentication.authNone, uc,
+                                         AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL,
+                                         sp, "", 0, volumeName,
+                                         "", "",
+                                         getKVList(), 0));
+
+        invokeSync(client.open(mrcAddress, RPCAuthentication.authNone,
+                               uc, volumeName, fileName, FileAccessManager.O_CREAT,
+                               0775, 0, getDefaultCoordinates()));
+
+        // store the UUID of the OSD automatically assigned to the file
+        listxattrResponse listxattrResponse =
+                invokeSync(client.listxattr(mrcAddress, RPCAuthentication.authNone,
+                                            uc, volumeName, fileName, false));
+        String locations = null;
+        for (XAttr xAttr : listxattrResponse.getXattrsList()) {
+            if (xAttr.getName().equals("xtreemfs.locations")) {
+                 locations = xAttr.getValue();
+            }
+        }
+        String oldOSD = extractOSDUUIDs(locations).get(0);
+
+        String fileID = "";
+        for (XAttr xAttr: listxattrResponse.getXattrsList()) {
+            if (xAttr.getName().equals("xtreemfs.file_id")) {
+                fileID = xAttr.getValue();
+            }
+        }
+
+        // set the replica update policy and create a new full replica on a suitable OSD
+        xtreemfs_set_replica_update_policyRequest msg =
+                xtreemfs_set_replica_update_policyRequest.newBuilder()
+                        .setVolumeName(volumeName)
+                        .setPath(fileName)
+                        .setUpdatePolicy(ReplicaUpdatePolicies.REPL_UPDATE_PC_RONLY)
+                        .build();
+        invokeSync(client.xtreemfs_set_replica_update_policy(mrcAddress,
+                                                             RPCAuthentication.authNone,
+                                                             uc, msg));
+
+        xtreemfs_get_suitable_osdsResponse suitable_osdsResponse =
+                invokeSync(client.xtreemfs_get_suitable_osds(mrcAddress,
+                                                             RPCAuthentication.authNone,
+                                                            uc,
+                                                            fileID, "", "",
+                                                             0));
+
+        String newOSD = suitable_osdsResponse.getOsdUuidsList().get(0);
+
+        GlobalTypes.Replica replica =
+                GlobalTypes.Replica.newBuilder()
+                        .addOsdUuids(newOSD)
+                        .setReplicationFlags(ReplicationFlags.setRarestFirstStrategy(GlobalTypes.REPL_FLAG.REPL_FLAG_FULL_REPLICA.getNumber()))
+                        .setStripingPolicy(sp)
+                        .build();
+
+        xtreemfs_replica_addRequest xtreemfsReplicaAddRequest =
+                xtreemfs_replica_addRequest.newBuilder()
+                        .setFileId(fileID)
+                        .setNewReplica(replica)
+                        .build();
+
+        invokeSync(client.xtreemfs_replica_add(mrcAddress,
+                                               RPCAuthentication.authNone,
+                                               uc,
+                                               xtreemfsReplicaAddRequest));
+
+        // changes to the meta data database are performed in the background,
+        // (the MRC sends the response before changes are made)
+        // so we have to wait a little before starting the next change
+        Thread.sleep(200);
+
+        // try to remove the old replica - this should fail,
+        // as the new replica is not complete yet
+        try {
+            invokeSync(client.xtreemfs_replica_remove(mrcAddress,
+                                                      RPCAuthentication.authNone,
+                                                      uc,
+                                                      fileID,
+                                                      "", "",
+                                                      oldOSD));
+            fail("deleting the only complete replica should fail!");
+        } catch (PBRPCException e) {
+            // this exception is expected
+        }
+
+        // simulate that the OSD of the new replica has fetched all data of the file
+        invokeSync(client.xtreemfs_replica_mark_complete(mrcAddress,
+                                                         RPCAuthentication.authNone,
+                                                         uc,
+                                                         fileID,
+                                                         newOSD));
+
+        Thread.sleep(200);
+
+        // now that the new replica has all data and has been marked as complete,
+        // it should be possible to delete the old replica
+        try {
+            invokeSync(client.xtreemfs_replica_remove(mrcAddress,
+                                                      RPCAuthentication.authNone,
+                                                      uc,
+                                                      fileID,
+                                                      "", "",
+                                                      oldOSD));
+        } catch (PBRPCException e) {
+            fail("after marking the new replica complete, " +
+                         "deleting the old one should be possible!");
+        }
+
+        Thread.sleep(200);
+
+        listxattrResponse =
+                invokeSync(client.listxattr(mrcAddress, RPCAuthentication.authNone,
+                                            uc, volumeName, fileName, false));
+
+        for (XAttr xAttr : listxattrResponse.getXattrsList()) {
+            if (xAttr.getName().equals("xtreemfs.locations")) {
+                locations = xAttr.getValue();
+            }
+        }
+
+        // check whether the new replica is on the new OSD and the only replica
+        String currentOSD = extractOSDUUIDs(locations).get(0);
+        assertEquals(1, extractOSDUUIDs(locations).size());
+        assertEquals(newOSD, currentOSD);
+        assertNotEquals(oldOSD, currentOSD);
+    }
     
     @Test
     public void testReplicateOnClose() throws Exception {
@@ -1509,5 +1655,21 @@ public class MRCTest {
             kvList.add(KeyValuePair.newBuilder().setKey(kvPairs[i]).setValue(kvPairs[i + 1]).build());
         
         return kvList;
+    }
+
+    private static List<String> extractOSDUUIDs(String xAttrLocations) {
+        List<String> osdUUIDs = new LinkedList<String>();
+        if (xAttrLocations == null) {
+            return osdUUIDs;
+        }
+        String UUIDIdentifier = "\"uuid\":";
+        String splits [] = xAttrLocations.split(",");
+        for (String split : splits) {
+            if (split.startsWith(UUIDIdentifier)) {
+                osdUUIDs.add(split.substring(UUIDIdentifier.length() + 1,
+                                         split.length() - 1));
+            }
+        }
+        return osdUUIDs;
     }
 }
