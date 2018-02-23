@@ -651,6 +651,14 @@ public class MRCHelper {
             FileMetadata file, String keyString, String value, AtomicDBUpdate update)
                     throws UserException, DatabaseException {
 
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, null,
+                               "calling setSysAttrValue in MRCHelper with arguments:" +
+                                       "master: %s sMan: %s parentId: %s " +
+                                       "file: %s keyString: %s value: %s update: %s",
+                               master, sMan, parentId, file, keyString, value, update);
+        }
+
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
 
@@ -675,6 +683,12 @@ public class MRCHelper {
             key = SysAttrs.valueOf(keyString);
         } catch (IllegalArgumentException exc) {
             throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "unknown system attribute '" + keyString + "'");
+        }
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, null,
+                               "setSysAttrValue in MRCHelper: " +
+                                       "using key: %s", key);
         }
 
         switch (key) {

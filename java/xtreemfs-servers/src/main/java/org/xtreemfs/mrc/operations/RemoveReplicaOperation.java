@@ -181,21 +181,39 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 
         // If the file is read-only replicated, check if at
         // least one complete or one full replica remains.
+
+        // (felse): a 'full' ronly replica does not necessarily contain all objects
+        // of a file. the check isFullReplica hence does not guarantee that
+        // all objects belonging to the deleted file are present after
+        // the requested replica deletion has been executed.
         if (ReplicaUpdatePolicies.isRO(oldXLocList.getReplUpdatePolicy())) {
 
-            boolean completeOrFullExists = false;
+//            boolean completeOrFullExists = false;
+//            for (int k = 0; k < newXLocList.getReplicaCount(); k++) {
+//                if (ReplicationFlags.isReplicaComplete(newXLocList.getReplica(k).getReplicationFlags())
+//                        || ReplicationFlags.isFullReplica(newXLocList.getReplica(k).getReplicationFlags())) {
+//                    completeOrFullExists = true;
+//                    break;
+//                }
+//            }
+
+            boolean completeExists = false;
             for (int k = 0; k < newXLocList.getReplicaCount(); k++) {
-                if (ReplicationFlags.isReplicaComplete(newXLocList.getReplica(k).getReplicationFlags())
-                        || ReplicationFlags.isFullReplica(newXLocList.getReplica(k).getReplicationFlags())) {
-                    completeOrFullExists = true;
-                    break;
+                if (ReplicationFlags.isReplicaComplete(newXLocList.getReplica(k).getReplicationFlags())) {
+                    completeExists = true;
                 }
             }
 
-            if (!completeOrFullExists) {
+//            if (!completeOrFullExists) {
+//                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Could not remove OSD '" + rqArgs.getOsdUuid()
+//                        + "': read-only replication w/ partial replicas requires at "
+//                        + "least one remaining replica that is full or complete");
+//            }
+
+            if (!completeExists) {
                 throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Could not remove OSD '" + rqArgs.getOsdUuid()
-                        + "': read-only replication w/ partial replicas requires at "
-                        + "least one remaining replica that is full or complete");
+                        + "': read-only replication requires at "
+                        + "least one remaining replica that is complete");
             }
         }
 
