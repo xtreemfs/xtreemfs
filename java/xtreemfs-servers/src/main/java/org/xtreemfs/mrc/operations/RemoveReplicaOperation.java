@@ -288,6 +288,14 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
 
         update.execute();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
+                               this,
+                               "removing replica of file %s successfully executed" +
+                                       "without error",
+                               fileId);
+        }
     }
 
     @Override
@@ -317,5 +325,14 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         master.getXLocSetCoordinator().unlockXLocSet(idRes.getLocalFileId(), sMan, update);
         update.execute();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
+                               this,
+                               "removing replica of file %s successfully executed" +
+                                       "with error",
+                               fileId);
+        }
+
     }
 }
