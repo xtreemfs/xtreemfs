@@ -211,9 +211,16 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 //            }
 
             if (!completeExists) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Could not remove OSD '" + rqArgs.getOsdUuid()
-                        + "': read-only replication requires at "
-                        + "least one remaining replica that is complete");
+                String filePath = "";
+                if (rqArgs.hasPath()) {
+                    filePath = " " + rqArgs.getPath();
+                }
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                                        fileId + filePath + " Could not remove OSD '" +
+                                                rqArgs.getOsdUuid()
+                                                + "': read-only replication " +
+                                                "requires at "
+                                                + "least one remaining replica that is complete");
             }
         }
 
@@ -293,7 +300,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
             Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
                                this,
                                "removing replica of file %s successfully executed" +
-                                       "without error",
+                                       " without error",
                                fileId);
         }
     }
@@ -330,7 +337,7 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
             Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
                                this,
                                "removing replica of file %s successfully executed" +
-                                       "with error",
+                                       " with error",
                                fileId);
         }
 
