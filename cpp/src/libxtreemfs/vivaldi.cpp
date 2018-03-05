@@ -241,6 +241,9 @@ void Vivaldi::Run() {
            current_retries.clear();
            retries_in_a_row = 0;
           }
+
+          // start over with a new list of OSDs from the DIR
+          continue;
         }
 
         // update local coordinate copy here
