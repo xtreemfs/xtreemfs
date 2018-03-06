@@ -6,8 +6,6 @@
  */
 package org.xtreemfs.test.osd;
 
-import static org.junit.Assert.assertFalse;
-
 import java.io.File;
 
 import org.junit.AfterClass;
@@ -58,13 +56,17 @@ public class FastDeleteOpenFile {
 
     private static Options              options;
 
+    private static int                  assertIntervalMS    = 100;
+
+    private static int                  assertRepetitions   = 50;
+
     @BeforeClass
     public static void initializeTest() throws Exception {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
         
-        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.DIR_CLIENT,
+        testEnv = new TestEnvironment(TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.DIR_CLIENT,
                 TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.RPC_CLIENT,
-                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD, TestEnvironment.Services.OSD});
+                TestEnvironment.Services.MRC, TestEnvironment.Services.OSD);
         testEnv.start();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test").addGroups("test").build();
@@ -76,7 +78,7 @@ public class FastDeleteOpenFile {
     }
 
     @AfterClass
-    public static void shutdownTest() throws Exception {
+    public static void shutdownTest() {
         testEnv.shutdown();
     }
 
@@ -113,17 +115,57 @@ public class FastDeleteOpenFile {
         fileHandle.write(userCredentials, bytesIn, length, 0);
         fileHandle.close();
 
+        // calculate the path of the storage folder of the file,
+        // this is independent of it actually exists in the file system or not
+        HashStorageLayout hashStorageLayout =
+                new HashStorageLayout(SetupUtils.createOSD1Config(),
+                                      new MetadataCache());
+        String pathOnDisk = hashStorageLayout.generateAbsoluteFilePath(globalFileId);
+
+        // give the storage thread up to 5 secs to write an object
+        boolean objectCreated = false;
+
+        timeLoop:
+        for (int i = 0; i < assertRepetitions; i++) {
+            if (new File(pathOnDisk).isDirectory()) {
+                File [] files = new File(pathOnDisk).listFiles();
+                for (File file : files) {
+                    if (!hashStorageLayout.isMetadataFile(file)) {
+                        objectCreated = true;
+                        break timeLoop;
+                    }
+                }
+            }
+            Thread.sleep(assertIntervalMS);
+        }
+
+        assert(objectCreated);
 
         // Delete file.
         volume.unlink(userCredentials, path);
 
-        // Make sure the file is deleted on disk.
-        HashStorageLayout hsl = new HashStorageLayout(SetupUtils.createOSD1Config(), new MetadataCache());
-        String pathOnDisk = hsl.generateAbsoluteFilePath(globalFileId);
+        // Check whether all object files are deleted on disk.
+        // By default, metadata files are not deleted.
+        boolean noRemainingObjectFiles = false;
 
-        // The file is deleted asynchronously by the DeletionStage in the OSD. Give it some time.
-        Thread.sleep(1 * 10000);
-        assertFalse(new File(pathOnDisk).isDirectory());
+        for (int i = 0; i < assertRepetitions; i++) {
+            noRemainingObjectFiles = true;
+            File[] files = new File(pathOnDisk).listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    noRemainingObjectFiles = noRemainingObjectFiles
+                            && hashStorageLayout.isMetadataFile(file);
+                }
+            } else {
+                noRemainingObjectFiles = true;
+            }
+            if (noRemainingObjectFiles) {
+                break;
+            }
+            Thread.sleep(assertIntervalMS);
+        }
+
+        assert(noRemainingObjectFiles);
 
         // Cleanup.
         volume.close();
