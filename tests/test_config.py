@@ -62,7 +62,7 @@ TestSets = {
                 'dir_repl': False,
                 'snmp': False
     },
-    'travis-junit-common' : {
+    'travis-junit-common-utils' : {
                 'ssl': False,
                 'mrc_repl': False,
                 'dir_repl': False,
@@ -344,9 +344,9 @@ Tests = [
     },
     {
         'name': 'JUnit server tests common',
-        'file': 'junit_tests_common.sh',
+        'file': 'junit_tests_common_utils.sh',
         'VolumeConfigs': [],
-        'TestSets': [ 'travis-junit-common' ]
+        'TestSets': [ 'travis-junit-common-utils' ]
     },
     {
         'name': 'JUnit server tests dir',
