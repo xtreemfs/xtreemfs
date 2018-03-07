@@ -11,8 +11,8 @@
 //import java.util.StringTokenizer;
 //
 //import org.xtreemfs.common.Capability;
-//import org.xtreemfs.foundation.buffer.BufferPool;
-//import org.xtreemfs.foundation.buffer.ReusableBuffer;
+//import BufferPool;
+//import ReusableBuffer;
 //import org.xtreemfs.common.clients.RPCResponse;
 //import org.xtreemfs.common.clients.RPCResponseListener;
 //import org.xtreemfs.common.clients.osd.OSDClient;

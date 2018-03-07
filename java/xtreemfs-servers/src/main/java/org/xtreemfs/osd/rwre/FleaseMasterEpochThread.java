@@ -10,8 +10,8 @@ package org.xtreemfs.osd.rwre;
 
 import java.io.IOException;
 
-import org.xtreemfs.foundation.flease.MasterEpochHandlerInterface;
-import org.xtreemfs.foundation.flease.comm.FleaseMessage;
+import org.xtreemfs.flease.MasterEpochHandlerInterface;
+import org.xtreemfs.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.storage.StorageLayout;

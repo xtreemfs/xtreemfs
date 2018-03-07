@@ -19,7 +19,7 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
-import org.xtreemfs.foundation.util.OutputUtils;
+
 import org.xtreemfs.osd.OSDRequest;
 
 public abstract class Stage extends LifeCycleThread {

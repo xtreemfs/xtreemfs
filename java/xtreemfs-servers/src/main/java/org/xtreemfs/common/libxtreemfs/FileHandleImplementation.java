@@ -229,7 +229,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * (non-Javadoc)
      * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation .pbrpc.generatedinterfaces.RPC
-     * .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
+     * .UserCredentials, ReusableBuffer, int, long)
      */
     @Override
     public int read(UserCredentials userCredentials, byte[] data, int count, long offset) throws IOException,
@@ -241,7 +241,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * (non-Javadoc)
      * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#read(org.xtreemfs.foundation .pbrpc.generatedinterfaces.RPC
-     * .UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
+     * .UserCredentials, ReusableBuffer, int, long)
      */
     @Override
     public int read(final UserCredentials userCredentials, final byte[] data, final int dataOffset, final int count,
@@ -352,7 +352,7 @@ public class FileHandleImplementation implements FileHandle, AdminFileHandle {
      * (non-Javadoc)
      * 
      * @see org.xtreemfs.common.libxtreemfs.FileHandle#write(org.xtreemfs.foundation .pbrpc.generatedinterfaces.
-     * RPC.UserCredentials, org.xtreemfs.foundation.buffer.ReusableBuffer, int, long)
+     * RPC.UserCredentials, ReusableBuffer, int, long)
      */
     @Override
     public synchronized int write(UserCredentials userCredentials, byte[] data, int count, long offset)

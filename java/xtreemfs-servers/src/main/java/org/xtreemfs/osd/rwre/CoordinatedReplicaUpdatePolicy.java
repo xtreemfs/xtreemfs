@@ -18,8 +18,8 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.buffer.BufferPool;
-import org.xtreemfs.foundation.flease.Flease;
-import org.xtreemfs.foundation.flease.comm.FleaseMessage;
+import org.xtreemfs.flease.Flease;
+import org.xtreemfs.flease.comm.FleaseMessage;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.logging.Logging.Category;
 import org.xtreemfs.foundation.pbrpc.client.RPCAuthentication;

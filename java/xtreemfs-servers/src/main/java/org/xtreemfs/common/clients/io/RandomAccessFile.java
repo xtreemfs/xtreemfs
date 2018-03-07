@@ -36,8 +36,8 @@
 //import org.xtreemfs.common.xloc.Replica;
 //import org.xtreemfs.common.xloc.StripingPolicyImpl;
 //import org.xtreemfs.common.xloc.XLocations;
-//import org.xtreemfs.foundation.buffer.BufferPool;
-//import org.xtreemfs.foundation.buffer.ReusableBuffer;
+//import BufferPool;
+//import ReusableBuffer;
 //import org.xtreemfs.foundation.logging.Logging;
 //import org.xtreemfs.foundation.logging.Logging.Category;
 //import org.xtreemfs.foundation.monitoring.Monitoring;

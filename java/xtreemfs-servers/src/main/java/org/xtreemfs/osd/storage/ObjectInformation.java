@@ -7,10 +7,8 @@
 
 package org.xtreemfs.osd.storage;
 
-import org.xtreemfs.foundation.buffer.BufferPool;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.osd.InternalObjectData;
-import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 
 /**
  *

@@ -16,5 +16,5 @@ then
 fi
 echo "TEST_DIR: $TEST_DIR"
 
-mvn -Dtest="org.xtreemfs.test.integrationtest.**" -DfailIfNoTests=false --settings $XTREEMFS/java/settings.xml --activate-profiles xtreemfs-dev --file $XTREEMFS/java/pom.xml test 2>&1 | tee "${TEST_DIR}/log/junit.log"
+mvn -Dtest="org.xtreemfs.integration.**, org.xtreemfs.utils.**" -DfailIfNoTests=false --settings $XTREEMFS/java/settings.xml --activate-profiles xtreemfs-dev --file $XTREEMFS/java/pom.xml test 2>&1 | tee "${TEST_DIR}/log/junit.log"
 exit ${PIPESTATUS[0]}

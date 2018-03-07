@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 
 /**

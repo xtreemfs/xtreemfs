@@ -25,7 +25,7 @@
 //package org.xtreemfs.osd.operations;
 //
 //import org.xtreemfs.common.Capability;
-//import org.xtreemfs.foundation.buffer.ReusableBuffer;
+//import ReusableBuffer;
 //import org.xtreemfs.common.uuids.ServiceUUID;
 //import org.xtreemfs.common.xloc.XLocations;
 //import org.xtreemfs.interfaces.OSDInterface.keep_file_openRequest;

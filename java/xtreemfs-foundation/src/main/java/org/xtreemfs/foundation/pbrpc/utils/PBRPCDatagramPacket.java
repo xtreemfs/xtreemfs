@@ -8,7 +8,6 @@
 
 package org.xtreemfs.foundation.pbrpc.utils;
 
-import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Message;
 import java.io.IOException;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
