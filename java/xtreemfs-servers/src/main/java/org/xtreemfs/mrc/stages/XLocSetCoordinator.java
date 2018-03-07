@@ -594,8 +594,9 @@ public class XLocSetCoordinator extends LifeCycleThread implements DBAccessResul
         }
 
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG, this, "invalidateReplicas invalidated %d replicas",
-                    listener.numResponses);
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,
+                               "%s invalidateReplicas invalidated %d replicas",
+                               fileId, listener.numResponses);
         }
 
         // If a primary exists, wait until the lease has timed out.

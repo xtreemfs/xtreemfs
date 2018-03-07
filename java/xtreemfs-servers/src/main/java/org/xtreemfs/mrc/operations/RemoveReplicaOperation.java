@@ -211,9 +211,16 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
 //            }
 
             if (!completeExists) {
-                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL, "Could not remove OSD '" + rqArgs.getOsdUuid()
-                        + "': read-only replication requires at "
-                        + "least one remaining replica that is complete");
+                String filePath = "";
+                if (rqArgs.hasPath()) {
+                    filePath = " " + rqArgs.getPath();
+                }
+                throw new UserException(POSIXErrno.POSIX_ERROR_EINVAL,
+                                        fileId + filePath + " Could not remove OSD '" +
+                                                rqArgs.getOsdUuid()
+                                                + "': read-only replication " +
+                                                "requires at "
+                                                + "least one remaining replica that is complete");
             }
         }
 
@@ -288,6 +295,14 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         master.getXLocSetCoordinator().unlockXLocSet(file, sMan, update);
 
         update.execute();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
+                               this,
+                               "removing replica of file %s successfully executed" +
+                                       " without error",
+                               fileId);
+        }
     }
 
     @Override
@@ -317,5 +332,14 @@ public class RemoveReplicaOperation extends MRCOperation implements XLocSetCoord
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         master.getXLocSetCoordinator().unlockXLocSet(idRes.getLocalFileId(), sMan, update);
         update.execute();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication,
+                               this,
+                               "removing replica of file %s successfully executed" +
+                                       " with error",
+                               fileId);
+        }
+
     }
 }
