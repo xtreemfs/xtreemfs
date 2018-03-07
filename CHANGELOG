@@ -19,6 +19,10 @@
     * Remove explicit support for SSLv3.
     * Fix potential disk space leak in BabuDB (for DIR and MRC)
     * Many small stability improvements and fixes.
+    * Ronly replication: partially fixing issue 223                                               
+      * Replica can only be deleted if another complete replica exists (previously, a full replica was sufficient)
+      * Any replicating OSD now notifies the MRC when the replica is complete, causing the MRC to mark it as complete in the file meta data database
+      * Data loss is still possible with striping
 
 12-MAR-2015: release 1.5.1
 
