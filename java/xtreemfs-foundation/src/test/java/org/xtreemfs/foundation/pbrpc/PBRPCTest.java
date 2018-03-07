@@ -7,7 +7,7 @@
  */
 
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

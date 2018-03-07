@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.junit.Test;

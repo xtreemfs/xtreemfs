@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.foundation.pbrpc;
+package org.xtreemfs.foundation.pbrpc;
 
 import java.io.IOException;
 import org.xtreemfs.foundation.util.OutputUtils;
