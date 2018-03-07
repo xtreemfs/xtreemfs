@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import org.junit.After;
 import org.junit.Before;
@@ -20,8 +20,8 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC;
 import org.xtreemfs.osd.tracing.TraceInfo;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 import java.io.*;
 import java.net.Socket;

@@ -20,7 +20,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestHelper;
 
 /**
  * This test case externally tests the integration of all XtreemFS components at

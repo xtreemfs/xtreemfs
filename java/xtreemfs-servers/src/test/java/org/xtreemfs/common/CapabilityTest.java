@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.common;
+package org.xtreemfs.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,9 +21,9 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 public class CapabilityTest {
     @Rule

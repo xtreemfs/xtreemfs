@@ -1,4 +1,4 @@
-package org.xtreemfs.test;
+package org.xtreemfs;
 
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;

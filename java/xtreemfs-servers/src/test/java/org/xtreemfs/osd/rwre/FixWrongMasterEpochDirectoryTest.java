@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.osd.rwre;
+package org.xtreemfs.osd.rwre;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -20,8 +20,8 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 public class FixWrongMasterEpochDirectoryTest {
     @Rule

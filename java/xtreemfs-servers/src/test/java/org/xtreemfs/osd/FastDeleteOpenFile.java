@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertFalse;
 
@@ -28,9 +28,9 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 
 /**

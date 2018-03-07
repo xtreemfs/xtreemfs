@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd.replication;
+package org.xtreemfs.osd.replication;
 
 
 import static org.junit.Assert.assertFalse;
@@ -24,8 +24,8 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.logging.Logging;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 /**
  *

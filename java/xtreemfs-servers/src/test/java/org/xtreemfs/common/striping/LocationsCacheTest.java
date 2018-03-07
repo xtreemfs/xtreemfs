@@ -7,7 +7,7 @@
  *
  */
 
-package org.xtreemfs.test.common.striping;
+package org.xtreemfs.common.striping;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -21,7 +21,7 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.osd.LocationsCache;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestHelper;
 
 /**
  * This class implements the tests for LocationsCache

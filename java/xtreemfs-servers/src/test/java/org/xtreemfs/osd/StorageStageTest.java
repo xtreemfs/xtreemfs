@@ -6,12 +6,12 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestHelper;
 
 // TODO
 public class StorageStageTest {

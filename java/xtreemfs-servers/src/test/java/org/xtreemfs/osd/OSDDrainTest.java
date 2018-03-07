@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -46,9 +46,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * @author bzcseife

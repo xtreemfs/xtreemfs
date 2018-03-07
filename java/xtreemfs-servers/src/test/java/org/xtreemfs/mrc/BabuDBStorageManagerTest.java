@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,9 +36,9 @@ import org.xtreemfs.mrc.database.DatabaseResultSet;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 public class BabuDBStorageManagerTest {
     @Rule

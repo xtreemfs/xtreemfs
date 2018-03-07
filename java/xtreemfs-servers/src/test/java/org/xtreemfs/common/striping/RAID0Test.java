@@ -7,7 +7,7 @@
  *
  */
 
-package org.xtreemfs.test.common.striping;
+package org.xtreemfs.common.striping;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,8 +24,8 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 /**
  * It tests the RAID0 class

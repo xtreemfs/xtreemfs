@@ -28,9 +28,9 @@ import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.common.monitoring;
+package org.xtreemfs.common.monitoring;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,9 +28,9 @@ import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.AccessControlPolicyType;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 import com.sun.management.snmp.SnmpDefinitions;
 import com.sun.management.snmp.SnmpInt;

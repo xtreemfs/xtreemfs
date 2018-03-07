@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.osd.replication;
+package org.xtreemfs.osd.replication;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +35,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

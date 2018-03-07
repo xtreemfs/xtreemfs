@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -61,10 +61,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_po
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_replica_addRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestEnvironment.Services;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestEnvironment.Services;
+import org.xtreemfs.TestHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;

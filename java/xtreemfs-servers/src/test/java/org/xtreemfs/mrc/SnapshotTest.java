@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -46,10 +46,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntries;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.DirectoryEntry;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.timestampResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestEnvironment.Services;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestEnvironment.Services;
+import org.xtreemfs.TestHelper;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;

@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,10 +49,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceStatus;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.KeyValuePair;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestEnvironment.Services;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestEnvironment.Services;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

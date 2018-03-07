@@ -22,7 +22,7 @@
 ///*
 // * AUTHORS: Christian Lorenz (ZIB)
 // */
-//package org.xtreemfs.test.osd.replication;
+//package org.xtreemfs.osd.replication;
 //
 //import java.io.File;
 //import java.io.IOException;
@@ -49,8 +49,8 @@
 //import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 //import org.xtreemfs.foundation.util.FSUtils;
 //import org.xtreemfs.osd.replication.ObjectSet;
-//import org.xtreemfs.test.SetupUtils;
-//import org.xtreemfs.test.TestEnvironment;
+//import org.xtreemfs.SetupUtils;
+//import org.xtreemfs.TestEnvironment;
 //
 ///**
 // *

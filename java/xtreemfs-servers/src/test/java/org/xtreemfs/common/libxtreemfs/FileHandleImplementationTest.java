@@ -39,9 +39,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XCap;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * Tests regarding the Java Implementation of the FileHandle interface.

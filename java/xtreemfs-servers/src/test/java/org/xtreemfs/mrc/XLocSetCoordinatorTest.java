@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -53,9 +53,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.OSDSelectionPolicyType
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 public class XLocSetCoordinatorTest {
     @Rule

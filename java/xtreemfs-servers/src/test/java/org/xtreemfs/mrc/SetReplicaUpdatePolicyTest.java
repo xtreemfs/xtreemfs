@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -40,10 +40,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.xtreemfs_set_replica_update_policyRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestEnvironment.Services;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestEnvironment.Services;
+import org.xtreemfs.TestHelper;
 
 public class SetReplicaUpdatePolicyTest {
     @Rule

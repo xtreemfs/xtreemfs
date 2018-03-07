@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertEquals;
 
@@ -38,10 +38,10 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
-import org.xtreemfs.test.osd.StripingTest.MRCDummy;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
+import org.xtreemfs.osd.StripingTest.MRCDummy;
 
 public class StripingTestCOW {
     @Rule

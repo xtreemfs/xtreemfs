@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd.replication;
+package org.xtreemfs.osd.replication;
 
 import static org.junit.Assert.*;
 
@@ -48,9 +48,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.OSD.InternalReadLocalResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectList;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

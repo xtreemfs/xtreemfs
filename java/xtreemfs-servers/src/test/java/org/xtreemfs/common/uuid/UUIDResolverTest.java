@@ -5,7 +5,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.common.uuid;
+package org.xtreemfs.common.uuid;
 
 import static org.junit.Assert.fail;
 
@@ -27,9 +27,9 @@ import org.xtreemfs.foundation.pbrpc.client.RPCResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMapping;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingSetResponse;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

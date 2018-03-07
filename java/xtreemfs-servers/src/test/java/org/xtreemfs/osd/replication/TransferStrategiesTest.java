@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd.replication;
+package org.xtreemfs.osd.replication;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,8 +40,8 @@ import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequ
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 /**
  * 
@@ -72,7 +72,7 @@ public class TransferStrategiesTest {
     }
 
     /*
-     * copied from org.xtreemfs.test.osd.replication.ReplicationTest
+     * copied from org.xtreemfs.osd.replication.ReplicationTest
      */
     private static XLocations createLocations(int numberOfReplicas, int numberOfStripedOSDs)
             throws InvalidXLocationsException {

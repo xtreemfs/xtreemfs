@@ -7,7 +7,7 @@
  *
  */
 
-package org.xtreemfs.test.common.striping;
+package org.xtreemfs.common.striping;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,8 +30,8 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 /**
  * This class implements the tests for Locations

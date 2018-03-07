@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd.replication;
+package org.xtreemfs.osd.replication;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -28,7 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

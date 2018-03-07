@@ -4,7 +4,7 @@
  * Licensed under the BSD License, see LICENSE file for details.
  *
  */
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -17,8 +17,8 @@ import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper;
 import org.xtreemfs.mrc.metadata.BufferBackedFileVoucherInfo;
 import org.xtreemfs.mrc.metadata.FileVoucherInfo;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 public class BufferBackedFileVoucherInfoTest {
 

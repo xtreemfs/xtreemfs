@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.mrc;
+package org.xtreemfs.mrc;
 
 import static org.junit.Assert.assertEquals;
 
@@ -30,8 +30,8 @@ import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 public class BufferBackedMetadataTest {
     @Rule

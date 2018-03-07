@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.CowPolicy.cowMode;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.TestHelper;
 
 /**
  *

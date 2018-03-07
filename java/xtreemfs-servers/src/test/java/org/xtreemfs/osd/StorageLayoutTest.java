@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,8 +39,8 @@ import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.Replica;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

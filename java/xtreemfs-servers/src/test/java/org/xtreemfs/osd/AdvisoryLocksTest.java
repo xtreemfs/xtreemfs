@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -32,9 +32,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SnapConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.XLocSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.Lock;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * Class for testing the NewOSD It uses the old OSDTest tests. It checks if the OSD works without replicas neither

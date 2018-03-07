@@ -1,4 +1,4 @@
-package org.xtreemfs.test.common.benchmark;
+package org.xtreemfs.common.benchmark;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -43,9 +43,9 @@ import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 public class ControllerIntegrationTest {
     @Rule

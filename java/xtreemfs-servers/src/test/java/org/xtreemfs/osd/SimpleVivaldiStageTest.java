@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.test.osd;
+package org.xtreemfs.osd;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,10 +29,10 @@ import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.VivaldiCoordinates;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.xtreemfs_pingMesssage;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceConstants;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestEnvironment.Services;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestEnvironment.Services;
+import org.xtreemfs.TestHelper;
 
 /**
  * 

@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test;
+package org.xtreemfs;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

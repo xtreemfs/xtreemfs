@@ -6,7 +6,7 @@
  *
  */
 
-package org.xtreemfs.test.dir;
+package org.xtreemfs.dir;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -34,9 +34,9 @@ import org.xtreemfs.foundation.pbrpc.server.RPCServerRequestListener;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.AddressMappingSet;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.addressMappingGetResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIRServiceConstants;
-import org.xtreemfs.test.SetupUtils;
-import org.xtreemfs.test.TestEnvironment;
-import org.xtreemfs.test.TestHelper;
+import org.xtreemfs.SetupUtils;
+import org.xtreemfs.TestEnvironment;
+import org.xtreemfs.TestHelper;
 
 /**
  * 
