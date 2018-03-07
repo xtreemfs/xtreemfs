@@ -41,7 +41,7 @@ class Server:
             except ValueError:
                 return False
 
-            print "xtestenv: checking if server is running with pid", pid
+            print("xtestenv: checking if server is running with pid", pid)
 
             # Use 'waitpid' to touch any zombies and ensure that these are
             # cleaned up first.
@@ -51,7 +51,11 @@ class Server:
             except OSError:
                 pass
 
-            return os.path.exists("/proc/" + str(pid))
+            try:
+                os.kill(pid, 0)
+                return True
+            except ProcessLookupError:
+                return False
         else:
             return False
 
@@ -99,14 +103,14 @@ class Server:
             pidfile.write(str(p.pid))
             pidfile.close()
 
-            print "xtestenv: started", self._service_name, "server with pid", p.pid
+            print("xtestenv: started", self._service_name, "server with pid", p.pid)
 
             sleep(2.0)
 
             if not self.is_running():
-                raise RuntimeError, "server failed to start"
+                raise RuntimeError("server failed to start")
         else:
-            print "xtestenv:", self._service_name, "server is already running"
+            print("xtestenv:", self._service_name, "server is already running")
 
     def stop(self):
         pid_file_path = self._get_pid_file_path()
@@ -119,8 +123,8 @@ class Server:
             else:
                 killed = False
                 for signo in (signal.SIGTERM, signal.SIGKILL):
-                    for try_i in xrange(self._start_stop_retries):
-                        print "xtestenv: stopping", self._service_name, "server with pid", pid, "with signal", str(signo) + ", try", try_i
+                    for try_i in range(self._start_stop_retries):
+                        print("xtestenv: stopping", self._service_name, "server with pid", pid, "with signal", str(signo) + ", try", try_i)
 
                         try: os.kill(pid, signo)
                         except: pass
@@ -135,7 +139,12 @@ class Server:
                         except OSError:
                             pass
 
-                        killed = not os.path.exists("/proc/" + str(pid))
+                        try:
+                            os.kill(int(pid), 0)
+                            killed = False
+                        except ProcessLookupError:
+                            killed = True
+
                         if killed:
                             break
 
@@ -145,10 +154,10 @@ class Server:
             if killed:
                 os.unlink(pid_file_path)
             else:
-                print "FAILED to stop", self._service_name, "server with pid", pid
+                print("FAILED to stop", self._service_name, "server with pid", pid)
 
         else:
-            print "xtestenv: no pid file for", self._service_name, "server found"
+            print("xtestenv: no pid file for", self._service_name, "server found")
 
 
 START_STOP_SERVICE_RETRIES = 3
@@ -207,7 +216,7 @@ if __name__ == "__main__":
                                        "etc/xos/xtreemfs/" + dir_string + "config.test")
         else:
             config_file = options.config_file_path
-        print "Starting DIR with config:", config_file
+        print("Starting DIR with config:", config_file)
         dir = Server(1,
                      config_file,
                      os.path.join(options.base_dir, "run", "xtreemfs_" + dir_string + ".pid"),
@@ -216,7 +225,7 @@ if __name__ == "__main__":
         dir.start(os.path.join(options.base_dir, "log", dir_string + ".log"))
 
     elif options.dir_stop:
-        print "Stopping DIR..."
+        print("Stopping DIR...")
         dir = Server(1,
                      '',
                      os.path.join(options.base_dir, "run", "xtreemfs_" + dir_string + ".pid"),
@@ -229,8 +238,8 @@ if __name__ == "__main__":
             config_file = os.path.join(xtreemfs_dir,
                                        "etc/xos/xtreemfs/" + mrc_string + "config.test")
         else:
-            config_file = options.config_file_path
-        print "Starting MRC with config:", config_file
+            cnfig_file = options.config_file_path
+        print("Starting MRC with config:", config_file)
         mrc = Server(1,
                      config_file,
                      os.path.join(options.base_dir, "run", "xtreemfs_" + mrc_string + ".pid"),
@@ -239,7 +248,7 @@ if __name__ == "__main__":
         mrc.start(os.path.join(options.base_dir, "log", mrc_string + ".log"))
 
     elif options.mrc_stop:
-        print "Stopping MRC..."
+        print("Stopping MRC...")
         mrc = Server(1,
                      '',
                      os.path.join(options.base_dir, "run", "xtreemfs_" + mrc_string + ".pid"),
@@ -253,7 +262,7 @@ if __name__ == "__main__":
                                        "etc/xos/xtreemfs/" + osd_string + "config.test")
         else:
             config_file = options.config_file_path
-        print "Starting OSD with config:", config_file
+        print("Starting OSD with config:", config_file)
         osd = Server(1,
                      config_file,
                      os.path.join(options.base_dir, "run", "xtreemfs_" + osd_string + ".pid"),
@@ -262,7 +271,7 @@ if __name__ == "__main__":
         osd.start(os.path.join(options.base_dir, "log", osd_string + ".log"))
 
     elif options.osd_stop:
-        print "Stopping OSD..."
+        print("Stopping OSD...")
         osd = Server(1,
                      '',
                      os.path.join(options.base_dir, "run", "xtreemfs_" + osd_string + ".pid"),

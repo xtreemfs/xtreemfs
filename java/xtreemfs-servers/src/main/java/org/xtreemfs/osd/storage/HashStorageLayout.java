@@ -722,7 +722,7 @@ public class HashStorageLayout extends StorageLayout {
 
             @Override
             public boolean accept(File pathname) {
-                if (!deleteMetadata && pathname.getName().startsWith(".")) {
+                if (!deleteMetadata && isMetadataFile(pathname)) {
                     return false;
                 }
 
@@ -744,6 +744,10 @@ public class HashStorageLayout extends StorageLayout {
         if (deleteMetadata) {
             del(fileDir);
         }
+    }
+
+    public boolean isMetadataFile(File pathname) {
+        return pathname.getName().startsWith(".");
     }
 
     private void del(File parent) {

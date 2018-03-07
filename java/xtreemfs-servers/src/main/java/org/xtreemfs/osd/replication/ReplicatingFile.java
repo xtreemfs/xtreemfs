@@ -211,6 +211,10 @@ class ReplicatingFile {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
                             "%s:%d - OBJECT FETCHED, but with wrong checksum", fileID, objectNo);
                 } else {
+                    // FIXME another possibility is that the file has no content,
+                    // FIXME which means that the object that has not been fetched simply does not exist.
+                    // a fix must probably deal with 2 issues:
+                    // return something to the client and notify the MRC that the replica is complete.
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                             "%s:%d - OBJECT COULD NOT BE FETCHED FROM A COMPLETE REPLICA; MUST BE A HOLE.",
