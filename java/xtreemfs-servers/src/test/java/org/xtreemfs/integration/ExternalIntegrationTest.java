@@ -5,7 +5,7 @@
  *
  */
 
-package org.xtreemfs.integrationtest;
+package org.xtreemfs.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
