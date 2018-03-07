@@ -27,8 +27,8 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Setattrs;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.XAttr;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.listxattrResponse;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * 

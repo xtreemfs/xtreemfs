@@ -19,8 +19,8 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.common.libxtreemfs.exceptions.UUIDIteratorListIsEmpyException;
 import org.xtreemfs.foundation.util.FSUtils;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 
 public class UUIDIteratorTest {

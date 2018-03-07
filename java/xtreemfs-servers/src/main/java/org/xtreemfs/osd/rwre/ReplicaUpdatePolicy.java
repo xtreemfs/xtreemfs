@@ -14,7 +14,7 @@ import java.util.List;
 import org.xtreemfs.common.ReplicaUpdatePolicies;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.foundation.buffer.ASCIIString;
-import org.xtreemfs.flease.Flease;
+import org.xtreemfs.foundation.flease.Flease;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader.ErrorResponse;
 import org.xtreemfs.osd.InternalObjectData;
 import org.xtreemfs.osd.rwre.RWReplicationStage.Operation;

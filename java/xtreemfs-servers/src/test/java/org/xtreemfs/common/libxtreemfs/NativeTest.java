@@ -26,9 +26,9 @@ import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.UserCredentials;
 import org.xtreemfs.foundation.util.FSUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.SYSTEM_V_FCNTL;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.Stat;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestEnvironment;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class NativeTest {
     @Rule

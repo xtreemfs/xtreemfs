@@ -41,9 +41,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.ObjectData;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSD.writeRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.OSDServiceClient;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestEnvironment;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class RPCCallerTest {
     @Rule

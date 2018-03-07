@@ -8,6 +8,7 @@
 
 package org.xtreemfs.dir.discovery;
 
+import com.google.protobuf.ByteString;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -23,7 +24,10 @@ import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.MessageType;
 import org.xtreemfs.foundation.pbrpc.generatedinterfaces.RPC.RPCHeader;
 import org.xtreemfs.foundation.pbrpc.utils.PBRPCDatagramPacket;
+import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferInputStream;
+import org.xtreemfs.foundation.pbrpc.utils.ReusableBufferOutputStream;
 import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyRequest;
+import org.xtreemfs.pbrpc.generatedinterfaces.Common.emptyResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.DirService;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
 

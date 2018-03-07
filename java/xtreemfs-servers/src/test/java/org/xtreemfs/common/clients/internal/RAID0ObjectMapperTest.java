@@ -19,8 +19,8 @@ import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 /**
  *

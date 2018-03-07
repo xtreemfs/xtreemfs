@@ -19,7 +19,7 @@ import org.junit.rules.TestRule;
 import org.xtreemfs.foundation.buffer.ReusableBuffer;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicy;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.StripingPolicyType;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.TestHelper;
 
 /**
  * Test against the bug from Issue 277 (erroneous calculation of object offsets for read requests). The test

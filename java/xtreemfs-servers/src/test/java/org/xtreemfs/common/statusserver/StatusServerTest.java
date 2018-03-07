@@ -13,8 +13,8 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;
 import org.xtreemfs.pbrpc.generatedinterfaces.GlobalTypes.PORTS;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestHelper;
 
 public class StatusServerTest {
     @Rule

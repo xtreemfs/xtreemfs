@@ -7,7 +7,10 @@
 
 package org.xtreemfs.osd;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +21,7 @@ import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.TimeSync;
 import org.xtreemfs.foundation.VersionManagement;
 import org.xtreemfs.foundation.buffer.BufferPool;
+import org.xtreemfs.foundation.logging.Logging;
 import org.xtreemfs.foundation.pbrpc.Schemes;
 import org.xtreemfs.foundation.util.OutputUtils;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.ServiceType;

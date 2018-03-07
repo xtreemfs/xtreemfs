@@ -57,9 +57,9 @@ import org.xtreemfs.pbrpc.generatedinterfaces.MRC.getattrResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.openResponse;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRC.statvfsRequest;
 import org.xtreemfs.pbrpc.generatedinterfaces.MRCServiceClient;
-import org.xtreemfs.SetupUtils;
-import org.xtreemfs.TestEnvironment;
-import org.xtreemfs.TestHelper;
+import org.xtreemfs.test.SetupUtils;
+import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.test.TestHelper;
 
 public class VolumeTest {
     @Rule
