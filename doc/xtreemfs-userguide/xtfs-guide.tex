@@ -96,6 +96,14 @@ Summary of important changes in release 1.6.0:
   \item \textbf{Bugfixes and improvements}\\
       Changes integrated into the unstable packages over time are now implemented
       in this stable version.
+  \item \textbf{Ronly data integrity, Bugfix}\\
+      Ronly replication: partially fixing issue 223
+      \begin{itemize}
+        \item Replica can only be deleted if another complete replica exists (previously, a full replica was sufficient)
+        \item Any replicating OSD now notifies the MRC when the replica is complete, causing the MRC to mark it as complete in the file meta data database
+        \item Data loss is still possible with striping
+      \end{itemize}
+
 \end{itemize}
 
 Summary of important changes in release 1.5.1:
