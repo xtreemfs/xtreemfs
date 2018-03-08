@@ -89,11 +89,19 @@ Client::Client(int32_t connect_timeout_s,
     }
 
     use_gridssl_ = options->use_grid_ssl();
+#if (BOOST_VERSION >= 106600)
+    ssl_context_ = new boost::asio::ssl::context(
+        //service_,
+        string_to_ssl_method(
+            options->ssl_method_string(),
+            boost::asio::ssl::context_base::sslv23_client));
+#else //BOOST_VERSION >= 106600
     ssl_context_ = new boost::asio::ssl::context(
         service_,
         string_to_ssl_method(
             options->ssl_method_string(),
             boost::asio::ssl::context_base::sslv23_client));
+#endif //BOOST_VERSION >= 106600
     ssl_context_->set_options(boost::asio::ssl::context::no_sslv2);
 #if (BOOST_VERSION > 104601)
     // Verify certificate callback can be conveniently specified from
