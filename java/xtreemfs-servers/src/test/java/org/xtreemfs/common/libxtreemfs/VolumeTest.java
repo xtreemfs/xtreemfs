@@ -950,11 +950,20 @@ public class VolumeTest {
         fileHandle.write(userCredentials, data, data.length, 0);
         fileHandle.close();
 
+        // writing to a replicated file causes background replication after file closure.
+        // give it some time.
+        Thread.sleep(100);
+
         // create replica and add it
         List<String> suitableOsds = volume.getSuitableOSDs(userCredentials, FILENAME, 2);
         Replica replica = Replica.newBuilder().setReplicationFlags(replicationFlags)
                 .setStripingPolicy(stripingPolicy).addAllOsdUuids(suitableOsds).build();
         volume.addReplica(userCredentials, FILENAME, replica);
+
+        // meta data is updated asynchronously on the MRC data base.
+        // give it some time.
+
+        Thread.sleep(100);
 
         List<StripeLocation> stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 4000);
         assertEquals(2, stripeLocations.size());
