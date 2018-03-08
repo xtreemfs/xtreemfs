@@ -337,10 +337,11 @@ public class ScrubberTest {
 
         // re-open file to trigger replication
         file.close();
-        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
         // wait for replication
-        Thread.sleep(5000);
+        Thread.sleep(500);
+
+        file = volume.openFile(userCredentials, FILE_NAME, SYSTEM_V_FCNTL.SYSTEM_V_FCNTL_H_O_RDONLY.getNumber());
 
         // modify first Object of the second replica on OSD
         File objFile = openObjectFile(file, 1, 0);
@@ -354,7 +355,6 @@ public class ScrubberTest {
         scrubber.scrub();
         
         //object file should be as long as the originally written content
-        Thread.sleep(5000);
         objFile = openObjectFile(file, 1, 0);
         assertEquals(contentSize, objFile.length());
         
