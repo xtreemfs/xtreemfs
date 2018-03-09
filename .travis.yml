@@ -10,7 +10,7 @@ env:
     - MAKEFLAGS="-j 2"
   matrix:
     # test suites to run in parallel
-    - TEST_SUITE=travis-junit-common
+    - TEST_SUITE=travis-junit-common-utils
     - TEST_SUITE=travis-junit-dir
     - TEST_SUITE=travis-junit-foundation
     - TEST_SUITE=travis-junit-integration
@@ -46,7 +46,7 @@ script: |
   if [[ $TEST_SUITE = "travis-deploy" ]]; then
     true
   else
-    if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common" ]] || [[ $TEST_SUITE = "travis-junit-osd" ]]; then
+    if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common-utils" ]] || [[ $TEST_SUITE = "travis-junit-osd" ]]; then
       make server
       travis_wait 30 make client_debug
     elif [[ $TEST_SUITE = "travis-junit"* ]]; then
