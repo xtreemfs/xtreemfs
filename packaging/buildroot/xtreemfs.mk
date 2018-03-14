@@ -14,8 +14,8 @@ endef
 
 define XTREEMFS_BUILD_CMDS
 # google-protobuf always tries to run its unit tests with a given 'protoc'. Make sure that these tests always pass by setting the 'protoc' path to '/bin/true'.
-	(cd $(@D)/cpp/thirdparty/protobuf-2.5.0 && $(TARGET_MAKE_ENV) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD) -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" ./configure --host=$(BR2_ARCH)"-unknown-linux-gnu" --with-protoc=/bin/true)
-	$(TARGET_MAKE_ENV) make -C $(@D)/cpp/thirdparty/protobuf-2.5.0
+	(cd $(@D)/cpp/thirdparty/protobuf-2.6.1 && $(TARGET_MAKE_ENV) CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD) -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" ./configure --host=$(BR2_ARCH)"-unknown-linux-gnu" --with-protoc=/bin/true)
+	$(TARGET_MAKE_ENV) make -C $(@D)/cpp/thirdparty/protobuf-2.6.1
 	(cd $(@D) && CC="$(TARGET_CC)" CXX="$(TARGET_CXX)" LD="$(TARGET_LD) -L$(STAGING_DIR)/lib -L$(STAGING_DIR)/usr/lib" CMAKE_LIBRARY_PATH="$(STAGING_DIR)/lib $(STAGING_DIR)/usr/lib $(STAGING_DIR)/lib64 $(STAGING_DIR)/usr/lib64" cmake -DCMAKE_TOOLCHAIN_FILE="$(TARGET_DIR)/../host/usr/share/buildroot/toolchainfile.cmake"  -DOPENSSL_INCLUDE_DIR:PATH=$(STAGING_DIR)/usr/include -DSKIP_FUSE=true -Hcpp -B$(@D)/cpp/build --check-build-system CMakeFiles/Makefile.cmake 0  -DBOOST_ROOT=$(STAGING_DIR)/usr)
 	$(TARGET_MAKE_ENV) make -C $(@D)/cpp/build
 	cp -p $(@D)/cpp/build/*.xtreemfs $(@D)/bin

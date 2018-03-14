@@ -103,6 +103,9 @@ Summary of important changes in release 1.6.0:
         \item Any replicating OSD now notifies the MRC when the replica is complete, causing the MRC to mark it as complete in the file meta data database
         \item Data loss is still possible with striping
       \end{itemize}
+  \item \textbf{Update to Protobuf 2.6.1}\\
+      Updating Protobuf for internal communication to version 2.6.1 enables
+      support for Arm platforms.
 
 \end{itemize}
 
@@ -3193,7 +3196,7 @@ This section will help you to set up a simple Hadoop configuration with all nece
 \begin{itemize}
 \item XtreemFS (\href{http://xtreemfs.org/download.php?t=source}{www.XtreemFS.org})
 \item xtreemfs-hadoop-client.jar (Download it from \href{http://www.xtreemfs.org/downloads/xtreemfs-hadoop-client.jar}{www.XtreemFS.org} or build it by yourself by executing make hadoop-client)
-\item Hadoop (2.2.x or 2.3+ are compatible. Versions 0.23.x, 2.0.x a,d 2.1.x use another version of Google's Protobuf (2.4.0a), however XtreemFS uses 2.5.0 which is incompatible, so rebuilding XtreemFS with version 2.4.0a is required. Versions 0.22 and earlier, as well as 1.x do not use Google's Protobuf, and are compatible as well.) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item Hadoop (2.2.x or 2.3+ are compatible. Versions 0.23.x, 2.0.x a,d 2.1.x use another version of Google's Protobuf (2.4.0a), however XtreemFS uses 2.6.1 which is incompatible, so rebuilding XtreemFS with version 2.4.0a is required. Versions 0.22 and earlier, as well as 1.x do not use Google's Protobuf, and are compatible as well.) (\href{http://hadoop.apache.org}{hadoop.apache.org})
 \item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
 \end{itemize}
 
