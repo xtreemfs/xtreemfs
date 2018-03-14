@@ -219,3 +219,4 @@ src/libprotoc.la
 src/protoc
 src/unittest_proto_middleman
 stamp-h1
+autom4te.cache/
