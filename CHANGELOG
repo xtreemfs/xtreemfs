@@ -23,6 +23,7 @@
       * Replica can only be deleted if another complete replica exists (previously, a full replica was sufficient)
       * Any replicating OSD now notifies the MRC when the replica is complete, causing the MRC to mark it as complete in the file meta data database
       * Data loss is still possible with striping
+    * Update to Protobuf 2.6.1 to enable Arm compatibility
 
 12-MAR-2015: release 1.5.1
 
