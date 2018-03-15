@@ -245,7 +245,7 @@ client_thirdparty: $(CLIENT_THIRDPARTY_REQUIREMENTS)
 
 $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY): $(CLIENT_GOOGLE_PROTOBUF_CPP)/src/**
 	@echo "client_thirdparty: Configuring and building required Google protobuf library..."
-	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure --with-pic $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
+	@cd $(CLIENT_GOOGLE_PROTOBUF_CPP) && LIBS=-lpthread ./configure --disable-maintainer-mode --with-pic $(PROTOBUF_DISABLE_64_BIT_SOLARIS) >/dev/null
 	@$(MAKE) -C $(CLIENT_GOOGLE_PROTOBUF_CPP) >/dev/null
 	@echo "client_thirdparty: ...completed building required Google protobuf library."
 	@touch $(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY)
