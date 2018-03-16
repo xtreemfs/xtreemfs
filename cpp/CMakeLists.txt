@@ -35,7 +35,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 endif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
 
 # Set paths for required thirdparty libraries.
-set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.5.0")
+set(CLIENT_GOOGLE_PROTOBUF_CPP "${CMAKE_SOURCE_DIR}/thirdparty/protobuf-2.6.1")
 if (WIN32)
   set(CLIENT_GOOGLE_PROTOBUF_CPP_LIBRARY "${CLIENT_GOOGLE_PROTOBUF_CPP}/vsprojects/Release/libprotobuf.lib")
 else()
