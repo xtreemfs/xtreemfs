@@ -4,8 +4,9 @@
   <artifactId>xtreemfs-pbrpcgen</artifactId>
   <versioning>
     <versions>
+      <version>1.5.1-SNAPSHOT</version>
       <version>1.6.0-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20170816142737</lastUpdated>
+    <lastUpdated>20180319111310</lastUpdated>
   </versioning>
 </metadata>
