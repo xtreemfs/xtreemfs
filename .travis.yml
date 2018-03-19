@@ -12,7 +12,10 @@ env:
     - BUILD_CLIENT_TESTS=true
 
 before_install:
-  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+  - echo -n | openssl s_client -connect scan.coverity.com:443 2>./openssl-connect.stderr | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
+  - echo "OpenSSL connect stderr:"
+  - cat ./openssl-connect.stderr
+  - rm ./openssl-connect.stderr
 
 addons:
   apt:
