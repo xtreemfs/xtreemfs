@@ -1,0 +1,182 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.xtreemfs.xtreemfs</groupId>
+  <artifactId>xtreemfs-parent</artifactId>
+  <version>1.6.0-SNAPSHOT</version>
+
+  <name>xtreemfs</name>
+  <packaging>pom</packaging>
+  <url>http://xtreemfs.org</url>
+  <inceptionYear>2006</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>The New BSD License</name>
+      <url>https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/LICENSE</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/xtreemfs/xtreemfs</url>
+    <connection>git@github.com:xtreemfs/xtreemfs.git</connection>
+    <developerConnection>scm:git:https://github.com/xtreemfs/xtreemfs.git</developerConnection>
+  </scm>
+
+  <modules>
+    <module>xtreemfs-pbrpcgen</module>
+    <module>xtreemfs-foundation</module>
+    <module>xtreemfs-flease</module>
+    <module>xtreemfs-servers</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.source.version>1.6</java.source.version>
+    <java.target.version>1.6</java.target.version>
+
+    <!-- Relative to 1st level childrens' basedirs -->
+    <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
+
+    <!-- Compile dependencies -->
+    <babudb.version>0.5.6</babudb.version>
+    <commons-codec.version>1.3</commons-codec.version>
+    <opendmk.version>1.0-b02-SNAPSHOT</opendmk.version>
+    <protobuf-java.version>2.6.1</protobuf-java.version>
+
+    <!-- Test dependencies -->
+    <junit.version>4.12</junit.version>
+
+    <!-- Plugin configurations -->
+    <exec-maven-plugin.version>1.5.0</exec-maven-plugin.version>
+    <github.global.server>github</github.global.server>
+    <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+    <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
+    <maven-surefire-plugin.version>2.20.1</maven-surefire-plugin.version>
+
+    <!-- Relative to 1st level childrens basedirs -->
+    <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src/protoc</protoc.bin>
+    <protoc.include>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/src</protoc.include>
+
+    <site-maven-plugin.version>0.12</site-maven-plugin.version>
+  </properties>
+
+  <!-- Provide alternative protoc location if on Windows -->
+  <profiles>
+    <profile>
+      <id>win</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
+      <properties>
+        <protoc.bin>${project.basedir}/../../cpp/thirdparty/protobuf-${protobuf-java.version}/vsprojects/Release/protoc</protoc.bin>
+      </properties>
+    </profile>
+  </profiles>
+
+  <distributionManagement>
+    <repository>
+      <id>xtreemfs-repository</id>
+      <url>file://${project.build.directory}/xtreemfs-repository</url>
+    </repository>
+  </distributionManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>${exec-maven-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>${maven-shade-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
+        <configuration>
+          <source>${java.source.version}</source>
+          <target>${java.target.version}</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <altDeploymentRepository>xtreemfs-repository::default::file://${project.build.directory}/xtreemfs-repository/maven</altDeploymentRepository>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Xms1024m -Xmx2048m -Djava.library.path=${libjni.directory}</argLine>
+          <reuseForks>false</reuseForks>
+          <forkCount>1</forkCount>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>${site-maven-plugin.version}</version>
+        <configuration>
+          <message>Maven artifacts for ${project.name}/${project.version}</message>
+          <noJekyll>true</noJekyll>
+          <outputDirectory>${project.build.directory}/xtreemfs-repository</outputDirectory>
+          <repositoryName>xtreemfs</repositoryName>
+          <repositoryOwner>xtreemfs</repositoryOwner>
+          <merge>true</merge>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>site</goal>
+            </goals>
+            <phase>deploy</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
