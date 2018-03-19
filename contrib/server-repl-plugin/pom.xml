@@ -11,7 +11,7 @@
     <java.source.version>1.6</java.source.version>
     <java.target.version>1.6</java.target.version>
 
-    <babudb-replication.version>0.5.6</babudb-replication.version>
+    <babudb-replication.version>0.6.0</babudb-replication.version>
 
     <!-- Plugin configurations. -->
     <maven-antrun-plugin.version>1.8</maven-antrun-plugin.version>
