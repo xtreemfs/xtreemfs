@@ -26,13 +26,13 @@ class makextreemfsTest(unittest.TestCase):
         if self.direct_io:
             print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
         else:
-            retcode = subprocess.call( "wget https://github.com/xtreemfs/xtreemfs/archive/unstable.tar.gz >/dev/null", shell=True )
+            retcode = subprocess.call( "wget https://github.com/xtreemfs/xtreemfs/archive/master.zip >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "tar xvzf unstable.tar.gz >/dev/null", shell=True )
+            retcode = subprocess.call( "unzip master.zip >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
 
-            retcode = subprocess.call( "cd xtreemfs-unstable && make >/dev/null", shell=True )
+            retcode = subprocess.call( "cd xtreemfs-master && make >/dev/null", shell=True )
             self.assertEqual( retcode, 0 )
 
 

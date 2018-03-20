@@ -169,11 +169,7 @@ for VERSION in $HADOOP_VERSIONS; do
    #prepare input
    mkdir input
 
-   wget -nv -O testWithBom.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt
-
-   # remove the UTF BOM because it confuses Hadoop prior to 2.5.0
-   tail --bytes=+4 testWithBom.txt > test.txt
-   rm testWithBom.txt
+   wget -nv -O test.txt https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/doc/xtreemfs-userguide/xtfs-guide.tex
 
    #test hadoop fs shell
    if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop2_test | grep test.txt)" ]

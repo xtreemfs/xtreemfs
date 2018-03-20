@@ -139,7 +139,7 @@ for VERSION in $HADOOP_VERSIONS; do
    #prepare input
    mkdir input
 
-   wget -nv -O test.txt http://www.gutenberg.org/cache/epub/1661/pg1661.txt
+   wget -nv -O test.txt https://raw.githubusercontent.com/xtreemfs/xtreemfs/master/doc/xtreemfs-userguide/xtfs-guide.tex
 
    #test hadoop fs shell
    if [ -z "$($HADOOP_PREFIX/bin/hadoop fs -ls /hadoop_test | grep test.txt)" ]
