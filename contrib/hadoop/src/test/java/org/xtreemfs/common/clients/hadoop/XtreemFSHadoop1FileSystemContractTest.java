@@ -6,6 +6,8 @@
  */
 package org.xtreemfs.common.clients.hadoop;
 
+import java.net.URL;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Hadoop1FileSystemContractBaseTest;
@@ -40,8 +42,13 @@ public final class XtreemFSHadoop1FileSystemContractTest extends Hadoop1FileSyst
         this.dirPath = new Path("xtreemfs://localhost:32638");
         this.mrcPath = new Path("xtreemfs://localhost:32636");
 
-        Configuration.addDefaultResource(XtreemFSHadoop1FileSystemContractTest.class
-                .getClassLoader().getResource("core-site.xml").getPath());
+        URL coreSiteUrl = XtreemFSHadoop1FileSystemContractTest.class.getClassLoader()
+                .getResource("core-site.xml");
+        if (coreSiteUrl == null) {
+            throw new RuntimeException("core-site.xml not found on classpath");
+        }
+
+        Configuration.addDefaultResource(coreSiteUrl.getPath());
         conf = new Configuration();
 
         userCredentials = UserCredentials.newBuilder().setUsername("test")
