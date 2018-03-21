@@ -1,40 +1,39 @@
-# As of today (20/11/2014), the certificates expire on 31/12/2099.
+# As of today (21/03/2018), the certificates expire on 31/12/2099.
 
 # Root CA, self signed
-openssl req -new -newkey rsa:1024 -nodes -out CA_Root.req -keyout CA_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA"
-openssl x509 -trustout -signkey CA_Root.key -days 31087 -req -in CA_Root.req -out CA_Root.pem
+openssl req -new -newkey rsa:1024 -nodes -out CA_Root.pem -keyout CA_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Root CA" -x509 -days 29870
 echo "02" > CA_Root.srl
 
 # Intermediate CA, signed by root
 openssl req -new -newkey rsa:1024 -nodes -out CA_Intermediate.req -keyout CA_Intermediate.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Intermediate CA"
-openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in CA_Intermediate.req -out CA_Intermediate.pem -days 31087
+openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in CA_Intermediate.req -out CA_Intermediate.pem -days 29870 -extensions v3_ca -extfile /etc/ssl/openssl.cnf
 echo "42" > CA_Intermediate.srl
 
 # Leaf CA, signed by intermediate
 openssl req -new -newkey rsa:1024 -nodes -out CA_Leaf.req -keyout CA_Leaf.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Leaf CA"
-openssl x509 -CA CA_Intermediate.pem -CAkey CA_Intermediate.key -CAserial CA_Intermediate.srl -req -in CA_Leaf.req -out CA_Leaf.pem -days 31087
+openssl x509 -CA CA_Intermediate.pem -CAkey CA_Intermediate.key -CAserial CA_Intermediate.srl -req -in CA_Leaf.req -out CA_Leaf.pem -days 29870 -extensions v3_ca -extfile /etc/ssl/openssl.cnf
 echo "82" > CA_Leaf.srl
 
 # Sign each service twice, once with the root CA and once with the leaf CA
 openssl req -new -newkey rsa:1024 -nodes -out DIR_Root.req -keyout DIR_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Root)"
-openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in DIR_Root.req -out DIR_Root.pem -days 31087
+openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in DIR_Root.req -out DIR_Root.pem -days 29870
 openssl req -new -newkey rsa:1024 -nodes -out DIR_Leaf.req -keyout DIR_Leaf.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=DIR (Leaf)"
-openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in DIR_Leaf.req -out DIR_Leaf.pem -days 31087
+openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in DIR_Leaf.req -out DIR_Leaf.pem -days 29870
 
 openssl req -new -newkey rsa:1024 -nodes -out MRC_Root.req -keyout MRC_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Root)"
-openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in MRC_Root.req -out MRC_Root.pem -days 31087
+openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in MRC_Root.req -out MRC_Root.pem -days 29870
 openssl req -new -newkey rsa:1024 -nodes -out MRC_Leaf.req -keyout MRC_Leaf.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=MRC (Leaf)"
-openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in MRC_Leaf.req -out MRC_Leaf.pem -days 31087
+openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in MRC_Leaf.req -out MRC_Leaf.pem -days 29870
 
 openssl req -new -newkey rsa:1024 -nodes -out OSD_Root.req -keyout OSD_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=OSD (Root)"
-openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in OSD_Root.req -out OSD_Root.pem -days 31087
+openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in OSD_Root.req -out OSD_Root.pem -days 29870
 openssl req -new -newkey rsa:1024 -nodes -out OSD_Leaf.req -keyout OSD_Leaf.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=OSD (Leaf)"
-openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in OSD_Leaf.req -out OSD_Leaf.pem -days 31087
+openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in OSD_Leaf.req -out OSD_Leaf.pem -days 29870
 
 openssl req -new -newkey rsa:1024 -nodes -out Client_Root.req -keyout Client_Root.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Client (Root)"
-openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in Client_Root.req -out Client_Root.pem -days 31087
+openssl x509 -CA CA_Root.pem -CAkey CA_Root.key -CAserial CA_Root.srl -req -in Client_Root.req -out Client_Root.pem -days 29870
 openssl req -new -newkey rsa:1024 -nodes -out Client_Leaf.req -keyout Client_Leaf.key -subj "/C=DE/ST=Berlin/L=Berlin/O=ZIB/CN=Client (Leaf)"
-openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in Client_Leaf.req -out Client_Leaf.pem -days 31087
+openssl x509 -CA CA_Leaf.pem -CAkey CA_Leaf.key -CAserial CA_Leaf.srl -req -in Client_Leaf.req -out Client_Leaf.pem -days 29870
 
 # PCKS#12 export
 openssl pkcs12 -export -in DIR_Root.pem -inkey DIR_Root.key -out DIR_Root.p12 -name "DIR (Root signed)" -passout "pass:dir_root"
