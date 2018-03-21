@@ -140,6 +140,7 @@ public class TracingTest {
         }
 
         assertTrue(lines >= MAX_WRITES);
+        br.close();
     }
 
     @Test
