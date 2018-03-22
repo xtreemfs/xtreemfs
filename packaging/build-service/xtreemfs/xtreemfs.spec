@@ -28,6 +28,11 @@ BuildRequires:  pwdutils >= 3
 Requires(post): %insserv_prereq  %fillup_prereq
 %endif
 
+# openSUSE Tumbleweed
+%if 0%{?suse_version} > 1500
+BuildRequires: libboost_system-devel >= 1.35 libboost_thread-devel >= 1.35 libboost_program_options-devel >= 1.35 libboost_regex-devel >= 1.35
+%endif
+
 # Mandriva >=2008
 %if 0%{?mandriva_version} >= 2007
 Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
