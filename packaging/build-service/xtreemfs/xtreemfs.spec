@@ -28,8 +28,8 @@ BuildRequires:  pwdutils >= 3
 Requires(post): %insserv_prereq  %fillup_prereq
 %endif
 
-# openSUSE Tumbleweed
-%if 0%{?suse_version} > 1500
+# openSUSE Tumbleweed, and Leap 15.0 / SLE 15
+%if 0%{?suse_version} > 1500 || 0%{?sle_version} >= 150000
 BuildRequires: libboost_system-devel >= 1.35 libboost_thread-devel >= 1.35 libboost_program_options-devel >= 1.35 libboost_regex-devel >= 1.35
 %endif
 
