@@ -71,6 +71,10 @@ inline bool is_packable(WireFormatLite::WireType type) {
     // Do not add a default statement. Let the compiler complain when someone
     // adds a new wire type.
   }
+
+  // Default return value despite Google's comment above, because otherwise
+  // some compilers on the openSUSE Build Service will complain.
+  return false;
 }
 
 // Registry stuff.
