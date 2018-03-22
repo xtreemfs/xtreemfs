@@ -190,7 +190,6 @@ purge: uninstall
 
 check_server:
 	@if [ ! -e $(JAVAC_BIN) ]; then echo "javac not found! Make sure a JDK is installed and set JAVA_HOME."; exit 1; fi;
-	@if [ $(shell $(JAVAC_BIN) -version 2>&1 | head -n1 | cut -d" " -f2 | cut -d. -f2) -lt 6 ]; then echo "java version >= 1.6.0 required!"; exit 1; fi;
 	@echo "java ok"
 
 	@if [ ! -e $(MVN_BIN) ]; then echo "mvn not found! Make sure mvn is installed and set MAVEN_HOME."; exit 1; fi;
