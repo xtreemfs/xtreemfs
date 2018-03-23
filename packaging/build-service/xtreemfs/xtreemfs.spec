@@ -28,8 +28,8 @@ BuildRequires:  pwdutils >= 3
 Requires(post): %insserv_prereq  %fillup_prereq
 %endif
 
-# openSUSE Tumbleweed
-%if 0%{?suse_version} > 1500
+# openSUSE Tumbleweed, and Leap 15.0 / SLE 15
+%if 0%{?suse_version} > 1500 || 0%{?sle_version} >= 150000
 BuildRequires: libboost_system-devel >= 1.35 libboost_thread-devel >= 1.35 libboost_program_options-devel >= 1.35 libboost_regex-devel >= 1.35
 %endif
 
@@ -52,7 +52,6 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 %package client
 Summary:        XtreemFS client
 Group:          System/Filesystems
-#Requires:       %{name} == %{version}-%{release}
 Requires:       fuse >= 2.6
 Requires:       attr >= 2
 Provides:       XtreemFS-client = %{version}
@@ -66,7 +65,6 @@ This package contains the XtreemFS client module.
 %package backend
 Summary:        XtreemFS backend modules and libraries
 Group:          System/Filesystems
-#Requires:       %{name} == %{version}-%{release}
 Requires:       jre >= 1.6.0
 
 %description backend
