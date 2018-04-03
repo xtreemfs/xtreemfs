@@ -353,6 +353,9 @@ public class ScrubberTest {
         // scrub volume
         xtfs_scrub scrubber = new xtfs_scrub(client, volume, 3, true, true, true);
         scrubber.scrub();
+
+        // srubber finishes before actual data has been fully written
+        Thread.sleep(5000);
         
         //object file should be as long as the originally written content
         objFile = openObjectFile(file, 1, 0);
