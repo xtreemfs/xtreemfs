@@ -882,6 +882,12 @@ public class VolumeTest {
         }
         fileHandle.write(userCredentials, data, data.length, 0);
         fileHandle.close();
+
+        // default replication factor of 2 with ronly replication policy implies
+        // background replication after file has been closed.
+        // wait some time so that it can complete.
+        Thread.sleep(100);
+
         List<StripeLocation> stripeLocations = volume.getStripeLocations(userCredentials, FILENAME, 0, 100);
         assertEquals(1, stripeLocations.size());
         assertEquals(2, stripeLocations.get(0).getUuids().length);
@@ -952,7 +958,7 @@ public class VolumeTest {
 
         // writing to a replicated file causes background replication after file closure.
         // give it some time.
-        Thread.sleep(100);
+        Thread.sleep(200);
 
         // create replica and add it
         List<String> suitableOsds = volume.getSuitableOSDs(userCredentials, FILENAME, 2);
