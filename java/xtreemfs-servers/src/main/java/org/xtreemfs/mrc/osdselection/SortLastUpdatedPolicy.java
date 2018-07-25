@@ -2,8 +2,11 @@ package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
+import org.xtreemfs.common.KeyValuePairs;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.logging.Logging;
