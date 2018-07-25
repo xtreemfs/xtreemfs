@@ -2522,7 +2522,8 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
-  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
+ \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
+ \item[\texttt{lastupdated}] Selects OSDs based on the time that has passed since their last update at the DIR.
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
