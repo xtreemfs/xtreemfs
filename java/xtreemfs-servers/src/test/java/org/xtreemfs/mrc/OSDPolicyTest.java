@@ -604,7 +604,7 @@ public class OSDPolicyTest {
     @Test
     public void testSortLastUpdatedPolicy() throws Exception {
 
-        SortLastUpatedPolicy policy = new SortLastUpdatedPolicy();
+        SortLastUpdatedPolicy policy = new SortLastUpdatedPolicy();
 
         ServiceDataMap.Builder sdm1 = ServiceDataMap.newBuilder();
         sdm1.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("5"));
