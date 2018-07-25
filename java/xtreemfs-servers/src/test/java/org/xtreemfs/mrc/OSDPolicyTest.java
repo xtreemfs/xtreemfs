@@ -40,6 +40,7 @@ import org.xtreemfs.mrc.osdselection.Inet4AddressMatcher;
 import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.SortHostRoundRobinPolicy;
+import org.xtreemfs.mrc.osdselection.SortLastUpdatedPolicy;
 import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.pbrpc.generatedinterfaces.DIR.Service;
@@ -598,6 +599,47 @@ public class OSDPolicyTest {
             String host2 = new ServiceUUID(sortedList.getServices(i + 1).getUuid()).getAddress().getHostName();
             assertNotSame(host1, host2);
         }
+    }
+
+    @Test
+    public void testSortLastUpdatedPolicy() throws Exception {
+
+        SortLastUpatedPolicy policy = new SortLastUpdatedPolicy();
+
+        ServiceDataMap.Builder sdm1 = ServiceDataMap.newBuilder();
+        sdm1.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("5"));
+
+        ServiceDataMap.Builder sdm2 = ServiceDataMap.newBuilder();
+        sdm2.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("5"));
+
+        ServiceDataMap.Builder sdm3 = ServiceDataMap.newBuilder();
+        sdm3.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("2"));
+
+        ServiceDataMap.Builder sdm4 = ServiceDataMap.newBuilder();
+        sdm4.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("1"));
+
+        ServiceDataMap.Builder sdm5 = ServiceDataMap.newBuilder();
+        sdm5.addData(KeyValuePair.newBuilder().setKey("seconds_since_last_update").setValue("3"));
+
+        ServiceSet.Builder servicesBuilder = ServiceSet.newBuilder();
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd1").setVersion(1).setUuid("osd1").setData(sdm1));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd2").setVersion(1).setUuid("osd2").setData(sdm2));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd3").setVersion(1).setUuid("osd3").setData(sdm3));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd4").setVersion(1).setUuid("osd4").setData(sdm4));
+        servicesBuilder.addServices(Service.newBuilder().setType(ServiceType.SERVICE_TYPE_OSD)
+                .setLastUpdatedS(0).setName("osd5").setVersion(1).setUuid("osd5").setData(sdm5));
+        ServiceSet services = servicesBuilder.build();
+
+        ServiceSet.Builder sortedOSDs = policy.getOSDs(services.toBuilder());
+        assertEquals("osd4", sortedOSDs.getServices(0).getUuid());
+        assertEquals("osd3", sortedOSDs.getServices(1).getUuid());
+        assertEquals("osd5", sortedOSDs.getServices(2).getUuid());
+        assertEquals("osd1", sortedOSDs.getServices(3).getUuid());
+        assertEquals("osd2", sortedOSDs.getServices(4).getUuid());
     }
 
     @Test
