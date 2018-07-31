@@ -70,8 +70,11 @@ Summary of important changes in release 1.6.0:
       service startup if the port is not free yet.
   \item \textbf{New tracing policy}\\
       Tracing data can be sent to RabbitMQ (ID 6003), queue "xtreemfs-trace".
-  \item \textbf{New OSD selection policy}\\
-      It is no possible to specify a preferred OSD via a UUID (ID 1003).
+  \item \textbf{New OSD selection policies}
+      \begin{itemize}
+       \item It is now possible to specify a preferred OSD via a UUID (PreferredUUIDPolicy, ID 1003).
+       \item It is now possible to specify an OSD for all files matching a given file path prefix (FileNamePrefixPolicy, ID 1004).
+      \end{itemize}      
   \item \textbf{More flexible X509 Authentication}\\
       User and group can now be mapped a certificate's distinguished name elements.
   \item \textbf{Mac OS X installer}\\
@@ -2522,7 +2525,8 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
-  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
+ \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
+ \item[\texttt{prefix}] Selects OSDs based on a user specified OSD for file path prefixes. A new file which matches a specified prefix is assigned to the corresponding OSD. 
 \end{description}
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
