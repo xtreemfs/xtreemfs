@@ -29,7 +29,7 @@ using namespace xtreemfs::pbrpc;
 
 class UserMappingGridmapUnicoreTestGeneral : public ::testing::Test {
  protected:
-  static const int kWaittimeForReload = 2;
+  static const int kWaittimeForReload;
 
   virtual string GetGridmapFileContent() = 0;
 
@@ -70,6 +70,8 @@ class UserMappingGridmapUnicoreTestGeneral : public ::testing::Test {
 
   boost::scoped_ptr<UserMapping> user_mapping_;
 };
+
+const int UserMappingGridmapUnicoreTestGeneral::kWaittimeForReload = 2;
 
 class UserMappingGridmapUnicore6Test
     : public UserMappingGridmapUnicoreTestGeneral {
