@@ -2518,17 +2518,34 @@ Similar to replica selection policies, OSD selection policies are set and retrie
  $> xtfsutil --set-osp dcmap /xtreemfs
 \end{verbatim}
 
-sets a data center map-based OSD selection policy, which is invoked each time a new file or replica is created. The following predefined policies exist (see Sec.\ \ref{sec:osd_policies} and \texttt{man xtfsutil} for details):
+sets a data center map-based OSD selection policy, which is invoked each time a new file or replica is created. 
+The following predefined OSD selection policies (OSPs) exist.
+The default policy is \emph{always} applied, i.e., all other OSD selection policies are combined with the default policy.
 
 \begin{description}
  \item[\texttt{default}] The default OSD selection policy selects a random subset of OSDs that are responsive and have more than 2GB of free disk space.
  \item[\texttt{fqdn}] Selects OSDs based on the size of the post-fix match of the fully qualified domain names and on the free space.
+ \item[\texttt{uuid}] OSD selection is restricted to a set of allowed OSD UUIDs. All other OSDs are not considered for OSD selection.
  \item[\texttt{dcmap}] Selects OSDs based on the distance defined in the datacenter map and on the free space.
  \item[\texttt{vivaldi}] Selects OSDs based on the distance of the Vivaldi coordinates between client and OSD and on the free space.
  \item[\texttt{roundrobin}] Selects OSDs based on a round robin manner regarding the host name of the OSDs.
  \item[\texttt{lastupdated}] Selects OSDs based on the time that has passed since their last update at the DIR.
+ \item[\texttt{preferred}] Allows to set a preferred OSD UUID; this OSD is always the first entry in the list of selectable OSDs.
  \item[\texttt{prefix}] Selects OSDs based on a user specified OSD for file path prefixes. A new file which matches a specified prefix is assigned to the corresponding OSD. 
 \end{description}
+
+The following predefined replica selection policies (RSPs) exist:
+
+\begin{description}
+ \item[\texttt{default}] The default RSP selection policy returns the replicas in the order in which they have been created.
+ \item[\texttt{fqdn}] Sorts replicas based on the size of the post-fix match of the fully qualified domain names.
+ \item[\texttt{dcmap}] Sorts replicas based on the distance defined in the datacenter map.
+ \item[\texttt{vivaldi}] Sorts replicas based on the distance of the Vivaldi coordinates between client and OSD.
+ \item[\texttt{roundrobin}] Sorts OSDs based on a round robin manner regarding the host name of the OSDs.
+ \item[\texttt{lastupdated}] Sorts OSDs based on the time that has passed since their last update at the DIR.
+\end{description}
+
+See Sec.\ \ref{sec:osd_policies} and \texttt{man xtfsutil} for more details.
 
 In addition, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
 
@@ -2930,7 +2947,7 @@ When a new file is created or a replica is automatically added to a file, the MR
 
 Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Initially, a client will always attempt to access the first replica in the list received from the MRC. If a replica is not available, it will automatically attempt to access the next replica from the list, and restart with the first replica if all attempts have failed. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients first try to access replicas that are close to them.
 
-Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the list of the current replica locations of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
+Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. But note that for replica selection, only filtering policies are available, while OSD selection may use arbitrary policies. Input parameters of a basic policy are a set of OSDs, the list of the current replica locations of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
 
 OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
 
@@ -2941,7 +2958,7 @@ The behavior of basic policies can be further refined by means of policy attribu
 \subsection{Predefined Policies}
 \label{sec:predefinedPolicies}
 
-Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sub-list from a list of OSDs. The sub-list only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs.
+Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sub-list from a list of OSDs. The sub-list only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs. For OSD selection of new files or replicas, all policies are available. For replica selection, only the sorting policies are available.
 
 The following predefined policies exist:
 
