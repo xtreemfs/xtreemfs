@@ -11,6 +11,7 @@
     * Added 'listen.port.bind_retries' server option that implements exponential backoff during service startup if the port is not free yet.
     * Added RabbitMQ OSD tracing policy (ID 6003).
     * Added Preferred UUID OSD selection policy (ID 1003).
+    * Added Last Updated OSD Sort Policy (ID 3005).
     * Extended X509 authentication to allow user and group mapping.
     * Slimmed down and updated Mac OS X installer with stricter dependency checking and SIP awareness.
     * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.

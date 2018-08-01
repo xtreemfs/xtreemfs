@@ -79,6 +79,9 @@ enum OSDSelectionPolicyType {
     // Sorts the OSDs in a round robin manner for
     // multiple OSDs per host.
     OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN = 3004;
+    // Sorts the OSDs based on their last updated
+    // time stamp.
+    OSD_SELECTION_POLICY_SORT_LAST_UPDATED = 3005;
     // Sortes the OSDs by their UUID.
     OSD_SELECTION_POLICY_SORT_UUID = 3998;
     // Reverse given list. Used only internally by unit tests.
