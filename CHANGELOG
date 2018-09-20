@@ -11,11 +11,13 @@
     * Added 'listen.port.bind_retries' server option that implements exponential backoff during service startup if the port is not free yet.
     * Added RabbitMQ OSD tracing policy (ID 6003).
     * Added Preferred UUID OSD selection policy (ID 1003).
+    * Added Last Updated OSD Sort Policy (ID 3005).
     * Extended X509 authentication to allow user and group mapping.
     * Slimmed down and updated Mac OS X installer with stricter dependency checking and SIP awareness.
     * Converted the Java parts to Maven and made all components available as artifacts hosted on GitHub.
     * Cleanup of code base to exclude generated sources and previously shipped binaries.
     * Add non-interactive console support to command line tools.
+    * Add File Name Prefix OSD selection policy (ID 1004).
     * Remove explicit support for SSLv3.
     * Fix potential disk space leak in BabuDB (for DIR and MRC)
     * Many small stability improvements and fixes.

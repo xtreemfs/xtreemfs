@@ -981,6 +981,12 @@ bool SetOSP(const string& xctl_file,
           + ","
           + boost::lexical_cast<string>(
               xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN);
+  } else if (policy_uc == "LASTUPDATED") {
+      request["policy"] = boost::lexical_cast<string>(
+          xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
+          + ","
+          + boost::lexical_cast<string>(
+              xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_LAST_UPDATED);
   } else if (policy_uc == "PREFERRED") {
       request["policy"] = boost::lexical_cast<string>(
           xtreemfs::pbrpc::OSD_SELECTION_POLICY_FILTER_DEFAULT)
@@ -1029,6 +1035,12 @@ bool SetRSP(const string& xctl_file,
   } else if (policy_uc == "VIVALDI") {
     request["policy"] = boost::lexical_cast<string>(
         xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_VIVALDI);
+  } else if (policy_uc == "ROUNDROBIN") {
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_HOST_ROUND_ROBIN);
+  } else if (policy_uc == "LASTUPDATED") {
+    request["policy"] = boost::lexical_cast<string>(
+        xtreemfs::pbrpc::OSD_SELECTION_POLICY_SORT_LAST_UPDATED);
   } else {
     request["policy"] = policy;
   }
