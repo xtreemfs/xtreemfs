@@ -8,7 +8,7 @@ TGZ_ARCHIVE="cpp.tgz"
 MOUNT="$PWD"
 
 cd "$XTREEMFS_DIR"
-tar czf "${MOUNT}/${TGZ_ARCHIVE}" "cpp" --exclude="build" --exclude="thirdparty"
+tar czf "${MOUNT}/${TGZ_ARCHIVE}" --exclude="build" --exclude="thirdparty" "cpp"
 cd "$MOUNT"
 
 tar zxf "$TGZ_ARCHIVE"
