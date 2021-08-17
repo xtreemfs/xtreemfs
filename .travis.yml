@@ -48,11 +48,11 @@ script: |
   else
     if [[ $TEST_SUITE = "travis-junit-mrc" ]] || [[ $TEST_SUITE = "travis-junit-common-utils" ]] || [[ $TEST_SUITE = "travis-junit-osd" ]]; then
       make server
-      travis_wait 30 make client_debug
+ make client_debug
     elif [[ $TEST_SUITE = "travis-junit"* ]]; then
       make server
     else
-      travis_wait 30 make client_debug server hadoop-client
+ make client_debug server hadoop-client
     fi
     ./tests/xtestenv --clean-test-dir -x $XTREEMFS_DIR -t $TEST_DIR -c $XTREEMFS_DIR/tests/test_config.py -p $TEST_SUITE
   fi
@@ -87,3 +87,6 @@ deploy:
     repo: xtreemfs/xtreemfs
     tags: true
     condition: "$TEST_SUITE = travis-deploy"
+cache:
+  directories:
+  - $HOME/.m2
