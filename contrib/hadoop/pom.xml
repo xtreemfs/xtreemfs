@@ -36,7 +36,7 @@
     <hadoop-common.version>3.2.3</hadoop-common.version>
 
     <!-- Test dependencies -->
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
 
     <!-- Plugin configurations -->
     <github.global.server>github</github.global.server>
