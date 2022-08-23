@@ -33,7 +33,7 @@
     <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
 
     <!-- Compile dependencies -->
-    <hadoop-common.version>3.2.3</hadoop-common.version>
+    <hadoop-common.version>3.2.4</hadoop-common.version>
 
     <!-- Test dependencies -->
     <junit.version>4.13.1</junit.version>
