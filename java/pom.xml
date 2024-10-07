@@ -34,8 +34,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.source.version>1.6</java.source.version>
-    <java.target.version>1.6</java.target.version>
+    <java.source.version>11</java.source.version>
+    <java.target.version>11</java.target.version>
 
     <!-- Relative to 1st level childrens' basedirs -->
     <libjni.directory>${project.basedir}/../../cpp/build</libjni.directory>
